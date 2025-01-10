@@ -134,3 +134,19 @@ func Login(c *fiber.Ctx) error {
 		"message": "User loggedin successfully",
 	})
 }
+
+func Logout(c *fiber.Ctx) error {
+	c.Cookie(&fiber.Cookie{
+		Name:     "Authorization",
+		Value:    "",
+		Expires:  time.Now().Add(-time.Hour),
+		SameSite: fiber.CookieSameSiteLaxMode,
+		HTTPOnly: true,
+		Secure:   true,
+	})
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "User loggedout successfully",
+	})
+}
