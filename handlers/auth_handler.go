@@ -1,7 +1,11 @@
 package handlers
 
 import (
+	"os"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/utils"
@@ -67,5 +71,66 @@ func Register(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "User created successfully",
+	})
+}
+
+func Login(c *fiber.Ctx) error {
+	var body struct {
+		EmployeeId string `json:"employee_id"`
+		Password   string `json:"password"`
+	}
+
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Cannot bind request",
+		})
+	}
+
+	var user models.User
+
+	if count := initializers.DB.First(&user, "employee_id = ?", body.EmployeeId).RowsAffected; count == 0 {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid email or password",
+		})
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password)); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid email or password",
+		})
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": user.ID,
+		"exp": time.Now().Add(time.Hour * 24).Unix(),
+	})
+
+	secretKey := os.Getenv("SECRET_KEY")
+
+	var tokenString string
+	var err error
+
+	if tokenString, err = token.SignedString([]byte(secretKey)); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed creating token",
+		})
+	}
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "Authorization",
+		Value:    tokenString,
+		Expires:  time.Now().Add(24 * time.Hour),
+		SameSite: fiber.CookieSameSiteLaxMode,
+		HTTPOnly: true,
+		Secure:   true,
+	})
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "User loggedin successfully",
 	})
 }
