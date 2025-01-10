@@ -25,7 +25,7 @@ func main() {
 	api := app.Group("/api")
 
 	// public routes start
-	api.Get("/register", handlers.Register)
+	api.Post("/register", handlers.Register)
 	// public routes end
 
 	app.Listen(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT"))

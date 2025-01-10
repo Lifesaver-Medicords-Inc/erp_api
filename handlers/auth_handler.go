@@ -10,9 +10,11 @@ import (
 
 func Register(c *fiber.Ctx) error {
 	var body struct {
-		EmployeeId string
-		Password   string
-		At         models.At
+		FirstName  string    `json:"first_name"`
+		LastName   string    `json:"last_name"`
+		Department string    `json:"department"`
+		Position   string    `json:"position"`
+		At         models.At `json:"at"`
 	}
 
 	if err := c.BodyParser(&body); err != nil {
@@ -22,22 +24,34 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 
+	user := models.User{FirstName: body.FirstName, LastName: body.LastName, Department: body.Department, Position: body.Position}
+
+	if err := initializers.DB.Create(&user).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed creating user",
+		})
+	}
+
+	employeeId := utils.GenerateEmployeeId(user.Department, user.Position, user.ID)
+
 	var hash []byte
 	var err error
 
-	if hash, err = bcrypt.GenerateFromPassword([]byte(body.Password), 10); err != nil {
+	if hash, err = bcrypt.GenerateFromPassword([]byte(employeeId), 10); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Internal server error",
 		})
 	}
 
-	user := models.User{EmployeeId: body.EmployeeId, Password: string(hash)}
+	user.EmployeeId = employeeId
+	user.Password = string(hash)
 
-	if err := initializers.DB.Create(&user).Error; err != nil {
+	if err := initializers.DB.Model(&user).Updates(user).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"message": "Failed creating user",
+			"message": "Failed updating user",
 		})
 	}
 
