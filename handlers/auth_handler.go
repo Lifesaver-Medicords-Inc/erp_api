@@ -89,7 +89,7 @@ func Register(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
-		"message": "User created successfully",
+		"data":    user,
 	})
 }
 
@@ -150,7 +150,7 @@ func Login(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
-		"message": "User loggedin successfully",
+		"data":    user,
 	})
 }
 

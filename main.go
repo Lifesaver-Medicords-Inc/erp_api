@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/pierceperado/smpc/handlers"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/middlewares"
 )
 
 func init() {
@@ -24,9 +25,16 @@ func main() {
 
 	api := app.Group("/api")
 	{
+		// Public Routes
 		api.Post("/register", handlers.Register)
 		api.Post("/login", handlers.Login)
 		api.Post("/logout", handlers.Logout)
+
+		// Protected Routes
+		api.Use(middlewares.RequireAuth)
+		{
+			api.Get("/profile", handlers.GetUserProfile)
+		}
 	}
 
 	app.Listen(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT"))
