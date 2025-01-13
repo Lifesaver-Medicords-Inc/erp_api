@@ -23,12 +23,11 @@ func main() {
 	}))
 
 	api := app.Group("/api")
-
-	// public routes start
-	api.Post("/register", handlers.Register)
-	api.Post("/login", handlers.Login)
-	api.Post("/logout", handlers.Logout)
-	// public routes end
+	{
+		api.Post("/register", handlers.Register)
+		api.Post("/login", handlers.Login)
+		api.Post("/logout", handlers.Logout)
+	}
 
 	app.Listen(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT"))
 }

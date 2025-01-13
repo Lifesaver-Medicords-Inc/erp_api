@@ -28,9 +28,18 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to start transaction",
+		})
+	}
+
 	user := models.User{FirstName: body.FirstName, LastName: body.LastName, Department: body.Department, Position: body.Position}
 
-	if err := initializers.DB.Create(&user).Error; err != nil {
+	if err := tx.Create(&user).Error; err != nil {
+		tx.Rollback()
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Failed creating user",
@@ -41,8 +50,8 @@ func Register(c *fiber.Ctx) error {
 
 	var hash []byte
 	var err error
-
 	if hash, err = bcrypt.GenerateFromPassword([]byte(employeeId), 10); err != nil {
+		tx.Rollback()
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Internal server error",
@@ -52,7 +61,8 @@ func Register(c *fiber.Ctx) error {
 	user.EmployeeId = employeeId
 	user.Password = string(hash)
 
-	if err := initializers.DB.Model(&user).Updates(user).Error; err != nil {
+	if err := tx.Model(&user).Updates(user).Error; err != nil {
+		tx.Rollback()
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Failed updating user",
@@ -61,10 +71,19 @@ func Register(c *fiber.Ctx) error {
 
 	userat := models.UserAt{User: user, At: utils.GetAtData(c, body.At)}
 
-	if err := initializers.DB.Create(&userat).Error; err != nil {
+	if err := tx.Create(&userat).Error; err != nil {
+		tx.Rollback()
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"message": "Failed creating userat",
+		})
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to commit transaction",
 		})
 	}
 
