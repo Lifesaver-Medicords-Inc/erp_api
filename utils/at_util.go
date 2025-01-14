@@ -23,6 +23,8 @@ func GetAtData(c *fiber.Ctx, at models.At) models.At {
 		action = "INSERT"
 	case "PUT":
 		action = "UPDATE"
+	case "PATCH":
+		action = "UPDATE"
 	case "DELETE":
 		action = "DELETE"
 	default:

@@ -95,8 +95,9 @@ func Register(c *fiber.Ctx) error {
 
 func Login(c *fiber.Ctx) error {
 	var body struct {
-		EmployeeId string `json:"employee_id"`
-		Password   string `json:"password"`
+		EmployeeId string    `json:"employee_id"`
+		Password   string    `json:"password"`
+		At         models.At `json:"at"`
 	}
 
 	if err := c.BodyParser(&body); err != nil {
@@ -125,6 +126,7 @@ func Login(c *fiber.Ctx) error {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": user.ID,
 		"exp": time.Now().Add(time.Hour * 24).Unix(),
+		"at":  utils.GetAtData(c, body.At),
 	})
 
 	secretKey := os.Getenv("SECRET_KEY")
