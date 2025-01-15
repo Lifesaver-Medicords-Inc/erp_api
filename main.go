@@ -46,6 +46,7 @@ func main() {
 			{
 				// Brand Endpoints
 				setupApi.Get("/brand", setup_handlers.GetBrands)
+				setupApi.Get("/brand/:id", setup_handlers.GetBrand)
 				setupApi.Post("/brand", setup_handlers.CreateBrand)
 				setupApi.Patch("/brand", setup_handlers.UpdateBrand)
 				setupApi.Delete("/brand", setup_handlers.DeleteBrand)

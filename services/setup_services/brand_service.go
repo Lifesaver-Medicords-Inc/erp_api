@@ -1,6 +1,9 @@
 package setup_services
 
 import (
+	"errors"
+
+	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
@@ -30,8 +33,27 @@ func GetBrand(id int) (models.Brand, error) {
 	return brand, nil
 }
 
-func CreateBrand(tx *gorm.DB, data *models.Brand) error {
-	if err := services.DbInsert(tx, data); err != nil {
+func CreateBrand(c *fiber.Ctx, tx *gorm.DB) error {
+	var body models.Brand
+	if err := c.BodyParser(&body); err != nil {
+		return err
+	}
+
+	if err := services.DbInsert(tx, &body); err != nil {
+		return err
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		return errors.New("error AT data")
+	}
+
+	atdata := models.BrandAt{
+		Brand: body,
+		At:    at,
+	}
+
+	if err := services.DbInsert(tx, &atdata); err != nil {
 		return err
 	}
 
