@@ -35,16 +35,6 @@ func CreateBrand(c *fiber.Ctx) error {
 		})
 	}
 
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"success": false,
-			"message": "At not found in context",
-		})
-	}
-
-	body.At = at
-
 	tx := initializers.DB.Begin()
 	err := setup_services.CreateBrand(tx, &body)
 
