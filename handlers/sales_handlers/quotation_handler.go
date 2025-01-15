@@ -1,19 +1,18 @@
-package sales_quotation_handler
+package sales_handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
 )
 
-func Get(c *fiber.Ctx) error {
+func GetQuotations(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "User created successfully",
 	})
 }
 
-func Create(c *fiber.Ctx) error { 
-	
+func CreateQuotation(c *fiber.Ctx) error {
 	var body struct {
 		FirstName  string    `json:"first_name"`
 		LastName   string    `json:"last_name"`
@@ -28,23 +27,23 @@ func Create(c *fiber.Ctx) error {
 			"success": false,
 			"message": "Cannot bind request",
 		})
-	} 
+	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
-		"data": body,
+		"data":    body,
 	})
 
 }
 
-func Update(c *fiber.Ctx) error {
+func UpdateQuotation(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "User created successfully",
 	})
 }
 
-func Delete(c *fiber.Ctx) error {
+func DeleteQuotation(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"message": "User created successfully",

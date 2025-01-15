@@ -21,7 +21,6 @@ func ConnectDb() {
 	dsn := fmt.Sprintf("sqlserver://%v:%v@%v:%v?database=%v", dbUsername, dbPassword, dbHost, dbPort, dbName)
 
 	var err error
-
 	DB, err = gorm.Open(sqlserver.Open(dsn), &gorm.Config{})
 
 	if err != nil {

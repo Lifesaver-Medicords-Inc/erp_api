@@ -11,9 +11,8 @@ func MapToStruct(m map[string]interface{}, s interface{}) error {
 		return fmt.Errorf("error marshaling map: %w", err)
 	}
 
-	err = json.Unmarshal(jsonData, s)
-	if err != nil {
-		return fmt.Errorf("error unmarshaling to struct: %w", err)
+	if err = json.Unmarshal(jsonData, s); err != nil {
+		return fmt.Errorf("error unmarshaling map: %w", err)
 	}
 
 	return nil
