@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/utils"
 )
 
 func RequireAuth(c *fiber.Ctx) error {
@@ -26,7 +27,6 @@ func RequireAuth(c *fiber.Ctx) error {
 		if method, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method %v", method)
 		}
-
 		return []byte(secretKey), nil
 	})
 
@@ -47,7 +47,14 @@ func RequireAuth(c *fiber.Ctx) error {
 			}
 		}
 
-		userID := claims["sub"].(float64)
+		userID, ok := claims["sub"].(float64)
+		if !ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"success": false,
+				"message": "Invalid user ID",
+			})
+		}
+
 		if userID == 0 {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"success": false,
@@ -55,15 +62,32 @@ func RequireAuth(c *fiber.Ctx) error {
 			})
 		}
 
-		var user models.User
-		if count := initializers.DB.First(&user, "id = ?", userID).RowsAffected; count == 0 {
+		var userObj models.User
+		if count := initializers.DB.First(&userObj, "id = ?", userID).RowsAffected; count == 0 {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"success": false,
 				"message": "User not found",
 			})
 		}
 
-		c.Locals("user", user)
+		atMap, ok := claims["at"].(map[string]interface{})
+		if !ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"success": false,
+				"message": "Invalid at data",
+			})
+		}
+
+		var atObj models.At
+		if err := utils.MapToStruct(atMap, &atObj); err != nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"success": false,
+				"message": "Invalid at data",
+			})
+		}
+
+		c.Locals("user", userObj)
+		c.Locals("at", atObj)
 
 		return c.Next()
 	}

@@ -1,31 +1,29 @@
-package db_services
+package services
 
 import (
 	"github.com/pierceperado/smpc/initializers"
 	"gorm.io/gorm"
 )
 
-func Get(model interface{}, conditions map[string]interface{}) error {
-	// Ensure that we pass a pointer to `model`, so GORM can modify it.
+func DbGet(model interface{}, conditions map[string]interface{}) error {
 	query := initializers.DB.Model(model)
 
-	// Apply conditions if provided (conditions is nil or empty)
-	if conditions != nil && len(conditions) > 0 {
+	if conditions != nil {
 		query = query.Where(conditions)
 	}
 
-	// Execute the query and retrieve the data
 	if err := query.Find(model).Error; err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func Insert(tx *gorm.DB, model interface{}) error {
-	// Ensure that the model is passed as a pointer.
+func DbInsert(tx *gorm.DB, model interface{}) error {
 	if err := tx.Create(model).Error; err != nil {
 		return err
 	}
+
 	return nil
 }
 
