@@ -49,7 +49,9 @@ func CreateBrand(c *fiber.Ctx, tx *gorm.DB) error {
 	}
 
 	atdata := models.BrandAt{
-		Brand: body,
+		RefId: body.ID,
+		Code:  body.Code,
+		Name:  body.Name,
 		At:    at,
 	}
 
@@ -60,10 +62,60 @@ func CreateBrand(c *fiber.Ctx, tx *gorm.DB) error {
 	return nil
 }
 
-// func Update(a int, b int) int {
-// 	return a * b
-// }
+func UpdateBrand(c *fiber.Ctx, tx *gorm.DB) error {
+	var body models.Brand
+	if err := c.BodyParser(&body); err != nil {
+		return err
+	}
 
-// func Delete(a int, b int) int {
-// 	return a * b
-// }
+	if err := services.DbUpdate(tx, &body, nil); err != nil {
+		return err
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		return errors.New("error AT data")
+	}
+
+	atdata := models.BrandAt{
+		RefId: body.ID,
+		Code:  body.Code,
+		Name:  body.Name,
+		At:    at,
+	}
+
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteBrand(c *fiber.Ctx, tx *gorm.DB) error {
+	var body models.Brand
+	if err := c.BodyParser(&body); err != nil {
+		return err
+	}
+
+	if err := services.DbDelete(tx, &body, nil); err != nil {
+		return err
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		return errors.New("error AT data")
+	}
+
+	atdata := models.BrandAt{
+		RefId: body.ID,
+		Code:  body.Code,
+		Name:  body.Name,
+		At:    at,
+	}
+
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return err
+	}
+
+	return nil
+}

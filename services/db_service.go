@@ -8,7 +8,7 @@ import (
 func DbGet(model interface{}, conditions map[string]interface{}) error {
 	query := initializers.DB.Model(model)
 
-	if conditions != nil {
+	if len(conditions) > 0 {
 		query = query.Where(conditions)
 	}
 
@@ -27,34 +27,30 @@ func DbInsert(tx *gorm.DB, model interface{}) error {
 	return nil
 }
 
-// func Update(tx *gorm.DB,model,interface{}, conditions map[string]interface{}, updates map[string]interface{}) error {
-// 	// Ensure that the model is passed as a pointer.
-// 	query := tx.Model(model)
+func DbUpdate(tx *gorm.DB, model interface{}, conditions map[string]interface{}) error {
+	query := tx.Model(model)
 
-// 	// Apply conditions if provided
-// 	if len(conditions) > 0 {
-// 		query = query.Where(conditions)
-// 	}
+	if len(conditions) > 0 {
+		query = query.Where(conditions)
+	}
 
-// 	// Apply updates
-// 	if err := query.UpdateColumns(updates).Error; err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+	if err := query.UpdateColumns(model).Error; err != nil {
+		return err
+	}
 
-// func Delete(tx *gorm.DB,model interface{}, conditions map[string]interface{}) error {
-// 	// Ensure that the model is passed as a pointer.
-// 	query := initializers.DB.Model(model)
+	return nil
+}
 
-// 	// Apply conditions if provided
-// 	if len(conditions) > 0 {
-// 		query = query.Where(conditions)
-// 	}
+func DbDelete(tx *gorm.DB, model interface{}, conditions map[string]interface{}) error {
+	query := initializers.DB.Model(model)
 
-// 	// Perform the delete operation
-// 	if err := query.Delete(model).Error; err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+	if len(conditions) > 0 {
+		query = query.Where(conditions)
+	}
+
+	if err := query.Delete(model).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

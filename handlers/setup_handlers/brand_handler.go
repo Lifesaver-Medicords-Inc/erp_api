@@ -48,7 +48,6 @@ func GetBrand(c *fiber.Ctx) error {
 		"success": true,
 		"data":    data,
 	})
-
 }
 
 func CreateBrand(c *fiber.Ctx) error {
@@ -73,31 +72,55 @@ func CreateBrand(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
-		// "data":    data,
 	})
 }
 
 func UpdateBrand(c *fiber.Ctx) error {
+	tx := initializers.DB.Begin()
+	err := setup_services.UpdateBrand(c, tx)
 
-	// var body models.Brand
-	// if err := c.BodyParser(&body); err != nil {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"success": false,
-	// 		"message": "Cannot bind request",
-	// 	})
-	// }
+	if err != nil {
+		tx.Rollback()
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed updating brand",
+		})
+	}
 
-	// data, err := item_brand_services.Create(body)
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to commit transaction",
+		})
+	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
-		"message": "User created successfully",
 	})
 }
 
 func DeleteBrand(c *fiber.Ctx) error {
+	tx := initializers.DB.Begin()
+	err := setup_services.DeleteBrand(c, tx)
+
+	if err != nil {
+		tx.Rollback()
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed deleting brand",
+		})
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to commit transaction",
+		})
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
-		"message": "User created successfully",
 	})
 }

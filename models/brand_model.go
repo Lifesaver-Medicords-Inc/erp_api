@@ -11,8 +11,11 @@ func (Brand) TableName() string {
 }
 
 type BrandAt struct {
-	Brand
-	At
+	ID    uint   `gorm:"primarykey" json:"id"`
+	RefId uint   `json:"ref_id"`
+	Code  string `json:"code"`
+	Name  string `json:"name"`
+	At    `json:"at"`
 }
 
 func (BrandAt) TableName() string {
