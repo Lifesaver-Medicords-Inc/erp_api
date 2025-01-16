@@ -50,6 +50,11 @@ func main() {
 				setupApi.Post("/brand", setup_handlers.CreateBrand)
 				setupApi.Patch("/brand", setup_handlers.UpdateBrand)
 				setupApi.Delete("/brand", setup_handlers.DeleteBrand)
+
+				//Item Endpoints
+				setupApi.Get("/item/", setup_handlers.GetClasses)
+				setupApi.Get("/item/:id", setup_handlers.GetClass)
+				setupApi.Post("/item", setup_handlers.CreateClass)
 			}
 
 			// Sales Endpoints
