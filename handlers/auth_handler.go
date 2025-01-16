@@ -69,7 +69,7 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 
-	userat := models.UserAt{User: user, At: utils.GetAtData(c, body.At)}
+	userat := models.UserAt{RefId: user.ID, FirstName: user.FirstName, LastName: user.LastName, Department: user.Department, Position: user.Position, EmployeeId: user.EmployeeId, Password: user.Password, At: utils.GetAtData(c, body.At)}
 
 	if err := tx.Create(&userat).Error; err != nil {
 		tx.Rollback()
