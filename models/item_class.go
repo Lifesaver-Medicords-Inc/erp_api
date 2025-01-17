@@ -11,8 +11,11 @@ func (Class) TableName() string {
 }
 
 type ClassAt struct {
-	Class
-	At
+	ID    uint   `gorm:"primarykey" json:"id"`
+	RefId uint   `json:"ref_id"`
+	Code  string `json:"code"`
+	Name  string `json:"name"`
+	At    `json:"at"`
 }
 
 func (ClassAt) TableName() string {

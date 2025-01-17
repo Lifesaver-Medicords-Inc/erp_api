@@ -55,6 +55,8 @@ func main() {
 				setupApi.Get("/item/", setup_handlers.GetClasses)
 				setupApi.Get("/item/:id", setup_handlers.GetClass)
 				setupApi.Post("/item", setup_handlers.CreateClass)
+				setupApi.Put("/item", setup_handlers.UpdateClass)
+				setupApi.Delete("/item", setup_handlers.DeleteClass)
 			}
 
 			// Sales Endpoints

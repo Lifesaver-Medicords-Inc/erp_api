@@ -1,12 +1,10 @@
 package setup_handlers
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
-	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services/setup_services"
 )
 
@@ -49,25 +47,14 @@ func GetClass(c *fiber.Ctx) error {
 }
 
 func CreateClass(c *fiber.Ctx) error {
-	var body models.Class
-	if err := c.BodyParser(&body); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"message": "Cannot bind request",
-		})
-	}
-
 	tx := initializers.DB.Begin()
-	err := setup_services.CreateClasses(tx, &body)
-
-	fmt.Println("Brand At:", body)
+	err := setup_services.CreateClass(c, tx)
 
 	if err != nil {
-		fmt.Println("Error:", err)
 		tx.Rollback()
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"message": "Failed creating brand",
+			"message": "Failed creating class",
 		})
 	}
 
@@ -81,6 +68,55 @@ func CreateClass(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
-		// "data":    data,
+	})
+}
+
+func UpdateClass(c *fiber.Ctx) error {
+	tx := initializers.DB.Begin()
+	err := setup_services.UpdateClass(c, tx)
+
+	if err != nil {
+		tx.Rollback()
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed updating item class",
+		})
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to commit transaction",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+	})
+}
+
+func DeleteClass(c *fiber.Ctx) error {
+	tx := initializers.DB.Begin()
+	err := setup_services.DeleteClass(c, tx)
+
+	if err != nil {
+		tx.Rollback()
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed deleting item class",
+		})
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to commit transaction",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
 	})
 }
