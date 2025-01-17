@@ -7,4 +7,6 @@ func MigrateDb() {
 
 	// SETUP
 	DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
+
+	DB.AutoMigrate(&models.Class{}, &models.ClassAt{})
 }
