@@ -9,4 +9,5 @@ func MigrateDb() {
 	DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
 
 	DB.AutoMigrate(&models.Class{}, &models.ClassAt{})
+	DB.AutoMigrate(&models.Name{}, &models.NameAt{})
 }

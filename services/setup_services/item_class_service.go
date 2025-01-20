@@ -3,6 +3,9 @@ package setup_services
 import (
 	// "errors"
 
+	"errors"
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -35,10 +38,14 @@ func GetClass(id int) (models.Class, error) {
 func CreateClass(c *fiber.Ctx, tx *gorm.DB) error {
 	var body models.Class
 	if err := c.BodyParser(&body); err != nil {
+
 		return err
 	}
 
 	if err := services.DbInsert(tx, &body); err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
+			err = errors.New("duplicate record")
+		}
 		return err
 	}
 

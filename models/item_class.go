@@ -2,7 +2,7 @@ package models
 
 type Class struct {
 	ID   uint   `gorm:"primarykey" json:"id"`
-	Code string `json:"code"`
+	Code string `gorm:"unique;not null" json:"code"`
 	Name string `json:"name"`
 }
 

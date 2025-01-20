@@ -1,6 +1,8 @@
 package setup_services
 
 import (
+	// "errors"
+
 	"errors"
 	"strings"
 
@@ -10,49 +12,49 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetBrands() ([]models.Brand, error) {
-	var brands []models.Brand
+func GetNames() ([]models.Name, error) {
+	var name []models.Name
 
-	if err := services.DbGet(&brands, nil); err != nil {
-		return brands, err
+	if err := services.DbGet(&name, nil); err != nil {
+		return name, err
 	}
 
-	return brands, nil
+	return name, nil
 }
-
-func GetBrand(id int) (models.Brand, error) {
+func GetName(id int) (models.Name, error) {
 	conditions := map[string]interface{}{
 		"id": id,
 	}
 
-	var brand models.Brand
+	var name models.Name
 
-	if err := services.DbGet(&brand, conditions); err != nil {
-		return brand, err
+	if err := services.DbGet(&name, conditions); err != nil {
+		return name, err
 	}
 
-	return brand, nil
+	return name, nil
 }
 
-func CreateBrand(c *fiber.Ctx, tx *gorm.DB) error {
-	var body models.Brand
+func CreateName(c *fiber.Ctx, tx *gorm.DB) error {
+	var body models.Name
 	if err := c.BodyParser(&body); err != nil {
-		return err
-	}
-
-	if err := services.DbInsert(tx, &body); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			err = errors.New("duplicate record")
 		}
 		return err
 	}
 
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		return errors.New("error AT data")
+	if err := services.DbInsert(tx, &body); err != nil {
+		return err
 	}
 
-	atdata := models.BrandAt{
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		//return errors.New("error AT data")
+		at = models.At{}
+	}
+
+	atdata := models.NameAt{
 		RefId: body.ID,
 		Code:  body.Code,
 		Name:  body.Name,
@@ -65,9 +67,8 @@ func CreateBrand(c *fiber.Ctx, tx *gorm.DB) error {
 
 	return nil
 }
-
-func UpdateBrand(c *fiber.Ctx, tx *gorm.DB) error {
-	var body models.Brand
+func UpdateName(c *fiber.Ctx, tx *gorm.DB) error {
+	var body models.Name
 	if err := c.BodyParser(&body); err != nil {
 		return err
 	}
@@ -78,10 +79,11 @@ func UpdateBrand(c *fiber.Ctx, tx *gorm.DB) error {
 
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
-		return errors.New("error AT data")
+		//return errors.New("error AT data")
+		at = models.At{}
 	}
 
-	atdata := models.BrandAt{
+	atdata := models.NameAt{
 		RefId: body.ID,
 		Code:  body.Code,
 		Name:  body.Name,
@@ -95,8 +97,8 @@ func UpdateBrand(c *fiber.Ctx, tx *gorm.DB) error {
 	return nil
 }
 
-func DeleteBrand(c *fiber.Ctx, tx *gorm.DB) error {
-	var body models.Brand
+func DeleteName(c *fiber.Ctx, tx *gorm.DB) error {
+	var body models.Name
 	if err := c.BodyParser(&body); err != nil {
 		return err
 	}
@@ -107,10 +109,11 @@ func DeleteBrand(c *fiber.Ctx, tx *gorm.DB) error {
 
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
-		return errors.New("error AT data")
+		//return errors.New("error AT data")
+		at = models.At{}
 	}
 
-	atdata := models.BrandAt{
+	atdata := models.ClassAt{
 		RefId: body.ID,
 		Code:  body.Code,
 		Name:  body.Name,
