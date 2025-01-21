@@ -10,4 +10,6 @@ func MigrateDb() {
 	DB.AutoMigrate(&models.UnitMeasurement{}, &models.UnitMeasurementAt{})
 	DB.AutoMigrate(&models.PaymentTerms{}, &models.PaymentTermsAt{})
 	DB.AutoMigrate(&models.Class{}, &models.ClassAt{})
+	DB.AutoMigrate(&models.Name{}, &models.NameAt{})
+	DB.AutoMigrate(&models.Type{}, &models.TypeAt{})
 }

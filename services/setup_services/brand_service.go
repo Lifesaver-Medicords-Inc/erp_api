@@ -41,6 +41,9 @@ func CreateBrand(c *fiber.Ctx, tx *gorm.DB) error {
 	}
 
 	if err := services.DbInsert(tx, &body); err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
+			err = errors.New("duplicate record")
+		}
 
 		if strings.Contains(err.Error(), "duplicate key") {
 			err = errors.New("duplicate record")

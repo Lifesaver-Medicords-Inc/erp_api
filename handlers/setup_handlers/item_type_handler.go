@@ -8,8 +8,8 @@ import (
 	"github.com/pierceperado/smpc/services/setup_services"
 )
 
-func GetClasses(c *fiber.Ctx) error {
-	data, err := setup_services.GetClasses()
+func GetTypes(c *fiber.Ctx) error {
+	data, err := setup_services.GetTypes()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success":  false,
@@ -21,7 +21,7 @@ func GetClasses(c *fiber.Ctx) error {
 		"data":    data,
 	})
 }
-func GetClass(c *fiber.Ctx) error {
+func GetType(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 
 	idNum, err := strconv.Atoi(idParam)
@@ -32,7 +32,7 @@ func GetClass(c *fiber.Ctx) error {
 		})
 	}
 
-	data, err := setup_services.GetClass(idNum)
+	data, err := setup_services.GetType(idNum)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
@@ -46,9 +46,9 @@ func GetClass(c *fiber.Ctx) error {
 	})
 }
 
-func CreateClass(c *fiber.Ctx) error {
+func CreateType(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
-	err := setup_services.CreateClass(c, tx)
+	err := setup_services.CreateType(c, tx)
 
 	if err != nil {
 		tx.Rollback()
@@ -71,15 +71,15 @@ func CreateClass(c *fiber.Ctx) error {
 	})
 }
 
-func UpdateClass(c *fiber.Ctx) error {
+func UpdateType(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
-	err := setup_services.UpdateClass(c, tx)
+	err := setup_services.UpdateType(c, tx)
 
 	if err != nil {
 		tx.Rollback()
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"message": "Failed updating item class",
+			"message": "Failed updating item type",
 		})
 	}
 
@@ -96,15 +96,15 @@ func UpdateClass(c *fiber.Ctx) error {
 	})
 }
 
-func DeleteClass(c *fiber.Ctx) error {
+func DeleteType(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
-	err := setup_services.DeleteClass(c, tx)
+	err := setup_services.DeleteType(c, tx)
 
 	if err != nil {
 		tx.Rollback()
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"message": "Failed deleting item class",
+			"message": "Failed deleting item type",
 		})
 	}
 
