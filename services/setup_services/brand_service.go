@@ -35,6 +35,7 @@ func GetBrand(id int) (models.Brand, error) {
 }
 
 func CreateBrand(c *fiber.Ctx, tx *gorm.DB) error {
+
 	var body models.Brand
 	if err := c.BodyParser(&body); err != nil {
 		return err
