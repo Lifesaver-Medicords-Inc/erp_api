@@ -2,6 +2,7 @@ package setup_services
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -40,20 +41,19 @@ func CreateBrand(c *fiber.Ctx, tx *gorm.DB) error {
 	}
 
 	if err := services.DbInsert(tx, &body); err != nil {
+
+		if strings.Contains(err.Error(), "duplicate key") {
+			err = errors.New("duplicate record")
+		}
 		return err
 	}
 
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		return errors.New("error AT data")
-	}
+	// at, ok := c.Locals("at").(models.At)
+	// if !ok {
+	// 	return errors.New("error AT data")
+	// }
 
-	atdata := models.BrandAt{
-		RefId: body.ID,
-		Code:  body.Code,
-		Name:  body.Name,
-		At:    at,
-	}
+	atdata := models.BrandAt{RefId: body.ID, Code: body.Code, BrandContent: models.BrandContent{Name: body.Name}, At: models.At{}}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return err
@@ -72,17 +72,12 @@ func UpdateBrand(c *fiber.Ctx, tx *gorm.DB) error {
 		return err
 	}
 
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		return errors.New("error AT data")
-	}
+	// at, ok := c.Locals("at").(models.At)
+	// if !ok {
+	// 	return errors.New("error AT data")
+	// }
 
-	atdata := models.BrandAt{
-		RefId: body.ID,
-		Code:  body.Code,
-		Name:  body.Name,
-		At:    at,
-	}
+	atdata := models.BrandAt{RefId: body.ID, Code: body.Code, BrandContent: models.BrandContent{Name: body.Name}, At: models.At{}}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return err
@@ -101,17 +96,19 @@ func DeleteBrand(c *fiber.Ctx, tx *gorm.DB) error {
 		return err
 	}
 
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		return errors.New("error AT data")
-	}
+	// at, ok := c.Locals("at").(models.At)
+	// if !ok {
+	// 	return errors.New("error AT data")
+	// }
 
-	atdata := models.BrandAt{
-		RefId: body.ID,
-		Code:  body.Code,
-		Name:  body.Name,
-		At:    at,
-	}
+	atdata := models.BrandAt{RefId: body.ID, Code: body.Code, BrandContent: models.BrandContent{Name: body.Name}, At: models.At{}}
+
+	// atdata := models.BrandAt{
+	// 	RefId: body.ID,
+	// 	Code:  body.Code,
+	// 	Name:  body.Name,
+	// 	At:    at,
+	// }
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return err
