@@ -8,24 +8,20 @@ import (
 	"github.com/pierceperado/smpc/services/setup_services"
 )
 
-func GetBrands(c *fiber.Ctx) error {
-	data, err := setup_services.GetBrands()
-
+func GetClasses(c *fiber.Ctx) error {
+	data, err := setup_services.GetClasses()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"message": err,
+			"success":  false,
+			"messsage": err,
 		})
 	}
-
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"data":    data,
 	})
-
 }
-
-func GetBrand(c *fiber.Ctx) error {
+func GetClass(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 
 	idNum, err := strconv.Atoi(idParam)
@@ -36,7 +32,7 @@ func GetBrand(c *fiber.Ctx) error {
 		})
 	}
 
-	data, err := setup_services.GetBrand(idNum)
+	data, err := setup_services.GetClass(idNum)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
@@ -50,9 +46,9 @@ func GetBrand(c *fiber.Ctx) error {
 	})
 }
 
-func CreateBrand(c *fiber.Ctx) error {
+func CreateClass(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
-	err := setup_services.CreateBrand(c, tx)
+	err := setup_services.CreateClass(c, tx)
 
 	if err != nil {
 		tx.Rollback()
@@ -75,15 +71,15 @@ func CreateBrand(c *fiber.Ctx) error {
 	})
 }
 
-func UpdateBrand(c *fiber.Ctx) error {
+func UpdateClass(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
-	err := setup_services.UpdateBrand(c, tx)
+	err := setup_services.UpdateClass(c, tx)
 
 	if err != nil {
 		tx.Rollback()
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"message": "Failed updating brand",
+			"message": "Failed updating item class",
 		})
 	}
 
@@ -100,15 +96,15 @@ func UpdateBrand(c *fiber.Ctx) error {
 	})
 }
 
-func DeleteBrand(c *fiber.Ctx) error {
+func DeleteClass(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
-	err := setup_services.DeleteBrand(c, tx)
+	err := setup_services.DeleteClass(c, tx)
 
 	if err != nil {
 		tx.Rollback()
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"message": "Failed deleting brand",
+			"message": "Failed deleting item class",
 		})
 	}
 
