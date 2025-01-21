@@ -12,39 +12,40 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetNames() ([]models.Name, error) {
-	var names []models.Name
+func GetTypes() ([]models.Type, error) {
+	var types []models.Type
 
-	if err := services.DbGet(&names, nil); err != nil {
-		return names, err
+	if err := services.DbGet(&types, nil); err != nil {
+		return types, err
 	}
 
-	return names, nil
+	return types, nil
 }
-func GetName(id int) (models.Name, error) {
+func GetType(id int) (models.Type, error) {
 	conditions := map[string]interface{}{
 		"id": id,
 	}
 
-	var name models.Name
+	var itemType models.Type
 
-	if err := services.DbGet(&name, conditions); err != nil {
-		return name, err
+	if err := services.DbGet(&itemType, conditions); err != nil {
+		return itemType, err
 	}
 
-	return name, nil
+	return itemType, nil
 }
 
-func CreateName(c *fiber.Ctx, tx *gorm.DB) error {
-	var body models.Name
+func CreateType(c *fiber.Ctx, tx *gorm.DB) error {
+	var body models.Type
 	if err := c.BodyParser(&body); err != nil {
-		if strings.Contains(err.Error(), "duplicate key") {
-			err = errors.New("duplicate record")
-		}
+
 		return err
 	}
 
 	if err := services.DbInsert(tx, &body); err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
+			err = errors.New("duplicate record")
+		}
 		return err
 	}
 
@@ -54,7 +55,7 @@ func CreateName(c *fiber.Ctx, tx *gorm.DB) error {
 		at = models.At{}
 	}
 
-	atdata := models.NameAt{RefId: body.ID, Code: body.Code, NameContent: models.NameContent{Name: body.Code}, At: at}
+	atdata := models.TypeAt{RefId: body.ID, Code: body.Code, TypeContent: models.TypeContent{Name: body.Name}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return err
@@ -62,8 +63,8 @@ func CreateName(c *fiber.Ctx, tx *gorm.DB) error {
 
 	return nil
 }
-func UpdateName(c *fiber.Ctx, tx *gorm.DB) error {
-	var body models.Name
+func UpdateType(c *fiber.Ctx, tx *gorm.DB) error {
+	var body models.Type
 	if err := c.BodyParser(&body); err != nil {
 		return err
 	}
@@ -78,7 +79,7 @@ func UpdateName(c *fiber.Ctx, tx *gorm.DB) error {
 		at = models.At{}
 	}
 
-	atdata := models.NameAt{RefId: body.ID, Code: body.Code, NameContent: models.NameContent{Name: body.Code}, At: at}
+	atdata := models.TypeAt{RefId: body.ID, Code: body.Code, TypeContent: models.TypeContent{Name: body.Name}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return err
@@ -87,8 +88,8 @@ func UpdateName(c *fiber.Ctx, tx *gorm.DB) error {
 	return nil
 }
 
-func DeleteName(c *fiber.Ctx, tx *gorm.DB) error {
-	var body models.Name
+func DeleteType(c *fiber.Ctx, tx *gorm.DB) error {
+	var body models.Type
 	if err := c.BodyParser(&body); err != nil {
 		return err
 	}
@@ -99,11 +100,10 @@ func DeleteName(c *fiber.Ctx, tx *gorm.DB) error {
 
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
-		//return errors.New("error AT data")
 		at = models.At{}
 	}
 
-	atdata := models.NameAt{RefId: body.ID, Code: body.Code, NameContent: models.NameContent{Name: body.Code}, At: at}
+	atdata := models.TypeAt{RefId: body.ID, Code: body.Code, TypeContent: models.TypeContent{Name: body.Name}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return err

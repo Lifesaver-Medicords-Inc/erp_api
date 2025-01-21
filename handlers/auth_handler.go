@@ -36,7 +36,7 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 
-	user := models.User{FirstName: body.FirstName, LastName: body.LastName, Department: body.Department, Position: body.Position}
+	user := models.User{UserContent: models.UserContent{FirstName: body.FirstName, LastName: body.LastName, Department: body.Department, Position: body.Position}}
 
 	if err := tx.Create(&user).Error; err != nil {
 		tx.Rollback()
@@ -69,7 +69,7 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 
-	userat := models.UserAt{RefId: user.ID, FirstName: user.FirstName, LastName: user.LastName, Department: user.Department, Position: user.Position, EmployeeId: user.EmployeeId, Password: user.Password, At: utils.GetAtData(c, body.At)}
+	userat := models.UserAt{RefId: user.ID, UserContent: models.UserContent{FirstName: user.FirstName, LastName: user.LastName, Department: user.Department, Position: user.Position, EmployeeId: user.EmployeeId, Password: user.Password}, At: utils.GetAtData(c, body.At)}
 
 	if err := tx.Create(&userat).Error; err != nil {
 		tx.Rollback()

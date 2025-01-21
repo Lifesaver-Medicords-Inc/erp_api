@@ -1,9 +1,12 @@
 package models
 
+type ClassContent struct {
+	Name string `json:"name"`
+}
 type Class struct {
 	ID   uint   `gorm:"primarykey" json:"id"`
-	Code string `gorm:"unique;not null" json:"code"`
-	Name string `json:"name"`
+	Code string `gorm:"unique" json:"code"`
+	ClassContent
 }
 
 func (Class) TableName() string {
@@ -14,8 +17,8 @@ type ClassAt struct {
 	ID    uint   `gorm:"primarykey" json:"id"`
 	RefId uint   `json:"ref_id"`
 	Code  string `json:"code"`
-	Name  string `json:"name"`
-	At    `json:"at"`
+	ClassContent
+	At
 }
 
 func (ClassAt) TableName() string {

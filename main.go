@@ -64,6 +64,13 @@ func main() {
 				setupApi.Post("/item/name", setup_handlers.CreateName)
 				setupApi.Put("/item/name",  setup_handlers.UpdateName)
 				setupApi.Delete("/item/name", setup_handlers.DeleteName)
+
+				//Item Name Endpoints
+				setupApi.Get("/item/type", setup_handlers.GetTypes)
+				setupApi.Get("/item/type/:id", setup_handlers.GetType)
+				setupApi.Post("/item/type", setup_handlers.CreateType)
+				setupApi.Put("/item/type",  setup_handlers.UpdateType)
+				setupApi.Delete("/item/type", setup_handlers.DeleteType)
 			}
 
 			// Sales Endpoints

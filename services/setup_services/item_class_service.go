@@ -13,13 +13,13 @@ import (
 )
 
 func GetClasses() ([]models.Class, error) {
-	var class []models.Class
+	var classes []models.Class
 
-	if err := services.DbGet(&class, nil); err != nil {
-		return class, err
+	if err := services.DbGet(&classes, nil); err != nil {
+		return classes, err
 	}
 
-	return class, nil
+	return classes, nil
 }
 func GetClass(id int) (models.Class, error) {
 	conditions := map[string]interface{}{
@@ -55,12 +55,7 @@ func CreateClass(c *fiber.Ctx, tx *gorm.DB) error {
 		at = models.At{}
 	}
 
-	atdata := models.ClassAt{
-		RefId: body.ID,
-		Code:  body.Code,
-		Name:  body.Name,
-		At:    at,
-	}
+	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{Name: body.Name}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return err
@@ -84,12 +79,7 @@ func UpdateClass(c *fiber.Ctx, tx *gorm.DB) error {
 		at = models.At{}
 	}
 
-	atdata := models.ClassAt{
-		RefId: body.ID,
-		Code:  body.Code,
-		Name:  body.Name,
-		At:    at,
-	}
+	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{Name: body.Name}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return err
@@ -113,12 +103,7 @@ func DeleteClass(c *fiber.Ctx, tx *gorm.DB) error {
 		at = models.At{}
 	}
 
-	atdata := models.ClassAt{
-		RefId: body.ID,
-		Code:  body.Code,
-		Name:  body.Name,
-		At:    at,
-	}
+	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{Name: body.Name}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return err
