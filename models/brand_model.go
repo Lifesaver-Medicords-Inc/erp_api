@@ -1,9 +1,13 @@
 package models
 
+type BrandContent struct {
+	Name string `json:"name"`
+}
+
 type Brand struct {
 	ID   uint   `gorm:"primarykey" json:"id"`
-	Code string `json:"code"`
-	Name string `json:"name"`
+	Code string `gorm:"unique;size:100" json:"code"`
+	BrandContent
 }
 
 func (Brand) TableName() string {
@@ -14,8 +18,8 @@ type BrandAt struct {
 	ID    uint   `gorm:"primarykey" json:"id"`
 	RefId uint   `json:"ref_id"`
 	Code  string `json:"code"`
-	Name  string `json:"name"`
-	At    `json:"at"`
+	BrandContent
+	At
 }
 
 func (BrandAt) TableName() string {
