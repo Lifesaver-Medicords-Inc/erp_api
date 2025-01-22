@@ -5,11 +5,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/pierceperado/smpc/handlers"
+	"github.com/pierceperado/smpc/handlers/public_handlers"
 	"github.com/pierceperado/smpc/handlers/sales_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
-	"github.com/pierceperado/smpc/middlewares"
 )
 
 func init() {
@@ -31,16 +30,14 @@ func main() {
 	api := app.Group("/api")
 	{
 		// Public Endpoints
-		api.Post("/register", handlers.Register)
-		api.Post("/login", handlers.Login)
-		api.Post("/logout", handlers.Logout)
+		api.Post("/register", public_handlers.CreateAccount)
+		api.Post("/login", public_handlers.LoginAccount)
+		api.Post("/logout", public_handlers.LogoutAccount)
+		api.Get("/hello", public_handlers.CheckHealth)
 
 		// Protected Endpoints
-		api.Use(middlewares.RequireAuth)
+		// api.Use(middlewares.RequireAuth)
 		{
-			// Test Endpoint
-			api.Get("/profile", handlers.GetUserProfile)
-
 			// Setup Endpoints
 			setupApi := api.Group("/setup")
 			{

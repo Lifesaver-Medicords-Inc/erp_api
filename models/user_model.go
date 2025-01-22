@@ -1,13 +1,17 @@
 package models
 
-type User struct {
-	ID         uint   `gorm:"primarykey" json:"id"`
+type UserContent struct {
 	FirstName  string `json:"first_name"`
 	LastName   string `json:"last_name"`
 	Department string `json:"department"`
 	Position   string `json:"position"`
-	EmployeeId string `gorm:"unique" json:"employee_id"`
 	Password   string `json:"password"`
+}
+
+type User struct {
+	ID         uint   `gorm:"primarykey" json:"id"`
+	EmployeeId string `gorm:"unique" json:"employee_id"`
+	UserContent
 }
 
 func (User) TableName() string {
@@ -17,12 +21,8 @@ func (User) TableName() string {
 type UserAt struct {
 	ID         uint   `gorm:"primarykey" json:"id"`
 	RefId      uint   `json:"ref_id"`
-	FirstName  string `json:"first_name"`
-	LastName   string `json:"last_name"`
-	Department string `json:"department"`
-	Position   string `json:"position"`
-	EmployeeId string `gorm:"unique" json:"employee_id"`
-	Password   string `json:"password"`
+	EmployeeId string `json:"employee_id"`
+	UserContent
 	At
 }
 
