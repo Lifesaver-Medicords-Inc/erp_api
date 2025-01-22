@@ -9,7 +9,6 @@ import (
 	"github.com/pierceperado/smpc/handlers/sales_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
-	"github.com/pierceperado/smpc/middlewares"
 )
 
 func init() {
@@ -36,7 +35,7 @@ func main() {
 		api.Post("/logout", handlers.Logout)
 
 		// Protected Endpoints
-		api.Use(middlewares.RequireAuth)
+		// api.Use(middlewares.RequireAuth)
 		{
 			// Test Endpoint
 			api.Get("/profile", handlers.GetUserProfile)
@@ -67,6 +66,15 @@ func main() {
 				salesApi.Post("/quotation", sales_handlers.CreateQuotation)
 				salesApi.Patch("/quotation", sales_handlers.UpdateQuotation)
 				salesApi.Delete("/quotation", sales_handlers.DeleteQuotation)
+
+				// Application Endpoints
+				salesApi.Get("/application", sales_handlers.GetApplications)
+				salesApi.Get("/application/:id", sales_handlers.GetApplication)
+				salesApi.Post("/application", sales_handlers.CreateApplication)
+				salesApi.Put("/application", sales_handlers.UpdateApplication)
+				salesApi.Delete("/application", sales_handlers.DeleteApplication)
+
+				//salesApi.Get("/application/:id", sales_handlers.GetQuotation)
 
 				// Order Routes
 				// sales_api.Get("/order", handlers.Register)
