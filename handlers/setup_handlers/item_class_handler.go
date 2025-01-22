@@ -54,7 +54,7 @@ func CreateClass(c *fiber.Ctx) error {
 		tx.Rollback()
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"message": "Failed creating class",
+			"message": err.Error(),
 		})
 	}
 

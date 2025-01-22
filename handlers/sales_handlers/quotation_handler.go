@@ -2,7 +2,8 @@ package sales_handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/services/sales_services"
 )
 
 func GetQuotations(c *fiber.Ctx) error {
@@ -13,25 +14,28 @@ func GetQuotations(c *fiber.Ctx) error {
 }
 
 func CreateQuotation(c *fiber.Ctx) error {
-	var body struct {
-		FirstName  string    `json:"first_name"`
-		LastName   string    `json:"last_name"`
-		Department string    `json:"department"`
-		Position   string    `json:"position"`
-		At         models.At `json:"at"`
+
+	tx := initializers.DB.Begin()
+	err := sales_services.CreateQuotation(c, tx)
+
+	if err != nil {
+		tx.Rollback()
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed creating sales quotation",
+		})
 	}
 
-	if err := c.BodyParser(&body); err != nil {
-
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"message": "Cannot bind request",
+			"message": "Failed to commit transaction",
 		})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
-		"data":    body,
 	})
 
 }
