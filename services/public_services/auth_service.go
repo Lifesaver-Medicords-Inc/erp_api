@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func CreateAccount(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
+func CreateAccount(c *fiber.Ctx, tx *gorm.DB) (models.User, int, error) {
 	var user models.User
 
 	var body models.UserAt
@@ -47,7 +47,7 @@ func CreateAccount(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 	return user, 0, nil
 }
 
-func LoginAccount(c *fiber.Ctx) (interface{}, int, error) {
+func LoginAccount(c *fiber.Ctx) (models.User, int, error) {
 	var user models.User
 
 	var body models.UserAt

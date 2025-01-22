@@ -40,5 +40,4 @@ func LogoutAccount(c *fiber.Ctx) error {
 	public_services.LogoutAccount(c)
 
 	return utils.RespondSuccess(c, nil)
-
 }
