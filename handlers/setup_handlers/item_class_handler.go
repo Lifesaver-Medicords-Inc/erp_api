@@ -6,117 +6,87 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/services/setup_services"
+	"github.com/pierceperado/smpc/utils"
 )
 
 func GetClasses(c *fiber.Ctx) error {
-	data, err := setup_services.GetClasses()
+	data, status, err := setup_services.GetClasses(nil)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success":  false,
-			"messsage": err,
-		})
+		return utils.RespondError(c, status, err.Error())
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-		"data":    data,
-	})
+
+	return utils.RespondSuccess(c, data)
 }
 func GetClass(c *fiber.Ctx) error {
 	idParam := c.Params("id")
-
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"message": err,
-		})
+		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	data, err := setup_services.GetClass(idNum)
+	data, status, err := setup_services.GetClass(idNum)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"message": err,
-		})
+		return utils.RespondError(c, status, err.Error())
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-		"data":    data,
-	})
+	return utils.RespondSuccess(c, data)
 }
 
 func CreateClass(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
-	err := setup_services.CreateClass(c, tx)
-
+	if tx.Error != nil {
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+	}
+	data, status, err := setup_services.CreateClass(c, tx)
 	if err != nil {
 		tx.Rollback()
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"message": err.Error(),
-		})
+		return utils.RespondError(c, status, err.Error())
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"message": "Failed to commit transaction",
-		})
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-	})
+	return utils.RespondSuccess(c, data)
 }
 
 func UpdateClass(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
-	err := setup_services.UpdateClass(c, tx)
+	if tx.Error != nil {
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+	}
 
+	data, status, err := setup_services.UpdateClass(c, tx, nil)
 	if err != nil {
 		tx.Rollback()
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"message": "Failed updating item class",
-		})
+		return utils.RespondError(c, status, err.Error())
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"message": "Failed to commit transaction",
-		})
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-	})
+	return utils.RespondSuccess(c, data)
 }
 
 func DeleteClass(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
-	err := setup_services.DeleteClass(c, tx)
+	if tx.Error != nil {
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+	}
 
+	data, status, err := setup_services.DeleteClass(c, tx, nil)
 	if err != nil {
 		tx.Rollback()
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"message": "Failed deleting item class",
-		})
+		return utils.RespondError(c, status, err.Error())
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"message": "Failed to commit transaction",
-		})
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"success": true,
-	})
+	return utils.RespondSuccess(c, data)
 }
