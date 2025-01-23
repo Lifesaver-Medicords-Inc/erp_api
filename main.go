@@ -15,6 +15,7 @@ func init() {
 	initializers.LoadEnv()
 	initializers.ConnectDb()
 	initializers.MigrateDb()
+	initializers.InitRedis()
 }
 
 func main() {
