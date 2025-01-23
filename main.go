@@ -87,6 +87,13 @@ func main() {
 				setupApi.Post("/payment_terms", setup_handlers.CreatePaymentTerms)
 				setupApi.Put("/payment_terms", setup_handlers.UpdatePaymentTerms)
 				setupApi.Delete("/payment_terms", setup_handlers.DeletePaymentTerms)
+
+				// Social Media Endpoints
+				setupApi.Get("/social", setup_handlers.GetPaymentTerms)
+				setupApi.Get("/social:id", setup_handlers.GetPaymentTerm)
+				setupApi.Post("/social", setup_handlers.CreatePaymentTerms)
+				setupApi.Put("/social", setup_handlers.UpdatePaymentTerms)
+				setupApi.Delete("/social", setup_handlers.DeletePaymentTerms)
 			}
 
 			// Sales Endpoints
