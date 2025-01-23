@@ -6,14 +6,15 @@ func MigrateDb() {
 	// Auth
 	DB.AutoMigrate(&models.User{}, &models.UserAt{})
 
-	// Setup
+	// // Setup
 	DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
 	DB.AutoMigrate(&models.UnitMeasurement{}, &models.UnitMeasurementAt{})
 	DB.AutoMigrate(&models.PaymentTerms{}, &models.PaymentTermsAt{})
 	DB.AutoMigrate(&models.Class{}, &models.ClassAt{})
 	DB.AutoMigrate(&models.Name{}, &models.NameAt{})
 	DB.AutoMigrate(&models.Type{}, &models.TypeAt{})
+	DB.AutoMigrate(&models.ShipType{}, &models.ShipTypeAt{})
 
-	// Sales
+	// // Sales
 	DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 }

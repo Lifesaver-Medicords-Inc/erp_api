@@ -87,6 +87,13 @@ func main() {
 				setupApi.Post("/payment_terms", setup_handlers.CreatePaymentTerms)
 				setupApi.Put("/payment_terms", setup_handlers.UpdatePaymentTerms)
 				setupApi.Delete("/payment_terms", setup_handlers.DeletePaymentTerms)
+
+				// Ship Type Endpoints
+				setupApi.Get("/shiptype", setup_handlers.GetShipTypes)
+				setupApi.Get("/shiptype/:id", setup_handlers.GetShipType)
+				setupApi.Post("/shiptype", setup_handlers.CreateShipType)
+				setupApi.Put("/shiptype", setup_handlers.UpdateShipType)
+				setupApi.Delete("/shiptype", setup_handlers.DeleteShipType)
 			}
 
 			// Sales Endpoints
