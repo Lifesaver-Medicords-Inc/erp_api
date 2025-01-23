@@ -16,7 +16,7 @@ func GetClasses(conditions map[string]interface{}) ([]models.Class, int, error) 
 	var classes []models.Class
 
 	if err := services.DbGet(&classes, conditions); err != nil {
-		return classes, fiber.StatusInternalServerError, errors.New("failed getting class")
+		return classes, fiber.StatusInternalServerError, errors.New("failed getting classes")
 	}
 
 	return classes, 0, nil
@@ -29,7 +29,7 @@ func GetClass(id int) (models.Class, int, error) {
 	var class models.Class
 
 	if err := services.DbGet(&class, conditions); err != nil {
-		return class, fiber.StatusInternalServerError, errors.New("failed getting brand")
+		return class, fiber.StatusInternalServerError, errors.New("failed getting class")
 	}
 
 	return class, 0, nil
@@ -106,7 +106,7 @@ func DeleteClass(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{Name: body.Name}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed creating brandat")
+		return body, fiber.StatusInternalServerError, errors.New("failed creating classat")
 	}
 
 	return body, 0, nil
