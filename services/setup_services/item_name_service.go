@@ -12,40 +12,39 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetClasses() ([]models.Class, error) {
-	var classes []models.Class
+func GetNames() ([]models.Name, error) {
+	var names []models.Name
 
-	if err := services.DbGet(&classes, nil); err != nil {
-		return classes, err
+	if err := services.DbGet(&names, nil); err != nil {
+		return names, err
 	}
 
-	return classes, nil
+	return names, nil
 }
-func GetClass(id int) (models.Class, error) {
+func GetName(id int) (models.Name, error) {
 	conditions := map[string]interface{}{
 		"id": id,
 	}
 
-	var class models.Class
+	var name models.Name
 
-	if err := services.DbGet(&class, conditions); err != nil {
-		return class, err
+	if err := services.DbGet(&name, conditions); err != nil {
+		return name, err
 	}
 
-	return class, nil
+	return name, nil
 }
 
-func CreateClass(c *fiber.Ctx, tx *gorm.DB) error {
-	var body models.Class
+func CreateName(c *fiber.Ctx, tx *gorm.DB) error {
+	var body models.Name
 	if err := c.BodyParser(&body); err != nil {
-
+		if strings.Contains(err.Error(), "duplicate key") {
+			err = errors.New("duplicate record")
+		}
 		return err
 	}
 
 	if err := services.DbInsert(tx, &body); err != nil {
-		if strings.Contains(err.Error(), "duplicate key") {
-			err = errors.New("duplicate record")
-		}
 		return err
 	}
 
@@ -55,7 +54,7 @@ func CreateClass(c *fiber.Ctx, tx *gorm.DB) error {
 		at = models.At{}
 	}
 
-	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{Name: body.Name}, At: at}
+	atdata := models.NameAt{RefId: body.ID, Code: body.Code, NameContent: models.NameContent{Name: body.Code}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return err
@@ -63,8 +62,8 @@ func CreateClass(c *fiber.Ctx, tx *gorm.DB) error {
 
 	return nil
 }
-func UpdateClass(c *fiber.Ctx, tx *gorm.DB) error {
-	var body models.Class
+func UpdateName(c *fiber.Ctx, tx *gorm.DB) error {
+	var body models.Name
 	if err := c.BodyParser(&body); err != nil {
 		return err
 	}
@@ -79,7 +78,7 @@ func UpdateClass(c *fiber.Ctx, tx *gorm.DB) error {
 		at = models.At{}
 	}
 
-	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{Name: body.Name}, At: at}
+	atdata := models.NameAt{RefId: body.ID, Code: body.Code, NameContent: models.NameContent{Name: body.Code}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return err
@@ -88,8 +87,8 @@ func UpdateClass(c *fiber.Ctx, tx *gorm.DB) error {
 	return nil
 }
 
-func DeleteClass(c *fiber.Ctx, tx *gorm.DB) error {
-	var body models.Class
+func DeleteName(c *fiber.Ctx, tx *gorm.DB) error {
+	var body models.Name
 	if err := c.BodyParser(&body); err != nil {
 		return err
 	}
@@ -100,10 +99,11 @@ func DeleteClass(c *fiber.Ctx, tx *gorm.DB) error {
 
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
+		//return errors.New("error AT data")
 		at = models.At{}
 	}
 
-	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{Name: body.Name}, At: at}
+	atdata := models.NameAt{RefId: body.ID, Code: body.Code, NameContent: models.NameContent{Name: body.Code}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return err

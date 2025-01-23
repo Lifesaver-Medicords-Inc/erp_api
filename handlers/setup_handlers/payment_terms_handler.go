@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/services/setup_services"
+	"github.com/pierceperado/smpc/utils"
 )
 
 func GetPaymentTerms(c *fiber.Ctx) error {
@@ -36,12 +37,9 @@ func GetPaymentTerm(c *fiber.Ctx) error {
 		})
 	}
 
-	data, err := setup_services.GetBrand(idNum)
+	data, status, err := setup_services.GetBrand(idNum)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"message": err,
-		})
+		return utils.RespondError(c, status, err.Error())
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{

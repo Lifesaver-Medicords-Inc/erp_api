@@ -12,31 +12,31 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetClasses() ([]models.Class, error) {
-	var classes []models.Class
+func GetTypes() ([]models.Type, error) {
+	var types []models.Type
 
-	if err := services.DbGet(&classes, nil); err != nil {
-		return classes, err
+	if err := services.DbGet(&types, nil); err != nil {
+		return types, err
 	}
 
-	return classes, nil
+	return types, nil
 }
-func GetClass(id int) (models.Class, error) {
+func GetType(id int) (models.Type, error) {
 	conditions := map[string]interface{}{
 		"id": id,
 	}
 
-	var class models.Class
+	var itemType models.Type
 
-	if err := services.DbGet(&class, conditions); err != nil {
-		return class, err
+	if err := services.DbGet(&itemType, conditions); err != nil {
+		return itemType, err
 	}
 
-	return class, nil
+	return itemType, nil
 }
 
-func CreateClass(c *fiber.Ctx, tx *gorm.DB) error {
-	var body models.Class
+func CreateType(c *fiber.Ctx, tx *gorm.DB) error {
+	var body models.Type
 	if err := c.BodyParser(&body); err != nil {
 
 		return err
@@ -55,7 +55,7 @@ func CreateClass(c *fiber.Ctx, tx *gorm.DB) error {
 		at = models.At{}
 	}
 
-	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{Name: body.Name}, At: at}
+	atdata := models.TypeAt{RefId: body.ID, Code: body.Code, TypeContent: models.TypeContent{Name: body.Name}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return err
@@ -63,8 +63,8 @@ func CreateClass(c *fiber.Ctx, tx *gorm.DB) error {
 
 	return nil
 }
-func UpdateClass(c *fiber.Ctx, tx *gorm.DB) error {
-	var body models.Class
+func UpdateType(c *fiber.Ctx, tx *gorm.DB) error {
+	var body models.Type
 	if err := c.BodyParser(&body); err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func UpdateClass(c *fiber.Ctx, tx *gorm.DB) error {
 		at = models.At{}
 	}
 
-	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{Name: body.Name}, At: at}
+	atdata := models.TypeAt{RefId: body.ID, Code: body.Code, TypeContent: models.TypeContent{Name: body.Name}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return err
@@ -88,8 +88,8 @@ func UpdateClass(c *fiber.Ctx, tx *gorm.DB) error {
 	return nil
 }
 
-func DeleteClass(c *fiber.Ctx, tx *gorm.DB) error {
-	var body models.Class
+func DeleteType(c *fiber.Ctx, tx *gorm.DB) error {
+	var body models.Type
 	if err := c.BodyParser(&body); err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func DeleteClass(c *fiber.Ctx, tx *gorm.DB) error {
 		at = models.At{}
 	}
 
-	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{Name: body.Name}, At: at}
+	atdata := models.TypeAt{RefId: body.ID, Code: body.Code, TypeContent: models.TypeContent{Name: body.Name}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return err

@@ -5,11 +5,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/pierceperado/smpc/handlers"
+	"github.com/pierceperado/smpc/handlers/public_handlers"
 	"github.com/pierceperado/smpc/handlers/sales_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
-	"github.com/pierceperado/smpc/middlewares"
 )
 
 func init() {
@@ -31,47 +30,62 @@ func main() {
 	api := app.Group("/api")
 	{
 		// Public Endpoints
-		api.Post("/register", handlers.Register)
-		api.Post("/login", handlers.Login)
-		api.Post("/logout", handlers.Logout)
+		api.Post("/register", public_handlers.CreateAccount)
+		api.Post("/login", public_handlers.LoginAccount)
+		api.Post("/logout", public_handlers.LogoutAccount)
+		api.Get("/hello", public_handlers.CheckHealth)
 
 		// Protected Endpoints
-		api.Use(middlewares.RequireAuth)
+		// api.Use(middlewares.RequireAuth)
 		{
-			// Test Endpoint
-			api.Get("/profile", handlers.GetUserProfile)
-
 			// Setup Endpoints
 			setupApi := api.Group("/setup")
 			{
-				// Brand Endpoints
-				setupApi.Get("/brand", setup_handlers.GetBrands)
-				setupApi.Get("/brand/:id", setup_handlers.GetBrand)
-				setupApi.Post("/brand", setup_handlers.CreateBrand)
-				setupApi.Put("/brand", setup_handlers.UpdateBrand)
-				setupApi.Delete("/brand", setup_handlers.DeleteBrand)
+				// Item Endpoints
+				itemApi := setupApi.Group("/item")
+				{
+					// Brand Endpoints
+					itemApi.Get("/brand", setup_handlers.GetBrands)
+					itemApi.Get("/brand/:id", setup_handlers.GetBrand)
+					itemApi.Post("/brand", setup_handlers.CreateBrand)
+					itemApi.Put("/brand", setup_handlers.UpdateBrand)
+					itemApi.Delete("/brand", setup_handlers.DeleteBrand)
 
-				//Item Endpoints
-				setupApi.Get("/item/", setup_handlers.GetClasses)
-				setupApi.Get("/item/:id", setup_handlers.GetClass)
-				setupApi.Post("/item", setup_handlers.CreateClass)
-				setupApi.Put("/item", setup_handlers.UpdateClass)
-				setupApi.Delete("/item", setup_handlers.DeleteClass)
+					// Class Endpoints
+					itemApi.Get("/class", setup_handlers.GetClasses)
+					itemApi.Get("/class/:id", setup_handlers.GetClass)
+					itemApi.Post("/class", setup_handlers.CreateClass)
+					itemApi.Put("/class", setup_handlers.UpdateClass)
+					itemApi.Delete("/class", setup_handlers.DeleteClass)
 
-				//Unit of Measurement Endpoint
+					// Name Endpoints
+					itemApi.Get("/name", setup_handlers.GetNames)
+					itemApi.Get("/name/:id", setup_handlers.GetName)
+					itemApi.Post("/name", setup_handlers.CreateName)
+					itemApi.Put("/name", setup_handlers.UpdateName)
+					itemApi.Delete("/name", setup_handlers.DeleteName)
+
+					// Type Endpoints
+					itemApi.Get("/type", setup_handlers.GetTypes)
+					itemApi.Get("/type/:id", setup_handlers.GetType)
+					itemApi.Post("/type", setup_handlers.CreateType)
+					itemApi.Put("/type", setup_handlers.UpdateType)
+					itemApi.Delete("/type", setup_handlers.DeleteType)
+				}
+
+				// Unit Measurement Endpoints
 				setupApi.Get("/unit_measurement", setup_handlers.GetUnitMeasurements)
 				setupApi.Get("/unit_measurement:id", setup_handlers.GetUnitMeasurements)
 				setupApi.Post("/unit_measurement", setup_handlers.CreateUnitMeasurement)
 				setupApi.Put("/unit_measurement", setup_handlers.UpdateUnitMeasurement)
 				setupApi.Delete("/unit_measurement", setup_handlers.DeleteUnitMeasurement)
 
-				//Payment  Terms Endpoint
+				// Payment Terms Endpoints
 				setupApi.Get("/payment_terms", setup_handlers.GetPaymentTerms)
 				setupApi.Get("/payment_terms:id", setup_handlers.GetPaymentTerm)
 				setupApi.Post("/payment_terms", setup_handlers.CreatePaymentTerms)
 				setupApi.Put("/payment_terms", setup_handlers.UpdatePaymentTerms)
 				setupApi.Delete("/payment_terms", setup_handlers.DeletePaymentTerms)
-
 			}
 
 			// Sales Endpoints
