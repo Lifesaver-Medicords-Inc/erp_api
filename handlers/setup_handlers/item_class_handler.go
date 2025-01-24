@@ -10,6 +10,7 @@ import (
 )
 
 func GetClasses(c *fiber.Ctx) error {
+	
 	data, status, err := setup_services.GetClasses(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())

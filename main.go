@@ -45,12 +45,6 @@ func main() {
 
 				itemApi := setupApi.Group("/item")
 				{
-					// Item Endpoints
-					itemApi.Get("", setup_handlers.GetItems)
-					itemApi.Get("/:id", setup_handlers.GetItem)
-					itemApi.Post("", setup_handlers.CreateItem)
-					itemApi.Put("", setup_handlers.UpdateItem)
-					itemApi.Delete("", setup_handlers.DeleteItem)
 					// Brand Endpoints
 					itemApi.Get("/brand", setup_handlers.GetBrands)
 					itemApi.Get("/brand/:id", setup_handlers.GetBrand)
@@ -78,6 +72,20 @@ func main() {
 					itemApi.Post("/type", setup_handlers.CreateType)
 					itemApi.Put("/type", setup_handlers.UpdateType)
 					itemApi.Delete("/type", setup_handlers.DeleteType)
+
+					// Model Endpoints
+					itemApi.Get("/model", setup_handlers.GetModels)
+					itemApi.Get("/model/:id", setup_handlers.GetModel)
+					itemApi.Post("/model", setup_handlers.CreateModel)
+					itemApi.Put("/model", setup_handlers.UpdateModel)
+					itemApi.Delete("/model", setup_handlers.DeleteModel)
+
+					// Item Endpoints
+					itemApi.Get("", setup_handlers.GetItems)
+					itemApi.Get("/:id", setup_handlers.GetItem)
+					itemApi.Post("", setup_handlers.CreateItem)
+					itemApi.Put("", setup_handlers.UpdateItem)
+					itemApi.Delete("", setup_handlers.DeleteItem)
 				}
 
 				// Unit Measurement Endpoints

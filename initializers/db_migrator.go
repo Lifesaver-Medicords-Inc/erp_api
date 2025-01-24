@@ -14,6 +14,7 @@ func MigrateDb() {
 	DB.AutoMigrate(&models.Name{}, &models.NameAt{})
 	DB.AutoMigrate(&models.Type{}, &models.TypeAt{})
 	DB.AutoMigrate(&models.Item{}, &models.ItemAt{})
+	DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
 
 	// Sales
 	DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
