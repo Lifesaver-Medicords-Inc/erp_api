@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/pierceperado/smpc/handlers/public_handlers"
 	"github.com/pierceperado/smpc/handlers/sales_handlers"
+	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
 )
@@ -39,6 +40,16 @@ func main() {
 		// Protected Endpoints
 		// api.Use(middlewares.RequireAuth)
 		{
+			// Sample Endpoints
+			sampleApi := api.Group("/sample")
+			{
+				sampleApi.Get("/parent", sample_handlers.GetParents)
+				sampleApi.Get("/parent/:id", sample_handlers.GetParent)
+				sampleApi.Post("/parent", sample_handlers.CreateParent)
+				sampleApi.Put("/parent", sample_handlers.UpdateParent)
+				sampleApi.Delete("/parent", sample_handlers.DeleteParent)
+			}
+
 			// Setup Endpoints
 			setupApi := api.Group("/setup")
 			{
