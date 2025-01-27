@@ -7,7 +7,7 @@ type IndustriesContent struct {
 type Industries struct {
 	ID   uint   `gorm:"primarykey" json:"id"`
 	Code string `gorm:"unique;size:100" json:"code"`
-	EntityContent
+	IndustriesContent
 }
 
 func (Industries) TableName() string {

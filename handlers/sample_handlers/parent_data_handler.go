@@ -38,7 +38,6 @@ func CreateParent(c *fiber.Ctx) error {
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
-
 	data, status, err := sample_services.CreateParent(c, tx)
 	if err != nil {
 		tx.Rollback()
