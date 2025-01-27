@@ -57,7 +57,7 @@ func CreateModel(c *fiber.Ctx, tx *gorm.DB) (models.Model, int, error) {
 		at = models.At{}
 	}
 
-	atdata := models.ModelAt{RefId: body.ID, Code: body.Code, ModelContent: models.ModelContent{Name: body.Name, ItemNameId: body.ItemNameId, ItemBrandId: body.ItemNameId, IsActive: body.IsActive}, At: at}
+	atdata := models.ModelAt{RefId: body.ID, ModelContent: models.ModelContent{Name: body.Name, ItemNameId: body.ItemNameId, ItemBrandId: body.ItemNameId, IsActive: body.IsActive}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating modelat")
@@ -80,7 +80,7 @@ func UpdateModel(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 		at = models.At{}
 	}
 
-	atdata := models.ModelAt{RefId: body.ID, Code: body.Code, ModelContent: models.ModelContent{Name: body.Name, ItemNameId: body.ItemNameId, ItemBrandId: body.ItemNameId, IsActive: body.IsActive}, At: at}
+	atdata := models.ModelAt{RefId: body.ID, ModelContent: models.ModelContent{Name: body.Name, ItemNameId: body.ItemNameId, ItemBrandId: body.ItemNameId, IsActive: body.IsActive}, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating modelat")
 	}
@@ -103,7 +103,7 @@ func DeleteModel(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 		at = models.At{}
 	}
 
-	atdata := models.ModelAt{RefId: body.ID, Code: body.Code, ModelContent: models.ModelContent{Name: body.Name, ItemNameId: body.ItemNameId, ItemBrandId: body.ItemNameId, IsActive: body.IsActive}, At: at}
+	atdata := models.ModelAt{RefId: body.ID, ModelContent: models.ModelContent{Name: body.Name, ItemNameId: body.ItemNameId, ItemBrandId: body.ItemNameId, IsActive: body.IsActive}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating modelat")
