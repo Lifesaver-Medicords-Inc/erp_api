@@ -7,20 +7,48 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
 )
 
-func GetModels(conditions map[string]interface{}) ([]models.Model, int, error) {
-	var models []models.Model
+// func GetModels(conditions map[string]interface{}) ([]models.Model, int, error) {
+// 	var models []models.Model
 
-	if err := services.DbGet(&models, conditions); err != nil {
-		return models, fiber.StatusInternalServerError, errors.New("failed getting models")
+// 	if err := services.DbGet(&models, conditions); err != nil {
+// 		return models, fiber.StatusInternalServerError, errors.New("failed getting models")
+// 	}
+
+//		return models, 0, nil
+//	}
+
+func GetModels(conditions map[string]interface{}) ([]models.Model, int, error) {
+	// Struct to hold the joined result
+
+	var results []models.Model
+
+	// Access the database instance directly from initializers
+	query := initializers.DB.Table("tbl_setup_item_model a").
+		Select("a.*, b.name AS related_name,  c.name AS related_brand").
+		Joins("LEFT JOIN tbl_setup_item_name b ON a.item_name_id = b.id").
+		Joins("LEFT JOIN tbl_setup_item_brand c ON a.item_brand_id = c.id")
+
+	// Apply conditions dynamically
+	for key, value := range conditions {
+		query = query.Where(key, value)
 	}
 
-	return models, 0, nil
+	// Execute the query
+	if err := query.Find(&results).Error; err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed to get models")
+	}
+
+	// Map the results back to models.Model if necessary
+
+	return results, 0, nil
 }
+
 func GetModel(id int) (models.Model, int, error) {
 	conditions := map[string]interface{}{
 		"id": id,
