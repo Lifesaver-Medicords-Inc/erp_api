@@ -14,15 +14,16 @@ func MigrateDb() {
 	DB.AutoMigrate(&models.Name{}, &models.NameAt{})
 	DB.AutoMigrate(&models.Type{}, &models.TypeAt{})
 	DB.AutoMigrate(&models.Item{}, &models.ItemAt{})
+	DB.AutoMigrate(&models.ItemSpecs{}, &models.ItemSpecsAt{})
 	DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
 
 	DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
 	DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
 
 	// Sales
-	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
+	DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 
-	// DB.AutoMigrate(&models.User{}, &models.UserAt{})
+	DB.AutoMigrate(&models.User{}, &models.UserAt{})
 
 
 	// Sample
