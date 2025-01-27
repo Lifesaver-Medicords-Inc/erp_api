@@ -5,14 +5,15 @@ import "github.com/pierceperado/smpc/models"
 func MigrateDb() {
 	// Auth
 
-	DB.AutoMigrate(&models.User{}, &models.UserAt{})
-	// Setup
-	DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
-	DB.AutoMigrate(&models.UnitMeasurement{}, &models.UnitMeasurementAt{})
-	DB.AutoMigrate(&models.PaymentTerms{}, &models.PaymentTermsAt{})
-	DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
-	DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
-	DB.AutoMigrate(&models.Industries{}, &models.IndustriesAt{})
+	// DB.AutoMigrate(&models.User{}, &models.UserAt{})
+	// // Setup
+	// DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
+	// DB.AutoMigrate(&models.UnitMeasurement{}, &models.UnitMeasurementAt{})
+	// DB.AutoMigrate(&models.PaymentTerms{}, &models.PaymentTermsAt{})
+	// DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
+	// DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
+	// DB.AutoMigrate(&models.Industries{}, &models.IndustriesAt{})
+	DB.AutoMigrate(&models.ShipType{}, &models.ShipTypeAt{})
 	// DB.AutoMigrate(&models.Class{}, &models.ClassAt{})
 	// DB.AutoMigrate(&models.Name{}, &models.NameAt{})
 	// DB.AutoMigrate(&models.Type{}, &models.TypeAt{})
