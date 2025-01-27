@@ -17,6 +17,8 @@ func DbGet(model interface{}, conditions map[string]interface{}) error {
 	ctx := context.Background()
 	key := getKey(model, conditions)
 
+	fmt.Println("Get Keyyyy:", key)
+
 	cache, err := initializers.RC.Get(ctx, key).Result()
 	if err == redis.Nil {
 
@@ -122,6 +124,7 @@ func DbUpdate(tx *gorm.DB, model interface{}, conditions map[string]interface{})
 	}
 
 	key := getKey(model, conditions)
+	fmt.Println("Update Keyyyy:", key)
 	if err := invalidateCache(key); err != nil {
 		return err
 	}
