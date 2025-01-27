@@ -4,7 +4,7 @@ import "github.com/pierceperado/smpc/models"
 
 func MigrateDb() {
 	// Auth
-	// DB.AutoMigrate(&models.User{}, &models.UserAt{})
+	DB.AutoMigrate(&models.User{}, &models.UserAt{})
 
 	// Setup
 	// DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
