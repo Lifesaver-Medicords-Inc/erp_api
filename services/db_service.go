@@ -19,6 +19,7 @@ func DbGet(model interface{}, conditions map[string]interface{}) error {
 
 	cache, err := initializers.RC.Get(ctx, key).Result()
 	if err == redis.Nil {
+
 		if err := fetchDB(model, conditions); err != nil {
 			return err
 		}
@@ -26,6 +27,7 @@ func DbGet(model interface{}, conditions map[string]interface{}) error {
 		if err := cacheData(ctx, key, model); err != nil {
 			return err
 		}
+
 	} else if err != nil {
 		return errors.New("failed getting cache")
 	} else {
