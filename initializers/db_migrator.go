@@ -4,8 +4,8 @@ import "github.com/pierceperado/smpc/models"
 
 func MigrateDb() {
 	// Auth
-	DB.AutoMigrate(&models.User{}, &models.UserAt{})
 
+	DB.AutoMigrate(&models.User{}, &models.UserAt{})
 	// Setup
 	DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
 	DB.AutoMigrate(&models.UnitMeasurement{}, &models.UnitMeasurementAt{})
@@ -16,6 +16,18 @@ func MigrateDb() {
 	DB.AutoMigrate(&models.Item{}, &models.ItemAt{})
 	DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
 
+	DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
+	DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
+
 	// Sales
-	DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
+	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
+
+	// DB.AutoMigrate(&models.User{}, &models.UserAt{})
+
+
+	// Sample
+	DB.AutoMigrate(&models.Parent{}, &models.ParentAt{})
+	DB.AutoMigrate(&models.Childf{}, &models.ChildfAt{})
+	DB.AutoMigrate(&models.Childs{}, &models.ChildsAt{})
+
 }

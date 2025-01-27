@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/pierceperado/smpc/handlers/public_handlers"
 	"github.com/pierceperado/smpc/handlers/sales_handlers"
+	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
 )
@@ -39,6 +40,16 @@ func main() {
 		// Protected Endpoints
 		// api.Use(middlewares.RequireAuth)
 		{
+			// Sample Endpoints
+			sampleApi := api.Group("/sample")
+			{
+				sampleApi.Get("/parent", sample_handlers.GetParents)
+				sampleApi.Get("/parent/:id", sample_handlers.GetParent)
+				sampleApi.Post("/parent", sample_handlers.CreateParent)
+				sampleApi.Put("/parent", sample_handlers.UpdateParent)
+				sampleApi.Delete("/parent", sample_handlers.DeleteParent)
+			}
+
 			// Setup Endpoints
 			setupApi := api.Group("/setup")
 			{
@@ -90,17 +101,38 @@ func main() {
 
 				// Unit Measurement Endpoints
 				setupApi.Get("/unit_measurement", setup_handlers.GetUnitMeasurements)
-				setupApi.Get("/unit_measurement:id", setup_handlers.GetUnitMeasurements)
+				setupApi.Get("/unit_measurement:/id", setup_handlers.GetUnitMeasurement)
 				setupApi.Post("/unit_measurement", setup_handlers.CreateUnitMeasurement)
 				setupApi.Put("/unit_measurement", setup_handlers.UpdateUnitMeasurement)
 				setupApi.Delete("/unit_measurement", setup_handlers.DeleteUnitMeasurement)
 
 				// Payment Terms Endpoints
 				setupApi.Get("/payment_terms", setup_handlers.GetPaymentTerms)
-				setupApi.Get("/payment_terms:id", setup_handlers.GetPaymentTerm)
+				setupApi.Get("/payment_terms:/id", setup_handlers.GetPaymentTerm)
 				setupApi.Post("/payment_terms", setup_handlers.CreatePaymentTerms)
 				setupApi.Put("/payment_terms", setup_handlers.UpdatePaymentTerms)
 				setupApi.Delete("/payment_terms", setup_handlers.DeletePaymentTerms)
+
+				// Social Media Endpoints
+				setupApi.Get("/social", setup_handlers.GetSocial)
+				setupApi.Get("/social:/id", setup_handlers.GetSocialMedia)
+				setupApi.Post("/social", setup_handlers.CreateSocial)
+				setupApi.Put("/social", setup_handlers.UpdateSocial)
+				setupApi.Delete("/social", setup_handlers.DeleteSocial)
+
+				//Industries Endpoints
+				setupApi.Get("/industries", setup_handlers.GetIndustries)
+				setupApi.Get("/industries:/id", setup_handlers.GetIndustry)
+				setupApi.Post("/industries", setup_handlers.CreateIndustry)
+				setupApi.Put("/industries", setup_handlers.UpdateIndustry)
+				setupApi.Delete("/industries", setup_handlers.DeleteIndustry)
+
+				//Entity Type Endpoints
+				setupApi.Get("/entity", setup_handlers.GetEntities)
+				setupApi.Get("/entity:/id", setup_handlers.GetEntity)
+				setupApi.Post("/entity", setup_handlers.CreateEntity)
+				setupApi.Put("/entity", setup_handlers.UpdateEntity)
+				setupApi.Delete("/entity", setup_handlers.DeleteEntity)
 			}
 
 			// Sales Endpoints
@@ -125,6 +157,8 @@ func main() {
 				// sales_api.Delete("/return/delete", handlers.Register)
 
 			}
+			// Bpi Endpoints
+
 		}
 	}
 

@@ -9,8 +9,8 @@ import (
 	"github.com/pierceperado/smpc/utils"
 )
 
-func GetUnitMeasurements(c *fiber.Ctx) error {
-	data, status, err := setup_services.GetUnitMeasurements(nil)
+func GetIndustries(c *fiber.Ctx) error {
+	data, status, err := setup_services.GetIndustries(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -18,14 +18,14 @@ func GetUnitMeasurements(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func GetUnitMeasurement(c *fiber.Ctx) error {
+func GetIndustry(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	data, status, err := setup_services.GetUnitMeasurement(idNum)
+	data, status, err := setup_services.GetIndustry(idNum)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -33,33 +33,13 @@ func GetUnitMeasurement(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func CreateUnitMeasurement(c *fiber.Ctx) error {
+func CreateIndustry(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 
-	data, status, err := setup_services.CreateUnitMeasurement(c, tx)
-	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
-	}
-
-	return utils.RespondSuccess(c, data)
-}
-
-func UpdateUnitMeasurement(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
-	}
-
-	data, status, err := setup_services.UpdateUnitMeasurement(c, tx, nil)
+	data, status, err := setup_services.CreateIndustry(c, tx)
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
@@ -73,13 +53,33 @@ func UpdateUnitMeasurement(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func DeleteUnitMeasurement(c *fiber.Ctx) error {
+func UpdateIndustry(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 
-	data, status, err := setup_services.DeleteUnitMeasurement(c, tx, nil)
+	data, status, err := setup_services.UpdateIndustry(c, tx, nil)
+	if err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+func DeleteIndustry(c *fiber.Ctx) error {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+	}
+
+	data, status, err := setup_services.DeleteIndustry(c, tx, nil)
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
