@@ -1,7 +1,7 @@
 package models
 
 type ShipTypeContent struct {
-	ShipName string `json:"shipname"`
+	ShipName string `json:"ship_name"`
 }
 
 type ShipType struct {
