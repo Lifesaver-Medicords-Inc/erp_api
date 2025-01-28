@@ -4,7 +4,6 @@ import (
 	// "errors"
 
 	"errors"
-	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -24,8 +23,6 @@ func GetItems(conditions map[string]interface{}) ([]Body, int, error) {
 	if err := services.DbGet(&items, conditions); err != nil {
 		return records, fiber.StatusInternalServerError, errors.New("failed getting itemspecs")
 	}
-
-	fmt.Println("Item Specsssss:", items)
 
 	for _, v := range items {
 		var itemspecs models.ItemSpecs
@@ -88,7 +85,7 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 		at = models.At{}
 	}
 
-	atdata := models.ItemAt{RefId: body.ID, ItemContent: models.ItemContent{ItemNameId: body.ItemNameId, ItemModelId: body.ItemModelId, ItemCode: body.ItemCode, ShortDesc: body.ShortDesc, ItemClassId: body.ItemClassId, ItemBrandId: body.ItemBrandId, UnitOfMeasureId: body.UnitOfMeasureId, IsInventoryItem: body.IsInventoryItem, IsSalesItem: body.IsSalesItem, IsPurchaseItem: body.IsPurchaseItem}, At: at}
+	atdata := models.ItemAt{RefId: body.ID, ItemContent: body.ItemContent, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating itemat")
@@ -115,7 +112,7 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (B
 		at = models.At{}
 	}
 
-	atdata := models.ItemAt{RefId: body.ID, ItemContent: models.ItemContent{ItemNameId: body.ItemNameId, ItemModelId: body.ItemModelId, ItemCode: body.ItemCode, ShortDesc: body.ShortDesc, ItemClassId: body.ItemClassId, ItemBrandId: body.ItemBrandId, UnitOfMeasureId: body.UnitOfMeasureId, IsInventoryItem: body.IsInventoryItem, IsSalesItem: body.IsSalesItem, IsPurchaseItem: body.IsPurchaseItem}, At: at}
+	atdata := models.ItemAt{RefId: body.ID, ItemContent: body.ItemContent, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating itemat")
