@@ -10,7 +10,6 @@ type ModelContent struct {
 type Model struct {
 	ID uint `gorm:"primarykey" json:"id"`
 	ModelContent
-	RelatedItemId string `json:"related_item_id" gorm:"->"`
 	RelatedName string `json:"related_name" gorm:"->"`
 	RelatedBrand  string `json:"related_brand" gorm:"->"`
 }

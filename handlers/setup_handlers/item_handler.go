@@ -1,7 +1,6 @@
 package setup_handlers
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -79,7 +78,7 @@ func DeleteItem(c *fiber.Ctx) error {
 	}
 
 	data, status, err := setup_services.DeleteItem(c, tx, nil)
-	fmt.Println("DATAAA: ", data)
+
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
