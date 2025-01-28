@@ -24,10 +24,14 @@ func MigrateDb() {
 
 	DB.AutoMigrate(&models.User{}, &models.UserAt{})
 
-
 	// Sample
 	DB.AutoMigrate(&models.Parent{}, &models.ParentAt{})
 	DB.AutoMigrate(&models.Childf{}, &models.ChildfAt{})
 	DB.AutoMigrate(&models.Childs{}, &models.ChildsAt{})
 
+	//BPI
+	DB.AutoMigrate(&models.Bpi{}, &models.BpiAt{})
+	DB.AutoMigrate(&models.BpiGeneral{}, &models.BpiGeneralAt{})
+	DB.AutoMigrate(&models.BpiContacts{}, &models.BpiContactsAt{})
+	DB.AutoMigrate(&models.BpiIndustries{}, &models.BpiIndustriesAt{})
 }
