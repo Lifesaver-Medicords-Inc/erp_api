@@ -31,6 +31,14 @@ func CreateChilds(tx *gorm.DB, parentId uint, child models.Childs, at models.At)
 	return nil
 }
 
+func GetChildss(childss *[]models.Childs, conditions map[string]interface{}) error {
+	if err := services.DbGet(childss, conditions); err != nil {
+		return errors.New("failed getting childss")
+	}
+
+	return nil
+}
+
 func GetChilds(childs *models.Childs, conditions map[string]interface{}) error {
 	if err := services.DbGet(childs, conditions); err != nil {
 		return errors.New("failed getting childs")

@@ -15,40 +15,28 @@ type Body struct {
 	Childs models.Childs `json:"childs"`
 }
 
-func GetParents(conditions map[string]interface{}) ([]Body, int, error) {
-	var records []Body
-	var parents []models.Parent
-
-	if err := services.DbGet(&parents, conditions); err != nil {
-		return records, fiber.StatusInternalServerError, errors.New("failed getting parents")
+func GetParents(conditions map[string]interface{}) (interface{}, int, error) {
+	type Response struct {
+		Parents []models.Parent `json:"parents"`
+		Childfs []models.Childf `json:"childfs"`
+		Childss []models.Childs `json:"childss"`
 	}
 
-	for _, v := range parents {
-		var childf models.Childf
-		var childs models.Childs
+	var response Response
 
-		conditions := map[string]interface{}{
-			"parent_id": v.ID,
-		}
-
-		if err := GetChildf(&childf, conditions); err != nil {
-			return records, fiber.StatusInternalServerError, err
-		}
-
-		if err := GetChilds(&childs, conditions); err != nil {
-			return records, fiber.StatusInternalServerError, err
-		}
-
-		body := Body{
-			Parent: v,
-			Childf: childf,
-			Childs: childs,
-		}
-
-		records = append(records, body)
+	if err := services.DbGet(&response.Parents, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting parents")
 	}
 
-	return records, 0, nil
+	if err := GetChildfs(&response.Childfs, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, err
+	}
+
+	if err := GetChildss(&response.Childss, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, err
+	}
+
+	return response, 0, nil
 }
 
 func GetParent(id int) (Body, int, error) {
