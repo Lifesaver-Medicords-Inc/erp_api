@@ -49,7 +49,7 @@ func GetSalesQuotationQuick(quickquotes *models.SalesQuotationQuick, conditions 
 }
 
 // update quick quotes
-func UpdateItemSpecs(tx *gorm.DB, quickquotes models.SalesQuotationQuick, at models.At) error {
+func UpdateSalesQuotationQuick(tx *gorm.DB, quickquotes models.SalesQuotationQuick, at models.At) error {
 	if err := services.DbUpdate(tx, &quickquotes, nil); err != nil {
 		return errors.New("failed updating itemspecs")
 	}
@@ -67,9 +67,9 @@ func UpdateItemSpecs(tx *gorm.DB, quickquotes models.SalesQuotationQuick, at mod
 	return nil
 }
 
-func DeleteItemSpecs(tx *gorm.DB, quickquotes models.SalesQuotationQuick, at models.At, conditions map[string]interface{}) error {
+func DeleteSalesQuotationQuick(tx *gorm.DB, quickquotes models.SalesQuotationQuick, at models.At, conditions map[string]interface{}) error {
 	if err := services.DbDelete(tx, &quickquotes, conditions); err != nil {
-		return errors.New("failed deleting itemspecs")
+		return errors.New("failed deleting sales quotation quick")
 	}
 
 	quickquotationsat := models.SalesQuotationQuickAt{

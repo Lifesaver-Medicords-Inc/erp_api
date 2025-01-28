@@ -69,6 +69,11 @@ func GetSalesQuotation(id int) (Body, int, error) {
 		return record, fiber.StatusInternalServerError, err
 	}
 
+	// //Child 2 for project quote
+	// if err := GetSalesQuotationQuick(&record.QuickQuote, conditions); err != nil {
+	// 	return record, fiber.StatusInternalServerError, err
+	// }
+
 	return record, 0, nil
 }
 
@@ -122,7 +127,7 @@ func UpdateSalesQuotation(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 		return body, fiber.StatusInternalServerError, errors.New("failed creating itemat")
 	}
 
-	if err := UpdateItemSpecs(tx, body.QuickQuote, at); err != nil {
+	if err := UpdateSalesQuotationQuick(tx, body.QuickQuote, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
@@ -153,7 +158,7 @@ func DeleteSalesQuotation(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 		"based_id": body.ID,
 	}
 
-	if err := DeleteItemSpecs(tx, body.QuickQuote, at, conditions); err != nil {
+	if err := DeleteSalesQuotationQuick(tx, body.QuickQuote, at, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
