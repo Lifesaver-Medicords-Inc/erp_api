@@ -2,6 +2,7 @@ package setup_services
 
 import (
 	"errors"
+
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
@@ -9,11 +10,11 @@ import (
 
 func CreateItemSpecs(tx *gorm.DB, basedId uint, itemSpecs models.ItemSpecs, at models.At) error {
 	content := models.ItemSpecsContent{
-		BasedId: basedId,
+		BasedId:  basedId,
 		ItemCode: itemSpecs.ItemCode,
 		Template: itemSpecs.Template,
-		Title: itemSpecs.Title,
-		Value: itemSpecs.Value,
+		Title:    itemSpecs.Title,
+		Value:    itemSpecs.Value,
 	}
 	itemspecs := models.ItemSpecs{ItemSpecsContent: content}
 	if err := services.DbInsert(tx, &itemspecs); err != nil {
@@ -21,9 +22,9 @@ func CreateItemSpecs(tx *gorm.DB, basedId uint, itemSpecs models.ItemSpecs, at m
 	}
 
 	itemspecsat := models.ItemSpecsAt{
-		RefId:         itemspecs.ID,
+		RefId:            itemspecs.ID,
 		ItemSpecsContent: content,
-		At:            at,
+		At:               at,
 	}
 	if err := services.DbInsert(tx, &itemspecsat); err != nil {
 		return errors.New("failed creating itemspecsat")
@@ -46,9 +47,9 @@ func UpdateItemSpecs(tx *gorm.DB, itemspecs models.ItemSpecs, at models.At) erro
 	}
 
 	itemspecsat := models.ItemSpecsAt{
-		RefId:         itemspecs.ID,
+		RefId:            itemspecs.ID,
 		ItemSpecsContent: itemspecs.ItemSpecsContent,
-		At:            at,
+		At:               at,
 	}
 	if err := services.DbInsert(tx, &itemspecsat); err != nil {
 		return errors.New("failed creating itemspecsat")
@@ -57,15 +58,15 @@ func UpdateItemSpecs(tx *gorm.DB, itemspecs models.ItemSpecs, at models.At) erro
 	return nil
 }
 
-func DeleteItemSpecs(tx *gorm.DB, itemspecs models.ItemSpecs, at models.At) error {
-	if err := services.DbDelete(tx, &itemspecs, nil); err != nil {
+func DeleteItemSpecs(tx *gorm.DB, itemspecs models.ItemSpecs, at models.At, conditions map[string]interface{}) error {
+	if err := services.DbDelete(tx, &itemspecs, conditions); err != nil {
 		return errors.New("failed deleting itemspecs")
 	}
 
 	itemspecsat := models.ItemSpecsAt{
-		RefId:         itemspecs.ID,
+		RefId:            itemspecs.ID,
 		ItemSpecsContent: itemspecs.ItemSpecsContent,
-		At:            at,
+		At:               at,
 	}
 	if err := services.DbInsert(tx, &itemspecsat); err != nil {
 		return errors.New("failed creating itemspecsat")

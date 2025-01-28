@@ -5,7 +5,6 @@ type ItemContent struct {
 	ItemModelId     string `json:"item_model_id"`
 	ItemCode        string `json:"item_code"`
 	ShortDesc       string `json:"short_desc"`
-	LongDesc        string `json:"long_desc"`
 	ItemClassId     string `json:"item_class_id"`
 	ItemBrandId     string `json:"item_brand_id"`
 	UnitOfMeasureId string `json:"oum_code_id"`

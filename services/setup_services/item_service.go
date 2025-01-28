@@ -88,7 +88,7 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 		at = models.At{}
 	}
 
-	atdata := models.ItemAt{RefId: body.ID, ItemContent: models.ItemContent{ItemNameId: body.ItemNameId, ItemModelId: body.ItemModelId, ItemCode: body.ItemCode, ShortDesc: body.ShortDesc, LongDesc: body.LongDesc, ItemClassId: body.ItemClassId, ItemBrandId: body.ItemBrandId, UnitOfMeasureId: body.UnitOfMeasureId, IsInventoryItem: body.IsInventoryItem, IsSalesItem: body.IsSalesItem, IsPurchaseItem: body.IsPurchaseItem}, At: at}
+	atdata := models.ItemAt{RefId: body.ID, ItemContent: models.ItemContent{ItemNameId: body.ItemNameId, ItemModelId: body.ItemModelId, ItemCode: body.ItemCode, ShortDesc: body.ShortDesc, ItemClassId: body.ItemClassId, ItemBrandId: body.ItemBrandId, UnitOfMeasureId: body.UnitOfMeasureId, IsInventoryItem: body.IsInventoryItem, IsSalesItem: body.IsSalesItem, IsPurchaseItem: body.IsPurchaseItem}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating itemat")
@@ -115,7 +115,7 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (B
 		at = models.At{}
 	}
 
-	atdata := models.ItemAt{RefId: body.ID, ItemContent: models.ItemContent{ItemNameId: body.ItemNameId, ItemModelId: body.ItemModelId, ItemCode: body.ItemCode, ShortDesc: body.ShortDesc, LongDesc: body.LongDesc, ItemClassId: body.ItemClassId, ItemBrandId: body.ItemBrandId, UnitOfMeasureId: body.UnitOfMeasureId, IsInventoryItem: body.IsInventoryItem, IsSalesItem: body.IsSalesItem, IsPurchaseItem: body.IsPurchaseItem}, At: at}
+	atdata := models.ItemAt{RefId: body.ID, ItemContent: models.ItemContent{ItemNameId: body.ItemNameId, ItemModelId: body.ItemModelId, ItemCode: body.ItemCode, ShortDesc: body.ShortDesc, ItemClassId: body.ItemClassId, ItemBrandId: body.ItemBrandId, UnitOfMeasureId: body.UnitOfMeasureId, IsInventoryItem: body.IsInventoryItem, IsSalesItem: body.IsSalesItem, IsPurchaseItem: body.IsPurchaseItem}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating itemat")
@@ -130,12 +130,11 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (B
 
 func DeleteItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Body, int, error) {
 	var body Body
-	fmt.Println("BODYYYY:", body)
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	if err := services.DbDelete(tx, &body, conditions); err != nil {
+	if err := services.DbDelete(tx, &body.Item, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed deleting item")
 	}
 
@@ -144,13 +143,16 @@ func DeleteItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (B
 		at = models.At{}
 	}
 
-	atdata := models.ItemAt{RefId: body.ID, ItemContent: models.ItemContent{ItemNameId: body.ItemNameId, ItemModelId: body.ItemModelId, ItemCode: body.ItemCode, ShortDesc: body.ShortDesc, LongDesc: body.LongDesc, ItemClassId: body.ItemClassId, ItemBrandId: body.ItemBrandId, UnitOfMeasureId: body.UnitOfMeasureId, IsInventoryItem: body.IsInventoryItem, IsSalesItem: body.IsSalesItem, IsPurchaseItem: body.IsPurchaseItem}, At: at}
-
+	atdata := models.ItemAt{RefId: body.ID, ItemContent: body.ItemContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating itemat")
 	}
 
-	if err := DeleteItemSpecs(tx, body.ItemSpecs, at); err != nil {
+	conditions = map[string]interface{}{
+		"based_id": body.ID,
+	}
+
+	if err := DeleteItemSpecs(tx, body.ItemSpecs, at, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
