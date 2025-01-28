@@ -48,6 +48,15 @@ func GetSalesQuotationQuick(quickquotes *models.SalesQuotationQuick, conditions 
 	return nil
 }
 
+// many
+func GetSalesQuotationQuicks(quickquotes *[]models.SalesQuotationQuick, conditions map[string]interface{}) error {
+	if err := services.DbGet(quickquotes, conditions); err != nil {
+		return errors.New("failed getting quick quotations")
+	}
+
+	return nil
+}
+
 // update quick quotes
 func UpdateSalesQuotationQuick(tx *gorm.DB, quickquotes models.SalesQuotationQuick, at models.At) error {
 	if err := services.DbUpdate(tx, &quickquotes, nil); err != nil {

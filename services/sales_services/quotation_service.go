@@ -2,7 +2,6 @@ package sales_services
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -12,40 +11,27 @@ import (
 
 type Body struct {
 	models.SalesQuotation
+	//Child 1
 	QuickQuote models.SalesQuotationQuick `json:"sales_quotation_quick"`
 }
 
-func GetSalesQuotations(conditions map[string]interface{}) ([]Body, int, error) {
-	var records []Body
-	var quotations []models.SalesQuotation
+func GetSalesQuotations(conditions map[string]interface{}) (interface{}, int, error) {
 
-	if err := services.DbGet(&quotations, conditions); err != nil {
-		return records, fiber.StatusInternalServerError, errors.New("failed getting quick quotations")
+	type Response struct {
+		SalesQuotation []models.SalesQuotation
+		QuickQuote     []models.SalesQuotationQuick
 	}
 
-	fmt.Println("Quick Quotes: ", quotations)
+	var response Response
 
-	for _, v := range quotations {
-		var quickquotations models.SalesQuotationQuick
-
-		conditions := map[string]interface{}{
-			"based_id": v.ID,
-		}
-
-		//CHILD 1
-		if err := GetSalesQuotationQuick(&quickquotations, conditions); err != nil {
-			return records, fiber.StatusInternalServerError, err
-		}
-
-		body := Body{
-			SalesQuotation: v,
-			QuickQuote:     quickquotations,
-		}
-
-		records = append(records, body)
+	if err := services.DbGet(&response.SalesQuotation, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting sales quotations")
 	}
 
-	return records, 0, nil
+	if err := GetSalesQuotationQuicks(&response.QuickQuote, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, err
+	}
+	return response, 0, nil
 }
 
 func GetSalesQuotation(id int) (Body, int, error) {

@@ -101,16 +101,24 @@ func main() {
 				setupApi.Post("/payment_terms", setup_handlers.CreatePaymentTerms)
 				setupApi.Put("/payment_terms", setup_handlers.UpdatePaymentTerms)
 				setupApi.Delete("/payment_terms", setup_handlers.DeletePaymentTerms)
+
 			}
 
 			// Sales Endpoints
 			salesApi := api.Group("/sales")
 			{
 				// Quotation Endpoints
-				salesApi.Get("/quotation", sales_handlers.GetQuotations)
-				salesApi.Post("/quotation", sales_handlers.CreateQuotation)
-				salesApi.Patch("/quotation", sales_handlers.UpdateQuotation)
-				salesApi.Delete("/quotation", sales_handlers.DeleteQuotation)
+				salesApi.Get("/quotation", sales_handlers.GetSalesQuotations)
+				salesApi.Get("/quotation/:id", sales_handlers.GetSalesQuotation)
+				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
+				salesApi.Patch("/quotation", sales_handlers.UpdateSalesQuotation)
+				salesApi.Delete("/quotation", sales_handlers.DeleteSalesQuotation)
+
+				salesApi.Get("/application", setup_handlers.GetApplications)
+				salesApi.Get("/application/:id", setup_handlers.GetApplication)
+				salesApi.Post("/application", setup_handlers.CreateApplication)
+				salesApi.Put("/application", setup_handlers.UpdateApplication)
+				salesApi.Delete("/application", setup_handlers.DeleteApplication)
 
 				// Order Routes
 				// sales_api.Get("/order", handlers.Register)

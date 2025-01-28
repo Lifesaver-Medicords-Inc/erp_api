@@ -24,7 +24,7 @@ type SalesQuotationContent struct {
 	SubTotal               float64 `json:"sub_total"`
 	CashDiscount           float64 `json:"cash_discount"`
 	NetAmountDue           float64 `json:"net_amount_due"`
-	IsVat                  bool    `json:"isVat"`
+	IsVat                  bool    `json:"is_vat"`
 	VatPercent             float64 `json:"vat_percent"`
 	Contact1               string  `json:"contact_1"`
 	Contact2               string  `json:"contact_2"`
