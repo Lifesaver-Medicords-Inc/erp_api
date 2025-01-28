@@ -7,8 +7,16 @@ import (
 	"github.com/pierceperado/smpc/utils"
 )
 
-func CreateBpi(c *fiber.Ctx) error {
+func GetBpis(c *fiber.Ctx) error {
+	data, status, err := bpi_services.GetBpis(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
 
+	return utils.RespondSuccess(c, data)
+}
+
+func CreateBpi(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transactions")

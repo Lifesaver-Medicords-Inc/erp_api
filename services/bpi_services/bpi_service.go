@@ -15,8 +15,52 @@ type Body struct {
 	IndustriesId []int `json:"industries_id"`
 }
 
-func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
+type BpiResponse struct {
+	models.Bpi
+	IndustryIds   []uint   `json:"industry_ids"`
+	BpiId         uint     `json:"bpi_id"`
+	IndustryNames []string `json:"industry_names"`
+}
 
+func GetBpis(conditions map[string]interface{}) ([]BpiResponse, int, error) {
+	var bpisResponse []BpiResponse
+
+	type BpiResult struct {
+		models.Bpi
+		IndustryId   uint   `json:"industry_id"`
+		BpiId        uint   `json:"bpi_id"`
+		IndustryName string `json:"industry_name"`
+	}
+
+	var bpiResults []BpiResult
+	if err := services.DbRaw(&bpiResults, "GetBPIInfos", conditions); err != nil {
+		return bpisResponse, fiber.StatusInternalServerError, errors.New("failed getting bpis")
+	}
+
+	groupedBpis := make(map[uint]*BpiResponse)
+
+	for _, bpi := range bpiResults {
+		if existingBpi, ok := groupedBpis[bpi.ID]; ok {
+			existingBpi.IndustryIds = append(existingBpi.IndustryIds, bpi.IndustryId)
+			existingBpi.IndustryNames = append(existingBpi.IndustryNames, bpi.IndustryName)
+		} else {
+			groupedBpis[bpi.ID] = &BpiResponse{
+				Bpi:           bpi.Bpi,
+				IndustryIds:   []uint{bpi.IndustryId},
+				BpiId:         bpi.BpiId,
+				IndustryNames: []string{bpi.IndustryName},
+			}
+		}
+	}
+
+	for _, bpi := range groupedBpis {
+		bpisResponse = append(bpisResponse, *bpi)
+	}
+
+	return bpisResponse, 0, nil
+}
+
+func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 	var body Body
 
 	if err := c.BodyParser(&body); err != nil {
@@ -47,5 +91,4 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 	}
 
 	return body, 0, nil
-
 }
