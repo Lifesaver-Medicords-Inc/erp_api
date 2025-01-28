@@ -137,11 +137,11 @@ func main() {
 				salesApi.Patch("/quotation", sales_handlers.UpdateQuotation)
 				salesApi.Delete("/quotation", sales_handlers.DeleteQuotation)
 
-				// Order Routes
-				// sales_api.Get("/order", handlers.Register)
-				// sales_api.Post("/order/create", handlers.Register)
-				// sales_api.Patch("/order/update", handlers.Register)
-				// sales_api.Delete("/order/delete", handlers.Register)
+				// Order Endpoints
+				salesApi.Get("/order", sales_handlers.GetOrders)
+				salesApi.Post("/order", sales_handlers.CreateOrder)
+				salesApi.Patch("/order", sales_handlers.UpdateOrder)
+				salesApi.Delete("/order", sales_handlers.DeleteOrder)
 
 				// Return Routes
 				// sales_api.Get("/return", handlers.Register)

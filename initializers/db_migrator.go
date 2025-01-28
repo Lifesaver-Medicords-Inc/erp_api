@@ -13,7 +13,9 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
 	// DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
 	// DB.AutoMigrate(&models.Industries{}, &models.IndustriesAt{})
-	DB.AutoMigrate(&models.ShipType{}, &models.ShipTypeAt{})
+	// DB.AutoMigrate(&models.ShipType{}, &models.ShipTypeAt{})
+	DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
+	DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
 	// DB.AutoMigrate(&models.Class{}, &models.ClassAt{})
 	// DB.AutoMigrate(&models.Name{}, &models.NameAt{})
 	// DB.AutoMigrate(&models.Type{}, &models.TypeAt{})
@@ -23,8 +25,8 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.User{}, &models.UserAt{})
 
 	// Sample
-	DB.AutoMigrate(&models.Parent{}, &models.ParentAt{})
-	DB.AutoMigrate(&models.Childf{}, &models.ChildfAt{})
-	DB.AutoMigrate(&models.Childs{}, &models.ChildsAt{})
+	// DB.AutoMigrate(&models.Parent{}, &models.ParentAt{})
+	// DB.AutoMigrate(&models.Childf{}, &models.ChildfAt{})
+	// DB.AutoMigrate(&models.Childs{}, &models.ChildsAt{})
 
 }

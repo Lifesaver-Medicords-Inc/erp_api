@@ -2,7 +2,7 @@ package setup_services
 
 import (
 	"errors"
-	"fmt"
+	//fmt"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -41,15 +41,11 @@ func CreateShipType(c *fiber.Ctx, tx *gorm.DB) (models.ShipType, int, error) {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	fmt.Println("SSSSSS")
-
-	fmt.Println("Body:", body)
-
 	if err := services.DbInsert(tx, &body); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			err = errors.New("duplicate record error")
 		} else {
-			err = errors.New("failed creating brand")
+			err = errors.New("failed creating shiptype")
 		}
 
 		return body, fiber.StatusInternalServerError, err
