@@ -13,13 +13,71 @@ import (
 	"gorm.io/gorm"
 )
 
+func DbRaw(model interface{}, procName string, conditions map[string]interface{}) error {
+	ctx := context.Background()
+	key := getKey(model, conditions)
+
+	cache, err := initializers.RC.Get(ctx, key).Result()
+	if err == redis.Nil {
+		if err := fetchRaw(model, procName, conditions); err != nil {
+			return err
+		}
+
+		if err := cacheData(ctx, key, model); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return errors.New("failed getting cache")
+	} else {
+		fmt.Println("Getting from Cache")
+		if err := json.Unmarshal([]byte(cache), model); err != nil {
+			return errors.New("failed deserializing cache")
+		}
+	}
+
+	return nil
+}
+
+func fetchRaw(model interface{}, procName string, conditions map[string]interface{}) error {
+	fmt.Println("Getting from DB")
+
+	query := buildQuery(procName, conditions)
+	if err := initializers.DB.Raw(query, buildParams(conditions)...).Scan(model).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func buildQuery(procName string, conditions map[string]interface{}) string {
+	if len(conditions) == 0 {
+		return fmt.Sprintf("EXEC %s", procName)
+	}
+
+	conditionStr := ""
+	for key := range conditions {
+		conditionStr += fmt.Sprintf("@%s = ?, ", key)
+	}
+	conditionStr = conditionStr[:len(conditionStr)-2]
+
+	return fmt.Sprintf("EXEC %s %s", procName, conditionStr)
+}
+
+func buildParams(conditions map[string]interface{}) []interface{} {
+	params := []interface{}{}
+	for _, value := range conditions {
+		params = append(params, value)
+	}
+
+	return params
+}
+
 func DbGet(model interface{}, conditions map[string]interface{}) error {
 	ctx := context.Background()
 	key := getKey(model, conditions)
 
 	cache, err := initializers.RC.Get(ctx, key).Result()
 	if err == redis.Nil {
-
 		if err := fetchDB(model, conditions); err != nil {
 			return err
 		}
@@ -27,7 +85,6 @@ func DbGet(model interface{}, conditions map[string]interface{}) error {
 		if err := cacheData(ctx, key, model); err != nil {
 			return err
 		}
-
 	} else if err != nil {
 		return errors.New("failed getting cache")
 	} else {

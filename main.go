@@ -146,7 +146,7 @@ func main() {
 			}
 
 			//Bpi Endpoints
-			api.Get("/bpi", sales_handlers.GetQuotations)
+			api.Get("/bpi", bpi_handlers.GetBpis)
 			api.Post("/bpi", bpi_handlers.CreateBpi)
 			api.Patch("/bpi", sales_handlers.UpdateQuotation)
 			api.Delete("/bpi", sales_handlers.DeleteQuotation)
