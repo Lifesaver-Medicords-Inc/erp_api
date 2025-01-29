@@ -24,8 +24,33 @@ func CreateBpiIndustries(tx *gorm.DB, parentId uint, industryId uint, at models.
 		BpiIndustriesContent: content,
 		At:                   at,
 	}
+
 	if err := services.DbInsert(tx, &bpiIndustriesAt); err != nil {
 		return errors.New("failed creating bpi_industries_at")
+	}
+
+	return nil
+}
+
+func CreateBpiBranchIndustries(tx *gorm.DB, parentId uint, branchIndustryId uint, at models.At) error {
+
+	content := models.BpiBranchIndustriesContent{
+		BpiGeneralId: parentId,
+		IndustryId:   branchIndustryId,
+	}
+	bpiBranchIndustries := models.BpiBranchIndustries{BpiBranchIndustriesContent: content}
+	if err := services.DbInsert(tx, &bpiBranchIndustries); err != nil {
+		return errors.New("failed creating bpi branch industries")
+	}
+
+	bpiBranchIndustriesAt := models.BpiBranchIndustriesAt{
+		RefId:                      bpiBranchIndustries.BpiGeneralId,
+		BpiBranchIndustriesContent: content,
+		At:                         at,
+	}
+
+	if err := services.DbInsert(tx, &bpiBranchIndustriesAt); err != nil {
+		return errors.New("failed creating bpi branch_industries_at")
 	}
 
 	return nil
