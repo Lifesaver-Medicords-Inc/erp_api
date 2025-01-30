@@ -9,6 +9,7 @@ type OrderDetailsContent struct {
 	ListPrice          float64 `json:"list_price"`
 	TotalPrice         float64 `json:"total_price"`
 	Status             string  `json:"status"`
+	HasStocks          bool    `json:"has_stocks"`
 }
 
 type OrderDetails struct {

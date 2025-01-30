@@ -22,6 +22,7 @@ type OrderContent struct {
 	TotalAmountDue float64 `json:"total_amount_due"`
 	ApprovedBy     string  `json:"approved_by"`
 	ApprovedByID   uint    `json:"approved_by_id"`
+	Tin            string  `json:"tin"`
 }
 
 type Order struct {

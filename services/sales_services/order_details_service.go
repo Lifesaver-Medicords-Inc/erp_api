@@ -4,7 +4,6 @@ import (
 	"errors"
 	// "fmt"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
@@ -27,17 +26,13 @@ func GetOrderDetails(quickquotes *[]models.OrderDetails, conditions map[string]i
 
 //		return orders, 0, nil
 //	}
-func GetOrderDetail(Order_Details_ID int) (models.OrderDetails, int, error) {
-	conditions := map[string]interface{}{
-		"order_details_id": Order_Details_ID,
+
+func GetOrderDetail(orderdetails *models.OrderDetails, conditions map[string]interface{}) error {
+	if err := services.DbGet(orderdetails, conditions); err != nil {
+		return errors.New("failed getting order detail")
 	}
 
-	var orderdetail models.OrderDetails
-
-	if err := services.DbGet(&orderdetail, conditions); err != nil {
-		return orderdetail, fiber.StatusInternalServerError, errors.New("failed getting order detail")
-	}
-	return orderdetail, 0, nil
+	return nil
 }
 
 func CreateOrderDetail(tx *gorm.DB, basedId uint, OrderDetails models.OrderDetails, at models.At) error {
@@ -64,13 +59,14 @@ func CreateOrderDetail(tx *gorm.DB, basedId uint, OrderDetails models.OrderDetai
 	}
 
 	if err := services.DbInsert(tx, &orderdetailsat); err != nil {
-		return errors.New("failed creating quick quotations")
+		return errors.New("failed creating order detail")
 	}
 
 	return nil
 }
 
-func UpdateOrderDetail(tx *gorm.DB, orderdetails models.OrderDetails, at models.At) error {
+func UpdateOrderDetail(tx *gorm.DB, orderdetails models.OrderDetails, at models.At, conditions map[string]interface{}) error {
+
 	if err := services.DbUpdate(tx, &orderdetails, nil); err != nil {
 		return errors.New("failed updating order details")
 	}

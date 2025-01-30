@@ -1,6 +1,8 @@
 package sales_handlers
 
 import (
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/services/sales_services"
@@ -16,20 +18,20 @@ func GetOrders(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-// func GetOrder(c *fiber.Ctx) error {
-// 	idParam := c.Params("order_id")
-// 	idNum, err := strconv.Atoi(idParam)
-// 	if err != nil {
-// 		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
-// 	}
+func GetOrder(c *fiber.Ctx) error {
+	idParam := c.Params("order_id")
+	idNum, err := strconv.Atoi(idParam)
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
+	}
 
-// 	data, status, err := sales_services.GetOrder(idNum)
-// 	if err != nil {
-// 		return utils.RespondError(c, status, err.Error())
-// 	}
+	data, status, err := sales_services.GetOrder(idNum)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
 
-// 	return utils.RespondSuccess(c, data)
-// }
+	return utils.RespondSuccess(c, data)
+}
 
 func CreateOrder(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
