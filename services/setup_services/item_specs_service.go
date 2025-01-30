@@ -33,9 +33,17 @@ func CreateItemSpecs(tx *gorm.DB, basedId uint, itemSpecs models.ItemSpecs, at m
 	return nil
 }
 
-func GetItemSpecs(itemspecs *models.ItemSpecs, conditions map[string]interface{}) error {
+func GetItemSpecs(itemspecs *[]models.ItemSpecs, conditions map[string]interface{}) error {
 	if err := services.DbGet(itemspecs, conditions); err != nil {
 		return errors.New("failed getting itemspecs")
+	}
+
+	return nil
+}
+
+func GetItemSpec(itemspec *models.ItemSpecs, conditions map[string]interface{}) error {
+	if err := services.DbGet(itemspec, conditions); err != nil {
+		return errors.New("failed getting itemspec")
 	}
 
 	return nil

@@ -16,35 +16,23 @@ type Body struct {
 	ItemSpecs models.ItemSpecs `json:"item_specs"`
 }
 
-func GetItems(conditions map[string]interface{}) ([]Body, int, error) {
-	var records []Body
-	var items []models.Item
-
-	if err := services.DbGet(&items, conditions); err != nil {
-		return records, fiber.StatusInternalServerError, errors.New("failed getting itemspecs")
+func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
+	type Response struct {
+		Items     []models.Item      `json:"items"`
+		ItemSpecs []models.ItemSpecs `json:"itemspecs"`
 	}
 
-	for _, v := range items {
-		var itemspecs models.ItemSpecs
+	var response Response
 
-		conditions := map[string]interface{}{
-			"based_id": v.ID,
-		}
-
-		//CHILD 1
-		if err := GetItemSpecs(&itemspecs, conditions); err != nil {
-			return records, fiber.StatusInternalServerError, err
-		}
-
-		body := Body{
-			Item:      v,
-			ItemSpecs: itemspecs,
-		}
-
-		records = append(records, body)
+	if err := services.DbGet(&response.Items, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting items")
 	}
 
-	return records, 0, nil
+	if err := GetItemSpecs(&response.ItemSpecs, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, err
+	}
+
+	return response, 0, nil
 }
 
 func GetItem(id int) (Body, int, error) {
@@ -62,8 +50,7 @@ func GetItem(id int) (Body, int, error) {
 		"based_id": record.Item.ID,
 	}
 
-	//Child 1
-	if err := GetItemSpecs(&record.ItemSpecs, conditions); err != nil {
+	if err := GetItemSpec(&record.ItemSpecs, conditions); err != nil {
 		return record, fiber.StatusInternalServerError, err
 	}
 
