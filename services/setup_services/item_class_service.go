@@ -12,16 +12,16 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetClasses() ([]models.Class, error) {
+func GetClasses(conditions map[string]interface{}) ([]models.Class, int, error) {
 	var classes []models.Class
 
-	if err := services.DbGet(&classes, nil); err != nil {
-		return classes, err
+	if err := services.DbGet(&classes, conditions); err != nil {
+		return classes, fiber.StatusInternalServerError, errors.New("failed getting classes")
 	}
 
-	return classes, nil
+	return classes, 0, nil
 }
-func GetClass(id int) (models.Class, error) {
+func GetClass(id int) (models.Class, int, error) {
 	conditions := map[string]interface{}{
 		"id": id,
 	}
@@ -29,73 +29,73 @@ func GetClass(id int) (models.Class, error) {
 	var class models.Class
 
 	if err := services.DbGet(&class, conditions); err != nil {
-		return class, err
+		return class, fiber.StatusInternalServerError, errors.New("failed getting class")
 	}
 
-	return class, nil
+	return class, 0, nil
 }
 
-func CreateClass(c *fiber.Ctx, tx *gorm.DB) error {
+func CreateClass(c *fiber.Ctx, tx *gorm.DB) (models.Class, int, error) {
 	var body models.Class
 	if err := c.BodyParser(&body); err != nil {
 
-		return err
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
 	if err := services.DbInsert(tx, &body); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-			err = errors.New("duplicate record")
+			err = errors.New("duplicate record error")
+		} else {
+			err = errors.New("failed creating class")
 		}
-		return err
+
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
-		//return errors.New("error AT data")
 		at = models.At{}
 	}
 
 	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{Name: body.Name}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return err
+		return body, fiber.StatusInternalServerError, errors.New("failed creating classat")
 	}
 
-	return nil
+	return body, 0, nil
 }
-func UpdateClass(c *fiber.Ctx, tx *gorm.DB) error {
+func UpdateClass(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.Class, int, error) {
 	var body models.Class
 	if err := c.BodyParser(&body); err != nil {
-		return err
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	if err := services.DbUpdate(tx, &body, nil); err != nil {
-		return err
+	if err := services.DbUpdate(tx, &body, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed updating class")
 	}
 
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
-		//return errors.New("error AT data")
 		at = models.At{}
 	}
 
 	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{Name: body.Name}, At: at}
-
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return err
+		return body, fiber.StatusInternalServerError, errors.New("failed creating classat")
 	}
 
-	return nil
+	return body, 0, nil
 }
 
-func DeleteClass(c *fiber.Ctx, tx *gorm.DB) error {
+func DeleteClass(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.Class, int, error) {
 	var body models.Class
 	if err := c.BodyParser(&body); err != nil {
-		return err
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
 	if err := services.DbDelete(tx, &body, nil); err != nil {
-		return err
+		return body, fiber.StatusInternalServerError, errors.New("failed deleting class")
 	}
 
 	at, ok := c.Locals("at").(models.At)
@@ -106,8 +106,8 @@ func DeleteClass(c *fiber.Ctx, tx *gorm.DB) error {
 	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{Name: body.Name}, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return err
+		return body, fiber.StatusInternalServerError, errors.New("failed creating classat")
 	}
 
-	return nil
+	return body, 0, nil
 }
