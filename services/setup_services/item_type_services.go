@@ -12,16 +12,16 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetTypes() ([]models.Type, error) {
+func GetTypes(conditions map[string]interface{}) ([]models.Type, int, error) {
 	var types []models.Type
 
-	if err := services.DbGet(&types, nil); err != nil {
-		return types, err
+	if err := services.DbGet(&types, conditions); err != nil {
+		return types, fiber.StatusInternalServerError, errors.New("failed getting types")
 	}
 
-	return types, nil
+	return types, 0, nil
 }
-func GetType(id int) (models.Type, error) {
+func GetType(id int) (models.Type, int, error) {
 	conditions := map[string]interface{}{
 		"id": id,
 	}
@@ -29,73 +29,72 @@ func GetType(id int) (models.Type, error) {
 	var itemType models.Type
 
 	if err := services.DbGet(&itemType, conditions); err != nil {
-		return itemType, err
+		return itemType, fiber.StatusInternalServerError, errors.New("failed getting type")
 	}
 
-	return itemType, nil
+	return itemType, 0, nil
 }
 
-func CreateType(c *fiber.Ctx, tx *gorm.DB) error {
+func CreateType(c *fiber.Ctx, tx *gorm.DB) (models.Type, int, error) {
 	var body models.Type
 	if err := c.BodyParser(&body); err != nil {
-
-		return err
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
 	if err := services.DbInsert(tx, &body); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-			err = errors.New("duplicate record")
+			err = errors.New("duplicate record error")
+		} else {
+			err = errors.New("failed creating type")
 		}
-		return err
+
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
-		//return errors.New("error AT data")
 		at = models.At{}
 	}
 
 	atdata := models.TypeAt{RefId: body.ID, Code: body.Code, TypeContent: models.TypeContent{Name: body.Name}, At: at}
-
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return err
+		return body, fiber.StatusInternalServerError, errors.New("failed creating typeat")
 	}
 
-	return nil
+	return body, 0, nil
 }
-func UpdateType(c *fiber.Ctx, tx *gorm.DB) error {
+
+func UpdateType(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.Type, int, error) {
 	var body models.Type
 	if err := c.BodyParser(&body); err != nil {
-		return err
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	if err := services.DbUpdate(tx, &body, nil); err != nil {
-		return err
+	if err := services.DbUpdate(tx, &body, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed updating type")
 	}
 
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
-		//return errors.New("error AT data")
 		at = models.At{}
 	}
 
 	atdata := models.TypeAt{RefId: body.ID, Code: body.Code, TypeContent: models.TypeContent{Name: body.Name}, At: at}
-
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return err
+		return body, fiber.StatusInternalServerError, errors.New("failed creating typeat")
 	}
 
-	return nil
+	return body, 0, nil
 }
 
-func DeleteType(c *fiber.Ctx, tx *gorm.DB) error {
+func DeleteType(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.Type, int, error) {
 	var body models.Type
 	if err := c.BodyParser(&body); err != nil {
-		return err
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	if err := services.DbDelete(tx, &body, nil); err != nil {
-		return err
+	if err := services.DbDelete(tx, &body, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed deleting type")
 	}
 
 	at, ok := c.Locals("at").(models.At)
@@ -104,10 +103,10 @@ func DeleteType(c *fiber.Ctx, tx *gorm.DB) error {
 	}
 
 	atdata := models.TypeAt{RefId: body.ID, Code: body.Code, TypeContent: models.TypeContent{Name: body.Name}, At: at}
-
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return err
+		return body, fiber.StatusInternalServerError, errors.New("failed creating typeat")
 	}
 
-	return nil
+	return body, 0, nil
 }
+

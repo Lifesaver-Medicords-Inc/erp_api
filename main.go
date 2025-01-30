@@ -53,7 +53,7 @@ func main() {
 			// Setup Endpoints
 			setupApi := api.Group("/setup")
 			{
-				// Item Endpoints
+
 				itemApi := setupApi.Group("/item")
 				{
 					// Brand Endpoints
@@ -83,6 +83,20 @@ func main() {
 					itemApi.Post("/type", setup_handlers.CreateType)
 					itemApi.Put("/type", setup_handlers.UpdateType)
 					itemApi.Delete("/type", setup_handlers.DeleteType)
+
+					// Model Endpoints
+					itemApi.Get("/model", setup_handlers.GetModels)
+					itemApi.Get("/model/:id", setup_handlers.GetModel)
+					itemApi.Post("/model", setup_handlers.CreateModel)
+					itemApi.Put("/model", setup_handlers.UpdateModel)
+					itemApi.Delete("/model", setup_handlers.DeleteModel)
+
+					// Item Endpoints
+					itemApi.Get("", setup_handlers.GetItems)
+					itemApi.Get("/:id", setup_handlers.GetItem)
+					itemApi.Post("", setup_handlers.CreateItem)
+					itemApi.Put("", setup_handlers.UpdateItem)
+					itemApi.Delete("", setup_handlers.DeleteItem)
 				}
 
 				// Unit Measurement Endpoints
@@ -131,12 +145,20 @@ func main() {
 			// Sales Endpoints
 			salesApi := api.Group("/sales")
 			{
-				// Quotation Endpoints
-				salesApi.Get("/quotation", sales_handlers.GetQuotations)
-				salesApi.Post("/quotation", sales_handlers.CreateQuotation)
-				salesApi.Patch("/quotation", sales_handlers.UpdateQuotation)
-				salesApi.Delete("/quotation", sales_handlers.DeleteQuotation)
+				salesApi.Get("/quotation", sales_handlers.GetSalesQuotations)
+				salesApi.Get("/quotation/:id", sales_handlers.GetSalesQuotation)
+				// POST for child
+				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotationChild)
+				// POST for Parent
+				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
+				salesApi.Put("/quotation", sales_handlers.UpdateSalesQuotation)
+				salesApi.Delete("/quotation", sales_handlers.DeleteSalesQuotation)
 
+				salesApi.Get("/application", setup_handlers.GetApplications)
+				salesApi.Get("/application/:id", setup_handlers.GetApplication)
+				salesApi.Post("/application", setup_handlers.CreateApplication)
+				salesApi.Put("/application", setup_handlers.UpdateApplication)
+				salesApi.Delete("/application", setup_handlers.DeleteApplication)
 				// Order Endpoints
 				salesApi.Get("/order", sales_handlers.GetOrders)
 				salesApi.Post("/order", sales_handlers.CreateOrder)
