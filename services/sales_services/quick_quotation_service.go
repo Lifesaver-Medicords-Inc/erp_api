@@ -9,26 +9,14 @@ import (
 )
 
 // Create Quick Quotation
-func CreateSalesQuotationQuick(tx *gorm.DB, basedId uint, QuickQuote models.SalesQuotationQuick, at models.At) error {
-	content := models.SalesQuotationQuickContent{
-		BasedId:         basedId,
-		Qty:             QuickQuote.Qty,
-		UnitCode:        QuickQuote.UnitCode,
-		UnitPrice:       QuickQuote.UnitPrice,
-		PercentDiscount: QuickQuote.PercentDiscount,
-		NetDiscount:     QuickQuote.NetDiscount,
-		NetTotal:        QuickQuote.NetTotal,
-		LineTotal:       QuickQuote.LineTotal,
-	}
-
-	quickquote := models.SalesQuotationQuick{SalesQuotationQuickContent: content}
-	if err := services.DbInsert(tx, &quickquote); err != nil {
+func CreateSalesQuotationQuick(tx *gorm.DB, QuickQuote models.SalesQuotationQuick, at models.At) error {
+	if err := services.DbInsert(tx, &QuickQuote); err != nil {
 		return errors.New("failed creating quick quote")
 	}
 
 	quickquotationsat := models.SalesQuotationQuickAt{
-		RefId:                      quickquote.ID,
-		SalesQuotationQuickContent: content,
+		RefId:                      QuickQuote.ID,
+		SalesQuotationQuickContent: QuickQuote.SalesQuotationQuickContent,
 		At:                         at,
 	}
 
@@ -58,9 +46,10 @@ func GetSalesQuotationQuicks(quickquotes *[]models.SalesQuotationQuick, conditio
 }
 
 // update quick quotes
-func UpdateSalesQuotationQuick(tx *gorm.DB, quickquotes models.SalesQuotationQuick, at models.At) error {
-	if err := services.DbUpdate(tx, &quickquotes, nil); err != nil {
-		return errors.New("failed updating itemspecs")
+func UpdateSalesQuotationQuick(tx *gorm.DB, quickquotes models.SalesQuotationQuick, at models.At, conditions map[string]interface{}) error {
+
+	if err := services.DbUpdate(tx, &quickquotes, conditions); err != nil {
+		return errors.New("failed updating quickquotations")
 	}
 
 	quickquotationsat := models.SalesQuotationQuickAt{

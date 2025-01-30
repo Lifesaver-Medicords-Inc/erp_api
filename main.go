@@ -110,8 +110,11 @@ func main() {
 				// Quotation Endpoints
 				salesApi.Get("/quotation", sales_handlers.GetSalesQuotations)
 				salesApi.Get("/quotation/:id", sales_handlers.GetSalesQuotation)
+				// POST for child
+				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotationChild)
+				// POST for Parent
 				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
-				salesApi.Patch("/quotation", sales_handlers.UpdateSalesQuotation)
+				salesApi.Put("/quotation", sales_handlers.UpdateSalesQuotation)
 				salesApi.Delete("/quotation", sales_handlers.DeleteSalesQuotation)
 
 				salesApi.Get("/application", setup_handlers.GetApplications)

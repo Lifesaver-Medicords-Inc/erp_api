@@ -2,6 +2,7 @@ package sales_services
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -12,14 +13,14 @@ import (
 type Body struct {
 	models.SalesQuotation
 	//Child 1
-	QuickQuote models.SalesQuotationQuick `json:"sales_quotation_quick"`
+	SalesQuotationQuick models.SalesQuotationQuick `json:"sales_quotation_quick"`
 }
 
 func GetSalesQuotations(conditions map[string]interface{}) (interface{}, int, error) {
 
 	type Response struct {
-		SalesQuotation []models.SalesQuotation
-		QuickQuote     []models.SalesQuotationQuick
+		SalesQuotation      []models.SalesQuotation
+		SalesQuotationQuick []models.SalesQuotationQuick
 	}
 
 	var response Response
@@ -28,13 +29,15 @@ func GetSalesQuotations(conditions map[string]interface{}) (interface{}, int, er
 		return response, fiber.StatusInternalServerError, errors.New("failed getting sales quotations")
 	}
 
-	if err := GetSalesQuotationQuicks(&response.QuickQuote, conditions); err != nil {
+	if err := GetSalesQuotationQuicks(&response.SalesQuotationQuick, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, err
 	}
+
 	return response, 0, nil
 }
 
 func GetSalesQuotation(id int) (Body, int, error) {
+
 	conditions := map[string]interface{}{
 		"id": id,
 	}
@@ -51,7 +54,7 @@ func GetSalesQuotation(id int) (Body, int, error) {
 	}
 
 	//Child 1
-	if err := GetSalesQuotationQuick(&record.QuickQuote, conditions); err != nil {
+	if err := GetSalesQuotationQuick(&record.SalesQuotationQuick, conditions); err != nil {
 		return record, fiber.StatusInternalServerError, err
 	}
 
@@ -63,7 +66,26 @@ func GetSalesQuotation(id int) (Body, int, error) {
 	return record, 0, nil
 }
 
-// CREATE SERVICE
+// CREATE CHILD SERVICE
+func CreateSalesQuotationChild(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
+	var body Body
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	if err := CreateSalesQuotationQuick(tx, body.SalesQuotationQuick, at); err != nil {
+		fmt.Println("err", err)
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	return body, 0, nil
+}
+
 func CreateSalesQuotation(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 	var body Body
 	if err := c.BodyParser(&body); err != nil {
@@ -84,22 +106,19 @@ func CreateSalesQuotation(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating sales quotation at")
 	}
-
-	if err := CreateSalesQuotationQuick(tx, body.ID, body.QuickQuote, at); err != nil {
-		return body, fiber.StatusInternalServerError, err
-	}
 	return body, 0, nil
 }
 
 func UpdateSalesQuotation(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Body, int, error) {
 	var body Body
 	if err := c.BodyParser(&body); err != nil {
+		fmt.Println(err)
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
 	// Parent class
 	if err := services.DbUpdate(tx, &body.SalesQuotation, conditions); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed updating item")
+		return body, fiber.StatusInternalServerError, errors.New("failed updating quotation")
 	}
 
 	at, ok := c.Locals("at").(models.At)
@@ -110,10 +129,14 @@ func UpdateSalesQuotation(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 	atdata := models.SalesQuotationAt{RefId: body.ID, SalesQuotationContent: body.SalesQuotationContent, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed creating itemat")
+		return body, fiber.StatusInternalServerError, errors.New("failed creating quotationat")
 	}
 
-	if err := UpdateSalesQuotationQuick(tx, body.QuickQuote, at); err != nil {
+	conditions = map[string]interface{}{
+		"based_id": body.ID,
+	}
+
+	if err := UpdateSalesQuotationQuick(tx, body.SalesQuotationQuick, at, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
@@ -144,7 +167,7 @@ func DeleteSalesQuotation(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 		"based_id": body.ID,
 	}
 
-	if err := DeleteSalesQuotationQuick(tx, body.QuickQuote, at, conditions); err != nil {
+	if err := DeleteSalesQuotationQuick(tx, body.SalesQuotationQuick, at, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
