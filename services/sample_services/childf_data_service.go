@@ -9,6 +9,7 @@ import (
 )
 
 func CreateChildf(tx *gorm.DB, parentId uint, child models.Childf, at models.At) error {
+
 	content := models.ChildfContent{
 		ParentId:    parentId,
 		Name:        child.Name,
@@ -31,6 +32,14 @@ func CreateChildf(tx *gorm.DB, parentId uint, child models.Childf, at models.At)
 	return nil
 }
 
+func GetChildfs(childfs *[]models.Childf, conditions map[string]interface{}) error {
+	if err := services.DbGet(childfs, conditions); err != nil {
+		return errors.New("failed getting childfs")
+	}
+
+	return nil
+}
+
 func GetChildf(childf *models.Childf, conditions map[string]interface{}) error {
 	if err := services.DbGet(childf, conditions); err != nil {
 		return errors.New("failed getting childf")
@@ -39,8 +48,8 @@ func GetChildf(childf *models.Childf, conditions map[string]interface{}) error {
 	return nil
 }
 
-func UpdateChildf(tx *gorm.DB, childf models.Childf, at models.At) error {
-	if err := services.DbUpdate(tx, &childf, nil); err != nil {
+func UpdateChildf(tx *gorm.DB, childf models.Childf, at models.At, conditions map[string]interface{}) error {
+	if err := services.DbUpdate(tx, &childf, conditions); err != nil {
 		return errors.New("failed updating childf")
 	}
 
@@ -56,8 +65,8 @@ func UpdateChildf(tx *gorm.DB, childf models.Childf, at models.At) error {
 	return nil
 }
 
-func DeleteChildf(tx *gorm.DB, childf models.Childf, at models.At) error {
-	if err := services.DbDelete(tx, &childf, nil); err != nil {
+func DeleteChildf(tx *gorm.DB, childf models.Childf, at models.At, conditions map[string]interface{}) error {
+	if err := services.DbDelete(tx, &childf, conditions); err != nil {
 		return errors.New("failed deleting childf")
 	}
 

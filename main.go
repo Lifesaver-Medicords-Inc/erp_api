@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/pierceperado/smpc/handlers/bpi_handlers"
 	"github.com/pierceperado/smpc/handlers/public_handlers"
 	"github.com/pierceperado/smpc/handlers/sales_handlers"
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
@@ -172,7 +173,12 @@ func main() {
 				// sales_api.Delete("/return/delete", handlers.Register)
 
 			}
-			// Bpi Endpoints
+
+			//Bpi Endpoints
+			api.Get("/bpi", bpi_handlers.GetBpis)
+			api.Post("/bpi", bpi_handlers.CreateBpi)
+			api.Patch("/bpi", sales_handlers.UpdateQuotation)
+			api.Delete("/bpi", sales_handlers.DeleteQuotation)
 
 		}
 	}

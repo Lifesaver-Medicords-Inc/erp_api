@@ -15,40 +15,28 @@ type Body struct {
 	Childs models.Childs `json:"childs"`
 }
 
-func GetParents(conditions map[string]interface{}) ([]Body, int, error) {
-	var records []Body
-	var parents []models.Parent
-
-	if err := services.DbGet(&parents, conditions); err != nil {
-		return records, fiber.StatusInternalServerError, errors.New("failed getting parents")
+func GetParents(conditions map[string]interface{}) (interface{}, int, error) {
+	type Response struct {
+		Parents []models.Parent `json:"parents"`
+		Childfs []models.Childf `json:"childfs"`
+		Childss []models.Childs `json:"childss"`
 	}
 
-	for _, v := range parents {
-		var childf models.Childf
-		var childs models.Childs
+	var response Response
 
-		conditions := map[string]interface{}{
-			"parent_id": v.ID,
-		}
-
-		if err := GetChildf(&childf, conditions); err != nil {
-			return records, fiber.StatusInternalServerError, err
-		}
-
-		if err := GetChilds(&childs, conditions); err != nil {
-			return records, fiber.StatusInternalServerError, err
-		}
-
-		body := Body{
-			Parent: v,
-			Childf: childf,
-			Childs: childs,
-		}
-
-		records = append(records, body)
+	if err := services.DbGet(&response.Parents, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting parents")
 	}
 
-	return records, 0, nil
+	if err := GetChildfs(&response.Childfs, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, err
+	}
+
+	if err := GetChildss(&response.Childss, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, err
+	}
+
+	return response, 0, nil
 }
 
 func GetParent(id int) (Body, int, error) {
@@ -128,11 +116,15 @@ func UpdateParent(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) 
 		return body, fiber.StatusInternalServerError, errors.New("failed creating parentat")
 	}
 
-	if err := UpdateChildf(tx, body.Childf, at); err != nil {
+	conditions = map[string]interface{}{
+		"parent_id": body.ID,
+	}
+
+	if err := UpdateChildf(tx, body.Childf, at, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	if err := UpdateChilds(tx, body.Childs, at); err != nil {
+	if err := UpdateChilds(tx, body.Childs, at, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
@@ -145,7 +137,7 @@ func DeleteParent(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) 
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	if err := services.DbDelete(tx, &body, conditions); err != nil {
+	if err := services.DbDelete(tx, &body.Parent, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed deleting parent")
 	}
 
@@ -159,11 +151,15 @@ func DeleteParent(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) 
 		return body, fiber.StatusInternalServerError, errors.New("failed creating parentat")
 	}
 
-	if err := DeleteChildf(tx, body.Childf, at); err != nil {
+	conditions = map[string]interface{}{
+		"parent_id": body.ID,
+	}
+
+	if err := DeleteChildf(tx, body.Childf, at, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	if err := DeleteChilds(tx, body.Childs, at); err != nil {
+	if err := DeleteChilds(tx, body.Childs, at, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
