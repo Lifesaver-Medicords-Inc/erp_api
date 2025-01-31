@@ -17,6 +17,8 @@ func DbRaw(model interface{}, procName string, conditions map[string]interface{}
 	ctx := context.Background()
 	key := getKey(model, conditions)
 
+	fmt.Println("KEEEEY DBGET:", key)
+
 	cache, err := initializers.RC.Get(ctx, key).Result()
 	if err == redis.Nil {
 		if err := fetchRaw(model, procName, conditions); err != nil {
@@ -75,6 +77,8 @@ func buildParams(conditions map[string]interface{}) []interface{} {
 func DbGet(model interface{}, conditions map[string]interface{}) error {
 	ctx := context.Background()
 	key := getKey(model, conditions)
+
+	fmt.Println("KEEEEY DBGET:", key)
 
 	cache, err := initializers.RC.Get(ctx, key).Result()
 	if err == redis.Nil {
@@ -160,6 +164,8 @@ func DbInsert(tx *gorm.DB, model interface{}) error {
 	}
 
 	key := getKey(model, nil)
+	fmt.Println("KEEEEYDBINSERT:", key)
+
 	if err := invalidateCache(key); err != nil {
 		return err
 	}
@@ -179,6 +185,7 @@ func DbUpdate(tx *gorm.DB, model interface{}, conditions map[string]interface{})
 	}
 
 	key := getKey(model, conditions)
+	fmt.Println("KEEEEYUpdate:", key)
 	if err := invalidateCache(key); err != nil {
 		return err
 	}
