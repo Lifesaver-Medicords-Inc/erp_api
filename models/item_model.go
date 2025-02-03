@@ -1,16 +1,16 @@
 package models
 
 type ItemContent struct {
-	ItemNameId        uint   `json:"item_name_id"`
-	ItemModelId       uint   `json:"item_model_id"`
-	ItemCode          string `json:"item_code"`
-	ShortDesc         string `json:"short_desc"`
-	ItemClassId       uint   `json:"item_class_id"`
-	ItemBrandId       uint   `json:"item_brand_id"`
-	UnitOfMeasureId   uint   `json:"unit_of_measure_id"`
-	IsStopSelling     bool   `json:"is_stop_selling"`
-	IsSalesItem       bool   `json:"is_sales_item"`
-	IsPurchaseItem    bool   `json:"is_purchase_item"`
+	ItemNameId      uint   `json:"item_name_id"`
+	ItemModelId     uint   `json:"item_model_id"`
+	ItemCode        string `json:"item_code"`
+	ShortDesc       string `json:"short_desc"`
+	ItemClassId     uint   `json:"item_class_id"`
+	ItemBrandId     uint   `json:"item_brand_id"`
+	UnitOfMeasureId uint   `json:"unit_of_measure_id"`
+	IsStopSelling   bool   `json:"is_stop_selling"`
+	IsSalesItem     bool   `json:"is_sales_item"`
+	IsPurchaseItem  bool   `json:"is_purchase_item"`
 }
 
 type Item struct {

@@ -2,8 +2,8 @@ package models
 
 type ModelView struct {
 	Model
-	RelatedName  string `json:"related_name" gorm:"->"`
-	RelatedBrand string `json:"related_brand" gorm:"->"`
+	RelatedName  string `json:"related_name"`
+	RelatedBrand string `json:"related_brand"`
 }
 
 func (ModelView) TableName() string {

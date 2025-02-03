@@ -1,6 +1,7 @@
 package setup_handlers
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -38,6 +39,8 @@ func CreateItem(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 	data, status, err := setup_services.CreateItem(c, tx)
+
+	fmt.Println("BODYY:", data)
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())

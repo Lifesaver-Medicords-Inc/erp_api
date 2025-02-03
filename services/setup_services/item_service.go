@@ -13,20 +13,31 @@ import (
 
 type Body struct {
 	models.Item
-	ItemSpecs models.ItemSpecs `json:"item_specs"`
+	ItemSpecs       models.ItemSpecs       `json:"itemspecs"`
+	AdditionalSpecs models.AdditionalSpecs `json:"additional_specs"`
 }
 
 type SaveBody struct {
 	models.Item
-	ItemSpecs       []models.ItemSpecs     `json:"item_specs"`
+	ItemSpecs       ItemSpecsWrapper       `json:"itemspecs"`
 	AdditionalSpecs models.AdditionalSpecs `json:"additional_specs"`
+}
+
+type ItemSpecsWrapper struct {
+	Template string       `json:"template"`
+	Fields   []SpecsField `json:"fields"`
+}
+
+type SpecsField struct {
+	Title string `json:"title"`
+	Value string `json:"value"`
 }
 
 func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 	type Response struct {
 		Items           []models.ItemView        `json:"items"`
-		ItemSpecs       []models.ItemSpecs       `json:"item_specs"`
-		AdditionalSpecs []models.AdditionalSpecs `json:"additional_specs"`
+		ItemSpecs       []models.ItemSpecs       `json:"itemspecs"`
+		AdditionalSpecs []models.AdditionalSpecs `json:"additionalspecs"`
 	}
 
 	var response Response
@@ -46,46 +57,22 @@ func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 	return response, 0, nil
 }
 
-// func GetItem(id int) (Body, int, error) {
-// 	conditions := map[string]interface{}{
-// 		"id": id,
-// 	}
-
-// 	var record Body
-
-// 	if err := services.DbGet(&record.Item, conditions); err != nil {
-// 		return record, fiber.StatusInternalServerError, errors.New("failed getting item")
-// 	}
-
-// 	conditions = map[string]interface{}{
-// 		"based_id": record.Item.ID,
-// 	}
-
-// 	if err := GetItemSpec(&record.ItemSpecs, conditions); err != nil {
-// 		return record, fiber.StatusInternalServerError, err
-// 	}
-
-//		return record, 0, nil
-//	}
-func GetItem(id int) (SaveBody, int, error) {
+func GetItem(id int) (Body, int, error) {
 
 	conditions := map[string]interface{}{
-		"id": id, // Fetch item by its unique 'id'
+		"id": id,
 	}
+	var record Body
 
-	var record SaveBody
-
-	// Fetch Item data
 	if err := services.DbGet(&record.Item, conditions); err != nil {
 		return record, fiber.StatusInternalServerError, errors.New("failed getting item")
 	}
 
-	// Fetch ItemSpecs data
 	itemSpecsConditions := map[string]interface{}{
 		"based_id": record.Item.ID,
 	}
 
-	if err := GetItemSpecs(&record.ItemSpecs, itemSpecsConditions); err != nil {
+	if err := GetItemSpec(&record.ItemSpecs, itemSpecsConditions); err != nil {
 		return record, fiber.StatusInternalServerError, err
 	}
 
@@ -96,32 +83,6 @@ func GetItem(id int) (SaveBody, int, error) {
 	return record, 0, nil
 }
 
-// func CreateItem(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
-// 	var body Body
-// 	if err := c.BodyParser(&body); err != nil {
-// 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
-// 	}
-
-// 	if err := services.DbInsert(tx, &body.Item); err != nil {
-// 		return body, fiber.StatusInternalServerError, errors.New("failed creating item")
-// 	}
-
-// 	at, ok := c.Locals("at").(models.At)
-// 	if !ok {
-// 		at = models.At{}
-// 	}
-
-// 	atdata := models.ItemAt{RefId: body.ID, ItemContent: body.ItemContent, At: at}
-
-//		if err := services.DbInsert(tx, &atdata); err != nil {
-//			return body, fiber.StatusInternalServerError, errors.New("failed creating itemat")
-//		}
-//		if err := CreateItemSpecs(tx, body.ID, body.ItemSpecs, at); err != nil {
-//		// if err := CreateItemSpecs(tx, body.ID, []models.ItemSpecs{body.ItemSpecs}, at); err != nil {
-//			return body, fiber.StatusInternalServerError, err
-//		}
-//			return body, 0, nil
-//	}
 func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 	var savebody SaveBody
 
@@ -129,7 +90,6 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 		return savebody, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	// Insert the main item record into the database
 	if err := services.DbInsert(tx, &savebody.Item); err != nil {
 		return savebody, fiber.StatusInternalServerError, errors.New("failed creating item")
 	}
@@ -139,14 +99,19 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 		at = models.At{}
 	}
 
-	// Insert the associated ItemAt record
 	atdata := models.ItemAt{RefId: savebody.ID, ItemContent: savebody.ItemContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return savebody, fiber.StatusInternalServerError, errors.New("failed creating itemat")
 	}
 
-	// Insert ItemSpecs
-	if err := CreateItemSpecs(tx, savebody.ID, savebody.ItemSpecs, at); err != nil {
+	key := services.GetKey(models.ItemView{}, nil)
+	services.InvalidateCache(key)
+
+	if err := CreateItemSpec(tx, savebody.Item.ID, savebody.ItemSpecs, at); err != nil {
+		return savebody, fiber.StatusInternalServerError, err
+	}
+
+	if err := CreateAdditionalSpec(tx, savebody.ID, savebody.AdditionalSpecs, at); err != nil {
 		return savebody, fiber.StatusInternalServerError, err
 	}
 
@@ -159,27 +124,43 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (B
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	if err := services.DbUpdate(tx, &body.Item, conditions); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed updating item")
-	}
+	if err := tx.Transaction(func(tx *gorm.DB) error {
+		if err := services.DbUpdate(tx, &body.Item, conditions); err != nil {
+			return errors.New("failed updating item")
+		}
 
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
+		at, ok := c.Locals("at").(models.At)
+		if !ok {
+			at = models.At{}
+		}
 
-	atdata := models.ItemAt{RefId: body.ID, ItemContent: body.ItemContent, At: at}
+		atdata := models.ItemAt{RefId: body.ID, ItemContent: body.ItemContent, At: at}
+		if err := services.DbInsert(tx, &atdata); err != nil {
+			return errors.New("failed updating itemat")
+		}
 
-	if err := services.DbInsert(tx, &atdata); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed creating itemat")
-	}
+		conditions = map[string]interface{}{
+			"based_id": body.ID,
+		}
 
-	if err := UpdateItemSpecs(tx, body.ItemSpecs, at); err != nil {
+		if err := UpdateItemSpec(tx, body.ItemSpecs, at, conditions); err != nil {
+			return err
+		}
+		if err := UpdateAdditionalSpec(tx, body.AdditionalSpecs, at, conditions); err != nil {
+			return err
+		}
+
+		key := services.GetKey(models.ItemView{}, nil)
+		services.InvalidateCache(key)
+
+		return nil
+	}); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
 	return body, 0, nil
 }
+
 
 func DeleteItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Body, int, error) {
 	var body Body

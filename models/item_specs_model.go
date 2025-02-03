@@ -2,7 +2,6 @@ package models
 
 type ItemSpecsContent struct {
 	BasedId  uint   `json:"based_id"`
-	ItemCode string `json:"item_code"`
 	Template string `json:"template"`
 	Title    string `json:"title"`
 	Value    string `json:"value"`

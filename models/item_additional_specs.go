@@ -8,7 +8,7 @@ type AdditionalSpecsContent struct {
 	MotorEnclosure    string  `json:"motor_enclosure"`
 	MotorManufacturer string  `json:"motor_manufacturer"`
 	ServiceFactor     string  `json:"service_factor"`
-	Liquidtype        string  `json:"liquid_type"`
+	LiquidType        string  `json:"liquid_type"`
 	Volume            float64 `json:"volume"`
 	Weight            float64 `json:"weight"`
 	LongDescription   string  `json:"long_desc"`
@@ -19,7 +19,7 @@ type AdditionalSpecs struct {
 	AdditionalSpecsContent
 }
 
-func (AdditionalSpecs) TableName() string {
+func (AdditionalSpecs) TableName() string {	
 	return "tbl_setup_item_additional_specs"
 }
 

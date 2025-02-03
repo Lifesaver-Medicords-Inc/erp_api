@@ -9,10 +9,10 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetAdditionalSpecs(additionalspecs *[]models.AdditionalSpecs, conditions map[string]interface{}) error {
-	if err := services.DbGet(additionalspecs, conditions); err != nil {
-		fmt.Println("ERRRRR:", err)
-		return errors.New("failed getting additional specs")
+func GetAdditionalSpecs(additionalSpecs *[]models.AdditionalSpecs, conditions map[string]interface{}) error {
+	if err := services.DbGet(additionalSpecs, conditions); err != nil {
+		fmt.Println("ERROR:", err)
+		return errors.New("failed getting item specs")
 	}
 
 	return nil
@@ -26,54 +26,55 @@ func GetAdditionalSpec(additionalspecs *models.AdditionalSpecs, conditions map[s
 	return nil
 }
 
-func Createadditionalspec(tx *gorm.DB, basedId uint, additionalspec models.AdditionalSpecs, at models.At) error {
+func CreateAdditionalSpec(tx *gorm.DB, basedId uint, additionalSpec models.AdditionalSpecs, at models.At) error {
 	content := models.AdditionalSpecsContent{
 		BasedId:           basedId,
-		ItemCode:          additionalspec.ItemCode,
-		SuctionPressure:   additionalspec.SuctionPressure,
-		DriverType:        additionalspec.DriverType,
-		MotorEnclosure:    additionalspec.MotorEnclosure,
-		MotorManufacturer: additionalspec.MotorManufacturer,
-		ServiceFactor:     additionalspec.ServiceFactor,
-		Liquidtype:        additionalspec.Liquidtype,
-		Volume:            additionalspec.Volume,
-		Weight:            additionalspec.Weight,
-		LongDescription:   additionalspec.LongDescription,
+		ItemCode:          additionalSpec.ItemCode,
+		SuctionPressure:   additionalSpec.SuctionPressure,
+		DriverType:        additionalSpec.DriverType,
+		MotorEnclosure:    additionalSpec.MotorEnclosure,
+		MotorManufacturer: additionalSpec.MotorManufacturer,
+		ServiceFactor:     additionalSpec.ServiceFactor,
+		LiquidType:        additionalSpec.LiquidType,
+		Volume:            additionalSpec.Volume,
+		Weight:            additionalSpec.Weight,
+		LongDescription:   additionalSpec.LongDescription,
 	}
 
 	additionalSpecs := models.AdditionalSpecs{AdditionalSpecsContent: content}
 	if err := services.DbInsert(tx, &additionalSpecs); err != nil {
 		return fmt.Errorf("failed creating additional specs")
 	}
-	additionalspecsat := models.AdditionalSpecsAt{
-		RefId:                  additionalSpecs.BasedId,
+
+	additionalSpecsAt := models.AdditionalSpecsAt{
+		RefId:                  additionalSpecs.ID,
 		AdditionalSpecsContent: content,
 		At:                     at,
 	}
-	if err := services.DbInsert(tx, &additionalspecsat); err != nil {
+
+	if err := services.DbInsert(tx, &additionalSpecsAt); err != nil {
 		return errors.New("failed creating additional specs")
 	}
 
 	return nil
 }
 
-func UpdateAdditionalSpecs(tx *gorm.DB, additionalspec models.AdditionalSpecs, at models.At) error {
-	if err := services.DbUpdate(tx, &additionalspec, nil); err != nil {
+func UpdateAdditionalSpec(tx *gorm.DB, additionalspec models.AdditionalSpecs, at models.At, conditions map[string]interface{}) error {
+	if err := services.DbUpdate(tx, &additionalspec, conditions); err != nil {
 		return errors.New("failed updating additional specs")
 	}
 
-	itemspecsat := models.AdditionalSpecsAt{
-		RefId:                  additionalspec.ID,
+	additionalspecat := models.AdditionalSpecsAt{
+		RefId:         additionalspec.ID,
 		AdditionalSpecsContent: additionalspec.AdditionalSpecsContent,
-		At:                     at,
+		At:            at,
 	}
-	if err := services.DbInsert(tx, &itemspecsat); err != nil {
-		return errors.New("failed creating itemspecsat")
+	if err := services.DbInsert(tx, &additionalspecat); err != nil {
+		return errors.New("failed creating childsat")
 	}
 
 	return nil
 }
-
 func DeleteAdditionalSpecs(tx *gorm.DB, additionalspec models.AdditionalSpecs, at models.At, conditions map[string]interface{}) error {
 	if err := services.DbDelete(tx, &additionalspec, conditions); err != nil {
 		return errors.New("failed deleting additional spec")
