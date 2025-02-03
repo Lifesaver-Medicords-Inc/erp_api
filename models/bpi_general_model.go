@@ -5,7 +5,7 @@ type BpiGeneralContent struct {
 	Social          uint   `json:"social_id"`
 	BranchName      string `json:"branch_name"`
 	TransactionType string `json:"transaction_type"`
-	Class           string `json:"class"`
+	ClassName       string `json:"class_name"`
 	BranchTelNo     string `json:"branch_tel_no"`
 	BranchWebsite   string `json:"branch_website"`
 	CustomerCode    string `json:"customer_code"`

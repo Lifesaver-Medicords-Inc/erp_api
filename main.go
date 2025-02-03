@@ -147,9 +147,9 @@ func main() {
 			salesApi := api.Group("/sales")
 			{
 				salesApi.Get("/quotation", sales_handlers.GetSalesQuotations)
-				salesApi.Get("/quotation/:id", sales_handlers.GetSalesQuotation)
-				// POST for child
-				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotationChild)
+				//salesApi.Get("/quotation/:id", sales_handlers.GetSalesQuotation)
+				//salesApi.Get("/quotation/:id", sales_handlers.GetBpi)
+				//salesApi.Post("child/quotation", sales_handlers.CreateSalesQuotationChild)
 				// POST for Parent
 				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
 				salesApi.Put("/quotation", sales_handlers.UpdateSalesQuotation)
@@ -179,6 +179,8 @@ func main() {
 			//Bpi Endpoints
 			api.Get("/bpi", bpi_handlers.GetBpis)
 			api.Post("/bpi", bpi_handlers.CreateBpi)
+			api.Get("/bpi/customers", sales_handlers.GetBpis)
+			api.Get("/bpi/:id", sales_handlers.GetBpi)
 			//api.Patch("/bpi", sales_handlers.UpdateQuotation)
 			//api.Delete("/bpi", sales_handlers.DeleteQuotation)
 

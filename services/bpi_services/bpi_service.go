@@ -13,26 +13,34 @@ type Body struct {
 	models.Bpi
 	IndustriesId []uint                  `json:"industries_id"`
 	General      models.BpiGeneralSchema `json:"general"`
-	Contacts     models.BpiContacts      `json:"contacts"`
-}
-
-type BpiResponse struct {
-	models.Bpi
-	IndustryIds   string `json:"industry_ids"`
-	IndustryNames string `json:"industry_names"`
+	Contacts     []models.BpiContacts    `json:"contacts"`
+	Address      []models.BpiAddress     `json:"address"`
 }
 
 func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
 	type Response struct {
-		Bpi []BpiResponse `json:"bpi"`
-		// Childfs []models.Childf `json:"childfs"`
-		// Childss []models.Childs `json:"childss"`
+		Bpi      []models.BpiView         `json:"bpi"`
+		General  []models.BpiGeneralView  `json:"general"`
+		Contacts []models.BpiViewContacts `json:"contacts"`
+		Address  []models.BpiAddressView  `json:"address"`
 	}
 
 	var response Response
 
-	if err := services.DbRaw(&response.Bpi, "GetBpiList", conditions); err != nil {
+	if err := services.DbGet(&response.Bpi, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting bpis")
+	}
+
+	if err := services.DbGet(&response.General, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting bpi general list")
+	}
+
+	if err := services.DbGet(&response.Contacts, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting bpi contacts")
+	}
+
+	if err := services.DbGet(&response.Address, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting bpi address")
 	}
 
 	return response, 0, nil
@@ -65,11 +73,24 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 		}
 	}
 
+	//Create Bpi General
 	if err := BpiGeneral(tx, body.ID, body.General, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
-	if err := BpiContact(tx, body.ID, body.Contacts, at); err != nil {
-		return body, fiber.StatusInternalServerError, err
+	// Create  Bpi Contacts
+	for _, v := range body.Contacts {
+
+		if err := BpiContact(tx, body.ID, v, at); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+
+	//Create Bpi Address
+	for _, v := range body.Address {
+
+		if err := BpiAddress(tx, body.ID, v, at); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
 	}
 
 	return body, 0, nil
