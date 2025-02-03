@@ -10,6 +10,13 @@ import (
 	"gorm.io/gorm"
 )
 
+type CustomerBody struct {
+	models.Bpi
+	General  models.BpiGeneral  `json:"general"`
+	Contacts models.BpiContacts `json:"contacts"`
+	Address  models.BpiAddress  `json:"address"`
+}
+
 type Body struct {
 	models.SalesQuotation
 	//Child 1
@@ -193,4 +200,51 @@ func DeleteSalesQuotation(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 	}
 
 	return body, 0, nil
+}
+
+func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
+	type Response struct {
+		GetBpiCustomer []models.BpiCustomerView
+	}
+
+	var response Response
+
+	if err := services.DbGet(&response.GetBpiCustomer, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting bpi customer list")
+	}
+
+	return response, 0, nil
+}
+
+func GetBpi(id int) (CustomerBody, int, error) {
+
+	conditions := map[string]interface{}{
+		"id": id,
+	}
+
+	var record CustomerBody
+
+	if err := services.DbGet(&record.Bpi, conditions); err != nil {
+		return record, fiber.StatusInternalServerError, errors.New("failed getting quotation")
+	}
+
+	conditions = map[string]interface{}{
+		// based on parent ID
+		"based_id": record.Bpi.ID,
+	}
+
+	//Child 1
+	if err := services.DbGet(&record.General, conditions); err != nil {
+		return record, fiber.StatusInternalServerError, err
+	}
+
+	if err := services.DbGet(&record.Address, conditions); err != nil {
+		return record, fiber.StatusInternalServerError, err
+	}
+
+	if err := services.DbGet(&record.Contacts, conditions); err != nil {
+		return record, fiber.StatusInternalServerError, err
+	}
+
+	return record, 0, nil
 }

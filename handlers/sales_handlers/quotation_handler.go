@@ -17,7 +17,30 @@ func GetSalesQuotations(c *fiber.Ctx) error {
 	}
 
 	return utils.RespondSuccess(c, data)
+}
 
+func GetBpis(c *fiber.Ctx) error {
+	data, status, err := sales_services.GetBpis(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+func GetBpi(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	idNum, err := strconv.Atoi(idParam)
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	data, status, err := sales_services.GetBpi(idNum)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
 }
 
 func GetSalesQuotation(c *fiber.Ctx) error {
