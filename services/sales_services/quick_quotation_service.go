@@ -2,6 +2,7 @@ package sales_services
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -9,8 +10,14 @@ import (
 )
 
 // Create Quick Quotation
-func CreateSalesQuotationQuick(tx *gorm.DB, QuickQuote models.SalesQuotationQuick, at models.At) error {
+func CreateSalesQuotationQuick(tx *gorm.DB, parentId uint, QuickQuote models.SalesQuotationQuick, at models.At) error {
+
+	// parentId = 10015
+	QuickQuote.BasedId = parentId
+
 	if err := services.DbInsert(tx, &QuickQuote); err != nil {
+		fmt.Println(err)
+		fmt.Println("ERR", &QuickQuote)
 		return errors.New("failed creating quick quote")
 	}
 

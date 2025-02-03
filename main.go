@@ -111,7 +111,7 @@ func main() {
 				salesApi.Get("/quotation", sales_handlers.GetSalesQuotations)
 				salesApi.Get("/quotation/:id", sales_handlers.GetSalesQuotation)
 				// POST for child
-				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotationChild)
+				salesApi.Post("child/quotation", sales_handlers.CreateSalesQuotationChild)
 				// POST for Parent
 				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
 				salesApi.Put("/quotation", sales_handlers.UpdateSalesQuotation)
