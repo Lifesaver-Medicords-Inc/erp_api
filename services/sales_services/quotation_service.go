@@ -16,6 +16,12 @@ type Body struct {
 	SalesQuotationQuick models.SalesQuotationQuick `json:"sales_quotation_quick"`
 }
 
+type CreateBody struct {
+	models.SalesQuotation
+	//Child 1
+	SalesQuotationQuick []models.SalesQuotationQuick `json:"sales_quotation_quick"`
+}
+
 func GetSalesQuotations(conditions map[string]interface{}) (interface{}, int, error) {
 
 	type Response struct {
@@ -78,21 +84,26 @@ func CreateSalesQuotationChild(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 		at = models.At{}
 	}
 
-	if err := CreateSalesQuotationQuick(tx, body.SalesQuotationQuick, at); err != nil {
+	if err := CreateSalesQuotationQuick(tx, body.ID, body.SalesQuotationQuick, at); err != nil {
 		fmt.Println("err", err)
+		fmt.Println("ID", body.ID)
 		return body, fiber.StatusInternalServerError, err
 	}
 
 	return body, 0, nil
 }
 
-func CreateSalesQuotation(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
-	var body Body
+func CreateSalesQuotation(c *fiber.Ctx, tx *gorm.DB) (CreateBody, int, error) {
+	var body CreateBody
 	if err := c.BodyParser(&body); err != nil {
+		fmt.Println("pt 1", err)
+		fmt.Println("ERR", body)
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
 	if err := services.DbInsert(tx, &body.SalesQuotation); err != nil {
+		fmt.Println(err)
+		fmt.Println("ERR", body)
 		return body, fiber.StatusInternalServerError, errors.New("failed creating sales quotation")
 	}
 
@@ -106,6 +117,16 @@ func CreateSalesQuotation(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating sales quotation at")
 	}
+
+	for _, v := range body.SalesQuotationQuick {
+		if err := CreateSalesQuotationQuick(tx, body.ID, v, at); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+	// if err := CreateSalesQuotationQuick(tx, body.ID, body.SalesQuotationQuick[], at); err != nil {
+	// 	return body, fiber.StatusInternalServerError, err
+	// }
+
 	return body, 0, nil
 }
 
