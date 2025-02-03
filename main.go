@@ -54,7 +54,7 @@ func main() {
 			// Setup Endpoints
 			setupApi := api.Group("/setup")
 			{
-				// Item Endpoints
+
 				itemApi := setupApi.Group("/item")
 				{
 					// Brand Endpoints
@@ -84,6 +84,20 @@ func main() {
 					itemApi.Post("/type", setup_handlers.CreateType)
 					itemApi.Put("/type", setup_handlers.UpdateType)
 					itemApi.Delete("/type", setup_handlers.DeleteType)
+
+					// Model Endpoints
+					itemApi.Get("/model", setup_handlers.GetModels)
+					itemApi.Get("/model/:id", setup_handlers.GetModel)
+					itemApi.Post("/model", setup_handlers.CreateModel)
+					itemApi.Put("/model", setup_handlers.UpdateModel)
+					itemApi.Delete("/model", setup_handlers.DeleteModel)
+
+					// Item Endpoints
+					itemApi.Get("", setup_handlers.GetItems)
+					itemApi.Get("/:id", setup_handlers.GetItem)
+					itemApi.Post("", setup_handlers.CreateItem)
+					itemApi.Put("", setup_handlers.UpdateItem)
+					itemApi.Delete("", setup_handlers.DeleteItem)
 				}
 
 				// Unit Measurement Endpoints
@@ -99,6 +113,13 @@ func main() {
 				setupApi.Post("/payment_terms", setup_handlers.CreatePaymentTerms)
 				setupApi.Put("/payment_terms", setup_handlers.UpdatePaymentTerms)
 				setupApi.Delete("/payment_terms", setup_handlers.DeletePaymentTerms)
+
+				// Ship Type Endpoints
+				setupApi.Get("/shiptype", setup_handlers.GetShipTypes)
+				setupApi.Get("/shiptype/:id", setup_handlers.GetShipType)
+				setupApi.Post("/shiptype", setup_handlers.CreateShipType)
+				setupApi.Put("/shiptype", setup_handlers.UpdateShipType)
+				setupApi.Delete("/shiptype", setup_handlers.DeleteShipType)
 
 				// Social Media Endpoints
 				setupApi.Get("/social", setup_handlers.GetSocial)
@@ -125,17 +146,25 @@ func main() {
 			// Sales Endpoints
 			salesApi := api.Group("/sales")
 			{
-				// Quotation Endpoints
-				salesApi.Get("/quotation", sales_handlers.GetQuotations)
-				salesApi.Post("/quotation", sales_handlers.CreateQuotation)
-				salesApi.Patch("/quotation", sales_handlers.UpdateQuotation)
-				salesApi.Delete("/quotation", sales_handlers.DeleteQuotation)
+				salesApi.Get("/quotation", sales_handlers.GetSalesQuotations)
+				salesApi.Get("/quotation/:id", sales_handlers.GetSalesQuotation)
+				// POST for child
+				salesApi.Post("child/quotation", sales_handlers.CreateSalesQuotationChild)
+				// POST for Parent
+				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
+				salesApi.Put("/quotation", sales_handlers.UpdateSalesQuotation)
+				salesApi.Delete("/quotation", sales_handlers.DeleteSalesQuotation)
 
-				// Order Routes
-				// sales_api.Get("/order", handlers.Register)
-				// sales_api.Post("/order/create", handlers.Register)
-				// sales_api.Patch("/order/update", handlers.Register)
-				// sales_api.Delete("/order/delete", handlers.Register)
+				salesApi.Get("/application", setup_handlers.GetApplications)
+				salesApi.Get("/application/:id", setup_handlers.GetApplication)
+				salesApi.Post("/application", setup_handlers.CreateApplication)
+				salesApi.Put("/application", setup_handlers.UpdateApplication)
+				salesApi.Delete("/application", setup_handlers.DeleteApplication)
+				// Order Endpoints
+				salesApi.Get("/order", sales_handlers.GetOrders)
+				salesApi.Post("/order", sales_handlers.CreateOrder)
+				salesApi.Patch("/order", sales_handlers.UpdateOrder)
+				salesApi.Delete("/order", sales_handlers.DeleteOrder)
 
 				// Return Routes
 				// sales_api.Get("/return", handlers.Register)
