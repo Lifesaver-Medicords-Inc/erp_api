@@ -9,8 +9,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetOrderDetails(quickquotes *[]models.OrderDetails, conditions map[string]interface{}) error {
-	if err := services.DbGet(quickquotes, conditions); err != nil {
+func GetOrderDetails(orderdetails *[]models.OrderDetails, conditions map[string]interface{}) error {
+	if err := services.DbGet(orderdetails, conditions); err != nil {
 		return errors.New("failed getting order details")
 	}
 
@@ -35,31 +35,23 @@ func GetOrderDetail(orderdetails *models.OrderDetails, conditions map[string]int
 	return nil
 }
 
-func CreateOrderDetail(tx *gorm.DB, basedId uint, OrderDetails models.OrderDetails, at models.At) error {
-	content := models.OrderDetailsContent{
-		Based_ID:           basedId,
-		Qty:                OrderDetails.Qty,
-		ItemCode:           OrderDetails.ItemCode,
-		ItemDescription:    OrderDetails.ItemDescription,
-		DeliveryPreference: OrderDetails.DeliveryPreference,
-		ListPrice:          OrderDetails.ListPrice,
-		TotalPrice:         OrderDetails.TotalPrice,
-		Status:             OrderDetails.Status,
-	}
+func CreateOrderDetail(tx *gorm.DB, parentId uint, OrderDetails models.OrderDetails, at models.At) error {
 
-	orderdetails := models.OrderDetails{OrderDetailsContent: content}
-	if err := services.DbInsert(tx, &orderdetails); err != nil {
-		return errors.New("failed creating order detail")
+	// parentId = 10015
+	OrderDetails.Based_ID = parentId
+
+	if err := services.DbInsert(tx, &OrderDetails); err != nil {
+		return errors.New("failed creating order details")
 	}
 
 	orderdetailsat := models.OrderDetailsAt{
-		RefId:               orderdetails.Order_Details_ID,
-		OrderDetailsContent: content,
+		RefId:               OrderDetails.Order_Details_ID,
+		OrderDetailsContent: OrderDetails.OrderDetailsContent,
 		At:                  at,
 	}
 
 	if err := services.DbInsert(tx, &orderdetailsat); err != nil {
-		return errors.New("failed creating order detail")
+		return errors.New("failed creating quick quotations")
 	}
 
 	return nil
