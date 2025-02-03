@@ -162,6 +162,8 @@ func main() {
 				salesApi.Delete("/application", setup_handlers.DeleteApplication)
 				// Order Endpoints
 				salesApi.Get("/order", sales_handlers.GetOrders)
+				salesApi.Get("/order/:id", sales_handlers.GetOrder)
+				salesApi.Post("child/order", sales_handlers.CreateOrderChild)
 				salesApi.Post("/order", sales_handlers.CreateOrder)
 				salesApi.Patch("/order", sales_handlers.UpdateOrder)
 				salesApi.Delete("/order", sales_handlers.DeleteOrder)
@@ -177,8 +179,8 @@ func main() {
 			//Bpi Endpoints
 			api.Get("/bpi", bpi_handlers.GetBpis)
 			api.Post("/bpi", bpi_handlers.CreateBpi)
-			api.Patch("/bpi", sales_handlers.UpdateQuotation)
-			api.Delete("/bpi", sales_handlers.DeleteQuotation)
+			//api.Patch("/bpi", sales_handlers.UpdateQuotation)
+			//api.Delete("/bpi", sales_handlers.DeleteQuotation)
 
 		}
 	}

@@ -2,6 +2,7 @@ package sales_services
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -14,15 +15,22 @@ type BodyOrder struct {
 	OrderDetails models.OrderDetails `json:"sales_order_details"`
 }
 
+type BodyOrderDetails struct {
+	models.Order
+	//Child 1
+	OrderDetails []models.OrderDetails `json:"sales_order_details"`
+}
+
 func GetOrders(conditions map[string]interface{}) (interface{}, int, error) {
 	type Response struct {
 		Orders       []models.Order        `json:"order"`
-		OrderDetails []models.OrderDetails `json:"orderdetails"`
+		OrderDetails []models.OrderDetails `json:"sales_order_details"`
 	}
 
 	var response Response
-	//fmt.Println("Orders: ", response)
+	fmt.Println("Orders: ", response)
 	if err := services.DbGet(&response.Orders, conditions); err != nil {
+		fmt.Println(err)
 		return response, fiber.StatusInternalServerError, errors.New("failed getting orders")
 	}
 
@@ -91,9 +99,29 @@ func GetOrder(Order_ID int) (BodyOrder, int, error) {
 // 	return record, 0, nil
 // }
 
-func CreateOrder(c *fiber.Ctx, tx *gorm.DB) (BodyOrder, int, error) {
-	var bodyorder BodyOrder
+// CREATE CHILD SERVICE
+func CreateOrderChild(c *fiber.Ctx, tx *gorm.DB) (BodyOrder, int, error) {
+	var orderbody BodyOrder
+	if err := c.BodyParser(&orderbody); err != nil {
+		return orderbody, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	if err := CreateOrderDetail(tx, orderbody.Order_ID, orderbody.OrderDetails, at); err != nil {
+		return orderbody, fiber.StatusInternalServerError, err
+	}
+
+	return orderbody, 0, nil
+}
+
+func CreateOrder(c *fiber.Ctx, tx *gorm.DB) (BodyOrderDetails, int, error) {
+	var bodyorder BodyOrderDetails
 	if err := c.BodyParser(&bodyorder); err != nil {
+		fmt.Println(err)
 		return bodyorder, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
@@ -112,9 +140,14 @@ func CreateOrder(c *fiber.Ctx, tx *gorm.DB) (BodyOrder, int, error) {
 		return bodyorder, fiber.StatusInternalServerError, errors.New("failed creating order at")
 	}
 
-	if err := CreateOrderDetail(tx, bodyorder.Order_ID, bodyorder.OrderDetails, at); err != nil {
-		return bodyorder, fiber.StatusInternalServerError, err
+	for _, v := range bodyorder.OrderDetails {
+		if err := CreateOrderDetail(tx, bodyorder.Order_ID, v, at); err != nil {
+			return bodyorder, fiber.StatusInternalServerError, err
+		}
 	}
+	// if err := CreateSalesQuotationQuick(tx, body.ID, body.SalesQuotationQuick[], at); err != nil {
+	// 	return body, fiber.StatusInternalServerError, err
+	// }
 	return bodyorder, 0, nil
 }
 
@@ -138,6 +171,10 @@ func UpdateOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return bodyorder, fiber.StatusInternalServerError, errors.New("failed creating orderat")
+	}
+
+	conditions = map[string]interface{}{
+		"based_id": bodyorder.Order_ID,
 	}
 
 	if err := UpdateOrderDetail(tx, bodyorder.OrderDetails, at, conditions); err != nil {
