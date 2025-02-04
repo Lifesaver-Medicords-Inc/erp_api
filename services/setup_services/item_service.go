@@ -118,8 +118,8 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 	return savebody, 0, nil
 }
 
-func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Body, int, error) {
-	var body Body
+func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (SaveBody, int, error) {
+	var body SaveBody
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
@@ -143,7 +143,7 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (B
 			"based_id": body.ID,
 		}
 
-		if err := UpdateItemSpec(tx, body.ItemSpecs, at, conditions); err != nil {
+		if err := UpdateItemSpec(tx, body.ID, body.ItemSpecs, at, conditions); err != nil {
 			return err
 		}
 		if err := UpdateAdditionalSpec(tx, body.AdditionalSpecs, at, conditions); err != nil {

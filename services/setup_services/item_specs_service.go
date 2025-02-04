@@ -62,21 +62,36 @@ func CreateItemSpec(tx *gorm.DB, basedId uint, itemSpecs ItemSpecsWrapper, at mo
 	return nil
 }
 
-func UpdateItemSpec(tx *gorm.DB, itemspec models.ItemSpecs, at models.At, conditions map[string]interface{}) error {
-	if err := services.DbUpdate(tx, &itemspec, conditions); err != nil {
-		return errors.New("failed updating itemspec")
-	}
+func UpdateItemSpec(tx *gorm.DB, basedId uint, itemSpecs ItemSpecsWrapper, at models.At, conditions map[string]interface{}) error {
+    if err := services.DbDelete(tx, &models.ItemSpecs{}, conditions); err != nil {
+        return errors.New("failed deleting existing itemspecs")
+    }
 
-	itemspecs := models.ItemSpecsAt{
-		RefId:         itemspec.ID,
-		ItemSpecsContent: itemspec.ItemSpecsContent,
-		At:            at,
-	}
-	if err := services.DbInsert(tx, &itemspecs); err != nil {
-		return errors.New("failed creating itemspec")
-	}
+    for _, field := range itemSpecs.Fields {
+        content := models.ItemSpecsContent{
+            BasedId:  basedId,
+            Template: itemSpecs.Template,
+            Title:    field.Title,
+            Value:    field.Value,
+        }
 
-	return nil
+        itemspecs := models.ItemSpecs{ItemSpecsContent: content}
+        if err := services.DbInsert(tx, &itemspecs); err != nil {
+            return errors.New("failed creating updated itemspecs")
+        }
+
+        itemspecsat := models.ItemSpecsAt{
+            RefId:            itemspecs.ID,
+            ItemSpecsContent: content,
+            At:               at,
+        }
+
+        if err := services.DbInsert(tx, &itemspecsat); err != nil {
+            return errors.New("failed creating updated itemspecsat")
+        }
+    }
+
+    return nil
 }
 
 func DeleteItemSpecs(tx *gorm.DB, itemspecs models.ItemSpecs, at models.At, conditions map[string]interface{}) error {

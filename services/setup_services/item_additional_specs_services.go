@@ -70,11 +70,12 @@ func UpdateAdditionalSpec(tx *gorm.DB, additionalspec models.AdditionalSpecs, at
 		At:            at,
 	}
 	if err := services.DbInsert(tx, &additionalspecat); err != nil {
-		return errors.New("failed creating childsat")
+		return errors.New("failed creating additional specs at")
 	}
 
 	return nil
 }
+
 func DeleteAdditionalSpecs(tx *gorm.DB, additionalspec models.AdditionalSpecs, at models.At, conditions map[string]interface{}) error {
 	if err := services.DbDelete(tx, &additionalspec, conditions); err != nil {
 		return errors.New("failed deleting additional spec")
