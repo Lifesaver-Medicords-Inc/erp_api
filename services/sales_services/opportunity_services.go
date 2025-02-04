@@ -35,6 +35,7 @@ func GetOpportunity(id int) (models.Opportunity, int, error) {
 	return opportunity, 0, nil
 }
 
+// test
 func CreateOpportunity(c *fiber.Ctx, tx *gorm.DB) (models.Opportunity, int, error) {
 	var body models.Opportunity
 	if err := c.BodyParser(&body); err != nil {

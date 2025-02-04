@@ -21,6 +21,7 @@ type OpportunityAt struct {
 	At
 }
 
+// test
 func (OpportunityAt) TableName() string {
 	return "z_tbl_trans_sales_opportunity_at"
 }
