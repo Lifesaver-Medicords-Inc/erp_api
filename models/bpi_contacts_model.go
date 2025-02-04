@@ -1,10 +1,12 @@
 package models
 
 type BpiContactContent struct {
-	BasedId  uint   `json:"based_id"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Position uint   `json:"position"`
+	BasedId     uint   `json:"based_id"`
+	Number      string `json:"number"`
+	Name        string `json:"name"`
+	Email       string `json:"email"`
+	Preferences string `json:"preferences"`
+	Position    uint   `json:"position"`
 }
 
 type BpiContacts struct {

@@ -10,10 +10,23 @@ import (
 	"gorm.io/gorm"
 )
 
+type CustomerBody struct {
+	models.Bpi
+	General  models.BpiGeneral  `json:"general"`
+	Contacts models.BpiContacts `json:"contacts"`
+	Address  models.BpiAddress  `json:"address"`
+}
+
 type Body struct {
 	models.SalesQuotation
 	//Child 1
 	SalesQuotationQuick models.SalesQuotationQuick `json:"sales_quotation_quick"`
+}
+
+type CreateBody struct {
+	models.SalesQuotation
+	//Child 1
+	SalesQuotationQuick []models.SalesQuotationQuick `json:"sales_quotation_quick"`
 }
 
 func GetSalesQuotations(conditions map[string]interface{}) (interface{}, int, error) {
@@ -78,21 +91,26 @@ func CreateSalesQuotationChild(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 		at = models.At{}
 	}
 
-	if err := CreateSalesQuotationQuick(tx, body.SalesQuotationQuick, at); err != nil {
+	if err := CreateSalesQuotationQuick(tx, body.ID, body.SalesQuotationQuick, at); err != nil {
 		fmt.Println("err", err)
+		fmt.Println("ID", body.ID)
 		return body, fiber.StatusInternalServerError, err
 	}
 
 	return body, 0, nil
 }
 
-func CreateSalesQuotation(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
-	var body Body
+func CreateSalesQuotation(c *fiber.Ctx, tx *gorm.DB) (CreateBody, int, error) {
+	var body CreateBody
 	if err := c.BodyParser(&body); err != nil {
+		fmt.Println("pt 1", err)
+		fmt.Println("ERR", body)
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
 	if err := services.DbInsert(tx, &body.SalesQuotation); err != nil {
+		fmt.Println(err)
+		fmt.Println("ERR", body)
 		return body, fiber.StatusInternalServerError, errors.New("failed creating sales quotation")
 	}
 
@@ -106,6 +124,16 @@ func CreateSalesQuotation(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating sales quotation at")
 	}
+
+	for _, v := range body.SalesQuotationQuick {
+		if err := CreateSalesQuotationQuick(tx, body.ID, v, at); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+	// if err := CreateSalesQuotationQuick(tx, body.ID, body.SalesQuotationQuick[], at); err != nil {
+	// 	return body, fiber.StatusInternalServerError, err
+	// }
+
 	return body, 0, nil
 }
 
@@ -172,4 +200,51 @@ func DeleteSalesQuotation(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 	}
 
 	return body, 0, nil
+}
+
+func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
+	type Response struct {
+		GetBpiCustomer []models.BpiCustomerView
+	}
+
+	var response Response
+
+	if err := services.DbGet(&response.GetBpiCustomer, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting bpi customer list")
+	}
+
+	return response, 0, nil
+}
+
+func GetBpi(id int) (CustomerBody, int, error) {
+
+	conditions := map[string]interface{}{
+		"id": id,
+	}
+
+	var record CustomerBody
+
+	if err := services.DbGet(&record.Bpi, conditions); err != nil {
+		return record, fiber.StatusInternalServerError, errors.New("failed getting quotation")
+	}
+
+	conditions = map[string]interface{}{
+		// based on parent ID
+		"based_id": record.Bpi.ID,
+	}
+
+	//Child 1
+	if err := services.DbGet(&record.General, conditions); err != nil {
+		return record, fiber.StatusInternalServerError, err
+	}
+
+	if err := services.DbGet(&record.Address, conditions); err != nil {
+		return record, fiber.StatusInternalServerError, err
+	}
+
+	if err := services.DbGet(&record.Contacts, conditions); err != nil {
+		return record, fiber.StatusInternalServerError, err
+	}
+
+	return record, 0, nil
 }

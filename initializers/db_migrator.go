@@ -39,4 +39,6 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.BpiBranchIndustries{}, &models.BpiBranchIndustriesAt{})
 	// DB.AutoMigrate(&models.BpiEntity{}, &models.BpiEntityAt{})
 
+	DB.AutoMigrate(&models.BpiAddress{}, &models.BpiAddressAt{})
+
 }
