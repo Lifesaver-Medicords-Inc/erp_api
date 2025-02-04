@@ -1,0 +1,26 @@
+package models
+
+type OpportunityContent struct {
+	TAG      string `json:"tag"`
+	QuoteRef string `json:"quote_ref"`
+}
+
+type Opportunity struct {
+	ID uint `gorm:"primarykey" json:"id"`
+	OpportunityContent
+}
+
+func (Opportunity) TableName() string {
+	return "tbl_trans_sales_opportunity"
+}
+
+type OpportunityAt struct {
+	ID    uint `gorm:"primarykey" json:"id"`
+	RefId uint `json:"ref_id"`
+	OpportunityContent
+	At
+}
+
+func (OpportunityAt) TableName() string {
+	return "z_tbl_trans_sales_opportunity_at"
+}

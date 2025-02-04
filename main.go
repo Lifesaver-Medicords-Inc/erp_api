@@ -167,6 +167,11 @@ func main() {
 				salesApi.Post("/order", sales_handlers.CreateOrder)
 				salesApi.Patch("/order", sales_handlers.UpdateOrder)
 				salesApi.Delete("/order", sales_handlers.DeleteOrder)
+				// Opportunity Endpoints
+				salesApi.Get("/opportunity", sales_handlers.GetOpportunities)
+				salesApi.Get("/opportunity/:id", sales_handlers.GetOpportunity)
+				salesApi.Post("/opportunity", sales_handlers.CreateOpportunity)
+				salesApi.Patch("/opportunity", sales_handlers.UpdateOpportunity)
 
 				// Return Routes
 				// sales_api.Get("/return", handlers.Register)
