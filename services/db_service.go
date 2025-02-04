@@ -15,7 +15,9 @@ import (
 
 func DbRaw(model interface{}, procName string, conditions map[string]interface{}) error {
 	ctx := context.Background()
-	key := getKey(model, conditions)
+	key := GetKey(model, conditions)
+
+	fmt.Println("Keeey", key)
 
 	cache, err := initializers.RC.Get(ctx, key).Result()
 	if err == redis.Nil {
@@ -74,7 +76,9 @@ func buildParams(conditions map[string]interface{}) []interface{} {
 
 func DbGet(model interface{}, conditions map[string]interface{}) error {
 	ctx := context.Background()
-	key := getKey(model, conditions)
+	key := GetKey(model, conditions)
+
+	fmt.Println("GET Keeey", key)
 
 	cache, err := initializers.RC.Get(ctx, key).Result()
 	if err == redis.Nil {
@@ -97,7 +101,7 @@ func DbGet(model interface{}, conditions map[string]interface{}) error {
 	return nil
 }
 
-func getKey(model interface{}, conditions map[string]interface{}) string {
+func GetKey(model interface{}, conditions map[string]interface{}) string {
 	modelType := reflect.TypeOf(model)
 
 	if modelType.Kind() == reflect.Ptr {
@@ -159,8 +163,11 @@ func DbInsert(tx *gorm.DB, model interface{}) error {
 		return err
 	}
 
-	key := getKey(model, nil)
-	if err := invalidateCache(key); err != nil {
+	key := GetKey(model, nil)
+
+	fmt.Println("Insert KEY:", key)
+
+	if err := InvalidateCache(key); err != nil {
 		return err
 	}
 
@@ -178,8 +185,8 @@ func DbUpdate(tx *gorm.DB, model interface{}, conditions map[string]interface{})
 		return err
 	}
 
-	key := getKey(model, conditions)
-	if err := invalidateCache(key); err != nil {
+	key := GetKey(model, conditions)
+	if err := InvalidateCache(key); err != nil {
 		return err
 	}
 
@@ -197,15 +204,15 @@ func DbDelete(tx *gorm.DB, model interface{}, conditions map[string]interface{})
 		return err
 	}
 
-	key := getKey(model, conditions)
-	if err := invalidateCache(key); err != nil {
+	key := GetKey(model, conditions)
+	if err := InvalidateCache(key); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func invalidateCache(key string) error {
+func InvalidateCache(key string) error {
 	ctx := context.Background()
 	if err := initializers.RC.Del(ctx, key).Err(); err != nil {
 		return errors.New("failed invalidating cache")
