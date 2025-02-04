@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// test
 func GetOpportunities(conditions map[string]interface{}) ([]models.Opportunity, int, error) {
 	var opportunities []models.Opportunity
 

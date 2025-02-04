@@ -17,7 +17,7 @@ func GetOpportunities(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-// test
+// testsad
 func GetOpportunity(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
