@@ -2,7 +2,6 @@ package models
 
 type AdditionalSpecsContent struct {
 	BasedId           uint    `json:"based_id"`
-	ItemCode          string  `json:"item_code"`
 	SuctionPressure   string  `json:"suction_pressure"`
 	DriverType        string  `json:"driver_type"`
 	MotorEnclosure    string  `json:"motor_enclosure"`

@@ -4,6 +4,7 @@ import (
 	// "errors"
 
 	"errors"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -121,42 +122,39 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (SaveBody, int, error) {
 	var body SaveBody
 	if err := c.BodyParser(&body); err != nil {
+		fmt.Println("Parsing Error:", err)
+
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	if err := tx.Transaction(func(tx *gorm.DB) error {
-		if err := services.DbUpdate(tx, &body.Item, conditions); err != nil {
-			return errors.New("failed updating item")
-		}
+	if err := services.DbUpdate(tx, &body.Item, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed updating item")
+	}
 
-		at, ok := c.Locals("at").(models.At)
-		if !ok {
-			at = models.At{}
-		}
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
 
-		atdata := models.ItemAt{RefId: body.ID, ItemContent: body.ItemContent, At: at}
-		if err := services.DbInsert(tx, &atdata); err != nil {
-			return errors.New("failed updating itemat")
-		}
+	atdata := models.ItemAt{RefId: body.ID, ItemContent: body.ItemContent, At: at}
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed inserting itemat")
+	}
 
-		conditions = map[string]interface{}{
-			"based_id": body.ID,
-		}
+	conditions = map[string]interface{}{
+		"based_id": body.ID,
+	}
 
-		if err := UpdateItemSpec(tx, body.ID, body.ItemSpecs, at, conditions); err != nil {
-			return err
-		}
-		if err := UpdateAdditionalSpec(tx, body.AdditionalSpecs, at, conditions); err != nil {
-			return err
-		}
-
-		key := services.GetKey(models.ItemView{}, nil)
-		services.InvalidateCache(key)
-
-		return nil
-	}); err != nil {
+	if err := UpdateItemSpec(tx, body.ID, body.ItemSpecs, at, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
+
+	if err := UpdateAdditionalSpec(tx, body.AdditionalSpecs, at, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	key := services.GetKey(models.ItemView{}, nil)
+	services.InvalidateCache(key)
 
 	return body, 0, nil
 }

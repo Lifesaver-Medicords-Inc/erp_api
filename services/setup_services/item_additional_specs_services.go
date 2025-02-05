@@ -29,7 +29,6 @@ func GetAdditionalSpec(additionalspecs *models.AdditionalSpecs, conditions map[s
 func CreateAdditionalSpec(tx *gorm.DB, basedId uint, additionalSpec models.AdditionalSpecs, at models.At) error {
 	content := models.AdditionalSpecsContent{
 		BasedId:           basedId,
-		ItemCode:          additionalSpec.ItemCode,
 		SuctionPressure:   additionalSpec.SuctionPressure,
 		DriverType:        additionalSpec.DriverType,
 		MotorEnclosure:    additionalSpec.MotorEnclosure,
@@ -65,9 +64,9 @@ func UpdateAdditionalSpec(tx *gorm.DB, additionalspec models.AdditionalSpecs, at
 	}
 
 	additionalspecat := models.AdditionalSpecsAt{
-		RefId:         additionalspec.ID,
+		RefId:                  additionalspec.ID,
 		AdditionalSpecsContent: additionalspec.AdditionalSpecsContent,
-		At:            at,
+		At:                     at,
 	}
 	if err := services.DbInsert(tx, &additionalspecat); err != nil {
 		return errors.New("failed creating additional specs at")
