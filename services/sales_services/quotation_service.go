@@ -160,7 +160,7 @@ func GetBpi(id int) (CustomerBody, int, error) {
 	if err := services.DbGet(&record.Contacts, conditions); err != nil {
 		return record, fiber.StatusInternalServerError, err
 	}
-
+	fmt.Println("DATA", record)
 	return record, 0, nil
 }
 
@@ -175,6 +175,7 @@ func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting items")
 	}
 
+	fmt.Println(response)
 	return response, 0, nil
 }
 
@@ -198,6 +199,8 @@ func GetItem(id int) (ItemBody, int, error) {
 	if err := services.DbGet(&record.ItemName, conditions); err != nil {
 		return record, fiber.StatusInternalServerError, err
 	}
+
+	//fmt.Println("DATAA", record)
 
 	return record, 0, nil
 }
