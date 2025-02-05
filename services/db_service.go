@@ -185,10 +185,11 @@ func DbUpdate(tx *gorm.DB, model interface{}, conditions map[string]interface{})
 		return err
 	}
 
-	key := GetKey(model, conditions)
+	key := GetKey(model, nil)
 	if err := InvalidateCache(key); err != nil {
 		return err
 	}
+	fmt.Println("Update KEY:", key)
 
 	return nil
 }
@@ -204,10 +205,11 @@ func DbDelete(tx *gorm.DB, model interface{}, conditions map[string]interface{})
 		return err
 	}
 
-	key := GetKey(model, conditions)
+	key := GetKey(model, nil)
 	if err := InvalidateCache(key); err != nil {
 		return err
 	}
+	fmt.Println("DELETE Keey")
 
 	return nil
 }

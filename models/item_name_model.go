@@ -6,7 +6,7 @@ type NameContent struct {
 type Name struct {
 	ID   uint   `gorm:"primarykey" json:"id"`
 	Code string `gorm:"unique;not null" json:"code"`
-	ClassContent
+	NameContent
 }
 
 func (Name) TableName() string {
