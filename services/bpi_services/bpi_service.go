@@ -62,7 +62,7 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 		at = models.At{}
 	}
 
-	parentat := models.BpiAt{RefId: body.ID, BpiContent: models.BpiContent{SalesId: body.SalesId, Name: body.Name, Tin: body.Tin, Tel_no: body.Tel_no}, At: at}
+	parentat := models.BpiAt{RefId: body.ID, BpiContent: models.BpiContent{SalesId: body.SalesId, Name: body.Name, Tin: body.Tin, MainTelNo: body.MainTelNo}, At: at}
 	if err := services.DbInsert(tx, &parentat); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating parentat")
 	}

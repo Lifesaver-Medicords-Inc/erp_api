@@ -152,8 +152,8 @@ func main() {
 				//salesApi.Post("child/quotation", sales_handlers.CreateSalesQuotationChild)
 				// POST for Parent
 				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
-				salesApi.Put("/quotation", sales_handlers.UpdateSalesQuotation)
-				salesApi.Delete("/quotation", sales_handlers.DeleteSalesQuotation)
+				// salesApi.Put("/quotation", sales_handlers.UpdateSalesQuotation)
+				// salesApi.Delete("/quotation", sales_handlers.DeleteSalesQuotation)
 
 				salesApi.Get("/application", setup_handlers.GetApplications)
 				salesApi.Get("/application/:id", setup_handlers.GetApplication)
