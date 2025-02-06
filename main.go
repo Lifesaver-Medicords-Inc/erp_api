@@ -183,6 +183,7 @@ func main() {
 
 			//Bpi Endpoints
 			api.Get("/bpi", bpi_handlers.GetBpis)
+			api.Get("/bpi/list", bpi_handlers.GetBpiItemList)
 			api.Post("/bpi", bpi_handlers.CreateBpi)
 			api.Get("/bpi/customers", sales_handlers.GetBpis)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)

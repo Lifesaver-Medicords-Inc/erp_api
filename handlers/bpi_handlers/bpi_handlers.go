@@ -16,6 +16,15 @@ func GetBpis(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
+func GetBpiItemList(c *fiber.Ctx) error {
+	data, status, err := bpi_services.GetBpiItemList(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
 func CreateBpi(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {

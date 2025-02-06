@@ -9,11 +9,11 @@ type BpiViewContactsContent struct {
 	Position        uint   `json:"position"`
 }
 
-type BpiViewContacts struct {
+type BpiContactView struct {
 	ContactsID uint `gorm:"primarykey" json:"contacts_id"`
 	BpiViewContactsContent
 }
 
-func (BpiViewContacts) TableName() string {
+func (BpiContactView) TableName() string {
 	return "GetBpiContacts"
 }

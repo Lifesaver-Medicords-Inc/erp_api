@@ -2,10 +2,10 @@ package models
 
 type BpiContent struct {
 	SalesId     uint   `json:"sales_id"`
-    Name        string `json:"name"`
-    MainWebsite string `json:"main_website"`
-    Tin         string `json:"tin"`
-    MainTelNo   string `json:"main_tel_no"`
+	Name        string `json:"name"`
+	MainWebsite string `json:"main_website"`
+	Tin         string `json:"tin"`
+	MainTelNo   string `json:"main_tel_no"`
 }
 
 type Bpi struct {
