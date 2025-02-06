@@ -166,7 +166,9 @@ func GetBpi(id int) (CustomerBody, int, error) {
 
 func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 	type Response struct {
-		Items []models.ItemView `json:"items"`
+		Items           []models.Item            `json:"items"`
+		ItemSpecs       []models.ItemSpecs       `json:"itemspecs"`
+		AdditionalSpecs []models.AdditionalSpecs `json:"additionalspecs"`
 	}
 
 	var response Response
