@@ -23,6 +23,6 @@ type ItemSpecsAt struct {
 	At
 }
 
-func (ItemSpecsContent) TableName() string {
+func (ItemSpecsAt) TableName() string {
 	return "z_tbl_setup_item_specs_at"
 }

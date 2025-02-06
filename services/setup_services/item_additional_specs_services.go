@@ -12,7 +12,7 @@ import (
 func GetAdditionalSpecs(additionalSpecs *[]models.AdditionalSpecs, conditions map[string]interface{}) error {
 	if err := services.DbGet(additionalSpecs, conditions); err != nil {
 		fmt.Println("ERROR:", err)
-		return errors.New("failed getting item specs")
+		return errors.New("failed getting additional specs")
 	}
 
 	return nil
@@ -52,7 +52,7 @@ func CreateAdditionalSpec(tx *gorm.DB, basedId uint, additionalSpec models.Addit
 	}
 
 	if err := services.DbInsert(tx, &additionalSpecsAt); err != nil {
-		return errors.New("failed creating additional specs")
+		return errors.New("failed creating additional specs at")
 	}
 
 	return nil
