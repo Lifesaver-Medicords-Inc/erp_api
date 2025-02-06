@@ -11,8 +11,8 @@ import (
 
 func BpiGeneral(tx *gorm.DB, parentId uint, child models.BpiGeneralSchema, at models.At) error {
 
+	fmt.Println("BPI GENERAL ")
 	child.BpiGeneralContent.BasedId = parentId
-
 	if err := services.DbInsert(tx, &child.BpiGeneral); err != nil {
 		return errors.New("failed to create bpi general")
 	}
@@ -23,7 +23,7 @@ func BpiGeneral(tx *gorm.DB, parentId uint, child models.BpiGeneralSchema, at mo
 			return err
 		}
 	}
-	for _, v := range child.EntityType {
+	for _, v := range child.EntityTypeId {
 		fmt.Println("Entity", v)
 		if err := CreateBpiEntity(tx, child.BpiGeneral.ID, uint(v), at); err != nil {
 			return err
