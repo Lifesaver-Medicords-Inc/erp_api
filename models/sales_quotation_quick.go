@@ -3,6 +3,8 @@ package models
 type SalesQuotationQuickContent struct {
 	// Parent ID references to Sales Quotation Model
 	BasedId         uint    `json:"based_id"`
+	ItemId          uint    `json:"item_id"`
+	ItemNameId      uint    `json:"item_name_id"`
 	ItemClassId     uint    `json:"item_class_id"`
 	Qty             uint    `json:"qty"`
 	UnitCode        string  `json:"unit_code"`
