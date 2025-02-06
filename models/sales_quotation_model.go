@@ -3,7 +3,6 @@ package models
 type SalesQuotationContent struct {
 	CustomerName           string  `json:"customer_name"`
 	CustomerCode           string  `json:"customer_code"`
-	Name                   string  `json:"name"`
 	Purpose                string  `json:"purpose"`
 	Application            string  `json:"application"`
 	PaymentTerms           string  `json:"payment_terms"`
