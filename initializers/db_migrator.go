@@ -20,7 +20,6 @@ func MigrateDb() {
 
 	DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
 	DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
-	DB.AutoMigrate(&models.User{}, &models.UserAt{})
 
 	// Setup
 	DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
@@ -40,7 +39,10 @@ func MigrateDb() {
 	// // DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// // DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 	// DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
-	// DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
+ 
+	// DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})/sad
+	DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
+	// DB.AutoMigrate(&models.Status{}, &models.StatusAt{}) 
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 	DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
@@ -54,8 +56,6 @@ func MigrateDb() {
 	DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
 	DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
-
-	DB.AutoMigrate(&models.User{}, &models.UserAt{})
 
 	// Sample
 	DB.AutoMigrate(&models.Parent{}, &models.ParentAt{})

@@ -11,6 +11,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/middlewares"
 )
 
 func init() {
@@ -39,7 +40,7 @@ func main() {
 		api.Get("/hello", public_handlers.CheckHealth)
 
 		// Protected Endpoints
-		// api.Use(middlewares.RequireAuth)
+		api.Use(middlewares.RequireAuth)
 		{
 			// Sample Endpoints
 			sampleApi := api.Group("/sample")
