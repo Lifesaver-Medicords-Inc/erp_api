@@ -11,6 +11,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/middlewares"
 )
 
 func init() {
@@ -39,7 +40,7 @@ func main() {
 		api.Get("/hello", public_handlers.CheckHealth)
 
 		// Protected Endpoints
-		// api.Use(middlewares.RequireAuth)
+		api.Use(middlewares.RequireAuth)
 		{
 			// Sample Endpoints
 			sampleApi := api.Group("/sample")
@@ -152,8 +153,8 @@ func main() {
 				//salesApi.Post("child/quotation", sales_handlers.CreateSalesQuotationChild)
 				// POST for Parent
 				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
-				salesApi.Put("/quotation", sales_handlers.UpdateSalesQuotation)
-				salesApi.Delete("/quotation", sales_handlers.DeleteSalesQuotation)
+				// salesApi.Put("/quotation", sales_handlers.UpdateSalesQuotation)
+				// salesApi.Delete("/quotation", sales_handlers.DeleteSalesQuotation)
 
 				salesApi.Get("/application", setup_handlers.GetApplications)
 				salesApi.Get("/application/:id", setup_handlers.GetApplication)

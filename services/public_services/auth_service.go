@@ -60,11 +60,11 @@ func LoginAccount(c *fiber.Ctx) (models.User, int, error) {
 	}
 
 	if err := services.DbGet(&user, conditions); err != nil {
-		return user, fiber.StatusUnauthorized, errors.New("invalid user credential")
+		return user, fiber.StatusUnauthorized, errors.New("invalid user credential 1")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password)); err != nil {
-		return user, fiber.StatusUnauthorized, errors.New("invalid user credential")
+		return user, fiber.StatusUnauthorized, errors.New("invalid user credential 2")
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{

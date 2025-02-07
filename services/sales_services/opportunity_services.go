@@ -2,6 +2,8 @@ package sales_services
 
 import (
 	"errors"
+	"fmt"
+
 	//fmt"
 	"strings"
 
@@ -12,22 +14,24 @@ import (
 )
 
 // test
-func GetOpportunities(conditions map[string]interface{}) ([]models.Opportunity, int, error) {
-	var opportunities []models.Opportunity
+func GetOpportunities(conditions map[string]interface{}) ([]models.OpportunityView, int, error) {
+
+	var opportunities []models.OpportunityView
 
 	if err := services.DbGet(&opportunities, conditions); err != nil {
+		fmt.Println("ERROR:", err.Error())
 		return opportunities, fiber.StatusInternalServerError, errors.New("failed getting opportunities")
 	}
 
 	return opportunities, 0, nil
 }
 
-func GetOpportunity(id int) (models.Opportunity, int, error) {
+func GetOpportunity(id int) (models.OpportunityView, int, error) {
 	conditions := map[string]interface{}{
 		"id": id,
 	}
 
-	var opportunity models.Opportunity
+	var opportunity models.OpportunityView
 
 	if err := services.DbGet(&opportunity, conditions); err != nil {
 		return opportunity, fiber.StatusInternalServerError, errors.New("failed getting opportunity")
