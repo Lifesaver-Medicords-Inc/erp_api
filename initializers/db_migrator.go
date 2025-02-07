@@ -15,6 +15,7 @@ func MigrateDb() {
 	DB.AutoMigrate(&models.Item{}, &models.ItemAt{})
 	DB.AutoMigrate(&models.ItemSpecs{}, &models.ItemSpecsAt{})
 	DB.AutoMigrate(&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{})
+	DB.AutoMigrate(&models.TradeType{}, models.TradeTypeAt{})
 	DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
 
 	DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
@@ -31,12 +32,17 @@ func MigrateDb() {
 	DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
 	DB.AutoMigrate(&models.Application{}, &models.ApplicationAt{})
 
-	// Sales
+	// // Sales
+	// // DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
+	// // DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})/sad
+	// DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
+	// // DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
+	// // DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 	// DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
+ 
 	// DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})/sad
 	DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
-	// DB.AutoMigrate(&models.Status{}, &models.StatusAt{})
-
+	// DB.AutoMigrate(&models.Status{}, &models.StatusAt{}) 
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 	DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
@@ -64,5 +70,6 @@ func MigrateDb() {
 	DB.AutoMigrate(&models.BpiBranchIndustries{}, &models.BpiBranchIndustriesAt{})
 	DB.AutoMigrate(&models.BpiEntity{}, &models.BpiEntityAt{})
 	DB.AutoMigrate(&models.BpiAddress{}, &models.BpiAddressAt{})
+	DB.AutoMigrate(&models.BpiItems{}, &models.BpiItemsAt{})
 
 }

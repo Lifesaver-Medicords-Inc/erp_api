@@ -2,6 +2,7 @@ package bpi_services
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -11,6 +12,8 @@ import (
 func BpiContact(tx *gorm.DB, parentId uint, child models.BpiContacts, at models.At) error {
 
 	child.BpiContactContent.BasedId = parentId
+
+	fmt.Println("BPI CONTACT1234")
 	if err := services.DbInsert(tx, &child); err != nil {
 		return errors.New("failed to create bpi contacts")
 	}

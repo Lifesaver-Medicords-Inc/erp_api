@@ -2,6 +2,7 @@ package bpi_services
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -15,14 +16,16 @@ type Body struct {
 	General      models.BpiGeneralSchema `json:"general"`
 	Contacts     []models.BpiContacts    `json:"contacts"`
 	Address      []models.BpiAddress     `json:"address"`
+	Items        []models.BpiItems       `json:"items"`
 }
 
 func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
 	type Response struct {
-		Bpi      []models.BpiView         `json:"bpi"`
-		General  []models.BpiGeneralView  `json:"general"`
-		Contacts []models.BpiViewContacts `json:"contacts"`
-		Address  []models.BpiAddressView  `json:"address"`
+		Bpi      []models.BpiView        `json:"bpi"`
+		General  []models.BpiGeneralView `json:"general"`
+		Contacts []models.BpiContactView `json:"contacts"`
+		Address  []models.BpiAddressView `json:"address"`
+		Items    []models.BpiItemsView   `json:"items"`
 	}
 
 	var response Response
@@ -41,6 +44,20 @@ func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
 
 	if err := services.DbGet(&response.Address, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting bpi address")
+	}
+	if err := services.DbGet(&response.Items, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting bpi items")
+	}
+
+	return response, 0, nil
+}
+
+func GetBpiItemList(conditions map[string]interface{}) (interface{}, int, error) {
+
+	var response []models.BpiItemList
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting bpi item list")
 	}
 
 	return response, 0, nil
@@ -62,7 +79,7 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 		at = models.At{}
 	}
 
-	parentat := models.BpiAt{RefId: body.ID, BpiContent: models.BpiContent{SalesId: body.SalesId, Name: body.Name, Tin: body.Tin, Tel_no: body.Tel_no}, At: at}
+	parentat := models.BpiAt{RefId: body.ID, BpiContent: models.BpiContent{SalesId: body.SalesId, Name: body.Name, Tin: body.Tin, MainTelNo: body.MainTelNo}, At: at}
 	if err := services.DbInsert(tx, &parentat); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating parentat")
 	}
@@ -74,23 +91,32 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 	}
 
 	//Create Bpi General
+
 	if err := BpiGeneral(tx, body.ID, body.General, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
-	// Create  Bpi Contacts
-	for _, v := range body.Contacts {
 
+	// Create  Bpi Contacts
+
+	for _, v := range body.Contacts {
+		fmt.Println("Branch Contacts", v)
 		if err := BpiContact(tx, body.ID, v, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
 
 	//Create Bpi Address
+
 	for _, v := range body.Address {
 
 		if err := BpiAddress(tx, body.ID, v, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
+	}
+
+	//Create Bpi Items
+	if err := BpiItems(tx, body.ID, body.Items, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	return body, 0, nil
