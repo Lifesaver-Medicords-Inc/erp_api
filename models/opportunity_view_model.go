@@ -17,5 +17,5 @@ type OpportunityView struct {
 
 func (OpportunityView) TableName() string {
 
-	return "vw_sales_opportunities"
+	return "vw_get_sales_opportunities_two"
 }

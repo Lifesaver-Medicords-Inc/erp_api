@@ -11,7 +11,6 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
-	"github.com/pierceperado/smpc/middlewares"
 )
 
 func init() {
@@ -40,7 +39,7 @@ func main() {
 		api.Get("/hello", public_handlers.CheckHealth)
 
 		// Protected Endpoints
-		api.Use(middlewares.RequireAuth)
+		// api.Use(middlewares.RequireAuth)
 		{
 			// Sample Endpoints
 			sampleApi := api.Group("/sample")
@@ -172,7 +171,7 @@ func main() {
 				salesApi.Get("/opportunity", sales_handlers.GetOpportunities)
 				salesApi.Get("/opportunity/:id", sales_handlers.GetOpportunity)
 				salesApi.Post("/opportunity", sales_handlers.CreateOpportunity)
-				salesApi.Patch("/opportunity", sales_handlers.UpdateOpportunity)
+				salesApi.Put("/opportunity", sales_handlers.UpdateOpportunity)
 
 				// Return Routes
 				// sales_api.Get("/return", handlers.Register)

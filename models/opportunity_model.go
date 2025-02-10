@@ -6,7 +6,7 @@ type OpportunityContent struct {
 	Stage       string `json:"stage"`
 	Status      string `json:"status_id"`
 	SpecialDeal string `json:"special_deal"`
-	QuoteRef    string `json:"quote_ref"`
+	DocumentNo  string `json:"document_no"`
 }
 
 type Opportunity struct {
