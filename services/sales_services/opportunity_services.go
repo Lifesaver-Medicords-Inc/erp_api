@@ -65,7 +65,8 @@ func CreateOpportunity(c *fiber.Ctx, tx *gorm.DB) (models.Opportunity, int, erro
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating opportunityat")
 	}
-
+	key := services.GetKey(models.OpportunityView{}, nil)
+	services.InvalidateCache(key)
 	return body, 0, nil
 }
 
@@ -73,6 +74,12 @@ func UpdateOpportunity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfac
 	var body models.Opportunity
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	fmt.Println("Body:", body)
+
+	conditions = map[string]interface{}{
+		"document_no": body.DocumentNo,
 	}
 
 	if err := services.DbUpdate(tx, &body, conditions); err != nil {
@@ -88,6 +95,7 @@ func UpdateOpportunity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfac
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating opportunityat")
 	}
-
+	key := services.GetKey(models.OpportunityView{}, nil)
+	services.InvalidateCache(key)
 	return body, 0, nil
 }
