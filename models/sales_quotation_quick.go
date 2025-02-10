@@ -25,9 +25,8 @@ func (SalesQuotationQuick) TableName() string {
 }
 
 type SalesQuotationQuickAt struct {
-	ID    uint   `gorm:"primarykey" json:"id"`
-	RefId uint   `json:"ref_id"`
-	Code  string `json:"code"`
+	ID    uint `gorm:"primarykey" json:"id"`
+	RefId uint `json:"ref_id"`
 	SalesQuotationQuickContent
 	At
 }
