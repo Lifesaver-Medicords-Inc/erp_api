@@ -1,14 +1,13 @@
 package models
 
 type SalesQuotationContent struct {
-	CustomerName           string  `json:"customer_name"`
-	CustomerCode           string  `json:"customer_code"`
+	CustomerID             uint    `json:"customer_id"`
+	ApplicationID          uint    `json:"application_id"`
+	PaymentTermsID         uint    `json:"payment_terms_id"`
+	ShipToID               uint    `json:"ship_to_id"`
+	BillToID               uint    `json:"bill_to_id"`
+	ShipTypeID             uint    `json:"ship_type_id"`
 	Purpose                string  `json:"purpose"`
-	Application            string  `json:"application"`
-	PaymentTerms           string  `json:"payment_terms"`
-	ShipType               string  `json:"ship_type"`
-	ShipTo                 string  `json:"ship_to"`
-	BillTo                 string  `json:"bill_to"`
 	Date                   string  `json:"date"`
 	ValidityDays           string  `json:"validity_days"`
 	ValidUntil             string  `json:"valid_until"`
@@ -34,12 +33,7 @@ type SalesQuotationContent struct {
 }
 
 type SalesQuotation struct {
-	ID             uint `gorm:"primarykey" json:"id"`
-	CustomerID     uint `json:"customer_id"`
-	ApplicationID  uint `json:"application_id"`
-	PaymentTermsID uint `json:"payment_terms_id"`
-	ShipToID       uint `json:"ship_to_id"`
-	BillToID       uint `json:"bill_to_id"`
+	ID uint `gorm:"primarykey" json:"id"`
 	SalesQuotationContent
 }
 

@@ -1,8 +1,12 @@
 package models
 
 type OpportunityContent struct {
-	TAG      string `json:"tag"`
-	QuoteRef string `json:"quote_ref"`
+	TAG         string `json:"tag"`
+	ClientReq   string `json:"client_req"`
+	Stage       string `json:"stage"`
+	Status      string `json:"status_id"`
+	SpecialDeal string `json:"special_deal"`
+	DocumentNo  string `json:"document_no"`
 }
 
 type Opportunity struct {

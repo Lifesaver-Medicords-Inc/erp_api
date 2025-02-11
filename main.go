@@ -171,7 +171,7 @@ func main() {
 				salesApi.Get("/opportunity", sales_handlers.GetOpportunities)
 				salesApi.Get("/opportunity/:id", sales_handlers.GetOpportunity)
 				salesApi.Post("/opportunity", sales_handlers.CreateOpportunity)
-				salesApi.Patch("/opportunity", sales_handlers.UpdateOpportunity)
+				salesApi.Put("/opportunity", sales_handlers.UpdateOpportunity)
 
 				// Return Routes
 				// sales_api.Get("/return", handlers.Register)
@@ -183,6 +183,7 @@ func main() {
 
 			//Bpi Endpoints
 			api.Get("/bpi", bpi_handlers.GetBpis)
+			api.Get("/bpi/list", bpi_handlers.GetBpiItemList)
 			api.Post("/bpi", bpi_handlers.CreateBpi)
 			api.Get("/bpi/customers", sales_handlers.GetBpis)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)

@@ -21,8 +21,8 @@ type BpiGeneral struct {
 
 type BpiGeneralSchema struct {
 	BpiGeneral
-	BranchIndustriesId []uint `json:"branch_industries_id"`
-	EntityType         []uint `json:"entity_type"`
+	BranchIndustriesId []uint `json:"branch_industry_id"`
+	EntityTypeId       []uint `json:"entity_type_id"`
 }
 
 func (BpiGeneral) TableName() string {
