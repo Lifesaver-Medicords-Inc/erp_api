@@ -13,9 +13,9 @@ type OpportunityView struct {
 	Stage        string `json:"stage"`
 	Status       string `json:"status"`
 	SpecialDeal  string `json:"special_deal"`
+	ID           uint   `json:"id"`
 }
 
 func (OpportunityView) TableName() string {
-
-	return "vw_get_sales_opportunities_two"
+	return "vw_get_sales_opportunities"
 }
