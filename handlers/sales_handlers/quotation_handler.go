@@ -1,32 +1,35 @@
 package sales_handlers
+
 import (
-    "fmt"
-    "strconv"
-    "github.com/gofiber/fiber/v2"
-    "github.com/pierceperado/smpc/initializers"
-    "github.com/pierceperado/smpc/services/sales_services"
-    "github.com/pierceperado/smpc/utils"
+	"fmt"
+	"strconv"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/services/sales_services"
+	"github.com/pierceperado/smpc/utils"
 )
+
 func GetSalesQuotations(c *fiber.Ctx) error {
-    data, status, err := sales_services.GetSalesQuotations(nil)
-    if err != nil {
-        return utils.RespondError(c, status, err.Error())
-    }
-    return utils.RespondSuccess(c, data)
+	data, status, err := sales_services.GetSalesQuotations(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
 }
 func GetBpis(c *fiber.Ctx) error {
-    data, status, err := sales_services.GetBpis(nil)
-    if err != nil {
-        return utils.RespondError(c, status, err.Error())
-    }
-    return utils.RespondSuccess(c, data)
+	data, status, err := sales_services.GetBpis(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
 }
 func GetItems(c *fiber.Ctx) error {
-    data, status, err := sales_services.GetItems(nil)
-    if err != nil {
-        return utils.RespondError(c, status, err.Error())
-    }
-    return utils.RespondSuccess(c, data)
+	data, status, err := sales_services.GetItems(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
 }
 
 func GetBpi(c *fiber.Ctx) error {
