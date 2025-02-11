@@ -7,5 +7,5 @@ type ModelView struct {
 }
 
 func (ModelView) TableName() string {
-	return "ItemModelList"
+	return "vw_item_model_list"
 }
