@@ -56,7 +56,7 @@ func CreateType(c *fiber.Ctx, tx *gorm.DB) (models.Type, int, error) {
 		at = models.At{}
 	}
 
-	atdata := models.TypeAt{RefId: body.ID, Code: body.Code, TypeContent: models.TypeContent{Name: body.Name}, At: at}
+	atdata := models.TypeAt{RefId: body.ID, Code: body.Code, TypeContent: body.TypeContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating typeat")
 	}
@@ -79,7 +79,7 @@ func UpdateType(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (m
 		at = models.At{}
 	}
 
-	atdata := models.TypeAt{RefId: body.ID, Code: body.Code, TypeContent: models.TypeContent{Name: body.Name}, At: at}
+	atdata := models.TypeAt{RefId: body.ID, Code: body.Code, TypeContent: body.TypeContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating typeat")
 	}
@@ -102,7 +102,7 @@ func DeleteType(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (m
 		at = models.At{}
 	}
 
-	atdata := models.TypeAt{RefId: body.ID, Code: body.Code, TypeContent: models.TypeContent{Name: body.Name}, At: at}
+	atdata := models.TypeAt{RefId: body.ID, Code: body.Code, TypeContent: body.TypeContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating typeat")
 	}
