@@ -109,11 +109,6 @@ func CreateSalesQuotation(c *fiber.Ctx, tx *gorm.DB) (CreateBody, int, error) {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
-
-	// if err := CreateSalesQuotationQuick(tx, body.ID, body.SalesQuotationQuick[], at); err != nil {
-	// 	return body, fiber.StatusInternalServerError, err
-	// }
-
 	return body, 0, nil
 }
 
@@ -144,11 +139,9 @@ func GetBpi(id int) (CustomerBody, int, error) {
 	}
 
 	conditions = map[string]interface{}{
-		// based on parent ID
 		"based_id": record.Bpi.ID,
 	}
 
-	//Child 1
 	if err := services.DbGet(&record.General, conditions); err != nil {
 		return record, fiber.StatusInternalServerError, err
 	}
@@ -181,7 +174,6 @@ func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 	return response, 0, nil
 }
 
-// GET: item name based on item_name_id
 func GetItem(id int) (ItemBody, int, error) {
 
 	conditions := map[string]interface{}{
@@ -201,8 +193,5 @@ func GetItem(id int) (ItemBody, int, error) {
 	if err := services.DbGet(&record.ItemName, conditions); err != nil {
 		return record, fiber.StatusInternalServerError, err
 	}
-
-	//fmt.Println("DATAA", record)
-
 	return record, 0, nil
 }
