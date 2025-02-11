@@ -25,7 +25,7 @@ type OpportunityAt struct {
 	At
 }
 
-// testsada
+// testsadas
 func (OpportunityAt) TableName() string {
 	return "z_tbl_trans_sales_opportunity_at"
 }

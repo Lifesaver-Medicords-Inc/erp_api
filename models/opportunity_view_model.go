@@ -16,6 +16,7 @@ type OpportunityView struct {
 	ID           uint   `json:"id"`
 }
 
+// test
 func (OpportunityView) TableName() string {
 	return "vw_get_sales_opportunities"
 }
