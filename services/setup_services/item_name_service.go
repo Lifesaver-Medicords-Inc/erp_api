@@ -57,7 +57,7 @@ func CreateName(c *fiber.Ctx, tx *gorm.DB) (models.Name, int, error) {
 		at = models.At{}
 	}
 
-	atdata := models.NameAt{RefId: body.ID, Code: body.Code, NameContent: models.NameContent{Name: body.Name}, At: at}
+	atdata := models.NameAt{RefId: body.ID, Code: body.Code, NameContent: body.NameContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating nameat")
 	}
@@ -80,7 +80,7 @@ func UpdateName(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (m
 		at = models.At{}
 	}
 
-	atdata := models.NameAt{RefId: body.ID, Code: body.Code, NameContent: models.NameContent{Name: body.Name}, At: at}
+	atdata := models.NameAt{RefId: body.ID, Code: body.Code, NameContent: body.NameContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating nameat")
 	}
@@ -103,7 +103,7 @@ func DeleteName(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (m
 		at = models.At{}
 	}
 
-	atdata := models.NameAt{RefId: body.ID, Code: body.Code, NameContent: models.NameContent{Name: body.Name}, At: at}
+	atdata := models.NameAt{RefId: body.ID, Code: body.Code, NameContent: body.NameContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating nameat")
 	}

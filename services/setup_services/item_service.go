@@ -22,7 +22,8 @@ type SaveBody struct {
 	models.Item
 	TradeType       []string               `json:"trade_status"`
 	ItemSpecs       ItemSpecsWrapper       `json:"itemspecs"`
-	AdditionalSpecs models.AdditionalSpecs `json:"additional_specs"`
+	AdditionalSpecs models.AdditionalSpecs `json:"additionalspecs"`
+	// ItemPurchasing  models.ItemPurchasing  `json:"itempurchasing"`
 }
 
 type ItemSpecsWrapper struct {
@@ -37,9 +38,10 @@ type SpecsField struct {
 
 func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 	type Response struct {
-		Items           []models.ItemView        `json:"items"`
-		ItemSpecs       []models.ItemSpecs       `json:"itemspecs"`
-		AdditionalSpecs []models.AdditionalSpecs `json:"additionalspecs"`
+		Items           []models.ItemView           `json:"items"`
+		ItemSpecs       []models.ItemSpecs          `json:"itemspecs"`
+		AdditionalSpecs []models.AdditionalSpecs    `json:"additionalspecs"`
+		ItemPurchasing  []models.ItemPurchasingView `json:"itempurchasing"`
 	}
 
 	var response Response
@@ -55,8 +57,12 @@ func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 	if err := GetAdditionalSpecs(&response.AdditionalSpecs, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, err
 	}
+	if err := services.DbGet(&response.ItemPurchasing, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting item purchasing")
+	}
 
 	return response, 0, nil
+
 }
 
 func GetItem(id int) (Body, int, error) {
@@ -123,6 +129,10 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 		return savebody, fiber.StatusInternalServerError, err
 	}
 
+	// if err := CreateItemPurchasing(tx, savebody.ID, savebody.ItemPurchasing, at); err != nil {
+	// 	return savebody, fiber.StatusInternalServerError, err
+	// }
+
 	return savebody, 0, nil
 }
 
@@ -152,14 +162,8 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 		"based_id": body.ID,
 	}
 
-	if err := services.DbDelete(tx, &models.TradeType{}, map[string]interface{}{"based_id": body.ID}); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed deleting existing trade types")
-	}
-
-	for _, v := range body.TradeType {
-		if err := CreateTradeType(tx, body.ID, v, at); err != nil {
-			return body, fiber.StatusInternalServerError, err
-		}
+	if err := UpdateTradeTypes(tx, body, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	if err := UpdateItemSpec(tx, body.ID, body.ItemSpecs, at, conditions); err != nil {
@@ -174,6 +178,20 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 	services.InvalidateCache(key)
 
 	return body, 0, nil
+}
+
+func UpdateTradeTypes(tx *gorm.DB, body SaveBody, at models.At) error {
+	if err := services.DbDelete(tx, &models.TradeType{}, map[string]interface{}{"based_id": body.ID}); err != nil {
+		return errors.New("failed deleting existing trade types")
+	}
+
+	for _, v := range body.TradeType {
+		if err := CreateTradeType(tx, body.ID, v, at); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func DeleteItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Body, int, error) {
@@ -203,6 +221,7 @@ func DeleteItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (B
 	if err := DeleteItemSpecs(tx, body.ItemSpecs, at, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
+	//additionalspecs, trade type
 
 	return body, 0, nil
 }

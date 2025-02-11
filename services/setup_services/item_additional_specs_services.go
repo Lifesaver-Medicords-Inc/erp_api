@@ -40,18 +40,18 @@ func CreateAdditionalSpec(tx *gorm.DB, basedId uint, additionalSpec models.Addit
 		LongDescription:   additionalSpec.LongDescription,
 	}
 
-	additionalSpecs := models.AdditionalSpecs{AdditionalSpecsContent: content}
-	if err := services.DbInsert(tx, &additionalSpecs); err != nil {
+	additionalspecs := models.AdditionalSpecs{AdditionalSpecsContent: content}
+	if err := services.DbInsert(tx, &additionalspecs); err != nil {
 		return fmt.Errorf("failed creating additional specs")
 	}
 
-	additionalSpecsAt := models.AdditionalSpecsAt{
-		RefId:                  additionalSpecs.ID,
+	additionalspecsat := models.AdditionalSpecsAt{
+		RefId:                  additionalspecs.ID,
 		AdditionalSpecsContent: content,
 		At:                     at,
 	}
 
-	if err := services.DbInsert(tx, &additionalSpecsAt); err != nil {
+	if err := services.DbInsert(tx, &additionalspecsat); err != nil {
 		return errors.New("failed creating additional specs at")
 	}
 
