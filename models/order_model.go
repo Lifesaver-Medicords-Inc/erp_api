@@ -6,12 +6,12 @@ type OrderContent struct {
 	Ship_To_ID       uint   `json:"ship_to_id"`
 	Customer_ID      uint   `json:"customer_id"`
 	Quotation_ID     uint   `json:"quotation_id"`
+	Payment_Terms_ID uint   `json:"payment_terms_id"`
 	ApprovedBy       string `json:"approved_by"`
 	ApprovedByID     uint   `json:"approved_by_id"`
 	Doc              string `json:"doc"`
 	Date             string `json:"date"`
 	DeliveryDate     string `json:"delivery_date"`
-	Payment_Terms_ID string `json:"payment_terms_id"`
 	Document_No      string `json:"document_no"`
 	Status           string `json:"status"`
 	// CustomerName  string `json:"customer_name"`
