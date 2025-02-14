@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
@@ -18,6 +19,7 @@ func init() {
 	initializers.ConnectDb()
 	initializers.MigrateDb()
 	initializers.InitRedis()
+	initializers.InitWm()
 }
 
 func main() {
@@ -37,6 +39,7 @@ func main() {
 		api.Post("/login", public_handlers.LoginAccount)
 		api.Post("/logout", public_handlers.LogoutAccount)
 		api.Get("/hello", public_handlers.CheckHealth)
+		api.Post("/upload", public_handlers.ImageUpload)
 
 		// Protected Endpoints
 		// api.Use(middlewares.RequireAuth)
@@ -98,6 +101,11 @@ func main() {
 					itemApi.Post("", setup_handlers.CreateItem)
 					itemApi.Put("", setup_handlers.UpdateItem)
 					itemApi.Delete("", setup_handlers.DeleteItem)
+				}
+
+				witemApi := setupApi.Group("/witem")
+				{
+					witemApi.Get("", websocket.New(setup_handlers.WgetItems))
 				}
 
 				// Unit Measurement Endpoints
