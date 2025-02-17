@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetAdditionalSpecs(additionalSpecs *[]models.AdditionalSpecs, conditions map[string]interface{}) error {
+func GetAdditionalSpecs(additionalSpecs *[]models.AdditionalSpecsView, conditions map[string]interface{}) error {
 	if err := services.DbGet(additionalSpecs, conditions); err != nil {
 		fmt.Println("ERROR:", err)
 		return errors.New("failed getting additional specs")

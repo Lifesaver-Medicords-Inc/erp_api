@@ -86,11 +86,11 @@ func main() {
 					itemApi.Delete("/type", setup_handlers.DeleteType)
 
 					// Model Endpoints
-					itemApi.Get("/model", setup_handlers.GetModels)
-					itemApi.Get("/model/:id", setup_handlers.GetModel)
-					itemApi.Post("/model", setup_handlers.CreateModel)
-					itemApi.Put("/model", setup_handlers.UpdateModel)
-					itemApi.Delete("/model", setup_handlers.DeleteModel)
+					// itemApi.Get("/model", setup_handlers.GetModels)
+					// itemApi.Get("/model/:id", setup_handlers.GetModel)
+					// itemApi.Post("/model", setup_handlers.CreateModel)
+					// itemApi.Put("/model", setup_handlers.UpdateModel)
+					// itemApi.Delete("/model", setup_handlers.DeleteModel)
 
 					// Item Endpoints
 					itemApi.Get("", setup_handlers.GetItems)
