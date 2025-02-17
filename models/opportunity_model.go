@@ -4,7 +4,7 @@ type OpportunityContent struct {
 	TAG         string `json:"tag"`
 	ClientReq   string `json:"client_req"`
 	Stage       string `json:"stage"`
-	Status      string `json:"status_id"`
+	Status      string `json:"status"`
 	SpecialDeal string `json:"special_deal"`
 	DocumentNo  string `json:"document_no"`
 }
@@ -25,7 +25,7 @@ type OpportunityAt struct {
 	At
 }
 
-// testsada
+// testsadas
 func (OpportunityAt) TableName() string {
 	return "z_tbl_trans_sales_opportunity_at"
 }
