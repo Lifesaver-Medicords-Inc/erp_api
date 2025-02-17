@@ -32,10 +32,11 @@ func CreateProject(c *fiber.Ctx, tx *gorm.DB) (models.Project, int, error) {
 		if strings.Contains(err.Error(), "duplicate key") {
 			err = errors.New("duplicate record error")
 		} else {
-			err = errors.New("failed creating project")
+			err = errors.New("failed creating application")
 		}
 
 		return body, fiber.StatusInternalServerError, err
 	}
+
 	return body, 0, nil
 }
