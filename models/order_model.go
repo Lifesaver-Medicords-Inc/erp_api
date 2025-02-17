@@ -9,10 +9,11 @@ type OrderContent struct {
 	Payment_Terms_ID uint   `json:"payment_terms_id"`
 	ApprovedBy       string `json:"approved_by"`
 	ApprovedByID     uint   `json:"approved_by_id"`
-	Doc              string `json:"doc"`
+	Doc              uint   `json:"doc"`
+	RefPO            uint   `json:"ref_po"`
 	Date             string `json:"date"`
 	DeliveryDate     string `json:"delivery_date"`
-	Document_No      string `json:"document_no"`
+	Document_No      uint   `json:"document_no"`
 	Status           string `json:"status"`
 	// CustomerName  string `json:"customer_name"`
 	// CustomerCode  string `json:"customer_code"`
