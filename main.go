@@ -167,7 +167,7 @@ func main() {
 				salesApi.Get("/order/:id", sales_handlers.GetOrder)
 				salesApi.Post("child/order", sales_handlers.CreateOrderChild)
 				salesApi.Post("/order", sales_handlers.CreateOrder)
-				salesApi.Patch("/order", sales_handlers.UpdateOrder)
+				salesApi.Put("/order", sales_handlers.UpdateOrder)
 				salesApi.Delete("/order", sales_handlers.DeleteOrder)
 				// Opportunity Endpointss
 				salesApi.Get("/opportunity", sales_handlers.GetOpportunities)
