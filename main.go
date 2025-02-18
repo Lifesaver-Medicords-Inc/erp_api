@@ -57,7 +57,6 @@ func main() {
 			// Setup Endpoints
 			setupApi := api.Group("/setup")
 			{
-
 				itemApi := setupApi.Group("/item")
 				{
 					// Brand Endpoints
@@ -101,11 +100,6 @@ func main() {
 					itemApi.Post("", setup_handlers.CreateItem)
 					itemApi.Put("", setup_handlers.UpdateItem)
 					itemApi.Delete("", setup_handlers.DeleteItem)
-				}
-
-				witemApi := setupApi.Group("/witem")
-				{
-					witemApi.Get("", websocket.New(setup_handlers.WgetItems))
 				}
 
 				// Unit Measurement Endpoints
@@ -198,6 +192,17 @@ func main() {
 			//api.Patch("/bpi", sales_handlers.UpdateQuotation)
 			//api.Delete("/bpi", sales_handlers.DeleteQuotation)
 
+			ws := api.Group("/ws")
+			{
+				// Setup Endpoints
+				setupApi := ws.Group("/setup")
+				{
+					itemApi := setupApi.Group("/item")
+					{
+						itemApi.Get("", websocket.New(setup_handlers.WsgetItems))
+					}
+				}
+			}
 		}
 	}
 

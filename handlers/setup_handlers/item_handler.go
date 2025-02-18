@@ -128,7 +128,7 @@ func broadcastItems() error {
 	return nil
 }
 
-func WgetItems(c *websocket.Conn) {
+func WsgetItems(c *websocket.Conn) {
 	initializers.WM.AddClient(c)
 
 	fmt.Println("Client Connected:", c.IP())
