@@ -16,11 +16,12 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.TradeType{}, models.TradeTypeAt{})
 	// DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
 	// DB.AutoMigrate(&models.ItemPurchasing{}, models.ItemPurchasingAt{})
+	//DB.AutoMigrate(&models.ItemImage{}, models.ItemImageAt{})
 
 	// DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
 	// DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
 
-	// // Setup
+	//ItemImage
 	// DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
 	// DB.AutoMigrate(&models.UnitMeasurement{}, &models.UnitMeasurementAt{})
 	// DB.AutoMigrate(&models.PaymentTerms{}, &models.PaymentTermsAt{})
