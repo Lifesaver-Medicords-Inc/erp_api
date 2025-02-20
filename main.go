@@ -12,6 +12,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/services"
 )
 
 func init() {
@@ -143,6 +144,10 @@ func main() {
 				setupApi.Post("/entity", setup_handlers.CreateEntity)
 				setupApi.Put("/entity", setup_handlers.UpdateEntity)
 				setupApi.Delete("/entity", setup_handlers.DeleteEntity)
+
+				setupApi.Get("/project", setup_handlers.GetProjects)
+				setupApi.Post("/project", setup_handlers.CreateProject)
+				setupApi.Put("/project", setup_handlers.UpdateProject)
 			}
 
 			// Sales Endpoints
@@ -200,6 +205,13 @@ func main() {
 					itemApi := setupApi.Group("/item")
 					{
 						itemApi.Get("", websocket.New(setup_handlers.WsgetItems))
+					}
+
+					projectApi := setupApi.Group("/project")
+					{
+						projectApi.Get("", websocket.New(func(c *websocket.Conn) {
+							services.HandleWs(c, setup_handlers.WsgetProjects)
+						}))
 					}
 				}
 			}
