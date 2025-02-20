@@ -1,13 +1,8 @@
 package public_handlers
 
 import (
-	"encoding/base64"
-	"fmt"
-	"os"
-	"time"
-
-	"github.com/gabriel-vasile/mimetype"
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/services"
 	"github.com/pierceperado/smpc/utils"
 )
 
@@ -21,24 +16,10 @@ func ImageUpload(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusBadRequest, "cannot bind request")
 	}
 
-	file, err := base64.StdEncoding.DecodeString(request.File)
+	path, err := services.UploadFile(request.File)
 	if err != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "failed decoding data")
+		return utils.RespondError(c, fiber.StatusInternalServerError, err.Error())
 	}
 
-	if err := os.MkdirAll("./files", os.ModePerm); err != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "failed creating folder")
-	}
-
-	fileName := time.Now().Unix()
-	mimeType := mimetype.Detect(file)
-	fileExtension := mimeType.Extension()
-
-	path := fmt.Sprintf("./files/%d%v", fileName, fileExtension)
-
-	if err := os.WriteFile(path, file, 0644); err != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "failed saving file")
-	}
-
-	return utils.RespondSuccess(c, file)
+	return utils.RespondSuccess(c, path)
 }
