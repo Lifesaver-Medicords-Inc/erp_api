@@ -10,18 +10,19 @@ type OrderContent struct {
 	ApprovedBy       string `json:"approved_by"`
 	ApprovedByID     uint   `json:"approved_by_id"`
 	Doc              string `json:"doc"`
+	RefPO            uint   `json:"ref_po"`
 	Date             string `json:"date"`
 	DeliveryDate     string `json:"delivery_date"`
 	Document_No      string `json:"document_no"`
 	Status           string `json:"status"`
+	Receiver         string `json:"receiver"`
+	SalesExecutive   string `json:"sales_executive"`
+	ContactNo        string `json:"contact_no"`
+	Remarks          string `json:"remarks"`
 	// CustomerName  string `json:"customer_name"`
 	// CustomerCode  string `json:"customer_code"`
 	// ShipTo        string `json:"ship_to"`
 	// BillTo        string `json:"bill_to"`
-	// SalesExecutive string `json:"sales_executive"`
-	// Receiver       string `json:"receiver"`
-	// ContactNo      string `json:"contact_no"`
-	// Remarks        string `json:"remarks"`
 	// Vat            string `json:"vat"`
 	// NetofVat       string `json:"netof_vat"`
 	// TotalAmountDue string `json:"total_amount_due"`

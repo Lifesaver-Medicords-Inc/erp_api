@@ -128,12 +128,12 @@ func broadcastItems() error {
 	return nil
 }
 
-func WgetItems(c *websocket.Conn) {
+func WsgetItems(c *websocket.Conn) {
 	initializers.WM.AddClient(c)
 
 	fmt.Println("Client Connected:", c.IP())
 
-	broadcastItems()
+	//broadcastItems()
 
 	// Read messages from the client
 	for {
@@ -145,14 +145,12 @@ func WgetItems(c *websocket.Conn) {
 
 		fmt.Println("Message Type:", msgType)
 		fmt.Println("Raw Message:", string(msg))
-
+		broadcastMessage(msg)
 		// Print the received message
-		fmt.Printf("Received message: %s\n", msg)
-
-		nmsg := fmt.Sprintf("Changed Message %s", msg)
+		//fmt.Printf("Received message: %s\n", msg)
 
 		// Send the message back to the client
-		if err := c.WriteMessage(msgType, []byte(nmsg)); err != nil {
+		if err := c.WriteMessage(msgType, msg); err != nil {
 			log.Println("Error writing message:", err)
 			break
 		}
@@ -161,4 +159,18 @@ func WgetItems(c *websocket.Conn) {
 	initializers.WM.RemoveClient(c)
 	// Connection closed
 	fmt.Println("Client disconnected:", c.IP())
+}
+
+func broadcastMessage(msg []byte) error {
+
+	initializers.WM.RLock()
+	defer initializers.WM.RUnlock()
+
+	for client := range initializers.WM.Clients {
+		if err := client.WriteMessage(websocket.TextMessage, msg); err != nil {
+			log.Println("error sending message:", err)
+		}
+	}
+
+	return nil
 }

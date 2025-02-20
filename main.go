@@ -12,6 +12,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/services"
 )
 
 func init() {
@@ -57,7 +58,6 @@ func main() {
 			// Setup Endpoints
 			setupApi := api.Group("/setup")
 			{
-
 				itemApi := setupApi.Group("/item")
 				{
 					// Brand Endpoints
@@ -103,11 +103,6 @@ func main() {
 					itemApi.Delete("", setup_handlers.DeleteItem)
 				}
 
-				witemApi := setupApi.Group("/witem")
-				{
-					witemApi.Get("", websocket.New(setup_handlers.WgetItems))
-				}
-
 				// Unit Measurement Endpoints
 				setupApi.Get("/unit_measurement", setup_handlers.GetUnitMeasurements)
 				setupApi.Get("/unit_measurement:/id", setup_handlers.GetUnitMeasurement)
@@ -149,6 +144,10 @@ func main() {
 				setupApi.Post("/entity", setup_handlers.CreateEntity)
 				setupApi.Put("/entity", setup_handlers.UpdateEntity)
 				setupApi.Delete("/entity", setup_handlers.DeleteEntity)
+
+				setupApi.Get("/project", setup_handlers.GetProjects)
+				setupApi.Post("/project", setup_handlers.CreateProject)
+				setupApi.Put("/project", setup_handlers.UpdateProject)
 			}
 
 			// Sales Endpoints
@@ -173,7 +172,7 @@ func main() {
 				salesApi.Get("/order/:id", sales_handlers.GetOrder)
 				salesApi.Post("child/order", sales_handlers.CreateOrderChild)
 				salesApi.Post("/order", sales_handlers.CreateOrder)
-				salesApi.Patch("/order", sales_handlers.UpdateOrder)
+				salesApi.Put("/order", sales_handlers.UpdateOrder)
 				salesApi.Delete("/order", sales_handlers.DeleteOrder)
 				// Opportunity Endpointss
 				salesApi.Get("/opportunity", sales_handlers.GetOpportunities)
@@ -198,6 +197,24 @@ func main() {
 			//api.Patch("/bpi", sales_handlers.UpdateQuotation)
 			//api.Delete("/bpi", sales_handlers.DeleteQuotation)
 
+			ws := api.Group("/ws")
+			{
+				// Setup Endpoints
+				setupApi := ws.Group("/setup")
+				{
+					itemApi := setupApi.Group("/item")
+					{
+						itemApi.Get("", websocket.New(setup_handlers.WsgetItems))
+					}
+
+					projectApi := setupApi.Group("/project")
+					{
+						projectApi.Get("", websocket.New(func(c *websocket.Conn) {
+							services.HandleWs(c, setup_handlers.WsgetProjects)
+						}))
+					}
+				}
+			}
 		}
 	}
 

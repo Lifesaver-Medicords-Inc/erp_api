@@ -151,36 +151,45 @@ func CreateOrder(c *fiber.Ctx, tx *gorm.DB) (BodyOrderDetails, int, error) {
 	return bodyorder, 0, nil
 }
 
-func UpdateOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (BodyOrder, int, error) {
-	var bodyorder BodyOrder
+// UpdateOrder function or similar code
+func UpdateOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (BodyOrderDetails, int, error) {
+	var bodyorder BodyOrderDetails
 	if err := c.BodyParser(&bodyorder); err != nil {
+		fmt.Println(err)
 		return bodyorder, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	// Parent class
+	// Update the parent order (already done in your existing code)
+	conditions = map[string]interface{}{
+		"doc": bodyorder.Doc,
+	}
+
 	if err := services.DbUpdate(tx, &bodyorder.Order, conditions); err != nil {
+		fmt.Println(err)
 		return bodyorder, fiber.StatusInternalServerError, errors.New("failed updating order")
 	}
 
+	// Now update each order detail (child) individually
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
 		at = models.At{}
 	}
 
-	atdata := models.OrderAt{RefId: bodyorder.Order_ID, OrderContent: bodyorder.OrderContent, At: at}
+	// Iterate over the slice of order details and update each one
+	for _, orderDetail := range bodyorder.OrderDetails {
+		// Add a condition based on the order details ID (or other relevant fields)
+		orderDetailConditions := map[string]interface{}{
+			"based_id": bodyorder.Order_ID, // Assuming 'based_id' is the condition to match
+		}
 
-	if err := services.DbInsert(tx, &atdata); err != nil {
-		return bodyorder, fiber.StatusInternalServerError, errors.New("failed creating orderat")
+		// Call UpdateOrderDetail for each child (order detail)
+		if err := UpdateOrderDetail(tx, orderDetail, at, orderDetailConditions); err != nil {
+			return bodyorder, fiber.StatusInternalServerError, err
+		}
+		fmt.Println(bodyorder)
 	}
-
-	conditions = map[string]interface{}{
-		"based_id": bodyorder.Order_ID,
-	}
-
-	if err := UpdateOrderDetail(tx, bodyorder.OrderDetails, at, conditions); err != nil {
-		return bodyorder, fiber.StatusInternalServerError, err
-	}
-
+	fmt.Println(bodyorder)
+	// If everything goes well, return success
 	return bodyorder, 0, nil
 }
 
