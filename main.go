@@ -74,12 +74,33 @@ func main() {
 					itemApi.Put("/class", setup_handlers.UpdateClass)
 					itemApi.Delete("/class", setup_handlers.DeleteClass)
 
+					// Material Endpoints
+					itemApi.Get("/material", setup_handlers.GetMaterials)
+					itemApi.Get("/material/:id", setup_handlers.GetMaterial)
+					itemApi.Post("/material", setup_handlers.CreateMaterial)
+					itemApi.Put("/material", setup_handlers.UpdateMaterial)
+					itemApi.Delete("/material", setup_handlers.DeleteMaterial)
+
 					// Name Endpoints
 					itemApi.Get("/name", setup_handlers.GetNames)
 					itemApi.Get("/name/:id", setup_handlers.GetName)
 					itemApi.Post("/name", setup_handlers.CreateName)
 					itemApi.Put("/name", setup_handlers.UpdateName)
 					itemApi.Delete("/name", setup_handlers.DeleteName)
+
+					// Pump Count Endpoints
+					itemApi.Get("/pump_count", setup_handlers.GetPumpCounts)
+					itemApi.Get("/pump_count/:id", setup_handlers.GetPumpCount)
+					itemApi.Post("/pump_count", setup_handlers.CreatePumpCount)
+					itemApi.Put("/pump_count", setup_handlers.UpdatePumpCount)
+					itemApi.Delete("/pump_count", setup_handlers.DeletePumpCount)
+
+					// Pump Type Endpoints
+					itemApi.Get("/pump_type", setup_handlers.GetPumpTypes)
+					itemApi.Get("/pump_type/:id", setup_handlers.GetPumpType)
+					itemApi.Post("/pump_type", setup_handlers.CreatePumpType)
+					itemApi.Put("/pump_type", setup_handlers.UpdatePumpType)
+					itemApi.Delete("/pump_type", setup_handlers.DeletePumpType)
 
 					// Type Endpoints
 					itemApi.Get("/type", setup_handlers.GetTypes)
