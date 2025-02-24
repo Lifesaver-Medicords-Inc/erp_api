@@ -28,16 +28,25 @@ func GetAdditionalSpec(additionalspecs *models.AdditionalSpecs, conditions map[s
 
 func CreateAdditionalSpec(tx *gorm.DB, basedId uint, additionalSpec models.AdditionalSpecs, at models.At) error {
 	content := models.AdditionalSpecsContent{
-		BasedId:           basedId,
-		SuctionPressure:   additionalSpec.SuctionPressure,
-		DriverType:        additionalSpec.DriverType,
-		MotorEnclosure:    additionalSpec.MotorEnclosure,
-		MotorManufacturer: additionalSpec.MotorManufacturer,
-		ServiceFactor:     additionalSpec.ServiceFactor,
-		LiquidType:        additionalSpec.LiquidType,
-		Volume:            additionalSpec.Volume,
-		Weight:            additionalSpec.Weight,
-		LongDescription:   additionalSpec.LongDescription,
+		BasedId:                  basedId,
+		MaterialId:               additionalSpec.MaterialId,
+		SuctionPressure:          additionalSpec.SuctionPressure,
+		DriverType:               additionalSpec.DriverType,
+		MotorEnclosure:           additionalSpec.MotorEnclosure,
+		MotorManufacturer:        additionalSpec.MotorManufacturer,
+		ServiceFactor:            additionalSpec.ServiceFactor,
+		LiquidType:               additionalSpec.LiquidType,
+		ConnectionType:           additionalSpec.ConnectionType,
+		PumpCountCompatabilityId: additionalSpec.PumpCountCompatabilityId,
+		Volume:                   additionalSpec.Volume,
+		VolumeUnitOfMeasureId:    additionalSpec.VolumeUnitOfMeasureId,
+		Weight:                   additionalSpec.Weight,
+		WeightUnitOfMeasureId:    additionalSpec.WeightUnitOfMeasureId,
+		Length:                   additionalSpec.Length,
+		LengthUnitOfMeasureId:    additionalSpec.LengthUnitOfMeasureId,
+		Height:                   additionalSpec.Height,
+		HeightUnitOfMeasureId:    additionalSpec.HeightUnitOfMeasureId,
+		LongDescription:          additionalSpec.LongDescription,
 	}
 
 	additionalspecs := models.AdditionalSpecs{AdditionalSpecsContent: content}

@@ -23,6 +23,7 @@ type SaveBody struct {
 	TradeType       []string               `json:"trade_status"`
 	ItemSpecs       ItemSpecsWrapper       `json:"itemspecs"`
 	AdditionalSpecs models.AdditionalSpecs `json:"additionalspecs"`
+	PumpTypeId      []uint                 `json:"pump_type_compatability_id"`
 	ItemImage       models.ItemImage       `json:"item_images"`
 }
 
@@ -99,6 +100,7 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 	var savebody SaveBody
 
 	if err := c.BodyParser(&savebody); err != nil {
+		fmt.Println("SAVING ERROR:", err)
 		return savebody, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
@@ -129,8 +131,13 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 	if err := CreateAdditionalSpec(tx, savebody.ID, savebody.AdditionalSpecs, at); err != nil {
 		return savebody, fiber.StatusInternalServerError, err
 	}
+	for _, v := range savebody.PumpTypeId {
+		if err := CreateAdditionalSpecsPumpType(tx, savebody.ID, uint(v), at); err != nil {
+			return savebody, fiber.StatusInternalServerError, err
+		}
+	}
 
-	if err := CreateItemImage(tx, savebody.ID, savebody.ItemImage.ItemImageContent, at); err != nil {
+	if err := CreateItemImage(tx, savebody.ID, savebody.ItemImage, at); err != nil {
 		return savebody, fiber.StatusInternalServerError, err
 	}
 
@@ -140,6 +147,7 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 	additionspecsview := services.GetKey(models.AdditionalSpecsView{}, nil)
 	services.InvalidateCache(additionspecsview)
 
+	fmt.Println("ITEM SAVING:", savebody)
 	return savebody, 0, nil
 }
 
@@ -176,7 +184,9 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 	if err := UpdateItemSpec(tx, body.ID, body.ItemSpecs, at, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
-
+	if err := UpdateAdditionalSpecsPumpType(tx, body, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
 	if err := UpdateAdditionalSpec(tx, body.AdditionalSpecs, at, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}

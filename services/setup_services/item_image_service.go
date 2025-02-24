@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"time"
 
-	"github.com/gabriel-vasile/mimetype"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
@@ -56,43 +54,19 @@ func EncodeFileToBase64(filePath string) (string, error) {
 	return base64Str, nil
 }
 
-func saveBase64Image(base64Str string) (string, error) {
-	if base64Str == "" {
-		return "", nil
-	}
-
-	file, err := base64.StdEncoding.DecodeString(base64Str)
-	if err != nil {
-		return "", errors.New("failed decoding data")
-	}
-
-	if err := os.MkdirAll("./files", os.ModePerm); err != nil {
-		return "", errors.New("failed creating folder")
-	}
-
-	fileName := time.Now().UnixNano()
-	mimeType := mimetype.Detect(file)
-	fileExtension := mimeType.Extension()
-	path := fmt.Sprintf("./files/%d%v", fileName, fileExtension)
-
-	if err := os.WriteFile(path, file, 0644); err != nil {
-		return "", errors.New("failed saving file")
-	}
-
-	return path, nil
-}
-
-func CreateItemImage(tx *gorm.DB, basedId uint, itemImage models.ItemImageContent, at models.At) error {
+func CreateItemImage(tx *gorm.DB, basedId uint, itemImage models.ItemImage, at models.At) error {
 	imgPaths := make(map[string]string)
 
 	imgFields := []string{"img1", "img2", "img3", "img4", "img5", "img6"}
 	imgValues := []string{itemImage.Img1, itemImage.Img2, itemImage.Img3, itemImage.Img4, itemImage.Img5, itemImage.Img6}
 
 	for i, field := range imgFields {
-		var err error
-		imgPaths[field], err = saveBase64Image(imgValues[i])
-		if err != nil {
-			return fmt.Errorf("error saving %s: %v", field, err)
+		if imgValues[i] != "" { // Only process if an image is provided
+			var err error
+			imgPaths[field], err = services.UploadFile(imgValues[i])
+			if err != nil {
+				return fmt.Errorf("error saving %s: %v", field, err)
+			}
 		}
 	}
 
@@ -123,7 +97,45 @@ func CreateItemImage(tx *gorm.DB, basedId uint, itemImage models.ItemImageConten
 
 	return nil
 }
+func UpdateItemImage(tx *gorm.DB, itemImage models.ItemImage, at models.At, conditions map[string]interface{}) error {
+	imgPaths := make(map[string]string)
 
+	imgFields := []string{"img1", "img2", "img3", "img4", "img5", "img6"}
+	imgValues := []string{itemImage.Img1, itemImage.Img2, itemImage.Img3, itemImage.Img4, itemImage.Img5, itemImage.Img6}
 
+	for i, field := range imgFields {
+		if imgValues[i] != "" { // Only process if an image is provided
+			var err error
+			imgPaths[field], err = services.UploadFile(imgValues[i])
+			if err != nil {
+				return fmt.Errorf("error saving %s: %v", field, err)
+			}
+		}
+	}
 
+	updatedContent := models.ItemImageContent{
+		BasedId: itemImage.BasedId,
+		Img1:    imgPaths["img1"],
+		Img2:    imgPaths["img2"],
+		Img3:    imgPaths["img3"],
+		Img4:    imgPaths["img4"],
+		Img5:    imgPaths["img5"],
+		Img6:    imgPaths["img6"],
+	}
 
+	if err := services.DbUpdate(tx, &updatedContent, conditions); err != nil {
+		fmt.Println("ERROR:", err)
+		return errors.New("failed updating item image")
+	}
+
+	itemImgAt := models.ItemImageAt{
+		RefId:            itemImage.ID,
+		ItemImageContent: updatedContent,
+		At:               at,
+	}
+	if err := services.DbInsert(tx, &itemImgAt); err != nil {
+		return errors.New("failed creating item image at")
+	}
+
+	return nil
+}

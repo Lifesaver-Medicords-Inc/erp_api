@@ -1,18 +1,26 @@
 package models
 
 type AdditionalSpecsContent struct {
-	BasedId               uint    `json:"based_id"`
-	SuctionPressure       string  `json:"suction_pressure"`
-	DriverType            string  `json:"driver_type"`
-	MotorEnclosure        string  `json:"motor_enclosure"`
-	MotorManufacturer     string  `json:"motor_manufacturer"`
-	ServiceFactor         string  `json:"service_factor"`
-	LiquidType            string  `json:"liquid_type"`
-	Volume                float64 `json:"volume"`
-	VolumeUnitOfMeasureId uint    `json:"volume_unit_of_measure_id"`
-	Weight                float64 `json:"weight"`
-	WeightUnitOfMeasureId uint    `json:"weight_unit_of_measure_id"`
-	LongDescription       string  `json:"long_desc"`
+	BasedId                  uint    `json:"based_id"`
+	MaterialId               uint    `json:"material_id"`
+	SuctionPressure          string  `json:"suction_pressure"`
+	DriverType               string  `json:"driver_type"`
+	MotorEnclosure           string  `json:"motor_enclosure"`
+	MotorManufacturer        string  `json:"motor_manufacturer"`
+	ServiceFactor            string  `json:"service_factor"`
+	LiquidType               string  `json:"liquid_type"`
+	ConnectionType           string  `json:"connection_type"`
+	PumpCountCompatabilityId uint    `json:"pump_count_compatability_id"`
+	Volume                   float64 `json:"volume"`
+	VolumeUnitOfMeasureId    uint    `json:"volume_unit_of_measure_id"`
+	Weight                   float64 `json:"weight"`
+	WeightUnitOfMeasureId    uint    `json:"weight_unit_of_measure_id"`
+	Length                   float64 `json:"length"`
+	LengthUnitOfMeasureId    uint    `json:"length_unit_of_measure_id"`
+	Height                   float64 `json:"height"`
+	HeightUnitOfMeasureId    uint    `json:"height_unit_of_measure_id"`
+	LongDescription          string  `json:"long_desc"`
+	//PumpTypeCompatabilityId  uint    `json:"pump_type_compatability_id"`
 }
 
 type AdditionalSpecs struct {
