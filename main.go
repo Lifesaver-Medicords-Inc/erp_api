@@ -201,6 +201,9 @@ func main() {
 				salesApi.Post("/opportunity", sales_handlers.CreateOpportunity)
 				salesApi.Put("/opportunity", sales_handlers.UpdateOpportunity)
 
+				//projects
+				salesApi.Get("/projects", sales_handlers.GetSalesProject)
+				salesApi.Post("/projects", sales_handlers.CreateSalesProject)
 				// Return Routes
 				// sales_api.Get("/return", handlers.Register)
 				// sales_api.Post("/return/create", handlers.Register)
