@@ -22,7 +22,7 @@ func UploadFile(filestr string) (string, error) {
 		return path, errors.New("failed creating folder")
 	}
 
-	name := time.Now().Unix()
+	name := time.Now().UnixNano()
 	mime := mimetype.Detect(file)
 	extension := mime.Extension()
 
