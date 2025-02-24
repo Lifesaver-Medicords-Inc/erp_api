@@ -6,7 +6,6 @@ import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
-	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
 	"github.com/pierceperado/smpc/services/setup_services"
 	"github.com/pierceperado/smpc/utils"
@@ -38,7 +37,7 @@ func CreateProject(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
-	broadcastProjects()
+	BroadcastProjects()
 
 	return utils.RespondSuccess(c, data)
 }
@@ -60,41 +59,40 @@ func UpdateProject(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
-	broadcastProjects()
+	BroadcastProjects()
 
 	return utils.RespondSuccess(c, data)
 }
 
-func broadcastProjects() (int, error) {
+func BroadcastProjects() error {
 	data, status, err := setup_services.GetProjects(nil)
 	if err != nil {
-		return status, err
+		return err
 	}
+
+	fmt.Println("Status:", status)
 
 	if err := services.BroadcastMessage(data); err != nil {
-		return status, err
+		return err
 	}
 
-	return 0, nil
+	return nil
 }
 
 func WsgetProjects(c *websocket.Conn) {
-	status, err := broadcastProjects()
+	data, status, err := setup_services.GetProjects(nil)
 	if err != nil {
-		fmt.Println(status, err)
+		fmt.Println(err)
 		return
 	}
 
-	for {
-		var project models.Project
-		if err := c.ReadJSON(&project); err != nil {
-			fmt.Println("error reading message")
-			break
-		}
-
-		if err := c.WriteJSON(project); err != nil {
-			fmt.Println("error writing message")
-			break
-		}
+	if err := services.BroadcastMessage(data); err != nil {
+		fmt.Println(err)
+		return
 	}
+
+	fmt.Println("Status:", status)
+
+	BroadcastProjects()
+
 }

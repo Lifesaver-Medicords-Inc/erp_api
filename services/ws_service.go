@@ -18,6 +18,19 @@ func HandleWs(c *websocket.Conn, h func(*websocket.Conn)) {
 	}()
 
 	h(c)
+
+	for {
+		var message interface{}
+		if err := c.ReadJSON(&message); err != nil {
+			fmt.Println("error reading message")
+			break
+		}
+
+		if err := c.WriteJSON(message); err != nil {
+			fmt.Println("error writing message")
+			break
+		}
+	}
 }
 
 func BroadcastMessage(data interface{}) error {
