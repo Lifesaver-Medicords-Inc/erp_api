@@ -197,16 +197,19 @@ func main() {
 			//api.Patch("/bpi", sales_handlers.UpdateQuotation)
 			//api.Delete("/bpi", sales_handlers.DeleteQuotation)
 
+			// Websocket Endpoints
 			ws := api.Group("/ws")
 			{
 				// Setup Endpoints
 				setupApi := ws.Group("/setup")
 				{
+					// Item Endpoints
 					itemApi := setupApi.Group("/item")
 					{
 						itemApi.Get("", websocket.New(setup_handlers.WsgetItems))
 					}
 
+					// Project Endpoints
 					projectApi := setupApi.Group("/project")
 					{
 						projectApi.Get("", websocket.New(func(c *websocket.Conn) {
