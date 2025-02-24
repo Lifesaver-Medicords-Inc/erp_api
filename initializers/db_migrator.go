@@ -1,10 +1,10 @@
 package initializers
 
-import "github.com/pierceperado/smpc/models"
+// import "github.com/pierceperado/smpc/models"
 
 func MigrateDb() {
 	// Auth
-	DB.AutoMigrate(&models.User{}, &models.UserAt{})
+	//DB.AutoMigrate(&models.User{}, &models.UserAt{})
 	// Setup
 	// DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
 	// DB.AutoMigrate(&models.UnitMeasurement{}, &models.UnitMeasurementAt{})
@@ -17,11 +17,17 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{})
 	// DB.AutoMigrate(&models.TradeType{}, models.TradeTypeAt{})
 	// DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
+	// DB.AutoMigrate(&models.ItemPurchasing{}, models.ItemPurchasingAt{})
+	//DB.AutoMigrate(&models.ItemImage{}, models.ItemImageAt{})
+	// DB.AutoMigrate(&models.Material{}, models.MaterialAt{})
+	// DB.AutoMigrate(&models.PumpType{}, &models.PumpTypeAt{})
+	// DB.AutoMigrate(&models.PumpCount{}, &models.PumpCountAt{})
+	// DB.AutoMigrate(&models.AdditionalSpecsPumpType{}, models.AdditionalSpecsPumpTypeAt{})
 
 	// DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
 	// DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
 
-	// // Setup
+	//ItemImage
 	// DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
 	// DB.AutoMigrate(&models.UnitMeasurement{}, &models.UnitMeasurementAt{})
 	// DB.AutoMigrate(&models.PaymentTerms{}, &models.PaymentTermsAt{})
