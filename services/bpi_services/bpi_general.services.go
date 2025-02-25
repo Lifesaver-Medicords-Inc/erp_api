@@ -17,7 +17,7 @@ func BpiGeneral(tx *gorm.DB, parentId uint, child models.BpiGeneralSchema, at mo
 		return errors.New("failed to create bpi general")
 	}
 
-	for _, v := range child.BranchIndustriesId {
+	for _, v := range child.BranchIndustryId {
 		fmt.Println("Branch Industriess", v)
 		if err := CreateBpiBranchIndustries(tx, child.BpiGeneral.ID, uint(v), at); err != nil {
 			return err
