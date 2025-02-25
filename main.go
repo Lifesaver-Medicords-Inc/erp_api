@@ -27,6 +27,8 @@ func main() {
 	// Fiber App
 	app := fiber.New()
 
+	app.Static("/files", "./files")
+
 	// App Logger
 	app.Use(logger.New(logger.Config{
 		Format: "[${ip}]:${port} ${status} - ${method} ${path}\n",
