@@ -22,26 +22,31 @@ func CreateAccount(c *fiber.Ctx, tx *gorm.DB) (models.User, int, error) {
 		return user, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	user = models.User{UserContent: models.UserContent{FirstName: body.FirstName, LastName: body.LastName, Department: body.Department, Position: body.Position}}
+	user = models.User{UserContent: body.UserContent}
 	if err := services.DbInsert(tx, &user); err != nil {
 		return user, fiber.StatusInternalServerError, errors.New("failed creating user")
 	}
 
 	employeeId := utils.GenerateEmployeeId(body.Department, body.Position, user.ID)
-	hash, err := bcrypt.GenerateFromPassword([]byte(employeeId), 10)
+	user.EmployeeId = employeeId
+
+	password, err := utils.GenerateUserPassword(employeeId)
 	if err != nil {
 		return user, fiber.StatusInternalServerError, errors.New("failed generating password")
 	}
+	user.Password = password
 
-	user.EmployeeId = employeeId
-	user.Password = string(hash)
 	if err := services.DbUpdate(tx, &user, nil); err != nil {
 		return user, fiber.StatusInternalServerError, errors.New("failed udpating user")
 	}
 
-	userat := models.UserAt{RefId: user.ID, EmployeeId: employeeId, UserContent: models.UserContent{FirstName: body.FirstName, LastName: body.LastName, Department: body.Department, Position: body.Position, Password: user.Password}, At: utils.GetAtData(c, body.At)}
-	if err := services.DbInsert(tx, &userat); err != nil {
-		return user, fiber.StatusInternalServerError, errors.New("failed creating user")
+	body.RefId = user.ID
+	body.EmployeeId = employeeId
+	body.Password = password
+	body.At = utils.GetAtData(c, body.At)
+
+	if err := services.DbInsert(tx, &body); err != nil {
+		return user, fiber.StatusInternalServerError, errors.New("failed creating userat")
 	}
 
 	return user, 0, nil
