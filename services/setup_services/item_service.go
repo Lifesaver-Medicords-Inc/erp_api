@@ -62,7 +62,6 @@ func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 	}
 
 	return response, 0, nil
-
 }
 
 func GetItem(id int) (Body, int, error) {
