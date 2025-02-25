@@ -2,15 +2,12 @@ package public_services
 
 import (
 	"errors"
-	"os"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
 	"github.com/pierceperado/smpc/utils"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -65,33 +62,16 @@ func LoginAccount(c *fiber.Ctx) (models.User, int, error) {
 	}
 
 	if err := services.DbGet(&user, conditions); err != nil {
-		return user, fiber.StatusUnauthorized, errors.New("invalid user credential 1")
+		return user, fiber.StatusUnauthorized, errors.New("invalid user credential")
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password)); err != nil {
-		return user, fiber.StatusUnauthorized, errors.New("invalid user credential 2")
+	if err := utils.CompareUserPassword(user.Password, body.Password); err != nil {
+		return user, fiber.StatusUnauthorized, errors.New("invalid user credential")
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": user.ID,
-		"exp": time.Now().Add(time.Hour * 24).Unix(),
-		"at":  utils.GetAtData(c, body.At),
-	})
-
-	secretKey := os.Getenv("SECRET_KEY")
-	tokenString, err := token.SignedString([]byte(secretKey))
-	if err != nil {
-		return user, fiber.StatusInternalServerError, errors.New("failed creating token")
+	if err := utils.CreateAuthToken(c, body.At, user.ID); err != nil {
+		return user, fiber.StatusUnauthorized, err
 	}
-
-	c.Cookie(&fiber.Cookie{
-		Name:     "Authorization",
-		Value:    tokenString,
-		Expires:  time.Now().Add(24 * time.Hour),
-		SameSite: fiber.CookieSameSiteLaxMode,
-		HTTPOnly: true,
-		Secure:   true,
-	})
 
 	return user, 0, nil
 }
