@@ -66,6 +66,20 @@ func UpdateTradeType(tx *gorm.DB, tradetype models.TradeType, at models.At, cond
 	return nil
 }
 
+func UpdateTradeTypes(tx *gorm.DB, body SaveBody, at models.At) error {
+	if err := services.DbDelete(tx, &models.TradeType{}, map[string]interface{}{"based_id": body.ID}); err != nil {
+		return errors.New("failed deleting existing trade types")
+	}
+
+	for _, v := range body.TradeType {
+		if err := CreateTradeType(tx, body.ID, v, at); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func DeleteTradeType(tx *gorm.DB, tradetype models.TradeType, at models.At, conditions map[string]interface{}) error {
 	if err := services.DbDelete(tx, &tradetype, conditions); err != nil {
 		return errors.New("failed deleting trade type")

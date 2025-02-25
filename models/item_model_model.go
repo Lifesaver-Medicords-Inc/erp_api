@@ -1,12 +1,12 @@
 package models
 
 type ModelContent struct {
-	Name          string `json:"name"`
-	ItemNameId    int    `json:"item_name_id"`
-	ItemBrandId   int    `json:"item_brand_id"`
+	BasedId       uint   `json:"based_id"`
+	ItemModelName string `json:"item_model_name"`
 	CatalogueYear string `json:"catalogue_year"`
 	IsActive      bool   `json:"is_active"`
 }
+
 type Model struct {
 	ID uint `gorm:"primarykey" json:"id"`
 	ModelContent

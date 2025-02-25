@@ -2,7 +2,8 @@ package models
 
 type ItemContent struct {
 	ItemNameId          uint   `json:"item_name_id"`
-	ItemModelId         uint   `json:"item_model_id"`
+	ItemModel           string `json:"item_model"`
+	CatalogueYear       string `json:"catalogue_year"`
 	ItemCode            string `json:"item_code"`
 	ShortDesc           string `json:"short_desc"`
 	ItemClassId         uint   `json:"item_class_id"`
