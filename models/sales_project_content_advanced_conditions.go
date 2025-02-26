@@ -27,7 +27,7 @@ func (SalesProjectAdvancedConditions) TableName() string {
 type SalesProjectAdvancedConditionsAt struct {
 	ID    uint `json:"id" gorm:"primaryKey"`
 	RefID uint `json:"ref_id"`
-	SalesProjectAdvancedConditions
+	SalesProjectAdvancedConditionsContent
 	At
 }
 

@@ -37,3 +37,21 @@ func GetSalesProjectContent(ProjectContent *[]models.SalesProjectContent, condit
 	}
 	return nil
 }
+
+func UpdateProjectContent(tx *gorm.DB, projectcontent models.SalesProjectContent, at models.At, conditions map[string]interface{}) error {
+	if err := services.DbUpdate(tx, &projectcontent, conditions); err != nil {
+		return errors.New("failed updating project content")
+	}
+
+	projectcontentat := models.SalesProjectContentAt{
+		RefID:                      projectcontent.ID,
+		SalesProjectContentContent: projectcontent.SalesProjectContentContent,
+		At:                         at,
+	}
+
+	if err := services.DbInsert(tx, &projectcontentat); err != nil {
+		return errors.New("failed creating project content")
+	}
+
+	return nil
+}
