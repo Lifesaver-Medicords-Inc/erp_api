@@ -41,21 +41,19 @@ func GetSalesProjectMultiplier(multiplier *[]models.SalesProjectMultiplier, cond
 	return nil
 }
 
-// UPDATE MULTIPLIERS
-func UpdateSalesProjectMultiplier(tx *gorm.DB, multiplier models.SalesProjectMultiplier, at models.At, conditions map[string]interface{}) error {
-
-	if err := services.DbUpdate(tx, &multiplier, conditions); err != nil {
-		return errors.New("failed updating multipliers")
+func UpdateSalesProjectMultiplier(tx *gorm.DB, projectmultiplier models.SalesProjectMultiplier, at models.At, conditions map[string]interface{}) error {
+	if err := services.DbUpdate(tx, &projectmultiplier, conditions); err != nil {
+		return errors.New("failed updating project multiplier")
 	}
 
-	multiplierat := models.SalesProjectMultiplierAt{
-		RefId:                         multiplier.ID,
-		SalesProjectMultiplierContent: multiplier.SalesProjectMultiplierContent,
+	projectmultiplierat := models.SalesProjectMultiplierAt{
+		RefId:                         projectmultiplier.ID,
+		SalesProjectMultiplierContent: projectmultiplier.SalesProjectMultiplierContent,
 		At:                            at,
 	}
 
-	if err := services.DbInsert(tx, &multiplierat); err != nil {
-		return errors.New("failed getting multipliers")
+	if err := services.DbInsert(tx, &projectmultiplierat); err != nil {
+		return errors.New("failed creating project multiplier at")
 	}
 
 	return nil

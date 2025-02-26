@@ -33,3 +33,21 @@ func GetProjectAdvancedConditions(ProjectConditions *[]models.SalesProjectAdvanc
 	}
 	return nil
 }
+
+func UpdateProjectAdvancedConditions(tx *gorm.DB, projectconditions *models.SalesProjectAdvancedConditions, at models.At, conditions map[string]interface{}) error {
+	if err := services.DbUpdate(tx, projectconditions, conditions); err != nil {
+		return errors.New("failed updating project advanced conditions")
+	}
+
+	projectconditionsat := models.SalesProjectAdvancedConditionsAt{
+		RefID:                                 projectconditions.ID,
+		SalesProjectAdvancedConditionsContent: projectconditions.SalesProjectAdvancedConditionsContent,
+		At:                                    at,
+	}
+
+	if err := services.DbInsert(tx, &projectconditionsat); err != nil {
+		return errors.New("failed creating project conditions")
+	}
+
+	return nil
+}

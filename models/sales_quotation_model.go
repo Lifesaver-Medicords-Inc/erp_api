@@ -1,7 +1,7 @@
 package models
 
 type SalesQuotationContent struct {
-	ProjectName      uint    `json:"project_name"`
+	ProjectName      string  `json:"project_name"`
 	CustomerID       uint    `json:"customer_id"`
 	ApplicationID    uint    `json:"application_id"`
 	PaymentTermsID   uint    `json:"payment_terms_id"`

@@ -1,8 +1,8 @@
 package models
 
 type SalesProjectItemSetContent struct {
-	BasedId   uint `json:"based_id"`
-	TabNumber uint `json:"tab_number"`
+	BasedId   uint   `json:"based_id"`
+	TabNumber string `json:"tab_number"`
 }
 
 type SalesProjectItemSet struct {

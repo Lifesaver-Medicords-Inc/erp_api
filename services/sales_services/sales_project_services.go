@@ -16,7 +16,6 @@ type ProjectBody struct {
 	SalesProjectHistory                  models.SalesProjectHistory            `json:"sales_project_history"`
 	SalesProjectItemSet                  models.SalesProjectItemSet            `json:"sales_project_item_set"`
 	SalesProjectContent                  models.SalesProjectContent            `json:"sales_project_content"`
-	SalesProjectContentChild             models.SalesProjectContentChild       `json:"sales_project_content_child"`
 	SalesProjectContentAdvancedCondition models.SalesProjectAdvancedConditions `json:"sales_project_content_advanced_condition"`
 	SalesProjectItems                    models.SalesProjectItems              `json:"sales_project_items"`
 }
@@ -27,7 +26,16 @@ type CreateProjectBody struct {
 	SalesProjectHistory                  []models.SalesProjectHistory          `json:"sales_project_history"`
 	SalesProjectItemSet                  models.SalesProjectItemSet            `json:"sales_project_item_set"`
 	SalesProjectContent                  models.SalesProjectContent            `json:"sales_project_content"`
-	SalesProjectContentChild             models.SalesProjectContentChild       `json:"sales_project_content_child"`
+	SalesProjectContentAdvancedCondition models.SalesProjectAdvancedConditions `json:"sales_project_content_advanced_condition"`
+	SalesProjectItems                    []models.SalesProjectItems            `json:"sales_project_items"`
+}
+
+type UpdateProjectBody struct {
+	models.SalesQuotation
+	SalesProjectMultiplier               models.SalesProjectMultiplier         `json:"sales_project_multiplier"`
+	SalesProjectHistory                  models.SalesProjectHistory            `json:"sales_project_history"`
+	SalesProjectItemSet                  models.SalesProjectItemSet            `json:"sales_project_item_set"`
+	SalesProjectContent                  models.SalesProjectContent            `json:"sales_project_content"`
 	SalesProjectContentAdvancedCondition models.SalesProjectAdvancedConditions `json:"sales_project_content_advanced_condition"`
 	SalesProjectItems                    []models.SalesProjectItems            `json:"sales_project_items"`
 }
@@ -39,7 +47,6 @@ func GetSalesProjects(conditions map[string]interface{}) (interface{}, int, erro
 		SalesProjectHistory                  []models.SalesProjectHistory            `json:"sales_project_history"`
 		SalesProjectItemSet                  []models.SalesProjectItemSet            `json:"sales_project_item_set"`
 		SalesProjectContent                  []models.SalesProjectContent            `json:"sales_project_content"`
-		SalesProjectContentChild             []models.SalesProjectContentChild       `json:"sales_project_content_child"`
 		SalesProjectContentAdvancedCondition []models.SalesProjectAdvancedConditions `json:"sales_project_content_advanced_condition"`
 		SalesProjectItems                    []models.SalesProjectItems              `json:"sales_project_items"`
 	}
@@ -66,9 +73,6 @@ func GetSalesProjects(conditions map[string]interface{}) (interface{}, int, erro
 		return response, fiber.StatusInternalServerError, err
 	}
 
-	if err := GetSalesProjectContentChild(&response.SalesProjectContentChild, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, err
-	}
 	if err := GetProjectAdvancedConditions(&response.SalesProjectContentAdvancedCondition, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, err
 	}
@@ -104,6 +108,7 @@ func CreateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, erro
 
 	for _, v := range body.SalesProjectMultiplier {
 		if err := CreateSalesProjectMultiplier(tx, body.ID, v, at); err != nil {
+			fmt.Print("KEY ADVCOND SET::", body)
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
@@ -115,26 +120,138 @@ func CreateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, erro
 	}
 
 	if err := CreateProjectItemSet(tx, body.ID, &body.SalesProjectItemSet, at); err != nil {
+		fmt.Print("KEY ITEM SET::", err)
 		return body, fiber.StatusInternalServerError, err
 	}
 
 	if err := CreateProjectContent(tx, body.SalesProjectItemSet.ID, body.SalesProjectContent, at); err != nil {
-
-		return body, fiber.StatusInternalServerError, err
-	}
-
-	if err := CreateProjectContentChild(tx, body.SalesProjectItemSet.ID, body.SalesProjectContentChild, at); err != nil {
-
+		fmt.Print("KEY CONTENT SET::", err)
 		return body, fiber.StatusInternalServerError, err
 	}
 
 	if err := CreateProjectAdvancedConditions(tx, body.SalesProjectItemSet.ID, body.SalesProjectContentAdvancedCondition, at); err != nil {
-
+		fmt.Print("KEY ADVCOND SET::", err)
 		return body, fiber.StatusInternalServerError, err
 	}
 
 	for _, v := range body.SalesProjectItems {
 		if err := CreateProjectItems(tx, body.SalesProjectItemSet.ID, v, at); err != nil {
+
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+
+	return body, 0, nil
+}
+
+// CREATE NEW TAB WITH ITS CHILD ITEMS
+func CreateNewItems(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, error) {
+	var body CreateProjectBody
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	if err := CreateProjectItemSet(tx, body.SalesProjectItemSet.BasedId, &body.SalesProjectItemSet, at); err != nil {
+		fmt.Print("KEY ITEM SET::", err)
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	if err := CreateProjectContent(tx, body.SalesProjectItemSet.ID, body.SalesProjectContent, at); err != nil {
+		fmt.Print("KEY CONTENT SET::", err)
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	if err := CreateProjectAdvancedConditions(tx, body.SalesProjectItemSet.ID, body.SalesProjectContentAdvancedCondition, at); err != nil {
+		fmt.Print("KEY ADVCOND SET::", err)
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	for _, v := range body.SalesProjectItems {
+		if err := CreateProjectItems(tx, body.SalesProjectItemSet.ID, v, at); err != nil {
+
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+
+	return body, 0, nil
+}
+
+func UpdateProjectMultiplier(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (UpdateProjectBody, int, error) {
+	var body UpdateProjectBody
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	if err := UpdateSalesProjectMultiplier(tx, body.SalesProjectMultiplier, at, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	return body, 0, nil
+}
+
+func UpdateProjectContents(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (UpdateProjectBody, int, error) {
+	var body UpdateProjectBody
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	if err := UpdateProjectContent(tx, body.SalesProjectContent, at, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	return body, 0, nil
+}
+
+func UpdateProjectAdvancedCondition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (UpdateProjectBody, int, error) {
+	var body UpdateProjectBody
+	if err := c.BodyParser(&body); err != nil {
+		fmt.Println(err)
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	fmt.Println("Sales Advanced Condition:", body.SalesProjectContentAdvancedCondition)
+
+	if err := UpdateProjectAdvancedConditions(tx, &body.SalesProjectContentAdvancedCondition, at, conditions); err != nil {
+		fmt.Println(err)
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	return body, 0, nil
+}
+
+func UpdateProjectItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (UpdateProjectBody, int, error) {
+	var body UpdateProjectBody
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	for _, v := range body.SalesProjectItems {
+		if err := UpdateProjectItems(tx, v, at, conditions); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}

@@ -12,7 +12,6 @@ import (
 // Create Quick Quotation
 func CreateSalesQuotationQuick(tx *gorm.DB, parentId uint, QuickQuote models.SalesQuotationQuick, at models.At) error {
 
-	// parentId = 10015
 	QuickQuote.BasedId = parentId
 
 	if err := services.DbInsert(tx, &QuickQuote); err != nil {
@@ -82,6 +81,7 @@ func DeleteSalesQuotationQuick(tx *gorm.DB, quickquotes models.SalesQuotationQui
 		SalesQuotationQuickContent: quickquotes.SalesQuotationQuickContent,
 		At:                         at,
 	}
+
 	if err := services.DbInsert(tx, &quickquotationsat); err != nil {
 		return errors.New("failed deleting quick quotations at")
 	}
