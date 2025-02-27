@@ -1,34 +1,33 @@
 package setup_services
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
 )
 
+func GetImageURL(filename string) string {
+	host := "localhost"
+	port := os.Getenv("BIND_PORT")
+
+	return fmt.Sprintf("%s:%s/files/%s", host, port, filename)
+}
+
 func GetItemImages(itemImage *[]models.ItemImage, conditions map[string]interface{}) error {
 	if err := services.DbGet(itemImage, conditions); err != nil {
-		return errors.New("failed getting itemimage")
+		return errors.New("failed getting item images")
+	}
+
+	for i := range *itemImage {
+		(*itemImage)[i].Image = GetImageURL(filepath.Base((*itemImage)[i].Image))
 	}
 
 	return nil
-}
-
-func EncodeFileToBase64(filePath string) (string, error) {
-	// Read the file
-	fileData, err := os.ReadFile(filePath)
-	if err != nil {
-		return "", fmt.Errorf("failed reading file: %w", err)
-	}
-
-	// Encode the file data to base64
-	base64Str := base64.StdEncoding.EncodeToString(fileData)
-	return base64Str, nil
 }
 
 func CreateItemImage(tx *gorm.DB, basedId uint, imageInput ItemImageInput, at models.At) error {
@@ -62,4 +61,3 @@ func CreateItemImage(tx *gorm.DB, basedId uint, imageInput ItemImageInput, at mo
 
 	return nil
 }
- 
