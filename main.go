@@ -27,6 +27,8 @@ func main() {
 	// Fiber App
 	app := fiber.New()
 
+	app.Static("/files", "./files")
+
 	// App Logger
 	app.Use(logger.New(logger.Config{
 		Format: "[${ip}]:${port} ${status} - ${method} ${path}\n",
@@ -221,16 +223,19 @@ func main() {
 			//api.Patch("/bpi", sales_handlers.UpdateQuotation)
 			//api.Delete("/bpi", sales_handlers.DeleteQuotation)
 
+			// Websocket Endpoints
 			ws := api.Group("/ws")
 			{
 				// Setup Endpoints
 				setupApi := ws.Group("/setup")
 				{
+					// Item Endpoints
 					itemApi := setupApi.Group("/item")
 					{
 						itemApi.Get("", websocket.New(setup_handlers.WsgetItems))
 					}
 
+					// Project Endpoints
 					projectApi := setupApi.Group("/project")
 					{
 						projectApi.Get("", websocket.New(func(c *websocket.Conn) {

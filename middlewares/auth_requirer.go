@@ -13,7 +13,7 @@ import (
 )
 
 func RequireAuth(c *fiber.Ctx) error {
-	tokenString := c.Get("Authorization")
+	tokenString := c.Cookies("Authorization")
 	if tokenString == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"success": false,

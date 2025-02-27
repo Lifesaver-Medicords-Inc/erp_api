@@ -61,6 +61,7 @@ func UpdateOrderDetail(tx *gorm.DB, orderdetails models.OrderDetails, at models.
 	// Ensure there is a condition to update the specific order details
 	conditions = map[string]interface{}{
 		"based_id": orderdetails.Based_ID,
+		"item_id":  orderdetails.Item_ID,
 	}
 	// Perform the update for order details with a condition
 	if err := services.DbUpdate(tx, &orderdetails, conditions); err != nil {
