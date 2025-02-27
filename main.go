@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
+	"github.com/pierceperado/smpc/handlers/position_handlers"
 	"github.com/pierceperado/smpc/handlers/public_handlers"
 	"github.com/pierceperado/smpc/handlers/sales_handlers"
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
@@ -141,6 +142,28 @@ func main() {
 				setupApi.Post("/entity", setup_handlers.CreateEntity)
 				setupApi.Put("/entity", setup_handlers.UpdateEntity)
 				setupApi.Delete("/entity", setup_handlers.DeleteEntity)
+
+				//Position Endpoints
+				setupApi.Get("/position", position_handlers.GetPositions)
+				setupApi.Get("/position:/id", position_handlers.GetPosition)
+				setupApi.Post("/position", position_handlers.CreatePosition)
+				setupApi.Put("/position", position_handlers.UpdatePosition)
+				setupApi.Delete("/position", position_handlers.DeletePosition)
+
+				//BOM Endpoints
+				setupApi.Get("/bom", setup_handlers.GetSetupItemBoms)
+				setupApi.Get("/bom:/id", setup_handlers.GetSetupItemBom)
+				setupApi.Post("/bom", setup_handlers.CreateSetupItemBom)
+				setupApi.Put("/bom", setup_handlers.UpdateSetupItemBom)
+				setupApi.Delete("/bom", setup_handlers.DeleteSetupItemBom)
+				setupApi.Get("/bom/item_list", setup_handlers.GetBomItemList)
+
+				//BOM Detail Endpoints
+				// setupApi.Get("/bom/detail", setup_handlers.GetSetupItemBomDetails)
+				// setupApi.Get("/bom:/id", setup_handlers.GetSetupItemBomDetail)
+				// setupApi.Post("/bom/detail", setup_handlers.CreateSetupItemBomDetail)
+				// setupApi.Put("/bom/detail", setup_handlers.UpdateSetupItemBomDetail)
+				// setupApi.Delete("/bom/detail", setup_handlers.DeleteSetupItemBomDetail)
 			}
 
 			// Sales Endpoints
@@ -187,8 +210,14 @@ func main() {
 			api.Post("/bpi", bpi_handlers.CreateBpi)
 			api.Get("/bpi/customers", sales_handlers.GetBpis)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
+
 			//api.Patch("/bpi", sales_handlers.UpdateQuotation)
 			//api.Delete("/bpi", sales_handlers.DeleteQuotation)
+
+			// positionApi := api.Group("/position")
+			// {
+
+			// }
 
 		}
 	}

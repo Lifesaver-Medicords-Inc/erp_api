@@ -19,6 +19,11 @@ type Body struct {
 	Items        []models.BpiItems       `json:"items"`
 }
 
+type BodySample struct {
+	models.SetupItemBom
+	BomDetails []models.SetupItemBomDetails `json:"bom_details"`
+}
+
 func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
 	type Response struct {
 		Bpi      []models.BpiView        `json:"bpi"`
