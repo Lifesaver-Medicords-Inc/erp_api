@@ -20,7 +20,6 @@ type AdditionalSpecsContent struct {
 	Height                   float64 `json:"height"`
 	HeightUnitOfMeasureId    uint    `json:"height_unit_of_measure_id"`
 	LongDescription          string  `json:"long_desc"`
-	//PumpTypeCompatabilityId  uint    `json:"pump_type_compatability_id"`
 }
 
 type AdditionalSpecs struct {
@@ -30,6 +29,11 @@ type AdditionalSpecs struct {
 
 func (AdditionalSpecs) TableName() string {
 	return "tbl_setup_item_additional_specs"
+}
+
+type AdditionalSpecsSchema struct {
+	AdditionalSpecs
+	PumpTypeCompatabilityId []uint `json:"pump_type_compatability_id"`
 }
 
 type AdditionalSpecsAt struct {

@@ -31,13 +31,15 @@ func CreateAdditionalSpecsPumpType(tx *gorm.DB, basedId uint, pumpTypeCompatabil
 	return nil
 }
 
-func UpdateAdditionalSpecsPumpType(tx *gorm.DB, body SaveBody, at models.At) error {
-	if err := services.DbDelete(tx, &models.AdditionalSpecsPumpType{}, map[string]interface{}{"based_id": body.ID}); err != nil {
-		return errors.New("failed deleting existing additional specs pump type")
+func UpdateAdditionalSpecsPumpType(tx *gorm.DB, additionalSpecsID uint, pumpTypeIDs []uint, at models.At) error {
+	// Delete old PumpTypeCompatability entries before inserting new ones
+	if err := services.DbDelete(tx, &models.AdditionalSpecsPumpType{}, map[string]interface{}{"additional_specs_id": additionalSpecsID}); err != nil {
+		return errors.New("failed deleting existing pump additional specs pump type")
 	}
 
-	for _, v := range body.PumpTypeId {
-		if err := CreateAdditionalSpecsPumpType(tx, body.ID, v, at); err != nil {
+	// Insert new PumpTypeCompatability entries
+	for _, pumpTypeID := range pumpTypeIDs {
+		if err := CreateAdditionalSpecsPumpType(tx, additionalSpecsID, pumpTypeID, at); err != nil {
 			return err
 		}
 	}
