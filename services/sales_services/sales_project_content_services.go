@@ -20,7 +20,7 @@ func CreateProjectContent(tx *gorm.DB, parentId uint, ProjectContent models.Sale
 	}
 
 	projectcontentat := models.SalesProjectContentAt{
-		RefID:                      ProjectContent.ID,
+		RefID:                      ProjectContent.ContentID,
 		SalesProjectContentContent: ProjectContent.SalesProjectContentContent,
 		At:                         at,
 	}
@@ -44,7 +44,7 @@ func UpdateProjectContent(tx *gorm.DB, projectcontent models.SalesProjectContent
 	}
 
 	projectcontentat := models.SalesProjectContentAt{
-		RefID:                      projectcontent.ID,
+		RefID:                      projectcontent.ContentID,
 		SalesProjectContentContent: projectcontent.SalesProjectContentContent,
 		At:                         at,
 	}

@@ -17,7 +17,7 @@ func CreateSalesProjectHistory(tx *gorm.DB, parentId uint, history models.SalesP
 	}
 
 	historyat := models.SalesProjectHistoryAt{
-		RefId:                      history.ID,
+		RefId:                      history.HistoryID,
 		SalesProjectHistoryContent: history.SalesProjectHistoryContent,
 		At:                         at,
 	}

@@ -206,8 +206,6 @@ func main() {
 				//salesApi.Post("child/quotation", sales_handlers.CreateSalesQuotationChild)
 				// POST for Parent
 				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
-				// salesApi.Put("/quotation", sales_handlers.UpdateSalesQuotation)
-				// salesApi.Delete("/quotation", sales_handlers.DeleteSalesQuotation)
 
 				salesApi.Get("/application", setup_handlers.GetApplications)
 				salesApi.Get("/application/:id", setup_handlers.GetApplication)
@@ -230,6 +228,9 @@ func main() {
 				//projects
 				salesApi.Get("/projects", sales_handlers.GetSalesProject)
 				salesApi.Post("/projects", sales_handlers.CreateSalesProject)
+				salesApi.Post("/projects_tab", sales_handlers.CreateItemSetTab)
+				salesApi.Put("/project_conditions", sales_handlers.UpdateProjectCondition)
+				salesApi.Put("/project_contents", sales_handlers.UpdateProjectContent)
 				// Return Routes
 				// sales_api.Get("/return", handlers.Register)
 				// sales_api.Post("/return/create", handlers.Register)
