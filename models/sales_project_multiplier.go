@@ -10,7 +10,7 @@ type SalesProjectMultiplierContent struct {
 }
 
 type SalesProjectMultiplier struct {
-	ID uint `gorm:"primarykey" json:"id"`
+	MultiplierID uint `gorm:"primarykey" json:"multiplier_id"`
 	SalesProjectMultiplierContent
 }
 

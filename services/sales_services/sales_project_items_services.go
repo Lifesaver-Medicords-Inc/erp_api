@@ -16,7 +16,7 @@ func CreateProjectItems(tx *gorm.DB, parentId uint, projectitems models.SalesPro
 	}
 
 	projectconditionsat := models.SalesProjectItemsAt{
-		RefID:                    projectitems.ID,
+		RefID:                    projectitems.ItemsID,
 		SalesProjectItemsContent: projectitems.SalesProjectItemsContent,
 		At:                       at,
 	}
@@ -41,7 +41,7 @@ func UpdateProjectItems(tx *gorm.DB, projectitems models.SalesProjectItems, at m
 	}
 
 	projectconditionsat := models.SalesProjectItemsAt{
-		RefID:                    projectitems.ID,
+		RefID:                    projectitems.ItemsID,
 		SalesProjectItemsContent: projectitems.SalesProjectItemsContent,
 		At:                       at,
 	}

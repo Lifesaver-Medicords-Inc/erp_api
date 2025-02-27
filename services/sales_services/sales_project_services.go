@@ -124,18 +124,18 @@ func CreateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, erro
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	if err := CreateProjectContent(tx, body.SalesProjectItemSet.ID, body.SalesProjectContent, at); err != nil {
+	if err := CreateProjectContent(tx, body.SalesProjectItemSet.ItemSetID, body.SalesProjectContent, at); err != nil {
 		fmt.Print("KEY CONTENT SET::", err)
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	if err := CreateProjectAdvancedConditions(tx, body.SalesProjectItemSet.ID, body.SalesProjectContentAdvancedCondition, at); err != nil {
+	if err := CreateProjectAdvancedConditions(tx, body.SalesProjectItemSet.ItemSetID, body.SalesProjectContentAdvancedCondition, at); err != nil {
 		fmt.Print("KEY ADVCOND SET::", err)
 		return body, fiber.StatusInternalServerError, err
 	}
 
 	for _, v := range body.SalesProjectItems {
-		if err := CreateProjectItems(tx, body.SalesProjectItemSet.ID, v, at); err != nil {
+		if err := CreateProjectItems(tx, body.SalesProjectItemSet.ItemSetID, v, at); err != nil {
 
 			return body, fiber.StatusInternalServerError, err
 		}
@@ -161,18 +161,18 @@ func CreateNewItems(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, error) {
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	if err := CreateProjectContent(tx, body.SalesProjectItemSet.ID, body.SalesProjectContent, at); err != nil {
+	if err := CreateProjectContent(tx, body.SalesProjectItemSet.ItemSetID, body.SalesProjectContent, at); err != nil {
 		fmt.Print("KEY CONTENT SET::", err)
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	if err := CreateProjectAdvancedConditions(tx, body.SalesProjectItemSet.ID, body.SalesProjectContentAdvancedCondition, at); err != nil {
+	if err := CreateProjectAdvancedConditions(tx, body.SalesProjectItemSet.ItemSetID, body.SalesProjectContentAdvancedCondition, at); err != nil {
 		fmt.Print("KEY ADVCOND SET::", err)
 		return body, fiber.StatusInternalServerError, err
 	}
 
 	for _, v := range body.SalesProjectItems {
-		if err := CreateProjectItems(tx, body.SalesProjectItemSet.ID, v, at); err != nil {
+		if err := CreateProjectItems(tx, body.SalesProjectItemSet.ItemSetID, v, at); err != nil {
 
 			return body, fiber.StatusInternalServerError, err
 		}

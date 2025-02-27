@@ -15,15 +15,15 @@ func CreateProjectAdvancedConditions(tx *gorm.DB, parentId uint, ProjectConditio
 		return errors.New("failed creating project advanced conditions")
 	}
 
-	// projectconditionsat := models.SalesProjectAdvancedConditionsAt{
-	// 	RefID:                          ProjectConditions.ID,
-	// 	SalesProjectAdvancedConditions: ProjectConditions,
-	// 	At:                             at,
-	// }
+	projectconditionsat := models.SalesProjectAdvancedConditionsAt{
+		RefID:                                 ProjectConditions.ConditionsID,
+		SalesProjectAdvancedConditionsContent: ProjectConditions.SalesProjectAdvancedConditionsContent,
+		At:                                    at,
+	}
 
-	// if err := services.DbInsert(tx, &projectconditionsat); err != nil {
-	// 	return errors.New("failed creating content child")
-	// }
+	if err := services.DbInsert(tx, &projectconditionsat); err != nil {
+		return errors.New("failed creating content child")
+	}
 	return nil
 }
 
@@ -40,7 +40,7 @@ func UpdateProjectAdvancedConditions(tx *gorm.DB, projectconditions *models.Sale
 	}
 
 	projectconditionsat := models.SalesProjectAdvancedConditionsAt{
-		RefID:                                 projectconditions.ID,
+		RefID:                                 projectconditions.ConditionsID,
 		SalesProjectAdvancedConditionsContent: projectconditions.SalesProjectAdvancedConditionsContent,
 		At:                                    at,
 	}
