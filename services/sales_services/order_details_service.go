@@ -58,11 +58,17 @@ func CreateOrderDetail(tx *gorm.DB, parentId uint, OrderDetails models.OrderDeta
 }
 
 func UpdateOrderDetail(tx *gorm.DB, orderdetails models.OrderDetails, at models.At, conditions map[string]interface{}) error {
-
-	if err := services.DbUpdate(tx, &orderdetails, nil); err != nil {
+	// Ensure there is a condition to update the specific order details
+	conditions = map[string]interface{}{
+		"based_id": orderdetails.Based_ID,
+		"item_id":  orderdetails.Item_ID,
+	}
+	// Perform the update for order details with a condition
+	if err := services.DbUpdate(tx, &orderdetails, conditions); err != nil {
 		return errors.New("failed updating order details")
 	}
 
+	// Insert the "at" data for the updated order details
 	orderdetailsat := models.OrderDetailsAt{
 		RefId:               orderdetails.Order_Details_ID,
 		OrderDetailsContent: orderdetails.OrderDetailsContent,

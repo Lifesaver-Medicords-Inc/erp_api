@@ -80,7 +80,7 @@ func UpdateClass(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 		at = models.At{}
 	}
 
-	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{}, At: at}
+	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: body.ClassContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating classat")
 	}

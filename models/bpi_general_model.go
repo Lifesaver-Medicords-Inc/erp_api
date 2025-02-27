@@ -1,9 +1,7 @@
 package models
 
-type BpiGeneralContent struct {
-	BasedId         uint   `json:"based_id"`
+type BpiGeneralEmbeddedContent struct {
 	Social          uint   `json:"social_id"`
-	BranchName      string `json:"branch_name"`
 	TransactionType string `json:"transaction_type"`
 	ClassName       string `json:"class_name"`
 	BranchTelNo     string `json:"branch_tel_no"`
@@ -14,6 +12,12 @@ type BpiGeneralContent struct {
 	Notes           string `json:"notes"`
 }
 
+type BpiGeneralContent struct {
+	BasedId    uint   `json:"based_id"`
+	BranchName string `gorm:"unique;size:100" json:"branch_name"`
+	BpiGeneralEmbeddedContent
+}
+
 type BpiGeneral struct {
 	ID uint `gorm:"primarykey" json:"id"`
 	BpiGeneralContent
@@ -21,8 +25,8 @@ type BpiGeneral struct {
 
 type BpiGeneralSchema struct {
 	BpiGeneral
-	BranchIndustriesId []uint `json:"branch_industry_id"`
-	EntityTypeId       []uint `json:"entity_type_id"`
+	BranchIndustryId []uint `json:"branch_industry_id"`
+	EntityTypeId     []uint `json:"entity_type_id"`
 }
 
 func (BpiGeneral) TableName() string {

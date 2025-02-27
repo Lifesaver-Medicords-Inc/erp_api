@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
@@ -12,6 +13,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/services"
 )
 
 func init() {
@@ -19,11 +21,14 @@ func init() {
 	initializers.ConnectDb()
 	initializers.MigrateDb()
 	initializers.InitRedis()
+	initializers.InitWm()
 }
 
 func main() {
 	// Fiber App
 	app := fiber.New()
+
+	app.Static("/files", "./files")
 
 	// App Logger
 	app.Use(logger.New(logger.Config{
@@ -38,6 +43,7 @@ func main() {
 		api.Post("/login", public_handlers.LoginAccount)
 		api.Post("/logout", public_handlers.LogoutAccount)
 		api.Get("/hello", public_handlers.CheckHealth)
+		api.Post("/upload", public_handlers.ImageUpload)
 
 		// Protected Endpoints
 		// api.Use(middlewares.RequireAuth)
@@ -55,7 +61,6 @@ func main() {
 			// Setup Endpoints
 			setupApi := api.Group("/setup")
 			{
-
 				itemApi := setupApi.Group("/item")
 				{
 					// Brand Endpoints
@@ -72,12 +77,33 @@ func main() {
 					itemApi.Put("/class", setup_handlers.UpdateClass)
 					itemApi.Delete("/class", setup_handlers.DeleteClass)
 
+					// Material Endpoints
+					itemApi.Get("/material", setup_handlers.GetMaterials)
+					itemApi.Get("/material/:id", setup_handlers.GetMaterial)
+					itemApi.Post("/material", setup_handlers.CreateMaterial)
+					itemApi.Put("/material", setup_handlers.UpdateMaterial)
+					itemApi.Delete("/material", setup_handlers.DeleteMaterial)
+
 					// Name Endpoints
 					itemApi.Get("/name", setup_handlers.GetNames)
 					itemApi.Get("/name/:id", setup_handlers.GetName)
 					itemApi.Post("/name", setup_handlers.CreateName)
 					itemApi.Put("/name", setup_handlers.UpdateName)
 					itemApi.Delete("/name", setup_handlers.DeleteName)
+
+					// Pump Count Endpoints
+					itemApi.Get("/pump_count", setup_handlers.GetPumpCounts)
+					itemApi.Get("/pump_count/:id", setup_handlers.GetPumpCount)
+					itemApi.Post("/pump_count", setup_handlers.CreatePumpCount)
+					itemApi.Put("/pump_count", setup_handlers.UpdatePumpCount)
+					itemApi.Delete("/pump_count", setup_handlers.DeletePumpCount)
+
+					// Pump Type Endpoints
+					itemApi.Get("/pump_type", setup_handlers.GetPumpTypes)
+					itemApi.Get("/pump_type/:id", setup_handlers.GetPumpType)
+					itemApi.Post("/pump_type", setup_handlers.CreatePumpType)
+					itemApi.Put("/pump_type", setup_handlers.UpdatePumpType)
+					itemApi.Delete("/pump_type", setup_handlers.DeletePumpType)
 
 					// Type Endpoints
 					itemApi.Get("/type", setup_handlers.GetTypes)
@@ -87,11 +113,11 @@ func main() {
 					itemApi.Delete("/type", setup_handlers.DeleteType)
 
 					// Model Endpoints
-					itemApi.Get("/model", setup_handlers.GetModels)
-					itemApi.Get("/model/:id", setup_handlers.GetModel)
-					itemApi.Post("/model", setup_handlers.CreateModel)
-					itemApi.Put("/model", setup_handlers.UpdateModel)
-					itemApi.Delete("/model", setup_handlers.DeleteModel)
+					// itemApi.Get("/model", setup_handlers.GetModels)
+					// itemApi.Get("/model/:id", setup_handlers.GetModel)
+					// itemApi.Post("/model", setup_handlers.CreateModel)
+					// itemApi.Put("/model", setup_handlers.UpdateModel)
+					// itemApi.Delete("/model", setup_handlers.DeleteModel)
 
 					// Item Endpoints
 					itemApi.Get("", setup_handlers.GetItems)
@@ -164,6 +190,11 @@ func main() {
 				// setupApi.Post("/bom/detail", setup_handlers.CreateSetupItemBomDetail)
 				// setupApi.Put("/bom/detail", setup_handlers.UpdateSetupItemBomDetail)
 				// setupApi.Delete("/bom/detail", setup_handlers.DeleteSetupItemBomDetail)
+        
+				setupApi.Get("/project", setup_handlers.GetProjects)
+				setupApi.Post("/project", setup_handlers.CreateProject)
+				setupApi.Put("/project", setup_handlers.UpdateProject)
+
 			}
 
 			// Sales Endpoints
@@ -188,7 +219,7 @@ func main() {
 				salesApi.Get("/order/:id", sales_handlers.GetOrder)
 				salesApi.Post("child/order", sales_handlers.CreateOrderChild)
 				salesApi.Post("/order", sales_handlers.CreateOrder)
-				salesApi.Patch("/order", sales_handlers.UpdateOrder)
+				salesApi.Put("/order", sales_handlers.UpdateOrder)
 				salesApi.Delete("/order", sales_handlers.DeleteOrder)
 				// Opportunity Endpointss
 				salesApi.Get("/opportunity", sales_handlers.GetOpportunities)
@@ -196,6 +227,9 @@ func main() {
 				salesApi.Post("/opportunity", sales_handlers.CreateOpportunity)
 				salesApi.Put("/opportunity", sales_handlers.UpdateOpportunity)
 
+				//projects
+				salesApi.Get("/projects", sales_handlers.GetSalesProject)
+				salesApi.Post("/projects", sales_handlers.CreateSalesProject)
 				// Return Routes
 				// sales_api.Get("/return", handlers.Register)
 				// sales_api.Post("/return/create", handlers.Register)
@@ -219,6 +253,27 @@ func main() {
 
 			// }
 
+			// Websocket Endpoints
+			ws := api.Group("/ws")
+			{
+				// Setup Endpoints
+				setupApi := ws.Group("/setup")
+				{
+					// Item Endpoints
+					itemApi := setupApi.Group("/item")
+					{
+						itemApi.Get("", websocket.New(setup_handlers.WsgetItems))
+					}
+
+					// Project Endpoints
+					projectApi := setupApi.Group("/project")
+					{
+						projectApi.Get("", websocket.New(func(c *websocket.Conn) {
+							services.HandleWs(c, setup_handlers.WsgetProjects)
+						}))
+					}
+				}
+			}
 		}
 	}
 

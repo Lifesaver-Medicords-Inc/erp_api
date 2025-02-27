@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetAdditionalSpecs(additionalSpecs *[]models.AdditionalSpecs, conditions map[string]interface{}) error {
+func GetAdditionalSpecs(additionalSpecs *[]models.AdditionalSpecsView, conditions map[string]interface{}) error {
 	if err := services.DbGet(additionalSpecs, conditions); err != nil {
 		fmt.Println("ERROR:", err)
 		return errors.New("failed getting additional specs")
@@ -26,54 +26,55 @@ func GetAdditionalSpec(additionalspecs *models.AdditionalSpecs, conditions map[s
 	return nil
 }
 
-func CreateAdditionalSpec(tx *gorm.DB, basedId uint, additionalSpec models.AdditionalSpecs, at models.At) error {
-	content := models.AdditionalSpecsContent{
-		BasedId:           basedId,
-		SuctionPressure:   additionalSpec.SuctionPressure,
-		DriverType:        additionalSpec.DriverType,
-		MotorEnclosure:    additionalSpec.MotorEnclosure,
-		MotorManufacturer: additionalSpec.MotorManufacturer,
-		ServiceFactor:     additionalSpec.ServiceFactor,
-		LiquidType:        additionalSpec.LiquidType,
-		Volume:            additionalSpec.Volume,
-		Weight:            additionalSpec.Weight,
-		LongDescription:   additionalSpec.LongDescription,
-	}
+func CreateAdditionalSpec(tx *gorm.DB, basedId uint, additionalSpec models.AdditionalSpecsSchema, at models.At) error {
+	additionalSpec.AdditionalSpecs.BasedId = basedId
 
-	additionalspecs := models.AdditionalSpecs{AdditionalSpecsContent: content}
-	if err := services.DbInsert(tx, &additionalspecs); err != nil {
+	if err := services.DbInsert(tx, &additionalSpec.AdditionalSpecs); err != nil {
 		return fmt.Errorf("failed creating additional specs")
 	}
 
-	additionalspecsat := models.AdditionalSpecsAt{
-		RefId:                  additionalspecs.ID,
-		AdditionalSpecsContent: content,
+	for _, v := range additionalSpec.PumpTypeCompatabilityId {
+		if err := CreateAdditionalSpecsPumpType(tx, additionalSpec.AdditionalSpecs.ID, uint(v), at); err != nil {
+			return err
+		}
+	}
+
+	additionalSpecsAt := models.AdditionalSpecsAt{
+		RefId:                  additionalSpec.AdditionalSpecs.ID,
+		AdditionalSpecsContent: additionalSpec.AdditionalSpecs.AdditionalSpecsContent, // Snapshot of content
 		At:                     at,
 	}
 
-	if err := services.DbInsert(tx, &additionalspecsat); err != nil {
-		return errors.New("failed creating additional specs at")
+	// Insert AdditionalSpecsAt into DB
+	if err := services.DbInsert(tx, &additionalSpecsAt); err != nil {
+		return fmt.Errorf("failed creating additional specs at: %w", err)
 	}
 
 	return nil
 }
 
-func UpdateAdditionalSpec(tx *gorm.DB, additionalspec models.AdditionalSpecs, at models.At, conditions map[string]interface{}) error {
-	if err := services.DbUpdate(tx, &additionalspec, conditions); err != nil {
-		return errors.New("failed updating additional specs")
+func UpdateAdditionalSpec(tx *gorm.DB, additionalspec models.AdditionalSpecsSchema, at models.At, conditions map[string]interface{}) error {
+	if err := services.DbUpdate(tx, &additionalspec.AdditionalSpecs, conditions); err != nil {
+		return fmt.Errorf("failed updating additional specs: %w", err)
+	}
+
+	if err := UpdateAdditionalSpecsPumpType(tx, additionalspec.AdditionalSpecs.ID, additionalspec.PumpTypeCompatabilityId, at); err != nil {
+		return err
 	}
 
 	additionalspecat := models.AdditionalSpecsAt{
-		RefId:                  additionalspec.ID,
-		AdditionalSpecsContent: additionalspec.AdditionalSpecsContent,
+		RefId:                  additionalspec.AdditionalSpecs.ID,
+		AdditionalSpecsContent: additionalspec.AdditionalSpecs.AdditionalSpecsContent,
 		At:                     at,
 	}
+
 	if err := services.DbInsert(tx, &additionalspecat); err != nil {
 		return errors.New("failed creating additional specs at")
 	}
 
 	return nil
 }
+
 
 func DeleteAdditionalSpecs(tx *gorm.DB, additionalspec models.AdditionalSpecs, at models.At, conditions map[string]interface{}) error {
 	if err := services.DbDelete(tx, &additionalspec, conditions); err != nil {
