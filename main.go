@@ -9,6 +9,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
 	"github.com/pierceperado/smpc/handlers/position_handlers"
 	"github.com/pierceperado/smpc/handlers/public_handlers"
+	"github.com/pierceperado/smpc/handlers/purchasing_handlers"
 	"github.com/pierceperado/smpc/handlers/sales_handlers"
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
@@ -190,7 +191,7 @@ func main() {
 				// setupApi.Post("/bom/detail", setup_handlers.CreateSetupItemBomDetail)
 				// setupApi.Put("/bom/detail", setup_handlers.UpdateSetupItemBomDetail)
 				// setupApi.Delete("/bom/detail", setup_handlers.DeleteSetupItemBomDetail)
-        
+
 				setupApi.Get("/project", setup_handlers.GetProjects)
 				setupApi.Post("/project", setup_handlers.CreateProject)
 				setupApi.Put("/project", setup_handlers.UpdateProject)
@@ -236,7 +237,17 @@ func main() {
 				// sales_api.Post("/return/create", handlers.Register)
 				// sales_api.Patch("/return/update", handlers.Register)
 				// sales_api.Delete("/return/delete", handlers.Register)
+			}
 
+			// Purchasing Endpoints
+			purchasingApi := api.Group("/purchasing")
+			{
+				purchasingApi.Get("/purchase_requisition", purchasing_handlers.GetPRs)
+				purchasingApi.Get("/purchase_requisition/:id", purchasing_handlers.GetPR)
+				purchasingApi.Post("child/purchase_requisition", purchasing_handlers.CreatePRChild)
+				purchasingApi.Post("/purchase_requisition", purchasing_handlers.CreatePR)
+				purchasingApi.Put("/purchase_requisition", purchasing_handlers.UpdatePR)
+				purchasingApi.Delete("/purchase_requisition", purchasing_handlers.DeletePR)
 			}
 
 			//Bpi Endpoints
