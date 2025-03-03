@@ -43,52 +43,9 @@ func MigrateDb() {
 	// // DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
 	// // DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})/sad
 	// DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
-<<<<<<< Updated upstream
 	// // DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// // DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 	// DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
-=======
-	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
-	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
-
-	// DB.AutoMigrate(
-	// 	&models.SalesProjectMultiplier{},
-	// 	&models.SalesProjectMultiplierAt{},
-	// 	&models.SalesProjectHistory{},
-	// 	&models.SalesProjectHistoryAt{},
-	// 	&models.SalesProjectItemSet{},
-	// 	&models.SalesProjectItemSetAt{},
-	// 	&models.SalesProjectContent{},
-	// 	&models.SalesProjectContentAt{},
-	// 	&models.SalesProjectContentChild{},
-	// 	&models.SalesProjectContentChildAt{},
-	// 	&models.SalesProjectAdvancedConditions{},
-	// 	&models.SalesProjectAdvancedConditionsAt{},
-	// 	&models.SalesProjectItems{},
-	// 	&models.SalesProjectItemsAt{},
-	// )
-
-	DB.AutoMigrate(
-		&models.SalesQuotation{},
-		&models.SalesQuotationAt{},
-		&models.SalesQuotationQuick{},
-		&models.SalesQuotationQuickAt{},
-		&models.SalesProjectMultiplier{},
-		&models.SalesProjectMultiplierAt{},
-		&models.SalesProjectHistory{},
-		&models.SalesProjectHistoryAt{},
-		&models.SalesProjectItemSet{},
-		&models.SalesProjectItemSetAt{},
-		&models.SalesProjectContent{},
-		&models.SalesProjectContentAt{},
-		&models.SalesProjectAdvancedConditions{},
-		&models.SalesProjectAdvancedConditionsAt{},
-		&models.SalesProjectItems{},
-		&models.SalesProjectItemsAt{},
-	)
-
-	//DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
->>>>>>> Stashed changes
 
 	// DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
 	// DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
