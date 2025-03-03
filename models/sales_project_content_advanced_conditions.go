@@ -16,7 +16,7 @@ type SalesProjectAdvancedConditionsContent struct {
 }
 
 type SalesProjectAdvancedConditions struct {
-	ID uint `json:"id" gorm:"primaryKey"`
+	ConditionsID uint `json:"conditions_id" gorm:"primaryKey"`
 	SalesProjectAdvancedConditionsContent
 }
 

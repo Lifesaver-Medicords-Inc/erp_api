@@ -21,7 +21,7 @@ func CreateSalesProjectMultiplier(tx *gorm.DB, parentId uint, multiplier models.
 	}
 
 	multiplierat := models.SalesProjectMultiplierAt{
-		RefId:                         multiplier.ID,
+		RefId:                         multiplier.MultiplierID,
 		SalesProjectMultiplierContent: multiplier.SalesProjectMultiplierContent,
 		At:                            at,
 	}
@@ -47,7 +47,7 @@ func UpdateSalesProjectMultiplier(tx *gorm.DB, projectmultiplier models.SalesPro
 	}
 
 	projectmultiplierat := models.SalesProjectMultiplierAt{
-		RefId:                         projectmultiplier.ID,
+		RefId:                         projectmultiplier.MultiplierID,
 		SalesProjectMultiplierContent: projectmultiplier.SalesProjectMultiplierContent,
 		At:                            at,
 	}

@@ -22,7 +22,7 @@ func CreateProjectItemSet(tx *gorm.DB, parentID uint, ItemSet *models.SalesProje
 	fmt.Println("KKKKKKKKKKKK")
 
 	itemsetat := models.SalesProjectItemSetAt{
-		RefID:                      ItemSet.ID,
+		RefID:                      ItemSet.ItemSetID,
 		SalesProjectItemSetContent: ItemSet.SalesProjectItemSetContent,
 		At:                         at,
 	}
@@ -41,7 +41,7 @@ func CreateSeparateProjectItemSet(tx *gorm.DB, ItemSet *models.SalesProjectItemS
 	}
 
 	itemsetat := models.SalesProjectItemSetAt{
-		RefID:                      ItemSet.ID,
+		RefID:                      ItemSet.ItemSetID,
 		SalesProjectItemSetContent: ItemSet.SalesProjectItemSetContent,
 		At:                         at,
 	}
@@ -69,7 +69,7 @@ func UpdateProjectItemSet(tx *gorm.DB, itemset models.SalesProjectItemSet, at mo
 	}
 
 	itemsetat := models.SalesProjectItemSetAt{
-		RefID:                      itemset.ID,
+		RefID:                      itemset.ItemSetID,
 		SalesProjectItemSetContent: itemset.SalesProjectItemSetContent,
 		At:                         at,
 	}

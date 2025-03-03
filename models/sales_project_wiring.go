@@ -18,8 +18,8 @@ func (SalesProjectWiring) TableName() string {
 }
 
 type SalesProjectWiringAt struct {
-	ID    uint `gorm:"primarykey" json:"id"`
-	RefId uint `json:"ref_id"`
+	WiringID uint `gorm:"primarykey" json:"wiring_id"`
+	RefId    uint `json:"ref_id"`
 	SalesProjectWiring
 	At
 }
