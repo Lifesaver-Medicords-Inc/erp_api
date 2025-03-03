@@ -30,7 +30,7 @@ func CreateAdditionalSpec(tx *gorm.DB, basedId uint, additionalSpec models.Addit
 	additionalSpec.AdditionalSpecs.BasedId = basedId
 
 	if err := services.DbInsert(tx, &additionalSpec.AdditionalSpecs); err != nil {
-		return fmt.Errorf("failed creating additional specs")
+		return errors.New("failed creating additional specs")
 	}
 
 	for _, v := range additionalSpec.PumpTypeCompatabilityId {
@@ -45,9 +45,8 @@ func CreateAdditionalSpec(tx *gorm.DB, basedId uint, additionalSpec models.Addit
 		At:                     at,
 	}
 
-	// Insert AdditionalSpecsAt into DB
 	if err := services.DbInsert(tx, &additionalSpecsAt); err != nil {
-		return fmt.Errorf("failed creating additional specs at: %w", err)
+		return errors.New("failed creating additional specs")
 	}
 
 	return nil
@@ -55,7 +54,7 @@ func CreateAdditionalSpec(tx *gorm.DB, basedId uint, additionalSpec models.Addit
 
 func UpdateAdditionalSpec(tx *gorm.DB, additionalspec models.AdditionalSpecsSchema, at models.At, conditions map[string]interface{}) error {
 	if err := services.DbUpdate(tx, &additionalspec.AdditionalSpecs, conditions); err != nil {
-		return fmt.Errorf("failed updating additional specs: %w", err)
+		return errors.New("failed updating additional specs")
 	}
 
 	if err := UpdateAdditionalSpecsPumpType(tx, additionalspec.AdditionalSpecs.ID, additionalspec.PumpTypeCompatabilityId, at); err != nil {

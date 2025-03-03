@@ -2,7 +2,6 @@ package setup_services
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -22,7 +21,7 @@ func CreateItemPurchasing(tx *gorm.DB, basedId uint, itemPurchasing models.ItemP
 	itempurchasing := models.ItemPurchasing{ItemPurchasingContent: content}
 
 	if err := services.DbInsert(tx, &itempurchasing); err != nil {
-		return fmt.Errorf("failed creating item purchasing")
+		return errors.New("failed creating item purchasing")
 	}
 
 	itempurchasingat := models.ItemPurchasingAt{

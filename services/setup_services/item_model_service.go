@@ -4,7 +4,6 @@ import (
 	// "errors"
 
 	"errors"
-	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -38,7 +37,7 @@ func CreateModel(tx *gorm.DB, basedId uint, itemModel models.Model, at models.At
 	itemModel.BasedId = basedId
 
 	if err := services.DbInsert(tx, &itemModel); err != nil {
-		return fmt.Errorf("failed creating item model")
+		return errors.New("failed creating item model")
 	}
 
 	itemmodelat := models.ModelAt{
