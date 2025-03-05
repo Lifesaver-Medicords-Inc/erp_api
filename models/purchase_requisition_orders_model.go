@@ -1,10 +1,10 @@
 package models
 
 type PROrdersContent struct {
-	Based_ID uint    `json:"based_id"`
-	ItemID   uint    `json:"item_id"`
-	QTY      float64 `json:"qty"`
-	NetTotal float64 `json:"net_total"`
+	Based_ID uint   `json:"based_id"`
+	ItemID   uint   `json:"item_id"`
+	QTY      uint   `json:"qty"`
+	Status   string `json:"status"`
 }
 
 type PROrders struct {
