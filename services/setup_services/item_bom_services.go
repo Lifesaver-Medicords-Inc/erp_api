@@ -15,14 +15,24 @@ type BodyParse struct {
 	BomDetails []models.SetupItemBomDetails `json:"bom_details"`
 }
 
-func GetSetupItemBoms(conditions map[string]interface{}) ([]models.SetupItemBom, int, error) {
-	var setupItemBoms []models.SetupItemBom
+func GetSetupItemBoms(conditions map[string]interface{}) (interface{}, int, error) {
+	//var setupItemBoms []models.SetupItemBom
 
-	if err := services.DbGet(&setupItemBoms, conditions); err != nil {
-		return setupItemBoms, fiber.StatusInternalServerError, errors.New("failed getting bom")
+	type Response struct {
+		ItemBom     []models.BomViewList     `json:"bom_head"`
+		ItemDetails []models.BomViewItemList `json:"bom_details"`
+	}
+	var response Response
+
+	if err := services.DbGet(&response.ItemBom, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting bom")
 	}
 
-	return setupItemBoms, 0, nil
+	if err := services.DbGet(&response.ItemDetails, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting bom")
+	}
+
+	return response, 0, nil
 }
 
 func GetBomItemList(conditions map[string]interface{}) (interface{}, int, error) {
@@ -90,13 +100,14 @@ func CreateSetupItemBom(c *fiber.Ctx, tx *gorm.DB) (BodyParse, int, error) {
 	return body, 0, nil
 }
 
-func UpdateSetupItemBom(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.SetupItemBom, int, error) {
-	var body models.SetupItemBom
+func UpdateSetupItemBom(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (BodyParse, int, error) {
+	var body BodyParse
+
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	if err := services.DbUpdate(tx, &body, conditions); err != nil {
+	if err := services.DbUpdate(tx, &body.SetupItemBom, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating setup item bom")
 	}
 
@@ -111,6 +122,14 @@ func UpdateSetupItemBom(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfa
 	}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating SetupItemBomAt")
+	}
+
+	for _, v := range body.BomDetails {
+
+		if err := UpdateChild(tx, v, at, body.ID); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
+
 	}
 
 	return body, 0, nil
