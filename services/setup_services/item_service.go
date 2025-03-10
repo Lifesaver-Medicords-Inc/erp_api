@@ -5,6 +5,7 @@ import (
 
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -109,8 +110,18 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 		return savebody, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
+	// if err := services.DbInsert(tx, &savebody.Item); err != nil {
+	// 	return savebody, fiber.StatusInternalServerError, errors.New("failed creating item")
+	// }
+
 	if err := services.DbInsert(tx, &savebody.Item); err != nil {
-		return savebody, fiber.StatusInternalServerError, errors.New("failed creating item")
+		if strings.Contains(err.Error(), "duplicate key") {
+			err = errors.New("duplicate record error")
+		} else {
+			err = errors.New("failed creating item")
+		}
+
+		return savebody, fiber.StatusInternalServerError, err
 	}
 
 	at, ok := c.Locals("at").(models.At)
@@ -147,6 +158,9 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 	additionspecsview := services.GetKey(models.AdditionalSpecsView{}, nil)
 	services.InvalidateCache(additionspecsview)
 
+	itemimage := services.GetKey(models.ItemImage{}, nil)
+	services.InvalidateCache(itemimage)
+
 	purchasingview := services.GetKey(models.ItemPurchasingView{}, nil)
 	services.InvalidateCache(purchasingview)
 
@@ -166,7 +180,12 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 	}
 
 	if err := services.DbUpdate(tx, &body.Item, conditions); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed updating item")
+		if strings.Contains(err.Error(), "duplicate key") {
+			err = errors.New("duplicate record error")
+		} else {
+			err = errors.New("failed creating item")
+		}
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	at, ok := c.Locals("at").(models.At)
@@ -195,15 +214,18 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	// if err := UpdateItemImage(tx, body.ItemImage, at, conditions); err != nil {
-	// 	return body, fiber.StatusInternalServerError, err
-	// }
+	if err := UpdateItemImage(tx, body.ID, body.ItemImages, at, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
 
 	itemview := services.GetKey(models.ItemView{}, nil)
 	services.InvalidateCache(itemview)
 
 	additionspecsview := services.GetKey(models.AdditionalSpecsView{}, nil)
 	services.InvalidateCache(additionspecsview)
+
+	itemimage := services.GetKey(models.ItemImage{}, nil)
+	services.InvalidateCache(itemimage)
 
 	purchasingview := services.GetKey(models.ItemPurchasingView{}, nil)
 	services.InvalidateCache(purchasingview)
