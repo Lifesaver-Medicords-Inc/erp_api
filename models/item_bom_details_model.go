@@ -3,8 +3,8 @@ package models
 type SetupItemBomDetailsContent struct {
 	ItemBomID uint `json:"item_bom_id"`
 	ItemID    uint `json:"item_id"`
-	Size      uint `json:"size"`
 	BomQty    uint `json:"bom_qty"`
+	UnitPrice uint `json:"unit_price"`
 }
 
 type SetupItemBomDetails struct {

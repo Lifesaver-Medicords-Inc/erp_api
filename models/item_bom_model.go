@@ -5,6 +5,7 @@ type SetupItemBomContent struct {
 	ProductionQty  uint   `json:"production_qty"`
 	ProductionType string `json:"production_type"`
 	Labor          string `json:"labor"`
+	ProductionCost uint   `json:"production_cost"`
 }
 
 type SetupItemBom struct {
