@@ -4,7 +4,6 @@ type ItemContent struct {
 	ItemNameId          uint    `json:"item_name_id"`
 	ItemModel           string  `json:"item_model"`
 	CatalogueYear       string  `json:"catalogue_year"`
-	ItemCode            string  `json:"item_code"`
 	ShortDesc           string  `json:"short_desc"`
 	ItemClassId         uint    `json:"item_class_id"`
 	ItemBrandId         uint    `json:"item_brand_id"`
@@ -16,7 +15,8 @@ type ItemContent struct {
 }
 
 type Item struct {
-	ID uint `gorm:"primarykey" json:"id"`
+	ID       uint   `gorm:"primarykey" json:"id"`
+	ItemCode string `gorm:"unique; not null" json:"item_code"`
 	ItemContent
 }
 
@@ -25,8 +25,9 @@ func (Item) TableName() string {
 }
 
 type ItemAt struct {
-	ID    uint `gorm:"primarykey" json:"id"`
-	RefId uint `json:"ref_id"`
+	ID       uint   `gorm:"primarykey" json:"id"`
+	RefId    uint   `json:"ref_id"`
+	ItemCode string `json:"item_code"`
 	ItemContent
 	At
 }

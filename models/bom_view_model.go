@@ -7,6 +7,7 @@ type BomView struct {
 	GeneralName string `json:"general_name"`
 	ItemModel   string `json:"item_model"`
 	UomName     string `json:"uom_name"`
+	Size        string `json:"size"`
 }
 
 func (BomView) TableName() string {
