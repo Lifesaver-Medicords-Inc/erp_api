@@ -6,12 +6,12 @@ type SalesProjectItemSetContent struct {
 }
 
 type SalesProjectItemSet struct {
-	ID uint `gorm:"primarykey" json:"id"`
+	ItemSetID uint `gorm:"primarykey" json:"itemset_id"`
 	SalesProjectItemSetContent
 }
 
 func (SalesProjectItemSet) TableName() string {
-	return "tbl_trans-sales_project_item_set"
+	return "tbl_trans_sales_project_item_set"
 }
 
 type SalesProjectItemSetAt struct {
@@ -22,5 +22,5 @@ type SalesProjectItemSetAt struct {
 }
 
 func (SalesProjectItemSetAt) TableName() string {
-	return "z_tbl_trans-sales_project_item_set_at"
+	return "z_tbl_trans_sales_project_item_set_at"
 }

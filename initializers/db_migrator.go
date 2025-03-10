@@ -11,12 +11,12 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.Class{}, &models.ClassAt{})
 	// DB.AutoMigrate(&models.Name{}, &models.NameAt{})
 	// DB.AutoMigrate(&models.Type{}, &models.TypeAt{})
-	// DB.AutoMigrate(&models.Item{}, &models.ItemAt{})
-	DB.AutoMigrate(&models.Position{}, &models.PositionAt{})
-	DB.AutoMigrate(&models.SetupItemBom{}, &models.SetupItemBomAt{})
-	DB.AutoMigrate(&models.SetupItemBomDetails{}, &models.SetupItemBomDetailsAt{})
+	//DB.AutoMigrate(&models.Item{}, &models.ItemAt{})
+	// DB.AutoMigrate(&models.Position{}, &models.PositionAt{})
+	// DB.AutoMigrate(&models.SetupItemBom{}, &models.SetupItemBomAt{})
+	// DB.AutoMigrate(&models.SetupItemBomDetails{}, &models.SetupItemBomDetailsAt{})
 	// DB.AutoMigrate(&models.ItemSpecs{}, &models.ItemSpecsAt{})
-	// DB.AutoMigrate(&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{})
+	//DB.AutoMigrate(&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{})
 	// DB.AutoMigrate(&models.TradeType{}, models.TradeTypeAt{})
 	// DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
 	//DB.AutoMigrate(&models.ItemImage{}, models.ItemImageAt{})
@@ -40,9 +40,9 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.Application{}, &models.ApplicationAt{})
 
 	// // Sales
-	// // DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
-	// // DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})/sad
-	// DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
+	//DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
+	//DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
+	//DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
 	// // DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// // DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 	// DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
@@ -52,10 +52,12 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.Status{}, &models.StatusAt{})
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
-	// DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
-	// DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
+
+	// Purchasing
+	//DB.AutoMigrate(&models.PurchaseRequisition{}, &models.PurchaseRequisitionAt{})
+	//DB.AutoMigrate(&models.PROrders{}, &models.PROrdersAt{})
 
 	// Sales
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})

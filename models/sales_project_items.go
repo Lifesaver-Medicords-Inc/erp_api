@@ -2,6 +2,7 @@ package models
 
 type SalesProjectItemsContent struct {
 	BasedId          uint    `json:"based_id"`
+	BomID            uint    `json:"bom_id"`
 	Components       string  `json:"components"`
 	Model            string  `json:"model"`
 	ItemInvType      string  `json:"item_inv_type"`
@@ -14,7 +15,7 @@ type SalesProjectItemsContent struct {
 }
 
 type SalesProjectItems struct {
-	ID uint `gorm:"primarykey" json:"id"`
+	ItemsID uint `gorm:"primarykey" json:"items_id"`
 	SalesProjectItemsContent
 }
 

@@ -17,7 +17,7 @@ type SalesProjectContentContent struct {
 }
 
 type SalesProjectContent struct {
-	ID uint `json:"id" gorm:"primaryKey"`
+	ContentID uint `json:"content_id" gorm:"primaryKey"`
 	SalesProjectContentContent
 }
 

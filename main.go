@@ -9,6 +9,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
 	"github.com/pierceperado/smpc/handlers/position_handlers"
 	"github.com/pierceperado/smpc/handlers/public_handlers"
+	"github.com/pierceperado/smpc/handlers/purchasing_handlers"
 	"github.com/pierceperado/smpc/handlers/sales_handlers"
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
@@ -190,7 +191,7 @@ func main() {
 				// setupApi.Post("/bom/detail", setup_handlers.CreateSetupItemBomDetail)
 				// setupApi.Put("/bom/detail", setup_handlers.UpdateSetupItemBomDetail)
 				// setupApi.Delete("/bom/detail", setup_handlers.DeleteSetupItemBomDetail)
-        
+
 				setupApi.Get("/project", setup_handlers.GetProjects)
 				setupApi.Post("/project", setup_handlers.CreateProject)
 				setupApi.Put("/project", setup_handlers.UpdateProject)
@@ -206,8 +207,6 @@ func main() {
 				//salesApi.Post("child/quotation", sales_handlers.CreateSalesQuotationChild)
 				// POST for Parent
 				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
-				// salesApi.Put("/quotation", sales_handlers.UpdateSalesQuotation)
-				// salesApi.Delete("/quotation", sales_handlers.DeleteSalesQuotation)
 
 				salesApi.Get("/application", setup_handlers.GetApplications)
 				salesApi.Get("/application/:id", setup_handlers.GetApplication)
@@ -230,12 +229,29 @@ func main() {
 				//projects
 				salesApi.Get("/projects", sales_handlers.GetSalesProject)
 				salesApi.Post("/projects", sales_handlers.CreateSalesProject)
+				salesApi.Post("/projects_tab", sales_handlers.CreateItemSetTab)
+				salesApi.Put("/project_conditions", sales_handlers.UpdateProjectCondition)
+				salesApi.Put("/project_contents", sales_handlers.UpdateProjectContent)
 				// Return Routes
 				// sales_api.Get("/return", handlers.Register)
 				// sales_api.Post("/return/create", handlers.Register)
 				// sales_api.Patch("/return/update", handlers.Register)
 				// sales_api.Delete("/return/delete", handlers.Register)
+			}
 
+			// Purchasing Endpoints
+			purchasingApi := api.Group("/purchasing")
+			{
+				purchasingApi.Get("/purchase_requisition", purchasing_handlers.GetPRs)
+				purchasingApi.Get("/purchase_requisition/:id", purchasing_handlers.GetPR)
+				purchasingApi.Post("child/purchase_requisition", purchasing_handlers.CreatePRChild)
+				purchasingApi.Post("/purchase_requisition", purchasing_handlers.CreatePR)
+				purchasingApi.Put("/purchase_requisition", purchasing_handlers.UpdatePR)
+				purchasingApi.Delete("/purchase_requisition", purchasing_handlers.DeletePR)
+				purchasingApi.Delete("child/purchase_requisition", purchasing_handlers.DeletePROrderByID)
+
+				// Purhcasing List
+				purchasingApi.Get("/purchase_list", purchasing_handlers.GetPurchasingList)
 			}
 
 			//Bpi Endpoints

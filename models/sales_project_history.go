@@ -10,7 +10,7 @@ type SalesProjectHistoryContent struct {
 }
 
 type SalesProjectHistory struct {
-	ID uint `gorm:"primarykey" json:"id"`
+	HistoryID uint `gorm:"primarykey" json:"history_id"`
 	SalesProjectHistoryContent
 }
 
