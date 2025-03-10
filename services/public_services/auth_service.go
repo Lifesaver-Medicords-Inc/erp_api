@@ -2,6 +2,7 @@ package public_services
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -21,6 +22,7 @@ func CreateAccount(c *fiber.Ctx, tx *gorm.DB) (models.User, int, error) {
 
 	user = models.User{UserContent: body.UserContent}
 	if err := services.DbInsert(tx, &user); err != nil {
+		fmt.Println("Error:", err)
 		return user, fiber.StatusInternalServerError, errors.New("failed creating user")
 	}
 
