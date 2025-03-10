@@ -28,6 +28,7 @@ type SalesQuotationContent struct {
 	DocumentNo       string  `json:"document_no"`
 	VersionNo        string  `json:"version_no"`
 	CreatedBy        string  `json:"created_by"`
+	FinalRefNo       string  `json:"final_ref_no"`
 }
 
 type SalesQuotation struct {

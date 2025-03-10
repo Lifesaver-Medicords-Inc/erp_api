@@ -59,8 +59,7 @@ func CreatePROrder(tx *gorm.DB, parentId uint, PROrder models.PROrders, at model
 func UpdatePROrder(tx *gorm.DB, prorders models.PROrders, at models.At, conditions map[string]interface{}) error {
 	// Ensure there is a condition to update the specific order details
 	conditions = map[string]interface{}{
-		"based_id": prorders.Based_ID,
-		"item_id":  prorders.ItemID,
+		"pr_order_id": prorders.PR_Order_ID,
 	}
 	// Perform the update for order details with a condition
 	if err := services.DbUpdate(tx, &prorders, conditions); err != nil {

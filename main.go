@@ -248,6 +248,7 @@ func main() {
 				purchasingApi.Post("/purchase_requisition", purchasing_handlers.CreatePR)
 				purchasingApi.Put("/purchase_requisition", purchasing_handlers.UpdatePR)
 				purchasingApi.Delete("/purchase_requisition", purchasing_handlers.DeletePR)
+				purchasingApi.Delete("child/purchase_requisition", purchasing_handlers.DeletePROrderByID)
 
 				// Purhcasing List
 				purchasingApi.Get("/purchase_list", purchasing_handlers.GetPurchasingList)

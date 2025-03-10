@@ -68,19 +68,22 @@ func GetPR(PR_ID int) (BodyPR, int, error) {
 // CREATE CHILD SERVICE
 func CreatePRChild(c *fiber.Ctx, tx *gorm.DB) (BodyPR, int, error) {
 	var PRbody BodyPR
-	if err := c.BodyParser(&PRbody); err != nil {
+	fmt.Println("starting: ", PRbody.PROrder)
+	if err := c.BodyParser(&PRbody.PROrder); err != nil {
+		fmt.Println(err)
 		return PRbody, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
-
+	fmt.Println("after parser: ", PRbody.PROrder)
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
 		at = models.At{}
 	}
 
-	if err := CreatePROrder(tx, PRbody.PR_ID, PRbody.PROrder, at); err != nil {
+	if err := CreatePROrder(tx, PRbody.PROrder.Based_ID, PRbody.PROrder, at); err != nil {
+		fmt.Println(PRbody)
 		return PRbody, fiber.StatusInternalServerError, err
 	}
-
+	fmt.Println(PRbody)
 	return PRbody, 0, nil
 }
 
@@ -125,7 +128,6 @@ func UpdatePR(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bod
 		return bodyPR, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	// Update the parent order (already done in your existing code)
 	conditions = map[string]interface{}{
 		"doc_no": bodyPR.DocNo,
 	}
@@ -135,27 +137,31 @@ func UpdatePR(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bod
 		return bodyPR, fiber.StatusInternalServerError, errors.New("failed updating purchase requisition")
 	}
 
-	// Now update each order detail (child) individually
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
 		at = models.At{}
 	}
 
-	// Iterate over the slice of order details and update each one
 	for _, PRorder := range bodyPR.PROrder {
-		// Add a condition based on the order details ID (or other relevant fields)
-		PROrderConditions := map[string]interface{}{
-			"based_id": bodyPR.PR_ID, // Assuming 'based_id' is the condition to match
+		var existingOrderDetail models.PROrders
+		proOrderConditions := map[string]interface{}{
+			"pr_order_id": PRorder.PR_Order_ID,
 		}
 
-		// Call UpdateOrderDetail for each child (order detail)
-		if err := UpdatePROrder(tx, PRorder, at, PROrderConditions); err != nil {
-			return bodyPR, fiber.StatusInternalServerError, err
+		if err := services.DbGet(&existingOrderDetail, proOrderConditions); err != nil {
+			PRorder.Based_ID = bodyPR.PurchaseRequisition.PR_ID
+			if err := CreatePROrder(tx, bodyPR.PurchaseRequisition.PR_ID, PRorder, at); err != nil {
+				return bodyPR, fiber.StatusInternalServerError, err
+			}
+		} else {
+			PRorder.Based_ID = bodyPR.PurchaseRequisition.PR_ID
+			if err := UpdatePROrder(tx, PRorder, at, proOrderConditions); err != nil {
+				return bodyPR, fiber.StatusInternalServerError, err
+			}
 		}
-		fmt.Println(bodyPR)
 	}
 	fmt.Println(bodyPR)
-	// If everything goes well, return success
+
 	return bodyPR, 0, nil
 }
 
@@ -187,5 +193,27 @@ func DeletePR(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bod
 		return bodyPR, fiber.StatusInternalServerError, err
 	}
 
+	return bodyPR, 0, nil
+}
+
+func DeletePROrderByID(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (BodyPR, int, error) {
+	var bodyPR BodyPR
+	if err := c.BodyParser(&bodyPR.PROrder); err != nil {
+		return bodyPR, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	conditions = map[string]interface{}{
+		"pr_order_id": bodyPR.PROrder.PR_Order_ID,
+	}
+
+	if err := DeletePROrder(tx, bodyPR.PROrder, at, conditions); err != nil {
+		return bodyPR, fiber.StatusInternalServerError, err
+	}
+	fmt.Println(bodyPR)
 	return bodyPR, 0, nil
 }

@@ -2,7 +2,7 @@ package models
 
 type PurchaseRequisitionContent struct {
 	DateRequest   string `json:"date_request"`
-	DateRequired  string `json:"date_Required"`
+	DateRequired  string `json:"date_required"`
 	RequestBy     string `json:"request_by"`
 	Department    string `json:"department"`
 	ContactNo     string `json:"contact_no"`
@@ -11,6 +11,7 @@ type PurchaseRequisitionContent struct {
 	Remarks       string `json:"remarks"`
 	Approval      string `json:"approval"`
 	IsApproved    bool   `json:"is_approved"`
+	Status        string `json:"status"`
 }
 
 type PurchaseRequisition struct {
