@@ -19,6 +19,8 @@ type OrderContent struct {
 	SalesExecutive   string `json:"sales_executive"`
 	ContactNo        string `json:"contact_no"`
 	Remarks          string `json:"remarks"`
+	Purchaser        string `json:"purchaser"`
+	ProjectName      string `json:"project_name"`
 	// CustomerName  string `json:"customer_name"`
 	// CustomerCode  string `json:"customer_code"`
 	// ShipTo        string `json:"ship_to"`
