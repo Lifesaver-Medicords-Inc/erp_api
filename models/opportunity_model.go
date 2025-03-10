@@ -3,6 +3,7 @@ package models
 type OpportunityContent struct {
 	TAG         string `json:"tag"`
 	ClientReq   string `json:"client_req"`
+	LastUpdate  string `json:"last_update"`
 	Stage       string `json:"stage"`
 	Status      string `json:"status"`
 	SpecialDeal string `json:"special_deal"`
