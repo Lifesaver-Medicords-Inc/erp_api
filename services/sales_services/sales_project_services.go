@@ -30,6 +30,16 @@ type CreateProjectBody struct {
 	SalesProjectItems                    []models.SalesProjectItems            `json:"sales_project_items"`
 }
 
+type CreateProjectBody2 struct {
+	models.SalesQuotation
+	SalesProjectMultiplier               []models.SalesProjectMultiplier       `json:"sales_project_multiplier"`
+	SalesProjectHistory                  []models.SalesProjectHistory          `json:"sales_project_history"`
+	SalesProjectItemSet                  []models.SalesProjectItemSet          `json:"sales_project_item_set"`
+	SalesProjectContent                  models.SalesProjectContent            `json:"sales_project_content"`
+	SalesProjectContentAdvancedCondition models.SalesProjectAdvancedConditions `json:"sales_project_content_advanced_condition"`
+	SalesProjectItems                    []models.SalesProjectItems            `json:"sales_project_items"`
+}
+
 type UpdateProjectBody struct {
 	models.SalesQuotation
 	SalesProjectMultiplier               models.SalesProjectMultiplier         `json:"sales_project_multiplier"`
