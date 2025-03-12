@@ -2,7 +2,6 @@ package setup_services
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -33,7 +32,7 @@ func CreateTradeType(tx *gorm.DB, basedId uint, value string, at models.At) erro
 
 	tradeType := models.TradeType{TradeTypeContent: content}
 	if err := services.DbInsert(tx, &tradeType); err != nil {
-		return fmt.Errorf("failed creating trade type")
+		return errors.New("failed creating trade type")
 	}
 
 	tradeTypeAt := models.TradeTypeAt{

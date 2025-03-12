@@ -22,7 +22,7 @@ func GetOpportunities(conditions map[string]interface{}) ([]models.OpportunityVi
 		fmt.Println("ERROR:", err.Error())
 		return opportunities, fiber.StatusInternalServerError, errors.New("failed getting opportunities")
 	}
-
+	fmt.Println("DATA: ", opportunities)
 	return opportunities, 0, nil
 }
 
@@ -80,6 +80,7 @@ func UpdateOpportunity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfac
 
 	conditions = map[string]interface{}{
 		"document_no": body.DocumentNo,
+		"version_no":  body.VersionNo,
 	}
 
 	if err := services.DbUpdate(tx, &body, conditions); err != nil {
@@ -95,6 +96,7 @@ func UpdateOpportunity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfac
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating opportunityat")
 	}
+	fmt.Println("body: ", body)
 	key := services.GetKey(models.OpportunityView{}, nil)
 	services.InvalidateCache(key)
 	return body, 0, nil

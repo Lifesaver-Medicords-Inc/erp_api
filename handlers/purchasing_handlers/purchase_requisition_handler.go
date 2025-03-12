@@ -1,17 +1,16 @@
-package setup_handlers
+package purchasing_handlers
 
 import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
-	"github.com/pierceperado/smpc/models"
-	"github.com/pierceperado/smpc/services/setup_services"
+	"github.com/pierceperado/smpc/services/purchasing_services"
 	"github.com/pierceperado/smpc/utils"
 )
 
-func GetBrands(c *fiber.Ctx) error {
-	data, status, err := setup_services.GetBrands(nil)
+func GetPRs(c *fiber.Ctx) error {
+	data, status, err := purchasing_services.GetPRs(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -19,14 +18,14 @@ func GetBrands(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func GetBrand(c *fiber.Ctx) error {
-	idParam := c.Params("id")
+func GetPR(c *fiber.Ctx) error {
+	idParam := c.Params("pr_id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	data, status, err := setup_services.GetBrand(idNum)
+	data, status, err := purchasing_services.GetPR(idNum)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -34,38 +33,13 @@ func GetBrand(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func CreateBrand(c *fiber.Ctx) error {
-	var brand models.Brand
-	if err := c.BodyParser(&brand); err != nil {
-		return utils.RespondError(c, fiber.StatusBadRequest, "cannot bind request")
-	}
-
+func CreatePR(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 
-	status, err := setup_services.CreateBrand(tx, &brand)
-	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
-	}
-
-	return utils.RespondSuccess(c, brand)
-}
-
-func UpdateBrand(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
-	}
-
-	data, status, err := setup_services.UpdateBrand(c, tx, nil)
+	data, status, err := purchasing_services.CreatePR(c, tx)
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
@@ -79,13 +53,71 @@ func UpdateBrand(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func DeleteBrand(c *fiber.Ctx) error {
+func CreatePRChild(c *fiber.Ctx) error {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+	}
+	data, status, err := purchasing_services.CreatePRChild(c, tx)
+	if err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+func UpdatePR(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 
-	data, status, err := setup_services.DeleteBrand(c, tx, nil)
+	data, status, err := purchasing_services.UpdatePR(c, tx, nil)
+	if err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+func DeletePR(c *fiber.Ctx) error {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+	}
+
+	data, status, err := purchasing_services.DeletePR(c, tx, nil)
+	if err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+func DeletePROrderByID(c *fiber.Ctx) error {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+	}
+
+	data, status, err := purchasing_services.DeletePROrderByID(c, tx, nil)
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
