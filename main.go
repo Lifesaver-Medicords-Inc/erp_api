@@ -184,6 +184,8 @@ func main() {
 				setupApi.Put("/bom", setup_handlers.UpdateSetupItemBom)
 				setupApi.Delete("/bom", setup_handlers.DeleteSetupItemBom)
 				setupApi.Get("/bom/item_list", setup_handlers.GetBomItemList)
+				setupApi.Get("/bom/parent_detail", setup_handlers.GetBomParentDetail)
+				setupApi.Get("/bom/child_detail", setup_handlers.GetBomChildDetail)
 
 				//BOM Detail Endpoints
 				// setupApi.Get("/bom/detail", setup_handlers.GetSetupItemBomDetails)
