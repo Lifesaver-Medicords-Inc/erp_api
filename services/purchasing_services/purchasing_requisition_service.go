@@ -162,6 +162,9 @@ func UpdatePR(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bod
 	}
 	fmt.Println(bodyPR)
 
+	redboxpurchasinglistview := services.GetKey(models.PurchasingRedboxPurchaseListView{}, nil)
+	services.InvalidateCache(redboxpurchasinglistview)
+
 	return bodyPR, 0, nil
 }
 
