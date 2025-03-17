@@ -8,6 +8,7 @@ type OpportunityContent struct {
 	Status      string `json:"status"`
 	SpecialDeal string `json:"special_deal"`
 	DocumentNo  string `json:"document_no"`
+	VersionNo   string `json:"version_no"`
 }
 
 type Opportunity struct {
