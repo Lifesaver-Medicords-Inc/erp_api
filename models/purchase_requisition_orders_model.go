@@ -1,10 +1,12 @@
 package models
 
 type PROrdersContent struct {
-	Based_ID uint   `json:"based_id"`
-	ItemID   uint   `json:"item_id"`
-	QTY      uint   `json:"qty"`
-	Status   string `json:"status"`
+	Based_ID        uint   `json:"based_id"`
+	ItemID          uint   `json:"item_id"`
+	QTY             uint   `json:"qty"`
+	Status          string `json:"status"`
+	ItemCode        string `json:"item_code"`
+	ItemDescription string `json:"item_description"`
 }
 
 type PROrders struct {

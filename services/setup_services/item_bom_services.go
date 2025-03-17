@@ -60,6 +60,24 @@ func GetSetupItemBom(id int) (models.SetupItemBom, int, error) {
 	return setupItemBom, 0, nil
 }
 
+func GetBomParentDetail(conditions map[string]interface{}) ([]models.BomViewList, int, error) {
+	var BomViewList []models.BomViewList
+
+	if err := services.DbGet(&BomViewList, conditions); err != nil {
+		return BomViewList, fiber.StatusInternalServerError, errors.New("failed getting BomViewList")
+	}
+	return BomViewList, 0, nil
+}
+
+func GetBomChildDetail(conditions map[string]interface{}) ([]models.BomViewItemList, int, error) {
+	var BomViewItemList []models.BomViewItemList
+
+	if err := services.DbGet(&BomViewItemList, conditions); err != nil {
+		return BomViewItemList, fiber.StatusInternalServerError, errors.New("failed getting BomViewItemList")
+	}
+	return BomViewItemList, 0, nil
+}
+
 func CreateSetupItemBom(c *fiber.Ctx, tx *gorm.DB) (BodyParse, int, error) {
 	var body BodyParse
 	if err := c.BodyParser(&body); err != nil {

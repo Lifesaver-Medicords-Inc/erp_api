@@ -8,6 +8,7 @@ type OrderDetailsContent struct {
 	Status             string  `json:"status"`
 	HasStocks          bool    `json:"has_stocks"`
 	Qty                int     `json:"qty"`
+	Numbering          string  `json:"numbering"`
 	ItemCode           string  `json:"item_code"`
 	ItemDescription    string  `json:"item_description"`
 	ListPrice          float64 `json:"list_price"`
