@@ -12,6 +12,7 @@ type PurchaseRequisitionContent struct {
 	Approval      string `json:"approval"`
 	IsApproved    bool   `json:"is_approved"`
 	Status        string `json:"status"`
+	Purchaser     string `json:"purchaser"`
 }
 
 type PurchaseRequisition struct {

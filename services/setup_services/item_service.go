@@ -24,11 +24,13 @@ type SaveBody struct {
 	TradeType       []string                     `json:"trade_status"`
 	ItemSpecs       ItemSpecsWrapper             `json:"itemspecs"`
 	AdditionalSpecs models.AdditionalSpecsSchema `json:"additionalspecs"`
-	ItemImages      ItemImageInput               `json:"item_images"`
+	//ItemImages      []string                     `json:"item_images"`
+	//ItemImages      ItemImageInput               `json:"item_images"`
 }
-type ItemImageInput struct {
-	Images []string `json:"images"`
-}
+
+//	type ItemImageInput struct {
+//		Images []string `json:"images"`
+//	}
 type ItemSpecsWrapper struct {
 	Template           string       `json:"template"`
 	Fields             []SpecsField `json:"fields"`
@@ -110,13 +112,9 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 		return savebody, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	// if err := services.DbInsert(tx, &savebody.Item); err != nil {
-	// 	return savebody, fiber.StatusInternalServerError, errors.New("failed creating item")
-	// }
-
 	if err := services.DbInsert(tx, &savebody.Item); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-			err = errors.New("duplicate record error")
+			err = errors.New("duplicate record error") //to be added: validation of duplicate fields
 		} else {
 			err = errors.New("failed creating item")
 		}
@@ -148,9 +146,14 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 		return savebody, fiber.StatusInternalServerError, err
 	}
 
-	if err := CreateItemImage(tx, savebody.ID, savebody.ItemImages, at); err != nil {
-		return savebody, fiber.StatusInternalServerError, err
-	}
+	// for _, v := range savebody.ItemImages {
+	// 	if err := CreateItemImage(tx, savebody.ID, string(v), at); err != nil {
+	// 		return savebody, fiber.StatusInternalServerError, err
+	// 	}
+	// }
+	// if err := CreateItemImage(tx, savebody.ID, savebody.ItemImages, at); err != nil {
+	// 	return savebody, fiber.StatusInternalServerError, err
+	// }
 
 	itemview := services.GetKey(models.ItemView{}, nil)
 	services.InvalidateCache(itemview)
@@ -214,9 +217,9 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	if err := UpdateItemImage(tx, body.ID, body.ItemImages, at, conditions); err != nil {
-		return body, fiber.StatusInternalServerError, err
-	}
+	// if err := UpdateItemImage(tx, body.ID, body.ItemImages, at, conditions); err != nil {
+	// 	return body, fiber.StatusInternalServerError, err
+	// }
 
 	itemview := services.GetKey(models.ItemView{}, nil)
 	services.InvalidateCache(itemview)
