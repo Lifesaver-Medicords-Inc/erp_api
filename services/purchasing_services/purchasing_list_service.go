@@ -9,7 +9,7 @@ import (
 )
 
 func GetPurchasingList(conditions map[string]interface{}) (interface{}, int, error) {
-	var response []models.PurchasingListView
+	var response []models.PurchasingRedboxPurchaseRequisitionListView
 
 	if err := services.DbGet(&response, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting purchasing list")
