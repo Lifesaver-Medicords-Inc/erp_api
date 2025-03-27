@@ -1,9 +1,17 @@
 package models
 
 type SalesProjectItemsContent struct {
-	BasedId          uint    `json:"based_id"`
-	BomID            uint    `json:"bom_id"`
-	ItemID           uint    `json:"item_id"`
+	TemplateID uint `json:"template_id"`
+	BasedId    uint `json:"based_id"`
+	BomID      uint `json:"bom_id"`
+	ItemID     uint `json:"item_id"`
+
+	NodeID       uint   `json:"node_id"`
+	NodeName     string `json:"node_name"`
+	ParentNodeID uint   `json:"parent_node_id"`
+	NodeOrder    uint   `json:"node_order"`
+	NodeType     string `json:"node_type"`
+
 	Components       string  `json:"components"`
 	Model            string  `json:"model"`
 	ItemInvType      string  `json:"item_inv_type"`
