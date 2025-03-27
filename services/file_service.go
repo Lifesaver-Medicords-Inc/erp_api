@@ -34,3 +34,10 @@ func UploadFile(filestr string) (string, error) {
 
 	return path, nil
 }
+
+func DeleteFile(filePath string) error {
+	if filePath == "" {
+		return nil // No file to delete
+	}
+	return os.Remove(filePath)
+}

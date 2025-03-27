@@ -113,12 +113,10 @@ func main() {
 					itemApi.Put("/type", setup_handlers.UpdateType)
 					itemApi.Delete("/type", setup_handlers.DeleteType)
 
-					// Model Endpoints
-					// itemApi.Get("/model", setup_handlers.GetModels)
-					// itemApi.Get("/model/:id", setup_handlers.GetModel)
-					// itemApi.Post("/model", setup_handlers.CreateModel)
-					// itemApi.Put("/model", setup_handlers.UpdateModel)
-					// itemApi.Delete("/model", setup_handlers.DeleteModel)
+					// Image Endpoints
+					itemApi.Post("/item_image", setup_handlers.CreateItemImage)
+					itemApi.Put("/item_image", setup_handlers.UpdateItemImage)
+					itemApi.Delete("/item_image", setup_handlers.DeleteItemImage)
 
 					// Item Endpoints
 					itemApi.Get("", setup_handlers.GetItems)
@@ -252,7 +250,8 @@ func main() {
 				purchasingApi.Delete("/purchase_requisition", purchasing_handlers.DeletePR)
 				purchasingApi.Delete("child/purchase_requisition", purchasing_handlers.DeletePROrderByID)
 
-				// Purhcasing List
+				// Purhcasing Redbox List
+				purchasingApi.Get("/purchase_redbox_list", purchasing_handlers.GetPurchasingRedboxList)
 				purchasingApi.Get("/purchase_list", purchasing_handlers.GetPurchasingList)
 			}
 

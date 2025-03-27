@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
@@ -30,88 +31,139 @@ func GetItemImages(itemImage *[]models.ItemImage, conditions map[string]interfac
 	return nil
 }
 
-func CreateItemImage(tx *gorm.DB, basedId uint, itemImage ItemImageInput, at models.At) error {
+type ImageBody struct {
+	BasedId    uint     `json:"based_id"`
+	ItemImages []string `json:"itemimages"`
+}
 
-	for _, base64Image := range itemImage.Images {
+func CreateItemImage(c *fiber.Ctx, tx *gorm.DB) (ImageBody, int, error) {
+	var body ImageBody
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	for _, base64Image := range body.ItemImages {
 		filePath, err := services.UploadFile(base64Image)
 		if err != nil {
-			return errors.New("failed to upload image locally")
+			return body, fiber.StatusInternalServerError, errors.New("failed to upload image locally")
 		}
 
 		content := models.ItemImageContent{
-			BasedId: basedId,
+			BasedId: body.BasedId,
 			Image:   filePath,
 		}
 
-		itemImage := models.ItemImage{ItemImageContent: content}
-		if err := services.DbInsert(tx, &itemImage); err != nil {
-			return errors.New("failed creating item image")
+		itemimage := models.ItemImage{ItemImageContent: content}
+		if err := services.DbInsert(tx, &itemimage); err != nil {
+			return body, fiber.StatusInternalServerError, errors.New("failed creating item images")
 		}
 
-		itemImageAt := models.ItemImageAt{
-			RefId:            itemImage.ID,
-			ItemImageContent: content,
+		at, ok := c.Locals("at").(models.At)
+		if !ok {
+			at = models.At{}
+		}
+
+		itemimageat := models.ItemImageAt{
+			RefId:            itemimage.ID,
+			ItemImageContent: itemimage.ItemImageContent,
 			At:               at,
 		}
-		if err := services.DbInsert(tx, &itemImageAt); err != nil {
-			return errors.New("failed creating item image at")
+
+		if err := services.DbInsert(tx, &itemimageat); err != nil {
+			return body, fiber.StatusInternalServerError, errors.New("failed creating itemimageat")
 		}
 	}
 
-	return nil
+	return body, 0, nil
 }
 
-func UpdateItemImage(tx *gorm.DB, basedId uint, itemImage ItemImageInput, at models.At, conditions map[string]interface{}) error {
-	var existingImages []models.ItemImage
-	if err := tx.Where("based_id = ?", basedId).Find(&existingImages).Error; err != nil {
-		return errors.New("failed to fetch existing item images")
+func UpdateItemImage(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.ItemImage, int, error) {
+	var body models.ItemImage
+
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	existingImagePaths := make(map[string]uint)
-	for _, img := range existingImages {
-		existingImagePaths[img.Image] = img.ID
+	// // Fetch the existing image record before deletion
+	// var existingImage models.ItemImage
+	// if err := tx.Where(conditions).First(&existingImage).Error; err != nil {
+	// 	return body, fiber.StatusNotFound, errors.New("image not found")
+	// }
+
+	// // Delete the image file from storage
+	// if err := services.DeleteFile(existingImage.Image); err != nil {
+	// 	return body, fiber.StatusInternalServerError, errors.New("failed to delete image file")
+	// }
+
+	filePath, err := services.UploadFile(body.Image)
+	if err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed to upload image locally")
 	}
 
-	newImagePaths := make(map[string]bool)
-	for _, base64Image := range itemImage.Images {
-		filePath, err := services.UploadFile(base64Image)
-		if err != nil {
-			return errors.New("failed to upload image locally")
-		}
-		newImagePaths[filePath] = true
+	body.Image = filePath
 
-		if _, exists := existingImagePaths[filePath]; !exists {
-			content := models.ItemImageContent{
-				BasedId: basedId,
-				Image:   filePath,
-			}
 
-			newItemImage := models.ItemImage{ItemImageContent: content}
-			if err := services.DbInsert(tx, &newItemImage); err != nil {
-				return errors.New("failed creating item image")
-			}
-
-			newItemImageAt := models.ItemImageAt{
-				RefId:            newItemImage.ID,
-				ItemImageContent: content,
-				At:               at,
-			}
-			if err := services.DbInsert(tx, &newItemImageAt); err != nil {
-				return errors.New("failed creating item image at")
-			}
-		}
+	if err := services.DbUpdate(tx, &body, conditions); err != nil {
+		fmt.Println("update body:", body)
+		return body, fiber.StatusInternalServerError, errors.New("failed updating itemimage")
 	}
 
-	for path, imgID := range existingImagePaths {
-		if _, exists := newImagePaths[path]; !exists {
-			if err := tx.Where("id = ?", imgID).Delete(&models.ItemImage{}).Error; err != nil {
-				return errors.New("failed to delete old item image")
-			}
-			if err := tx.Where("ref_id = ?", imgID).Delete(&models.ItemImageAt{}).Error; err != nil {
-				return errors.New("failed to delete old item image at")
-			}
-		}
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
 	}
 
-	return nil
+	itemimageat := models.ItemImageAt{
+		RefId:            body.ID,
+		ItemImageContent: body.ItemImageContent,
+		At:               at,
+	}
+
+	if err := services.DbInsert(tx, &itemimageat); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed creating itemimageat")
+	}
+
+	return body, 0, nil
+}
+
+func DeleteItemImage(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.ItemImage, int, error) {
+	var body models.ItemImage
+
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	// // Fetch the existing image record before deletion
+	// var existingImage models.ItemImage
+	// if err := tx.Where(conditions).First(&existingImage).Error; err != nil {
+	// 	return body, fiber.StatusNotFound, errors.New("image not found")
+	// }
+
+	// // Delete the image file from storage
+	// if err := services.DeleteFile(existingImage.Image); err != nil {
+	// 	return body, fiber.StatusInternalServerError, errors.New("failed to delete image file")
+	// }
+
+	// Delete the record from the database
+	if err := services.DbDelete(tx, &body, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed deleting item image")
+	}
+
+	// Log the deletion (audit tracking)
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	itemimageat := models.ItemImageAt{
+		RefId:            body.ID,
+		ItemImageContent: body.ItemImageContent,
+		At:               at,
+	}
+
+	if err := services.DbInsert(tx, &itemimageat); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed creating itemimageat")
+	}
+
+	return body, fiber.StatusOK, nil
 }
