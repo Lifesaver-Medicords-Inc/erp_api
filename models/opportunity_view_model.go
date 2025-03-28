@@ -3,7 +3,7 @@ package models
 type OpportunityView struct {
 	Tag            string  `json:"tag"`
 	VersionNo      string  `json:"version_no"`
-	FinalRefNo     string  `json:"final_ref_no"`
+	IsFinalized    bool    `json:"is_finalized"`
 	DocumentNo     string  `json:"document_no"`
 	Customer_ID    uint    `json:"customer_id"`
 	BranchName     string  `json:"branch_name"`
