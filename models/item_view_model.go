@@ -8,7 +8,9 @@ type ItemView struct {
 	ItemClass     string `json:"item_class"`
 	ItemBrand     string `json:"item_brand"`
 	UnitOfMeasure string `json:"unit_of_measure"`
-	TradeStatus   string `json:"trade_status"`
+	TradeTypeId string `json:"trade_type_id"`
+	TradeTypeNames string `json:"trade_type_names"`
+	//TradeStatus   string `json:"trade_status"`
 }
 
 func (ItemView) TableName() string {
