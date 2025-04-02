@@ -185,12 +185,13 @@ func main() {
 				setupApi.Delete("/bom", setup_handlers.DeleteSetupItemBom)
 				setupApi.Get("/bom/item_list", setup_handlers.GetBomItemList)
 
-				//BOM Detail Endpoints
-				// setupApi.Get("/bom/detail", setup_handlers.GetSetupItemBomDetails)
-				// setupApi.Get("/bom:/id", setup_handlers.GetSetupItemBomDetail)
-				// setupApi.Post("/bom/detail", setup_handlers.CreateSetupItemBomDetail)
-				// setupApi.Put("/bom/detail", setup_handlers.UpdateSetupItemBomDetail)
-				// setupApi.Delete("/bom/detail", setup_handlers.DeleteSetupItemBomDetail)
+				//BOQ Endpoints
+				setupApi.Get("/boq", setup_handlers.GetItemBoqs)
+				//setupApi.Get("/boq:/id", setup_handlers.GetItemBoq)
+				setupApi.Post("/boq", setup_handlers.CreateItemBoq)
+				setupApi.Put("/boq", setup_handlers.UpdateItemBoq)
+				//setupApi.Delete("/boq", setup_handlers.DeleteItemBoq)
+				//setupApi.Get("/boq/item_list", setup_handlers.GetBomItemList)
 
 				setupApi.Get("/project", setup_handlers.GetProjects)
 				setupApi.Post("/project", setup_handlers.CreateProject)
