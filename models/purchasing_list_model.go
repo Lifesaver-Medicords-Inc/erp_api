@@ -8,7 +8,7 @@ type PurchasingListViewContent struct {
 	ItemId          uint   `json:"item_id"`
 	ItemCode        string `json:"item_code"`
 	ItemName        string `json:"item_name"`
-	ItemBrand        string `json:"item_brand"`
+	ItemBrand       string `json:"item_brand"`
 	ItemDescription string `json:"item_description"`
 	UnitPrices      string `json:"unit_prices"`
 	Qtys            string `json:"qtys"`
@@ -21,5 +21,5 @@ type PurchasingListView struct {
 }
 
 func (PurchasingListView) TableName() string {
-	return "vw_get_purchasing_list"
+	return "vw_get_purchasing_purchase_list"
 }
