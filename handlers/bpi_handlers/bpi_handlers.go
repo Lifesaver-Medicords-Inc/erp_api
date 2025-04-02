@@ -38,11 +38,13 @@ func GetBpiItemList(c *fiber.Ctx) error {
 
 func CreateBpi(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
+
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transactions")
-
 	}
+
 	data, status, err := bpi_services.CreateBpi(c, tx)
+
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
