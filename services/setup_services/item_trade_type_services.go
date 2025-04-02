@@ -2,7 +2,6 @@ package setup_services
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -33,7 +32,7 @@ func CreateTradeType(tx *gorm.DB, basedId uint, value string, at models.At) erro
 
 	tradeType := models.TradeType{TradeTypeContent: content}
 	if err := services.DbInsert(tx, &tradeType); err != nil {
-		return fmt.Errorf("failed creating trade type")
+		return errors.New("failed creating trade type")
 	}
 
 	tradeTypeAt := models.TradeTypeAt{
@@ -61,6 +60,56 @@ func UpdateTradeType(tx *gorm.DB, tradetype models.TradeType, at models.At, cond
 	}
 	if err := services.DbInsert(tx, &tradeTypeAt); err != nil {
 		return errors.New("failed creating trade type at")
+	}
+
+	return nil
+}
+
+// func UpdateTradeTypes(tx *gorm.DB, body UpdateBody, at models.At) error {
+// 	if err := services.DbDelete(tx, &models.TradeType{}, map[string]interface{}{"based_id": body.ID}); err != nil {
+// 		return errors.New("failed deleting existing trade types")
+// 	}
+
+// 	for _, v := range body.TradeType {
+// 		if err := CreateTradeType(tx, body.ID, string(rune(v)), at); err != nil {
+// 			return errors.New("failed updating existing trade types")
+// 		}
+// 	}
+
+// 	return nil
+// }
+func CreateItemTradeTypes(tx *gorm.DB, basedId uint, tradeTypeId uint, at models.At) error {
+	content := models.ItemTradeTypeContent{
+		ItemId:       basedId,
+		TradeTypeId: tradeTypeId,
+	}
+	itemTradeTypes := models.ItemTradeType{ItemTradeTypeContent: content }
+	if err := services.DbInsert(tx, &itemTradeTypes); err != nil {
+		return errors.New("failed creating item trade type")
+	}
+
+	additionalSpecsPumpTypeAt := models.ItemTradeTypeAt{
+		RefId:                          itemTradeTypes.ID,
+		ItemTradeTypeContent: content,
+		At:                             at,
+	}
+
+	if err := services.DbInsert(tx, &additionalSpecsPumpTypeAt); err != nil {
+		return errors.New("failed creating additional specs pump type at")
+	}
+
+	return nil
+}
+
+func UpdateTradeTypes(tx *gorm.DB, itemId uint, tradeTypeIDs []uint, at models.At) error {
+	if err := services.DbDelete(tx, &models.ItemTradeType{}, map[string]interface{}{"item_id": itemId}); err != nil {
+		return errors.New("failed deleting existing item trade type")
+	}
+
+	for _, tradeTypeID := range tradeTypeIDs {
+		if err := CreateItemTradeTypes(tx, itemId, tradeTypeID, at); err != nil {
+			return err
+		}
 	}
 
 	return nil

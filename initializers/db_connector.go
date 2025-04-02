@@ -12,13 +12,7 @@ import (
 var DB *gorm.DB
 
 func ConnectDb() {
-	dbUsername := os.Getenv("DB_USERNAME")
-	dbPassword := os.Getenv("DB_PASSWORD")
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbName := os.Getenv("DB_NAME")
-
-	dsn := fmt.Sprintf("sqlserver://%v:%v@%v:%v?database=%v", dbUsername, dbPassword, dbHost, dbPort, dbName)
+	dsn := fmt.Sprintf("sqlserver://%v:%v@%v:%v?database=%v", os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
 
 	var err error
 	DB, err = gorm.Open(sqlserver.Open(dsn), &gorm.Config{})

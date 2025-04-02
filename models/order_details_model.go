@@ -2,14 +2,17 @@ package models
 
 type OrderDetailsContent struct {
 	Based_ID           uint    `json:"based_id"`
-	Qty                string  `json:"qty"`
-	ItemCode           string  `json:"item_code"`
-	ItemDescription    string  `json:"item_description"`
+	Quotation_Quick_ID uint    `json:"quotation_quick_id"`
+	Item_ID            uint    `json:"item_id"`
 	DeliveryPreference string  `json:"delivery_preference"`
-	ListPrice          float64 `json:"list_price"`
-	TotalPrice         float64 `json:"total_price"`
 	Status             string  `json:"status"`
 	HasStocks          bool    `json:"has_stocks"`
+	Qty                int     `json:"qty"`
+	Numbering          string  `json:"numbering"`
+	ItemCode           string  `json:"item_code"`
+	ItemDescription    string  `json:"item_description"`
+	ListPrice          float64 `json:"list_price"`
+	TotalPrice         float64 `json:"total_price"`
 }
 
 type OrderDetails struct {

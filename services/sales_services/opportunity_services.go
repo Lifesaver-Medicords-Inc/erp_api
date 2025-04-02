@@ -2,6 +2,8 @@ package sales_services
 
 import (
 	"errors"
+	"fmt"
+
 	//fmt"
 	"strings"
 
@@ -12,22 +14,24 @@ import (
 )
 
 // test
-func GetOpportunities(conditions map[string]interface{}) ([]models.Opportunity, int, error) {
-	var opportunities []models.Opportunity
+func GetOpportunities(conditions map[string]interface{}) ([]models.OpportunityView, int, error) {
+
+	var opportunities []models.OpportunityView
 
 	if err := services.DbGet(&opportunities, conditions); err != nil {
+		fmt.Println("ERROR:", err.Error())
 		return opportunities, fiber.StatusInternalServerError, errors.New("failed getting opportunities")
 	}
-
+	fmt.Println("DATA: ", opportunities)
 	return opportunities, 0, nil
 }
 
-func GetOpportunity(id int) (models.Opportunity, int, error) {
+func GetOpportunity(id int) (models.OpportunityView, int, error) {
 	conditions := map[string]interface{}{
 		"id": id,
 	}
 
-	var opportunity models.Opportunity
+	var opportunity models.OpportunityView
 
 	if err := services.DbGet(&opportunity, conditions); err != nil {
 		return opportunity, fiber.StatusInternalServerError, errors.New("failed getting opportunity")
@@ -61,7 +65,8 @@ func CreateOpportunity(c *fiber.Ctx, tx *gorm.DB) (models.Opportunity, int, erro
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating opportunityat")
 	}
-
+	key := services.GetKey(models.OpportunityView{}, nil)
+	services.InvalidateCache(key)
 	return body, 0, nil
 }
 
@@ -69,6 +74,13 @@ func UpdateOpportunity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfac
 	var body models.Opportunity
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	fmt.Println("Body:", body)
+
+	conditions = map[string]interface{}{
+		"document_no": body.DocumentNo,
+		"version_no":  body.VersionNo,
 	}
 
 	if err := services.DbUpdate(tx, &body, conditions); err != nil {
@@ -84,6 +96,8 @@ func UpdateOpportunity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfac
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating opportunityat")
 	}
-
+	fmt.Println("body: ", body)
+	key := services.GetKey(models.OpportunityView{}, nil)
+	services.InvalidateCache(key)
 	return body, 0, nil
 }

@@ -7,7 +7,7 @@ type SalesQuotationQuickContent struct {
 	ItemNameId      uint    `json:"item_name_id"`
 	ItemClassId     uint    `json:"item_class_id"`
 	Qty             uint    `json:"qty"`
-	UnitCode        string  `json:"unit_code"`
+	UnitId          uint    `json:"unit_id"`
 	UnitPrice       float64 `json:"unit_price"`
 	PercentDiscount float64 `json:"percent_discount"`
 	NetDiscount     float64 `json:"net_discount"`
@@ -25,9 +25,8 @@ func (SalesQuotationQuick) TableName() string {
 }
 
 type SalesQuotationQuickAt struct {
-	ID    uint   `gorm:"primarykey" json:"id"`
-	RefId uint   `json:"ref_id"`
-	Code  string `json:"code"`
+	ID    uint `gorm:"primarykey" json:"id"`
+	RefId uint `json:"ref_id"`
 	SalesQuotationQuickContent
 	At
 }

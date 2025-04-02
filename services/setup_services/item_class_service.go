@@ -57,7 +57,7 @@ func CreateClass(c *fiber.Ctx, tx *gorm.DB) (models.Class, int, error) {
 		at = models.At{}
 	}
 
-	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{Name: body.Name}, At: at}
+	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: body.ClassContent, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating classat")
@@ -80,7 +80,7 @@ func UpdateClass(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 		at = models.At{}
 	}
 
-	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{Name: body.Name}, At: at}
+	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: body.ClassContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating classat")
 	}
@@ -103,7 +103,7 @@ func DeleteClass(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 		at = models.At{}
 	}
 
-	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: models.ClassContent{Name: body.Name}, At: at}
+	atdata := models.ClassAt{RefId: body.ID, Code: body.Code, ClassContent: body.ClassContent, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating classat")

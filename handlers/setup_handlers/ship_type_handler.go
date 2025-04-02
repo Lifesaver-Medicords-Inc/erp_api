@@ -14,7 +14,6 @@ func GetShipTypes(c *fiber.Ctx) error {
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
-
 	return utils.RespondSuccess(c, data)
 }
 
@@ -89,6 +88,5 @@ func DeleteShipType(c *fiber.Ctx) error {
 		tx.Rollback()
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
-
 	return utils.RespondSuccess(c, data)
 }

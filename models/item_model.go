@@ -1,20 +1,22 @@
 package models
 
 type ItemContent struct {
-	ItemNameId          uint   `json:"item_name_id"`
-	ItemModelId         uint   `json:"item_model_id"`
-	ItemCode            string `json:"item_code"`
-	ShortDesc           string `json:"short_desc"`
-	ItemClassId         uint   `json:"item_class_id"`
-	ItemBrandId         uint   `json:"item_brand_id"`
-	UnitOfMeasureId     uint   `json:"unit_of_measure_id"`
-	ItemTradeType       string `json:"item_trade_type"`
-	ItemTangibilityType string `json:"item_tangibility_type"`
-	IsStopSelling       bool   `json:"is_stop_selling"`
+	ItemNameId          uint    `json:"item_name_id"`
+	ItemModel           string  `json:"item_model"`
+	CatalogueYear       string  `json:"catalogue_year"`
+	ShortDesc           string  `json:"short_desc"`
+	ItemClassId         uint    `json:"item_class_id"`
+	ItemBrandId         uint    `json:"item_brand_id"`
+	UnitOfMeasureId     uint    `json:"unit_of_measure_id"`
+	//ItemTradeTypeId     uint    `json:"trade_type_id"`
+	ItemTangibilityType string  `json:"item_tangibility_type"`
+	IsStopSelling       bool    `json:"is_stop_selling"`
+	Price               float64 `json:"price"`
 }
 
 type Item struct {
-	ID uint `gorm:"primarykey" json:"id"`
+	ID       uint   `gorm:"primarykey" json:"id"`
+	ItemCode string `gorm:"unique; not null" json:"item_code"`
 	ItemContent
 }
 
@@ -23,8 +25,9 @@ func (Item) TableName() string {
 }
 
 type ItemAt struct {
-	ID    uint `gorm:"primarykey" json:"id"`
-	RefId uint `json:"ref_id"`
+	ID       uint   `gorm:"primarykey" json:"id"`
+	RefId    uint   `json:"ref_id"`
+	ItemCode string `json:"item_code"`
 	ItemContent
 	At
 }
