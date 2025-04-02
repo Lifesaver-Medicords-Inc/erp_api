@@ -9,10 +9,18 @@ import (
 )
 
 func GetPurchasingList(conditions map[string]interface{}) (interface{}, int, error) {
-	var response []models.PurchasingRedboxPurchaseRequisitionListView
+	var response []models.PurchasingListView
 
 	if err := services.DbGet(&response, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting purchasing list")
+	}
+	return response, 0, nil
+}
+func GetPurchasingListSupplier(conditions map[string]interface{}) (interface{}, int, error) {
+	var response []models.PurchasingListSupplierView
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting purchasing list supplier")
 	}
 	return response, 0, nil
 }

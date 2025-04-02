@@ -27,8 +27,10 @@ func init() {
 
 func main() {
 	// Fiber App
-	app := fiber.New()
-
+	app := fiber.New(fiber.Config{
+		BodyLimit: 50 * 1024 * 1024,
+	})
+ 
 	app.Static("/files", "./files")
 
 	// App Logger
@@ -114,9 +116,9 @@ func main() {
 					itemApi.Delete("/type", setup_handlers.DeleteType)
 
 					// Image Endpoints
-					itemApi.Post("/item_image", setup_handlers.CreateItemImage)
-					itemApi.Put("/item_image", setup_handlers.UpdateItemImage)
-					itemApi.Delete("/item_image", setup_handlers.DeleteItemImage)
+					// itemApi.Post("/item_image", setup_handlers.CreateItemImage)
+					// itemApi.Put("/item_image", setup_handlers.UpdateItemImage)
+					// itemApi.Delete("/item_image", setup_handlers.DeleteItemImage)
 
 					// Item Endpoints
 					itemApi.Get("", setup_handlers.GetItems)
@@ -252,7 +254,10 @@ func main() {
 
 				// Purhcasing Redbox List
 				purchasingApi.Get("/purchase_redbox_list", purchasing_handlers.GetPurchasingRedboxList)
+
+				//Purchasing List
 				purchasingApi.Get("/purchase_list", purchasing_handlers.GetPurchasingList)
+				purchasingApi.Get("/purchase_list_supplier", purchasing_handlers.GetPurchasingListSupplier)
 			}
 
 			//Bpi Endpoints
