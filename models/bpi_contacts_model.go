@@ -2,6 +2,7 @@ package models
 
 type BpiContactContent struct {
 	BasedId     uint   `json:"based_id"`
+	BranchId    uint   `json:"branch_id"`
 	Number      string `json:"number"`
 	Name        string `json:"name"`
 	Email       string `json:"email"`

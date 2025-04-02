@@ -2,43 +2,38 @@ package initializers
 
 func MigrateDb() {
 	// Auth
-	// DB.AutoMigrate(&models.User{}, &models.UserAt{})
 
+	//	DB.AutoMigrate(&models.User{}, &models.UserAt{})
 	// Setup
-	// DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
-	// DB.AutoMigrate(&models.UnitMeasurement{}, &models.UnitMeasurementAt{})
-	// DB.AutoMigrate(&models.PaymentTerms{}, &models.PaymentTermsAt{})
+	DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
+	DB.AutoMigrate(&models.UnitMeasurement{}, &models.UnitMeasurementAt{})
+	DB.AutoMigrate(&models.PaymentTerms{}, &models.PaymentTermsAt{})
 	// DB.AutoMigrate(&models.Class{}, &models.ClassAt{})
 	// DB.AutoMigrate(&models.Name{}, &models.NameAt{})
 	// DB.AutoMigrate(&models.Type{}, &models.TypeAt{})
-	//DB.AutoMigrate(&models.Item{}, &models.ItemAt{})
-	// DB.AutoMigrate(&models.Position{}, &models.PositionAt{})
-	// DB.AutoMigrate(&models.SetupItemBom{}, &models.SetupItemBomAt{})
-	// DB.AutoMigrate(&models.SetupItemBomDetails{}, &models.SetupItemBomDetailsAt{})
+	// DB.AutoMigrate(&models.Item{}, &models.ItemAt{})
 	// DB.AutoMigrate(&models.ItemSpecs{}, &models.ItemSpecsAt{})
-	//DB.AutoMigrate(&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{})
+	// DB.AutoMigrate(&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{})
 	// DB.AutoMigrate(&models.TradeType{}, models.TradeTypeAt{})
-	//DB.AutoMigrate(&models.ItemTradeType{}, models.ItemTradeTypeAt{})
 	// DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
-	//DB.AutoMigrate(&models.ItemImage{}, models.ItemImageAt{})
-	// DB.AutoMigrate(&models.Material{}, models.MaterialAt{})
-	// DB.AutoMigrate(&models.PumpType{}, &models.PumpTypeAt{})
-	// DB.AutoMigrate(&models.PumpCount{}, &models.PumpCountAt{})
-	// DB.AutoMigrate(&models.AdditionalSpecsPumpType{}, models.AdditionalSpecsPumpTypeAt{})
 
-	// DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
-	// DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
+	DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
+	DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
+	// DB.AutoMigrate(&models.User{}, &models.UserAt{})
 
-	//ItemImage
-	// DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
-	// DB.AutoMigrate(&models.UnitMeasurement{}, &models.UnitMeasurementAt{})
-	// DB.AutoMigrate(&models.PaymentTerms{}, &models.PaymentTermsAt{})
+	// Setup
+	DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
+	DB.AutoMigrate(&models.UnitMeasurement{}, &models.UnitMeasurementAt{})
+	DB.AutoMigrate(&models.PaymentTerms{}, &models.PaymentTermsAt{})
+
 	// DB.AutoMigrate(&models.Class{}, &models.ClassAt{})
 	// DB.AutoMigrate(&models.Name{}, &models.NameAt{})
 	// DB.AutoMigrate(&models.Type{}, &models.TypeAt{})
 	// DB.AutoMigrate(&models.Item{}, &models.ItemAt{})
 	// DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
-	// DB.AutoMigrate(&models.Application{}, &models.ApplicationAt{})
+
+	//	DB.AutoMigrate(&models.Application{}, &models.ApplicationAt{})
+
 
 	// // Sales
 	// DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
@@ -56,9 +51,11 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 
+
 	// Purchasing
 	//DB.AutoMigrate(&models.PurchaseRequisition{}, &models.PurchaseRequisitionAt{})
 	//DB.AutoMigrate(&models.PROrders{}, &models.PROrdersAt{})
+
 
 	// Sales
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
@@ -69,18 +66,17 @@ func MigrateDb() {
 
 	//DB.AutoMigrate(&models.SalesProjectItems{}, &models.SalesProjectItemsAt{})
 
-	// // Sample
-	// DB.AutoMigrate(&models.Parent{}, &models.ParentAt{})
-	// DB.AutoMigrate(&models.Childf{}, &models.ChildfAt{})
-	// DB.AutoMigrate(&models.Childs{}, &models.ChildsAt{})
+y
+	//BPI
+	DB.AutoMigrate(&models.Bpi{}, &models.BpiAt{})
+	DB.AutoMigrate(&models.BpiGeneral{}, &models.BpiGeneralAt{})
+	DB.AutoMigrate(&models.BpiContacts{}, &models.BpiContactsAt{})
+	DB.AutoMigrate(&models.BpiIndustries{}, &models.BpiIndustriesAt{})
+	DB.AutoMigrate(&models.BpiBranchIndustries{}, &models.BpiBranchIndustriesAt{})
+	DB.AutoMigrate(&models.BpiEntity{}, &models.BpiEntityAt{})
+	DB.AutoMigrate(&models.BpiAddress{}, &models.BpiAddressAt{})
+	DB.AutoMigrate(&models.BpiItems{}, &models.BpiItemsAt{})
+	DB.AutoMigrate(&models.BpiFinance{}, &models.BpiFinanceAt{})
+	DB.AutoMigrate(&models.BpiAccreditation{}, &models.BpiAccreditationAt{})
 
-	// //BPI
-	// DB.AutoMigrate(&models.Bpi{}, &models.BpiAt{})
-	// DB.AutoMigrate(&models.BpiGeneral{}, &models.BpiGeneralAt{})
-	// DB.AutoMigrate(&models.BpiContacts{}, &models.BpiContactsAt{})
-	// DB.AutoMigrate(&models.BpiIndustries{}, &models.BpiIndustriesAt{})
-	// DB.AutoMigrate(&models.BpiBranchIndustries{}, &models.BpiBranchIndustriesAt{})
-	// DB.AutoMigrate(&models.BpiEntity{}, &models.BpiEntityAt{})
-	// DB.AutoMigrate(&models.BpiAddress{}, &models.BpiAddressAt{})
-	// DB.AutoMigrate(&models.BpiItems{}, &models.BpiItemsAt{})
 }
