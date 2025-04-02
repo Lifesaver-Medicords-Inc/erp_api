@@ -18,6 +18,7 @@ type ProjectBody struct {
 	SalesProjectContent                  models.SalesProjectContent            `json:"sales_project_content"`
 	SalesProjectContentAdvancedCondition models.SalesProjectAdvancedConditions `json:"sales_project_content_advanced_condition"`
 	SalesProjectItems                    models.SalesProjectItems              `json:"sales_project_items"`
+	SalesProjectWirings                  models.SalesProjectWiring             `json:"sales_project_wiring"`
 }
 
 type CreateProjectBody struct {
@@ -28,6 +29,7 @@ type CreateProjectBody struct {
 	SalesProjectContent                  models.SalesProjectContent            `json:"sales_project_content"`
 	SalesProjectContentAdvancedCondition models.SalesProjectAdvancedConditions `json:"sales_project_content_advanced_condition"`
 	SalesProjectItems                    []models.SalesProjectItems            `json:"sales_project_items"`
+	SalesProjectWirings                  []models.SalesProjectWiring           `json:"sales_project_wiring"`
 }
 
 type CreateProjectBody2 struct {
@@ -38,6 +40,7 @@ type CreateProjectBody2 struct {
 	SalesProjectContent                  models.SalesProjectContent            `json:"sales_project_content"`
 	SalesProjectContentAdvancedCondition models.SalesProjectAdvancedConditions `json:"sales_project_content_advanced_condition"`
 	SalesProjectItems                    []models.SalesProjectItems            `json:"sales_project_items"`
+	SalesProjectWirings                  models.SalesProjectWiring             `json:"sales_project_wiring"`
 }
 
 type UpdateProjectBody struct {
@@ -48,6 +51,21 @@ type UpdateProjectBody struct {
 	SalesProjectContent                  models.SalesProjectContent            `json:"sales_project_content"`
 	SalesProjectContentAdvancedCondition models.SalesProjectAdvancedConditions `json:"sales_project_content_advanced_condition"`
 	SalesProjectItems                    []models.SalesProjectItems            `json:"sales_project_items"`
+	SalesProjectWirings                  models.SalesProjectWiring             `json:"sales_project_wiring"`
+}
+
+func GetBpiSuppliers(conditions map[string]interface{}) (interface{}, int, error) {
+	type Response struct {
+		BpiSuppliers []models.BpiSuppliersView
+	}
+
+	var response Response
+
+	if err := services.DbGet(&response.BpiSuppliers, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting bpi suppliers")
+	}
+
+	return response, 0, nil
 }
 
 func GetSalesProjects(conditions map[string]interface{}) (interface{}, int, error) {
@@ -59,13 +77,24 @@ func GetSalesProjects(conditions map[string]interface{}) (interface{}, int, erro
 		SalesProjectContent                  []models.SalesProjectContent            `json:"sales_project_content"`
 		SalesProjectContentAdvancedCondition []models.SalesProjectAdvancedConditions `json:"sales_project_content_advanced_condition"`
 		SalesProjectItems                    []models.SalesProjectItems              `json:"sales_project_items"`
+		SalesProjectWirings                  []models.SalesProjectWiring             `json:"sales_project_wiring"`
 	}
 
 	var response Response
 
 	if err := services.DbGet(&response.SalesQuotation, conditions); err != nil {
+		fmt.Println("Error fetching SalesQuotation:", err)
 		return response, fiber.StatusInternalServerError, errors.New("failed getting sales projects")
 	}
+
+	var filteredQuotations []models.SalesQuotation
+	for _, quotation := range response.SalesQuotation {
+		if quotation.ProjectName != "" {
+			filteredQuotations = append(filteredQuotations, quotation)
+		}
+	}
+
+	response.SalesQuotation = filteredQuotations
 
 	if err := GetSalesProjectMultiplier(&response.SalesProjectMultiplier, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, err
@@ -87,6 +116,9 @@ func GetSalesProjects(conditions map[string]interface{}) (interface{}, int, erro
 		return response, fiber.StatusInternalServerError, err
 	}
 	if err := GetProjectItems(&response.SalesProjectItems, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, err
+	}
+	if err := GetProjectWiring(&response.SalesProjectWirings, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, err
 	}
 
@@ -151,6 +183,13 @@ func CreateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, erro
 		}
 	}
 
+	for _, v := range body.SalesProjectWirings {
+		if err := CreateProjectWiring(tx, body.SalesProjectItemSet.ItemSetID, v, at); err != nil {
+
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+
 	return body, 0, nil
 }
 
@@ -183,6 +222,13 @@ func CreateNewItems(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, error) {
 
 	for _, v := range body.SalesProjectItems {
 		if err := CreateProjectItems(tx, body.SalesProjectItemSet.ItemSetID, v, at); err != nil {
+
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+
+	for _, v := range body.SalesProjectWirings {
+		if err := CreateProjectWiring(tx, body.SalesProjectItemSet.ItemSetID, v, at); err != nil {
 
 			return body, fiber.StatusInternalServerError, err
 		}
@@ -267,4 +313,18 @@ func UpdateProjectItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfac
 	}
 
 	return body, 0, nil
+}
+
+func GetItemPumps(conditions map[string]interface{}) (interface{}, int, error) {
+	type Response struct {
+		ItemPumpsView []models.ItemPumpSpecsView
+	}
+
+	var response Response
+
+	if err := services.DbGet(&response.ItemPumpsView, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting item pump view")
+	}
+
+	return response, 0, nil
 }
