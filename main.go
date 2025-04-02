@@ -182,12 +182,13 @@ func main() {
 			}
 
 			//Bpi Endpoints
-			api.Get("/bpi", bpi_handlers.GetBpis)
+			api.Get("/bpi/entity", bpi_handlers.GetBpiEntityRecords)
 			api.Get("/bpi/list", bpi_handlers.GetBpiItemList)
 			api.Post("/bpi", bpi_handlers.CreateBpi)
-			api.Get("/bpi/customers", sales_handlers.GetBpis)
+			api.Put("/bpi", bpi_handlers.UpdateBpi)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
-			//api.Patch("/bpi", sales_handlers.UpdateQuotation)
+			api.Get("/bpi", bpi_handlers.GetBpis)
+
 			//api.Delete("/bpi", sales_handlers.DeleteQuotation)
 
 		}
