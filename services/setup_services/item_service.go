@@ -27,10 +27,6 @@ type SaveBody struct {
 	ItemImages      ItemImageUpdate              `json:"itemimages"`
 }
 
-// type ItemImageInput struct {
-// 	Image []string `json:"image"`
-// }
-
 type UpdateBody struct {
 	models.Item
 	TradeTypeId     []uint                       `json:"trade_type_id"`
