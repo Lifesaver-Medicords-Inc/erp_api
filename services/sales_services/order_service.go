@@ -191,8 +191,11 @@ func UpdateOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 	fmt.Println(bodyorder)
 	// If everything goes well, return success
 
-	redboxpurchasinglistview := services.GetKey(models.PurchasingRedboxPurchaseListView{}, nil)
-	services.InvalidateCache(redboxpurchasinglistview)
+	purchasinglistview := services.GetKey(models.PurchasingListView{}, nil)
+	services.InvalidateCache(purchasinglistview)
+
+	purchasinsupplierlist := services.GetKey(models.PurchasingListSupplierView{}, nil)
+	services.InvalidateCache(purchasinsupplierlist)
 
 	return bodyorder, 0, nil
 }

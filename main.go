@@ -30,7 +30,7 @@ func main() {
 	app := fiber.New(fiber.Config{
 		BodyLimit: 50 * 1024 * 1024,
 	})
- 
+
 	app.Static("/files", "./files")
 
 	// App Logger
@@ -258,6 +258,9 @@ func main() {
 				//Purchasing List
 				purchasingApi.Get("/purchase_list", purchasing_handlers.GetPurchasingList)
 				purchasingApi.Get("/purchase_list_supplier", purchasing_handlers.GetPurchasingListSupplier)
+				purchasingApi.Get("/purchase_canvass_sheet", purchasing_handlers.GetPurchasingCanvassSheet)
+				purchasingApi.Post("/purchase_canvass_sheet", purchasing_handlers.CreatePurchasingCanvassSheet)
+				purchasingApi.Put("/purchase_canvass_sheet", purchasing_handlers.UpdatePurchasingCanvassSheet)
 			}
 
 			//Bpi Endpoints
@@ -268,7 +271,6 @@ func main() {
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
 
 			api.Get("/bpi", bpi_handlers.GetBpis)
-
 
 			//api.Delete("/bpi", sales_handlers.DeleteQuotation)
 
