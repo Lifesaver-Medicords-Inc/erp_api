@@ -1,7 +1,6 @@
 package models
 
 type SalesProjectItemsContent struct {
-
 	TemplateID uint `json:"template_id"`
 	BasedId    uint `json:"based_id"`
 	BomID      uint `json:"bom_id"`
