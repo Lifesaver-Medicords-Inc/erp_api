@@ -242,9 +242,8 @@ func main() {
 				salesApi.Post("/projects_tab", sales_handlers.CreateItemSetTab)
 				salesApi.Put("/project_conditions", sales_handlers.UpdateProjectCondition)
 				salesApi.Put("/project_contents", sales_handlers.UpdateProjectContent)
-<<<<<<< HEAD
+
 				salesApi.Get("/projects_pumps", sales_handlers.GetItemPumps)
-=======
 
 				// CRM Endpointss //test
 				salesApi.Get("/crm", sales_handlers.GetCRMs)
@@ -252,7 +251,7 @@ func main() {
 				salesApi.Get("/crm/:id", sales_handlers.GetCRM)
 				salesApi.Post("/crm", sales_handlers.CreateCRM)
 				salesApi.Put("/crm", sales_handlers.UpdateCRM)
->>>>>>> 620edd480847ac5c23ef777f54ecb6e1b667a02b
+
 				// Return Routes
 				// sales_api.Get("/return", handlers.Register)
 				// sales_api.Post("/return/create", handlers.Register)
