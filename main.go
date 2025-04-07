@@ -27,7 +27,9 @@ func init() {
 
 func main() {
 	// Fiber App
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		BodyLimit: 50 * 1024 * 1024,
+	})
 
 	app.Static("/files", "./files")
 
@@ -114,9 +116,9 @@ func main() {
 					itemApi.Delete("/type", setup_handlers.DeleteType)
 
 					// Image Endpoints
-					itemApi.Post("/item_image", setup_handlers.CreateItemImage)
-					itemApi.Put("/item_image", setup_handlers.UpdateItemImage)
-					itemApi.Delete("/item_image", setup_handlers.DeleteItemImage)
+					// itemApi.Post("/item_image", setup_handlers.CreateItemImage)
+					// itemApi.Put("/item_image", setup_handlers.UpdateItemImage)
+					// itemApi.Delete("/item_image", setup_handlers.DeleteItemImage)
 
 					// Item Endpoints
 					itemApi.Get("", setup_handlers.GetItems)
@@ -259,17 +261,24 @@ func main() {
 
 				// Purhcasing Redbox List
 				purchasingApi.Get("/purchase_redbox_list", purchasing_handlers.GetPurchasingRedboxList)
+
+				//Purchasing List
 				purchasingApi.Get("/purchase_list", purchasing_handlers.GetPurchasingList)
+				purchasingApi.Get("/purchase_list_supplier", purchasing_handlers.GetPurchasingListSupplier)
+				purchasingApi.Get("/purchase_canvass_sheet", purchasing_handlers.GetPurchasingCanvassSheet)
+				purchasingApi.Post("/purchase_canvass_sheet", purchasing_handlers.CreatePurchasingCanvassSheet)
+				purchasingApi.Put("/purchase_canvass_sheet", purchasing_handlers.UpdatePurchasingCanvassSheet)
 			}
 
 			//Bpi Endpoints
-			api.Get("/bpi", bpi_handlers.GetBpis)
+			api.Get("/bpi/entity", bpi_handlers.GetBpiEntityRecords)
 			api.Get("/bpi/list", bpi_handlers.GetBpiItemList)
 			api.Post("/bpi", bpi_handlers.CreateBpi)
-			api.Get("/bpi/customers", sales_handlers.GetBpis)
+			api.Put("/bpi", bpi_handlers.UpdateBpi)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
 
-			//api.Patch("/bpi", sales_handlers.UpdateQuotation)
+			api.Get("/bpi", bpi_handlers.GetBpis)
+
 			//api.Delete("/bpi", sales_handlers.DeleteQuotation)
 
 			// positionApi := api.Group("/position")
