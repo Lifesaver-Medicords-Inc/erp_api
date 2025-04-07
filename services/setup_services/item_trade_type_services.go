@@ -65,13 +65,49 @@ func UpdateTradeType(tx *gorm.DB, tradetype models.TradeType, at models.At, cond
 	return nil
 }
 
-func UpdateTradeTypes(tx *gorm.DB, body SaveBody, at models.At) error {
-	if err := services.DbDelete(tx, &models.TradeType{}, map[string]interface{}{"based_id": body.ID}); err != nil {
-		return errors.New("failed deleting existing trade types")
+// func UpdateTradeTypes(tx *gorm.DB, body UpdateBody, at models.At) error {
+// 	if err := services.DbDelete(tx, &models.TradeType{}, map[string]interface{}{"based_id": body.ID}); err != nil {
+// 		return errors.New("failed deleting existing trade types")
+// 	}
+
+// 	for _, v := range body.TradeType {
+// 		if err := CreateTradeType(tx, body.ID, string(rune(v)), at); err != nil {
+// 			return errors.New("failed updating existing trade types")
+// 		}
+// 	}
+
+// 	return nil
+// }
+func CreateItemTradeTypes(tx *gorm.DB, basedId uint, tradeTypeId uint, at models.At) error {
+	content := models.ItemTradeTypeContent{
+		ItemId:       basedId,
+		TradeTypeId: tradeTypeId,
+	}
+	itemTradeTypes := models.ItemTradeType{ItemTradeTypeContent: content }
+	if err := services.DbInsert(tx, &itemTradeTypes); err != nil {
+		return errors.New("failed creating item trade type")
 	}
 
-	for _, v := range body.TradeType {
-		if err := CreateTradeType(tx, body.ID, v, at); err != nil {
+	additionalSpecsPumpTypeAt := models.ItemTradeTypeAt{
+		RefId:                          itemTradeTypes.ID,
+		ItemTradeTypeContent: content,
+		At:                             at,
+	}
+
+	if err := services.DbInsert(tx, &additionalSpecsPumpTypeAt); err != nil {
+		return errors.New("failed creating additional specs pump type at")
+	}
+
+	return nil
+}
+
+func UpdateTradeTypes(tx *gorm.DB, itemId uint, tradeTypeIDs []uint, at models.At) error {
+	if err := services.DbDelete(tx, &models.ItemTradeType{}, map[string]interface{}{"item_id": itemId}); err != nil {
+		return errors.New("failed deleting existing item trade type")
+	}
+
+	for _, tradeTypeID := range tradeTypeIDs {
+		if err := CreateItemTradeTypes(tx, itemId, tradeTypeID, at); err != nil {
 			return err
 		}
 	}

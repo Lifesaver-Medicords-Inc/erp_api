@@ -2,6 +2,7 @@ package models
 
 type BpiAddressContent struct {
 	BasedId  uint   `json:"based_id"`
+	BranchId uint   `json:"branch_id"`
 	Location string `json:"location"`
 }
 

@@ -2,7 +2,9 @@ package models
 
 type BpiItemContent struct {
 	BasedId        uint    `json:"based_id"`
+	BranchId       uint    `json:"branch_id"`
 	PaymentTermsId uint    `json:"payment_terms_id"`
+	ItemAccountId  uint    `json:"item_account_id"`
 	ItemId         uint    `json:"item_id"`
 	TaxCode        string  `json:"tax_code"`
 	ItemTaxCode    string  `json:"item_tax_code"`
