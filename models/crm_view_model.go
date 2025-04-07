@@ -13,6 +13,7 @@ type CRMView struct {
 }
 
 // test
+// test
 func (CRMView) TableName() string {
 	return "vw_get_CRM"
 }

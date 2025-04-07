@@ -9,6 +9,7 @@ import (
 	"github.com/pierceperado/smpc/utils"
 )
 
+// test
 func GetCRMs(c *fiber.Ctx) error {
 	data, status, err := sales_services.GetCRMs(nil)
 	if err != nil {

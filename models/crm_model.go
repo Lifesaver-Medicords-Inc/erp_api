@@ -11,6 +11,7 @@ type CRM struct {
 	CRMContent
 }
 
+// test
 func (CRM) TableName() string {
 	return "tbl_trans_sales_crm"
 }

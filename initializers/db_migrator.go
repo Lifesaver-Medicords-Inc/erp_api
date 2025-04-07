@@ -3,7 +3,7 @@ package initializers
 func MigrateDb() {
 	// Auth
 	// DB.AutoMigrate(&models.User{}, &models.UserAt{})
-
+	//test
 	// Setup
 	// DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
 	// DB.AutoMigrate(&models.UnitMeasurement{}, &models.UnitMeasurementAt{})

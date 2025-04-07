@@ -233,7 +233,7 @@ func main() {
 				salesApi.Put("/project_conditions", sales_handlers.UpdateProjectCondition)
 				salesApi.Put("/project_contents", sales_handlers.UpdateProjectContent)
 
-				// CRM Endpointss
+				// CRM Endpointss //test
 				salesApi.Get("/crm", sales_handlers.GetCRMs)
 				salesApi.Get("/crm/table", sales_handlers.GetCRMTable)
 				salesApi.Get("/crm/:id", sales_handlers.GetCRM)
