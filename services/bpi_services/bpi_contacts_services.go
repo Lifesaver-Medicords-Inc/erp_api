@@ -9,12 +9,14 @@ import (
 	"gorm.io/gorm"
 )
 
-func BpiContact(tx *gorm.DB, parentId uint, child models.BpiContacts, at models.At) error {
+func BpiContact(tx *gorm.DB, parentId uint, generalId uint, child *models.BpiContacts, at models.At) error {
 
+	fmt.Println("GENRAL ID ", generalId)
 	child.BpiContactContent.BasedId = parentId
+	child.BpiContactContent.BranchId = generalId
 
 	fmt.Println("BPI CONTACT1234")
-	if err := services.DbInsert(tx, &child); err != nil {
+	if err := services.DbInsert(tx, child); err != nil {
 		return errors.New("failed to create bpi contacts")
 	}
 
@@ -27,5 +29,31 @@ func BpiContact(tx *gorm.DB, parentId uint, child models.BpiContacts, at models.
 		return errors.New("failed creating bpi_contacts_at")
 	}
 
+	return nil
+}
+func UpdateBpiContact(tx *gorm.DB, child models.BpiContacts, at models.At, conditions map[string]interface{}) error {
+
+	if child.ID == 0 {
+		child.BpiContactContent.BasedId = conditions["based_id"].(uint)
+
+		fmt.Println("BPI CONTACT1234")
+		if err := services.DbInsert(tx, &child); err != nil {
+			return errors.New("failed to create bpi contacts")
+		}
+
+	} else {
+		if err := services.DbUpdate(tx, &child, conditions); err != nil {
+			return errors.New("failed updating bpi contacts")
+		}
+	}
+
+	childfat := models.BpiContactsAt{
+		RefId:             child.ID,
+		BpiContactContent: child.BpiContactContent,
+		At:                at,
+	}
+	if err := services.DbInsert(tx, &childfat); err != nil {
+		return errors.New("failed creating bpi contact at  in Update Bpi Contacts")
+	}
 	return nil
 }

@@ -8,7 +8,7 @@ type ItemContent struct {
 	ItemClassId         uint    `json:"item_class_id"`
 	ItemBrandId         uint    `json:"item_brand_id"`
 	UnitOfMeasureId     uint    `json:"unit_of_measure_id"`
-	ItemTradeType       string  `json:"item_trade_type"`
+	//ItemTradeTypeId     uint    `json:"trade_type_id"`
 	ItemTangibilityType string  `json:"item_tangibility_type"`
 	IsStopSelling       bool    `json:"is_stop_selling"`
 	Price               float64 `json:"price"`
