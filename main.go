@@ -168,7 +168,7 @@ func main() {
 				setupApi.Put("/entity", setup_handlers.UpdateEntity)
 				setupApi.Delete("/entity", setup_handlers.DeleteEntity)
 
-				//Position Endpoints
+				// Position Endpoints
 				setupApi.Get("/position", position_handlers.GetPositions)
 				setupApi.Get("/position:/id", position_handlers.GetPosition)
 				setupApi.Post("/position", position_handlers.CreatePosition)
@@ -176,7 +176,8 @@ func main() {
 				setupApi.Delete("/position", position_handlers.DeletePosition)
 
 				//BOM Endpoints
-				setupApi.Get("/bom", setup_handlers.GetSetupItemBoms)
+				//setupApi.Get("/bom", setup_handlers.GetSetupItemBoms)
+				setupApi.Get("/bom", setup_handlers.GetSetupItemBomss)
 				setupApi.Get("/bom:/id", setup_handlers.GetSetupItemBom)
 				setupApi.Post("/bom", setup_handlers.CreateSetupItemBom)
 				setupApi.Put("/bom", setup_handlers.UpdateSetupItemBom)
@@ -196,6 +197,10 @@ func main() {
 				setupApi.Post("/project", setup_handlers.CreateProject)
 				setupApi.Put("/project", setup_handlers.UpdateProject)
 
+				// PROJECT TEMPLATES ENDPOINTS
+				setupApi.Get("/templates", setup_handlers.GetProjectsTemplates)
+				setupApi.Post("/templates", setup_handlers.CreateProjectTemplate)
+
 			}
 
 			// Sales Endpoints
@@ -207,6 +212,9 @@ func main() {
 				//salesApi.Post("child/quotation", sales_handlers.CreateSalesQuotationChild)
 				// POST for Parent
 				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
+
+				salesApi.Post("/salescanvas", sales_handlers.CreateSalesCanvasSheet)
+				salesApi.Get("/salescanvas", sales_handlers.GetSalesCanvasView)
 
 				salesApi.Get("/application", setup_handlers.GetApplications)
 				salesApi.Get("/application/:id", setup_handlers.GetApplication)
@@ -232,6 +240,7 @@ func main() {
 				salesApi.Post("/projects_tab", sales_handlers.CreateItemSetTab)
 				salesApi.Put("/project_conditions", sales_handlers.UpdateProjectCondition)
 				salesApi.Put("/project_contents", sales_handlers.UpdateProjectContent)
+				salesApi.Get("/projects_pumps", sales_handlers.GetItemPumps)
 				// Return Routes
 				// sales_api.Get("/return", handlers.Register)
 				// sales_api.Post("/return/create", handlers.Register)
@@ -261,6 +270,7 @@ func main() {
 			api.Post("/bpi", bpi_handlers.CreateBpi)
 			api.Get("/bpi/customers", sales_handlers.GetBpis)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
+			api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
 
 			//api.Patch("/bpi", sales_handlers.UpdateQuotation)
 			//api.Delete("/bpi", sales_handlers.DeleteQuotation)
