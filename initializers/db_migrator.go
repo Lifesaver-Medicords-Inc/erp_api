@@ -48,7 +48,7 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
 
 	// DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
-	// DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
+	//DB.AutoMigrate(&models.CRM{}, &models.CRMAt{})
 	// DB.AutoMigrate(&models.Status{}, &models.StatusAt{})
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
