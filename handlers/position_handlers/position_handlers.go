@@ -1,6 +1,7 @@
 package position_handlers
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -11,6 +12,7 @@ import (
 
 func GetPositions(c *fiber.Ctx) error {
 	data, status, err := position_services.GetPositions(nil)
+	fmt.Println("POSITIONS>>>", data)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
