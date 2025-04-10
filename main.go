@@ -30,7 +30,7 @@ func main() {
 	app := fiber.New(fiber.Config{
 		BodyLimit: 50 * 1024 * 1024,
 	})
- 
+
 	app.Static("/files", "./files")
 
 	// App Logger
@@ -268,7 +268,6 @@ func main() {
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
 
 			api.Get("/bpi", bpi_handlers.GetBpis)
-
 
 			//api.Delete("/bpi", sales_handlers.DeleteQuotation)
 
