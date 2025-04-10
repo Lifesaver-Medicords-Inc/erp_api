@@ -48,6 +48,7 @@ func main() {
 		api.Get("/hello", public_handlers.CheckHealth)
 		api.Post("/upload", public_handlers.ImageUpload)
 		api.Post("/dfile", public_handlers.DeleteFile)
+		api.Get("/vfile/:filename", public_handlers.ViewFile)
 
 		// Protected Endpoints
 		// api.Use(middlewares.RequireAuth)
