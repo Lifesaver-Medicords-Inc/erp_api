@@ -173,8 +173,6 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 	}
 
 	InvalidateItemCaches()
-
-	fmt.Println("ITEM SAVING:", savebody)
 	return savebody, 0, nil
 }
 

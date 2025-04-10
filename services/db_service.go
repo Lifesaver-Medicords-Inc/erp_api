@@ -195,7 +195,8 @@ func DbUpdate(tx *gorm.DB, model interface{}, conditions map[string]interface{})
 }
 
 func DbDelete(tx *gorm.DB, model interface{}, conditions map[string]interface{}) error {
-	query := initializers.DB.Model(model)
+	//query := initializers.DB.Model(model)
+	query := tx.Model(model)
 
 	if len(conditions) > 0 {
 		query = query.Where(conditions)

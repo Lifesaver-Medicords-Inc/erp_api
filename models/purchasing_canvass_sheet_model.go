@@ -12,7 +12,7 @@ type PurchasingCanvassSheetContent struct {
 	NetPrice         float64 `json:"net_price"`
 	PriceValidity    string  `json:"price_validity"`
 	PaymentTerms     float64 `json:"payment_terms"`
-	LeadTime         float64 `json:"lead_time"`
+	LeadTime         string `json:"lead_time"`
 	ItemId           int     `json:"item_id"`
 	Date             string  `json:"date"`
 }
