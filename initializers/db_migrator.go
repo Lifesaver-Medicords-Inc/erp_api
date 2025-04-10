@@ -5,7 +5,9 @@ import "github.com/pierceperado/smpc/models"
 func MigrateDb() {
 	// Auth
 
+	// DB.AutoMigrate(&models.User{}, &models.UserAt{})
 	//	DB.AutoMigrate(&models.User{}, &models.UserAt{})
+
 	// Setup
 
 	// DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})
@@ -49,7 +51,7 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
 
 	// DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
-	// DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
+	//DB.AutoMigrate(&models.CRM{}, &models.CRMAt{})
 	// DB.AutoMigrate(&models.Status{}, &models.StatusAt{})
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
@@ -59,6 +61,9 @@ func MigrateDb() {
 	// Purchasing
 	//DB.AutoMigrate(&models.PurchaseRequisition{}, &models.PurchaseRequisitionAt{})
 	//DB.AutoMigrate(&models.PROrders{}, &models.PROrdersAt{})
+
+	//DB.AutoMigrate(&models.PurchasingCanvassSheet{}, &models.PurchasingCanvassSheetAt{})
+
 
 	// Sales
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
@@ -72,7 +77,9 @@ func MigrateDb() {
 	//BPI
 	// DB.AutoMigrate(&models.Bpi{}, &models.BpiAt{})
 	// DB.AutoMigrate(&models.BpiGeneral{}, &models.BpiGeneralAt{})
-	DB.AutoMigrate(&models.BpiContacts{}, &models.BpiContactsAt{})
+
+	// DB.AutoMigrate(&models.BpiContacts{}, &models.BpiContactsAt{})
+
 	// DB.AutoMigrate(&models.BpiIndustries{}, &models.BpiIndustriesAt{})
 	// DB.AutoMigrate(&models.BpiBranchIndustries{}, &models.BpiBranchIndustriesAt{})
 	// DB.AutoMigrate(&models.BpiEntity{}, &models.BpiEntityAt{})

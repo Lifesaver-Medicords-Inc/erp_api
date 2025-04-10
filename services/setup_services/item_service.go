@@ -27,10 +27,6 @@ type SaveBody struct {
 	ItemImages      ItemImageUpdate              `json:"itemimages"`
 }
 
-// type ItemImageInput struct {
-// 	Image []string `json:"image"`
-// }
-
 type UpdateBody struct {
 	models.Item
 	TradeTypeId     []uint                       `json:"trade_type_id"`
@@ -177,8 +173,6 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 	}
 
 	InvalidateItemCaches()
-
-	fmt.Println("ITEM SAVING:", savebody)
 	return savebody, 0, nil
 }
 
