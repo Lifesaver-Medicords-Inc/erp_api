@@ -47,6 +47,8 @@ func main() {
 		api.Post("/logout", public_handlers.LogoutAccount)
 		api.Get("/hello", public_handlers.CheckHealth)
 		api.Post("/upload", public_handlers.ImageUpload)
+		api.Post("/dfile", public_handlers.DeleteFile)
+		api.Get("/vfile/:filename", public_handlers.ViewFile)
 
 		// Protected Endpoints
 		// api.Use(middlewares.RequireAuth)
@@ -182,7 +184,9 @@ func main() {
 
 				//BOM Endpoints
 				//setupApi.Get("/bom", setup_handlers.GetSetupItemBoms)
-				setupApi.Get("/bom", setup_handlers.GetSetupItemBoms)
+
+				// setupApi.Get("/bom", setup_handlers.GetSetupItemBomss)
+
 				setupApi.Get("/bom:/id", setup_handlers.GetSetupItemBom)
 				setupApi.Post("/bom", setup_handlers.CreateSetupItemBom)
 				setupApi.Put("/bom", setup_handlers.UpdateSetupItemBom)
@@ -291,6 +295,9 @@ func main() {
 			api.Post("/bpi", bpi_handlers.CreateBpi)
 			api.Put("/bpi", bpi_handlers.UpdateBpi)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
+
+			// api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
+
 			api.Get("/bpi", bpi_handlers.GetBpis)
 
 			// api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)

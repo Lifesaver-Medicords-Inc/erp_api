@@ -113,7 +113,7 @@ func DeleteItemImageChild(tx *gorm.DB, itemImageID uint) error {
 		fmt.Println("DELETION ERROR:", err)
 		return errors.New("failed deleting item image")
 	}
-	
+
 	if err := tx.Where("ref_id = ?", itemImageID).Delete(&models.ItemImageAt{}).Error; err != nil {
 		return errors.New("failed deleting item image at")
 	}
