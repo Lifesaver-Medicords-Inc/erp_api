@@ -1,7 +1,7 @@
 package models
 
 type BpiContent struct {
-	SalesId     uint   `json:"sales_id"`
+	SalesId     string `json:"sales_id"`
 	Name        string `json:"name"`
 	MainWebsite string `json:"main_website"`
 	Tin         string `json:"tin"`
