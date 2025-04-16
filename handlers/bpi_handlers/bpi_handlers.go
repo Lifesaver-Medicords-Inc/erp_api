@@ -1,8 +1,11 @@
 package bpi_handlers
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
+
 	"github.com/pierceperado/smpc/services/bpi_services"
 	"github.com/pierceperado/smpc/utils"
 )
@@ -14,6 +17,20 @@ func GetBpis(c *fiber.Ctx) error {
 		return utils.RespondError(c, status, err.Error())
 	}
 
+	return utils.RespondSuccess(c, data)
+}
+func GetBpiUsers(c *fiber.Ctx) error {
+	fmt.Println("GET BPI USERS")
+
+	idParam := c.Params("employee_id")
+
+	fmt.Println("GET BPI USERS>>", idParam)
+
+	data, status, err := bpi_services.GetBpiUsers(idParam)
+	fmt.Println("DATA USER", data)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
 	return utils.RespondSuccess(c, data)
 }
 

@@ -63,6 +63,9 @@ func main() {
 				sampleApi.Delete("/parent", sample_handlers.DeleteParent)
 			}
 
+			//User Employee Endpoints
+			api.Get("/employee_users/:employee_id", bpi_handlers.GetBpiUsers)
+
 			// Setup Endpoints
 			setupApi := api.Group("/setup")
 			{
@@ -181,7 +184,9 @@ func main() {
 
 				//BOM Endpoints
 				//setupApi.Get("/bom", setup_handlers.GetSetupItemBoms)
+
 				// setupApi.Get("/bom", setup_handlers.GetSetupItemBomss)
+
 				setupApi.Get("/bom:/id", setup_handlers.GetSetupItemBom)
 				setupApi.Post("/bom", setup_handlers.CreateSetupItemBom)
 				setupApi.Put("/bom", setup_handlers.UpdateSetupItemBom)
@@ -284,21 +289,19 @@ func main() {
 			}
 
 			//Bpi Endpoints
+
 			api.Get("/bpi/entity", bpi_handlers.GetBpiEntityRecords)
 			api.Get("/bpi/list", bpi_handlers.GetBpiItemList)
 			api.Post("/bpi", bpi_handlers.CreateBpi)
 			api.Put("/bpi", bpi_handlers.UpdateBpi)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
+
 			// api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
 
 			api.Get("/bpi", bpi_handlers.GetBpis)
 
+			// api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
 			//api.Delete("/bpi", sales_handlers.DeleteQuotation)
-
-			// positionApi := api.Group("/position")
-			// {
-
-			// }
 
 			// Websocket Endpoints
 			ws := api.Group("/ws")

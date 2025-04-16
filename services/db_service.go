@@ -52,6 +52,7 @@ func fetchRaw(model interface{}, procName string, conditions map[string]interfac
 }
 
 func buildQuery(procName string, conditions map[string]interface{}) string {
+
 	if len(conditions) == 0 {
 		return fmt.Sprintf("EXEC %s", procName)
 	}
@@ -75,12 +76,15 @@ func buildParams(conditions map[string]interface{}) []interface{} {
 }
 
 func DbGet(model interface{}, conditions map[string]interface{}) error {
+	fmt.Println("CONDITION GET BPI USER DB SERVICES", conditions)
+
 	ctx := context.Background()
 	key := GetKey(model, conditions)
 
 	fmt.Println("GET Keeey", key)
 
 	cache, err := initializers.RC.Get(ctx, key).Result()
+
 	if err == redis.Nil {
 		if err := fetchDB(model, conditions); err != nil {
 			return err
@@ -91,8 +95,12 @@ func DbGet(model interface{}, conditions map[string]interface{}) error {
 		}
 	} else if err != nil {
 		return errors.New("failed getting cache")
+
 	} else {
+
 		fmt.Println("Getting from Cache")
+		fmt.Println("MODEL", model)
+
 		if err := json.Unmarshal([]byte(cache), model); err != nil {
 			return errors.New("failed deserializing cache")
 		}
@@ -131,6 +139,7 @@ func GetKey(model interface{}, conditions map[string]interface{}) string {
 
 func fetchDB(model interface{}, conditions map[string]interface{}) error {
 	fmt.Println("Getting from DB")
+	fmt.Println("Getting from DB111", conditions)
 
 	query := initializers.DB.Model(model)
 
