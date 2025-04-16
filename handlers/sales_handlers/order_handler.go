@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/handlers/purchasing_handlers"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/services/sales_services"
 	"github.com/pierceperado/smpc/utils"
@@ -50,6 +51,9 @@ func CreateOrder(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
+	// websocket
+	purchasing_handlers.BroadcastRedboxList()
+
 	return utils.RespondSuccess(c, data)
 }
 
@@ -89,6 +93,9 @@ func UpdateOrder(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
+	// websocket
+	purchasing_handlers.BroadcastRedboxList()
+
 	return utils.RespondSuccess(c, data)
 }
 
@@ -108,6 +115,9 @@ func DeleteOrder(c *fiber.Ctx) error {
 		tx.Rollback()
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
+
+	// websocket
+	purchasing_handlers.BroadcastRedboxList()
 
 	return utils.RespondSuccess(c, data)
 }
