@@ -80,6 +80,7 @@ func UpdateOpportunity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfac
 
 	conditions = map[string]interface{}{
 		"document_no": body.DocumentNo,
+		"version_no":  body.VersionNo,
 	}
 
 	if err := services.DbUpdate(tx, &body, conditions); err != nil {

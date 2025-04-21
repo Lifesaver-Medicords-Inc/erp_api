@@ -43,6 +43,24 @@ func GetBomItemList(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
+func GetBomParentDetail(c *fiber.Ctx) error {
+	data, status, err := setup_services.GetBomParentDetail(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+func GetBomChildDetail(c *fiber.Ctx) error {
+	data, status, err := setup_services.GetBomChildDetail(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
 func CreateSetupItemBom(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {

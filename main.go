@@ -7,10 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
-
-	//"github.com/pierceperado/smpc/handlers/position_handlers"
 	"github.com/pierceperado/smpc/handlers/public_handlers"
-	//"github.com/pierceperado/smpc/handlers/purchasing_handlers"
 	"github.com/pierceperado/smpc/handlers/sales_handlers"
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
@@ -28,7 +25,9 @@ func init() {
 
 func main() {
 	// Fiber App
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		BodyLimit: 50 * 1024 * 1024,
+	})
 
 	app.Static("/files", "./files")
 
@@ -45,7 +44,9 @@ func main() {
 		api.Post("/login", public_handlers.LoginAccount)
 		api.Post("/logout", public_handlers.LogoutAccount)
 		api.Get("/hello", public_handlers.CheckHealth)
-		//api.Post("/upload", public_handlers.ImageUpload)
+		//	api.Post("/upload", public_handlers.ImageUpload)
+		//	api.Post("/dfile", public_handlers.DeleteFile)
+		//	api.Get("/vfile/:filename", public_handlers.ViewFile)
 
 		// Protected Endpoints
 		// api.Use(middlewares.RequireAuth)
@@ -59,6 +60,9 @@ func main() {
 				sampleApi.Put("/parent", sample_handlers.UpdateParent)
 				sampleApi.Delete("/parent", sample_handlers.DeleteParent)
 			}
+
+			//User Employee Endpoints
+			//	api.Get("/employee_users/:employee_id", bpi_handlers.GetBpiUsers)
 
 			// Setup Endpoints
 			setupApi := api.Group("/setup")
@@ -114,12 +118,10 @@ func main() {
 					itemApi.Put("/type", setup_handlers.UpdateType)
 					itemApi.Delete("/type", setup_handlers.DeleteType)
 
-					// Model Endpoints
-					// itemApi.Get("/model", setup_handlers.GetModels)
-					// itemApi.Get("/model/:id", setup_handlers.GetModel)
-					// itemApi.Post("/model", setup_handlers.CreateModel)
-					// itemApi.Put("/model", setup_handlers.UpdateModel)
-					// itemApi.Delete("/model", setup_handlers.DeleteModel)
+					// Image Endpoints
+					// itemApi.Post("/item_image", setup_handlers.CreateItemImage)
+					// itemApi.Put("/item_image", setup_handlers.UpdateItemImage)
+					// itemApi.Delete("/item_image", setup_handlers.DeleteItemImage)
 
 					// Item Endpoints
 					itemApi.Get("", setup_handlers.GetItems)
@@ -171,39 +173,40 @@ func main() {
 				setupApi.Put("/entity", setup_handlers.UpdateEntity)
 				setupApi.Delete("/entity", setup_handlers.DeleteEntity)
 
-				//Position Endpoints
-				//setupApi.Get("/position", position_handlers.GetPositions)
-				//setupApi.Get("/position:/id", position_handlers.GetPosition)
-				//setupApi.Post("/position", position_handlers.CreatePosition)
-				//setupApi.Put("/position", position_handlers.UpdatePosition)
-				//setupApi.Delete("/position", position_handlers.DeletePosition)
+				// Position Endpoints
+				// setupApi.Get("/position", position_handlers.GetPositions)
+				// setupApi.Get("/position:/id", position_handlers.GetPosition)
+				// setupApi.Post("/position", position_handlers.CreatePosition)
+				// setupApi.Put("/position", position_handlers.UpdatePosition)
+				// setupApi.Delete("/position", position_handlers.DeletePosition)
 
 				//BOM Endpoints
-				setupApi.Get("/bom", setup_handlers.GetSetupItemBoms)
+				//setupApi.Get("/bom", setup_handlers.GetSetupItemBoms)
+
+				// setupApi.Get("/bom", setup_handlers.GetSetupItemBomss)
+
 				setupApi.Get("/bom:/id", setup_handlers.GetSetupItemBom)
 				setupApi.Post("/bom", setup_handlers.CreateSetupItemBom)
 				setupApi.Put("/bom", setup_handlers.UpdateSetupItemBom)
 				setupApi.Delete("/bom", setup_handlers.DeleteSetupItemBom)
 				setupApi.Get("/bom/item_list", setup_handlers.GetBomItemList)
+				setupApi.Get("/bom/parent_detail", setup_handlers.GetBomParentDetail)
+				setupApi.Get("/bom/child_detail", setup_handlers.GetBomChildDetail)
 
-				//BOQ Endpoints
-				setupApi.Get("/boq", setup_handlers.GetItemBoqs)
-				//setupApi.Get("/boq:/id", setup_handlers.GetItemBoq)
-				setupApi.Post("/boq", setup_handlers.CreateItemBoq)
-				setupApi.Put("/boq", setup_handlers.UpdateItemBoq)
-				//setupApi.Delete("/boq", setup_handlers.DeleteItemBoq)
-				//setupApi.Get("/boq/item_list", setup_handlers.GetBomItemList)
-
-				//BOQ_NOTES Endpoints
-				setupApi.Get("/boq_notes", setup_handlers.GetBoqNotes)
-				setupApi.Get("/boq_notes:/id", setup_handlers.GetBoqNote)
-				setupApi.Post("/boq_notes", setup_handlers.CreateBoqNote)
-				setupApi.Put("/boq_notes", setup_handlers.UpdateBoqNote)
-				setupApi.Delete("/boq_notes", setup_handlers.DeleteBoqNote)
+				//BOM Detail Endpoints
+				// setupApi.Get("/bom/detail", setup_handlers.GetSetupItemBomDetails)
+				// setupApi.Get("/bom:/id", setup_handlers.GetSetupItemBomDetail)
+				// setupApi.Post("/bom/detail", setup_handlers.CreateSetupItemBomDetail)
+				// setupApi.Put("/bom/detail", setup_handlers.UpdateSetupItemBomDetail)
+				// setupApi.Delete("/bom/detail", setup_handlers.DeleteSetupItemBomDetail)
 
 				setupApi.Get("/project", setup_handlers.GetProjects)
 				setupApi.Post("/project", setup_handlers.CreateProject)
 				setupApi.Put("/project", setup_handlers.UpdateProject)
+
+				// PROJECT TEMPLATES ENDPOINTS
+				setupApi.Get("/templates", setup_handlers.GetProjectsTemplates)
+				setupApi.Post("/templates", setup_handlers.CreateProjectTemplate)
 
 			}
 
@@ -216,6 +219,9 @@ func main() {
 				//salesApi.Post("child/quotation", sales_handlers.CreateSalesQuotationChild)
 				// POST for Parent
 				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
+
+				// salesApi.Post("/salescanvas", sales_handlers.CreateSalesCanvasSheet)
+				// salesApi.Get("/salescanvas", sales_handlers.GetSalesCanvasView)
 
 				salesApi.Get("/application", setup_handlers.GetApplications)
 				salesApi.Get("/application/:id", setup_handlers.GetApplication)
@@ -236,11 +242,21 @@ func main() {
 				salesApi.Put("/opportunity", sales_handlers.UpdateOpportunity)
 
 				//projects
-				//salesApi.Get("/projects", sales_handlers.GetSalesProject)
-				//salesApi.Post("/projects", sales_handlers.CreateSalesProject)
-				//salesApi.Post("/projects_tab", sales_handlers.CreateItemSetTab)
-				//salesApi.Put("/project_conditions", sales_handlers.UpdateProjectCondition)
-				//salesApi.Put("/project_contents", sales_handlers.UpdateProjectContent)
+				//		salesApi.Get("/projects", sales_handlers.GetSalesProject)
+				//		salesApi.Post("/projects", sales_handlers.CreateSalesProject)
+				//		salesApi.Post("/projects_tab", sales_handlers.CreateItemSetTab)
+				//		salesApi.Put("/project_conditions", sales_handlers.UpdateProjectCondition)
+				//		salesApi.Put("/project_contents", sales_handlers.UpdateProjectContent)
+
+				// salesApi.Get("/projects_pumps", sales_handlers.GetItemPumps)
+
+				// CRM Endpointss //test
+				//			salesApi.Get("/crm", sales_handlers.GetCRMs)
+				//		salesApi.Get("/crm/table", sales_handlers.GetCRMTable)
+				//		salesApi.Get("/crm/:id", sales_handlers.GetCRM)
+				//		salesApi.Post("/crm", sales_handlers.CreateCRM)
+				//		salesApi.Put("/crm", sales_handlers.UpdateCRM)
+
 				// Return Routes
 				// sales_api.Get("/return", handlers.Register)
 				// sales_api.Post("/return/create", handlers.Register)
@@ -249,34 +265,41 @@ func main() {
 			}
 
 			// Purchasing Endpoints
-			//purchasingApi := api.Group("/purchasing")
-			//{
-			//purchasingApi.Get("/purchase_requisition", purchasing_handlers.GetPRs)
-			//purchasingApi.Get("/purchase_requisition/:id", purchasing_handlers.GetPR)
-			//purchasingApi.Post("child/purchase_requisition", purchasing_handlers.CreatePRChild)
-			//purchasingApi.Post("/purchase_requisition", purchasing_handlers.CreatePR)
-			//purchasingApi.Put("/purchase_requisition", purchasing_handlers.UpdatePR)
-			//purchasingApi.Delete("/purchase_requisition", purchasing_handlers.DeletePR)
-			//purchasingApi.Delete("child/purchase_requisition", purchasing_handlers.DeletePROrderByID)
+			// purchasingApi := api.Group("/purchasing")
+			// {
+			// 	purchasingApi.Get("/purchase_requisition", purchasing_handlers.GetPRs)
+			// 	purchasingApi.Get("/purchase_requisition/:id", purchasing_handlers.GetPR)
+			// 	purchasingApi.Post("child/purchase_requisition", purchasing_handlers.CreatePRChild)
+			// 	purchasingApi.Post("/purchase_requisition", purchasing_handlers.CreatePR)
+			// 	purchasingApi.Put("/purchase_requisition", purchasing_handlers.UpdatePR)
+			// 	purchasingApi.Delete("/purchase_requisition", purchasing_handlers.DeletePR)
+			// 	purchasingApi.Delete("child/purchase_requisition", purchasing_handlers.DeletePROrderByID)
 
-			// Purhcasing List
-			//purchasingApi.Get("/purchase_list", purchasing_handlers.GetPurchasingList)
-			//}
+			// 	// Purhcasing Redbox List
+			// 	purchasingApi.Get("/purchase_redbox_list", purchasing_handlers.GetPurchasingRedboxList)
+
+			// 	//Purchasing List
+			// 	purchasingApi.Get("/purchase_list", purchasing_handlers.GetSOPurchasingList)
+			// 	purchasingApi.Get("/purchase_list_supplier", purchasing_handlers.GetSOPurchasingListSupplier)
+			// 	purchasingApi.Get("/purchase_canvass_sheet", purchasing_handlers.GetPurchasingCanvassSheet)
+			// 	purchasingApi.Post("/purchase_canvass_sheet", purchasing_handlers.CreatePurchasingCanvassSheet)
+			// 	purchasingApi.Put("/purchase_canvass_sheet", purchasing_handlers.UpdatePurchasingCanvassSheet)
+			// }
 
 			//Bpi Endpoints
-			api.Get("/bpi", bpi_handlers.GetBpis)
+
+			//	api.Get("/bpi/entity", bpi_handlers.GetBpiEntityRecords)
 			api.Get("/bpi/list", bpi_handlers.GetBpiItemList)
 			api.Post("/bpi", bpi_handlers.CreateBpi)
-			api.Get("/bpi/customers", sales_handlers.GetBpis)
+			//		api.Put("/bpi", bpi_handlers.UpdateBpi)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
 
-			//api.Patch("/bpi", sales_handlers.UpdateQuotation)
+			// api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
+
+			api.Get("/bpi", bpi_handlers.GetBpis)
+
+			// api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
 			//api.Delete("/bpi", sales_handlers.DeleteQuotation)
-
-			// positionApi := api.Group("/position")
-			// {
-
-			// }
 
 			// Websocket Endpoints
 			ws := api.Group("/ws")
@@ -295,6 +318,16 @@ func main() {
 					{
 						projectApi.Get("", websocket.New(func(c *websocket.Conn) {
 							services.HandleWs(c, setup_handlers.WsgetProjects)
+						}))
+					}
+				}
+				// Purchasing Endpoints
+				purchasingApi := ws.Group("/purchasing")
+				{
+					redboxlistApi := purchasingApi.Group("/redboxlist")
+					{
+						redboxlistApi.Get("", websocket.New(func(c *websocket.Conn) {
+							//	services.HandleWs(c, purchasing_handlers.WsgetRedboxList)
 						}))
 					}
 				}
