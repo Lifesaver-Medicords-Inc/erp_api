@@ -8,5 +8,5 @@ type BpiView struct {
 }
 
 func (BpiView) TableName() string {
-	return "GetBpiList"
+	return "vw_get_bpi_list"
 }

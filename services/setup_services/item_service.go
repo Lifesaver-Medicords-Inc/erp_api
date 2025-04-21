@@ -21,16 +21,34 @@ type Body struct {
 
 type SaveBody struct {
 	models.Item
-	TradeType       []string                     `json:"trade_status"`
+	TradeTypeId     []uint                       `json:"trade_type_id"`
 	ItemSpecs       ItemSpecsWrapper             `json:"itemspecs"`
 	AdditionalSpecs models.AdditionalSpecsSchema `json:"additionalspecs"`
-	//ItemImages      []string                     `json:"item_images"`
-	//ItemImages      ItemImageInput               `json:"item_images"`
+	ItemImages      ItemImageUpdate              `json:"itemimages"`
 }
 
-//	type ItemImageInput struct {
-//		Images []string `json:"images"`
-//	}
+type UpdateBody struct {
+	models.Item
+	TradeTypeId     []uint                       `json:"trade_type_id"`
+	ItemSpecs       ItemSpecsWrapper             `json:"itemspecs"`
+	AdditionalSpecs models.AdditionalSpecsSchema `json:"additionalspecs"`
+	ItemImages      ItemImageUpdate              `json:"itemimages"`
+}
+type ItemImageUpdate struct {
+	NewImages     []string        `json:"newimages"`
+	ReplaceImages []ReplaceImages `json:"replaceimages"`
+	DeleteImages  []DeleteImages  `json:"deleteimages"`
+}
+
+type ReplaceImages struct {
+	ImageID uint   `json:"imageid"`
+	Image   string `json:"newimage"`
+}
+
+type DeleteImages struct {
+	ImageID uint `json:"imageid"`
+}
+
 type ItemSpecsWrapper struct {
 	Template           string       `json:"template"`
 	Fields             []SpecsField `json:"fields"`
@@ -50,6 +68,7 @@ func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 		ItemImage       []models.ItemImage           `json:"itemimages"`
 		ItemPurchasing  []models.ItemPurchasingView  `json:"itempurchasing"`
 		ItemSales       []models.ItemSalesView       `json:"itemsales"`
+		ItemProductions []models.ItemProductionView  `json:"itemproduction"`
 	}
 
 	var response Response
@@ -72,7 +91,10 @@ func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting item purchasing")
 	}
 	if err := services.DbGet(&response.ItemSales, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting item purchasing")
+		return response, fiber.StatusInternalServerError, errors.New("failed getting item sales")
+	}
+	if err := services.DbGet(&response.ItemProductions, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting item production")
 	}
 
 	return response, 0, nil
@@ -132,9 +154,9 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 		return savebody, fiber.StatusInternalServerError, errors.New("failed creating itemat")
 	}
 
-	for _, v := range savebody.TradeType {
-		if err := CreateTradeType(tx, savebody.ID, string(v), at); err != nil {
-			return savebody, fiber.StatusInternalServerError, err
+	for _, v := range savebody.TradeTypeId {
+		if err := CreateItemTradeTypes(tx, savebody.ID, uint(v), at); err != nil {
+			return savebody, 0, err
 		}
 	}
 
@@ -146,36 +168,16 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 		return savebody, fiber.StatusInternalServerError, err
 	}
 
-	// for _, v := range savebody.ItemImages {
-	// 	if err := CreateItemImage(tx, savebody.ID, string(v), at); err != nil {
-	// 		return savebody, fiber.StatusInternalServerError, err
-	// 	}
-	// }
-	// if err := CreateItemImage(tx, savebody.ID, savebody.ItemImages, at); err != nil {
-	// 	return savebody, fiber.StatusInternalServerError, err
-	// }
+	if err := CreateItemImageChild(tx, savebody.ID, savebody.ItemImages.NewImages, at); err != nil {
+		return savebody, fiber.StatusInternalServerError, err
+	}
 
-	itemview := services.GetKey(models.ItemView{}, nil)
-	services.InvalidateCache(itemview)
-
-	additionspecsview := services.GetKey(models.AdditionalSpecsView{}, nil)
-	services.InvalidateCache(additionspecsview)
-
-	itemimage := services.GetKey(models.ItemImage{}, nil)
-	services.InvalidateCache(itemimage)
-
-	purchasingview := services.GetKey(models.ItemPurchasingView{}, nil)
-	services.InvalidateCache(purchasingview)
-
-	salesview := services.GetKey(models.ItemSalesView{}, nil)
-	services.InvalidateCache(salesview)
-
-	fmt.Println("ITEM SAVING:", savebody)
+	InvalidateItemCaches()
 	return savebody, 0, nil
 }
 
-func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (SaveBody, int, error) {
-	var body SaveBody
+func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (UpdateBody, int, error) {
+	var body UpdateBody
 	if err := c.BodyParser(&body); err != nil {
 		fmt.Println("Parsing Error:", err)
 
@@ -205,8 +207,8 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 		"based_id": body.ID,
 	}
 
-	if err := UpdateTradeTypes(tx, body, at); err != nil {
-		return body, fiber.StatusInternalServerError, err
+	if err := UpdateTradeTypes(tx, body.ID, body.TradeTypeId, at); err != nil {
+		return body, 0, err
 	}
 
 	if err := UpdateItemSpec(tx, body.ID, body.ItemSpecs, at, conditions); err != nil {
@@ -217,24 +219,11 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	// if err := UpdateItemImage(tx, body.ID, body.ItemImages, at, conditions); err != nil {
-	// 	return body, fiber.StatusInternalServerError, err
-	// }
+	if err := UpdateItemImage(tx, body.ID, body.ItemImages, at, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
 
-	itemview := services.GetKey(models.ItemView{}, nil)
-	services.InvalidateCache(itemview)
-
-	additionspecsview := services.GetKey(models.AdditionalSpecsView{}, nil)
-	services.InvalidateCache(additionspecsview)
-
-	itemimage := services.GetKey(models.ItemImage{}, nil)
-	services.InvalidateCache(itemimage)
-
-	purchasingview := services.GetKey(models.ItemPurchasingView{}, nil)
-	services.InvalidateCache(purchasingview)
-
-	salesview := services.GetKey(models.ItemSalesView{}, nil)
-	services.InvalidateCache(salesview)
+	InvalidateItemCaches()
 
 	return body, 0, nil
 }
@@ -274,4 +263,18 @@ func DeleteItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (B
 	services.InvalidateCache(additionspecsview)
 
 	return body, 0, nil
+}
+
+func InvalidateItemCaches() {
+	cacheKeys := []interface{}{
+		models.ItemView{},
+		models.AdditionalSpecsView{},
+		models.ItemImage{},
+		models.ItemPurchasingView{},
+		models.ItemSalesView{},
+		models.ItemProductionView{},
+	}
+	for _, key := range cacheKeys {
+		services.InvalidateCache(services.GetKey(key, nil))
+	}
 }

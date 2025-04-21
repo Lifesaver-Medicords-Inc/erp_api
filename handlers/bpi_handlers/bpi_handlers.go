@@ -1,18 +1,46 @@
 package bpi_handlers
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
+
 	"github.com/pierceperado/smpc/services/bpi_services"
 	"github.com/pierceperado/smpc/utils"
 )
 
 func GetBpis(c *fiber.Ctx) error {
 	data, status, err := bpi_services.GetBpis(nil)
+
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
+	return utils.RespondSuccess(c, data)
+}
+func GetBpiUsers(c *fiber.Ctx) error {
+	fmt.Println("GET BPI USERS")
+
+	idParam := c.Params("employee_id")
+
+	fmt.Println("GET BPI USERS>>", idParam)
+
+	data, status, err := bpi_services.GetBpiUsers(idParam)
+	fmt.Println("DATA USER", data)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
+
+func GetBpiEntityRecords(c *fiber.Ctx) error {
+
+	data, status, err := bpi_services.GetBpiEntityRecords(nil)
+
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
 	return utils.RespondSuccess(c, data)
 }
 
@@ -27,11 +55,13 @@ func GetBpiItemList(c *fiber.Ctx) error {
 
 func CreateBpi(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
+
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transactions")
-
 	}
+
 	data, status, err := bpi_services.CreateBpi(c, tx)
+
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
@@ -43,4 +73,22 @@ func CreateBpi(c *fiber.Ctx) error {
 	}
 	return utils.RespondSuccess(c, data)
 
+}
+
+func UpdateBpi(c *fiber.Ctx) error {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transactions")
+	}
+	data, status, err := bpi_services.UpdateBpi(c, tx, nil)
+	if err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, status, err.Error())
+	}
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transactions")
+	}
+
+	return utils.RespondSuccess(c, data)
 }

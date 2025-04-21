@@ -49,6 +49,7 @@ func GetChildf(childf *models.Childf, conditions map[string]interface{}) error {
 }
 
 func UpdateChildf(tx *gorm.DB, childf models.Childf, at models.At, conditions map[string]interface{}) error {
+
 	if err := services.DbUpdate(tx, &childf, conditions); err != nil {
 		return errors.New("failed updating childf")
 	}
