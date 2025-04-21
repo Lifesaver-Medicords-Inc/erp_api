@@ -120,11 +120,6 @@ func main() {
 					itemApi.Put("/type", setup_handlers.UpdateType)
 					itemApi.Delete("/type", setup_handlers.DeleteType)
 
-					// Image Endpoints
-					// itemApi.Post("/item_image", setup_handlers.CreateItemImage)
-					// itemApi.Put("/item_image", setup_handlers.UpdateItemImage)
-					// itemApi.Delete("/item_image", setup_handlers.DeleteItemImage)
-
 					// Item Endpoints
 					itemApi.Get("", setup_handlers.GetItems)
 					itemApi.Get("/:id", setup_handlers.GetItem)
@@ -281,8 +276,8 @@ func main() {
 				purchasingApi.Get("/purchase_redbox_list", purchasing_handlers.GetPurchasingRedboxList)
 
 				//Purchasing List
-				purchasingApi.Get("/purchase_list", purchasing_handlers.GetPurchasingList)
-				purchasingApi.Get("/purchase_list_supplier", purchasing_handlers.GetPurchasingListSupplier)
+				purchasingApi.Get("/purchase_list", purchasing_handlers.GetSOPurchasingList)
+				purchasingApi.Get("/purchase_list_supplier", purchasing_handlers.GetSOPurchasingListSupplier)
 				purchasingApi.Get("/purchase_canvass_sheet", purchasing_handlers.GetPurchasingCanvassSheet)
 				purchasingApi.Post("/purchase_canvass_sheet", purchasing_handlers.CreatePurchasingCanvassSheet)
 				purchasingApi.Put("/purchase_canvass_sheet", purchasing_handlers.UpdatePurchasingCanvassSheet)
