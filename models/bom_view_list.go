@@ -5,11 +5,13 @@ type BomViewList struct {
 	ItemID         uint    `json:"item_id"`
 	ProductionQty  uint    `json:"production_qty"`
 	ProductionType string  `json:"production_type"`
-	Labor          string  `json:"labor"`
+	ManDays        uint    `json:"man_days"`
+	LaborRate      float32 `json:"labor_rate"`
+
 	ItemModel      string  `json:"item_model"`
 	ItemCode       string  `json:"item_code"`
 	GeneralName    string  `json:"general_name"`
-	ProductionCost float64 `json:"production_cost"`
+	ProductionCost float32 `json:"production_cost"`
 }
 
 func (BomViewList) TableName() string {

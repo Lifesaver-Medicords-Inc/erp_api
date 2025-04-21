@@ -321,7 +321,7 @@ func main() {
 						projectApi.Get("", websocket.New(func(c *websocket.Conn) {
 							services.HandleWs(c, setup_handlers.WsgetProjects)
 						}))
-					}	
+					}
 				}
 				// Purchasing Endpoints
 				purchasingApi := ws.Group("/purchasing")
