@@ -8,7 +8,7 @@ import (
 	"github.com/pierceperado/smpc/services"
 )
 
-func GetPurchasingList(conditions map[string]interface{}) (interface{}, int, error) {
+func GetSOPurchasingList(conditions map[string]interface{}) (interface{}, int, error) {
 	var response []models.PurchasingListView
 
 	if err := services.DbGet(&response, conditions); err != nil {
@@ -16,7 +16,7 @@ func GetPurchasingList(conditions map[string]interface{}) (interface{}, int, err
 	}
 	return response, 0, nil
 }
-func GetPurchasingListSupplier(conditions map[string]interface{}) (interface{}, int, error) {
+func GetSOPurchasingListSupplier(conditions map[string]interface{}) (interface{}, int, error) {
 	var response []models.PurchasingListSupplierView
 
 	if err := services.DbGet(&response, conditions); err != nil {
