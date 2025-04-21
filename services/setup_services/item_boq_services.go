@@ -11,18 +11,23 @@ import (
 
 type BoqBody struct {
 	models.ItemBoq
-	BoqDetails       []models.ItemBoqDetails `json:"boq_details"`
-	ProjectComponent []models.ProjectComponent
+	BoqDetails         []models.ItemBoqDetails `json:"boq_details"`
+	ProjectComponent   []models.ProjectComponent
+	SalesProjectWiring []models.SalesProjectWiring
 }
 
 func GetItemBoqs(conditions map[string]interface{}) (interface{}, int, error) {
 	type Response struct {
-		ProjectComponent []models.ProjectComponent `json:"project_component"`
+		ProjectComponent   []models.ProjectComponent   `json:"project_component"`
+		SalesProjectWiring []models.SalesProjectWiring `json:"sales_project_wiring"`
 	}
 
 	var response Response
 
 	if err := services.DbGet(&response.ProjectComponent, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting canvas sheet view")
+	}
+	if err := services.DbGet(&response.SalesProjectWiring, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting canvas sheet view")
 	}
 

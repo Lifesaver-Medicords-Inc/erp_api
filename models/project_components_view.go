@@ -25,6 +25,19 @@ type ProjectComponent struct {
 	ComponentTotal            float64 `json:"component_total"`
 	UnitOfMeasure             string  `json:"unit_of_measure"`
 	CustomerName              string  `json:"customer_name"`
+	Materials                 string  `json:"materials"`
+	AmpReq                    uint    `json:"amp_req"`
+	WireReq                   uint    `json:"wire_req"`
+	WiringDescription         string  `json:"wiring_description"`
+	NumOfWiresSet             uint    `json:"num_of_wires_set"`
+	NumOfQtySet               uint    `json:"num_of_qty_set"`
+	DistanceTravelledSet      uint    `json:"distance_travelled_set"`
+	AllowanceWireSet          uint    `json:"allowance_wire_set"`
+	WiringQty                 uint    `json:"wiring_qty"`
+	NumOfSets                 uint    `json:"num_of_sets"`
+	TotalQty                  uint    `json:"total_qty"`
+	Cost                      uint    `json:"cost"`
+	TotalCost                 uint    `json:"total_cost"`
 }
 
 func (ProjectComponent) TableName() string {
