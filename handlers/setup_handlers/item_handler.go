@@ -67,8 +67,6 @@ func UpdateItem(c *fiber.Ctx) error {
 
 	data, status, err := setup_services.UpdateItem(c, tx, nil)
 
-	fmt.Println("Update Body:", data)
-
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())

@@ -71,6 +71,24 @@ func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
 	return response, 0, nil
 }
 
+func GetBpiUsers(employeeId string) (interface{}, int, error) {
+
+	conditions := map[string]interface{}{
+		"EmployeeId": employeeId,
+	}
+	var response []models.User
+
+	fmt.Println("CONDITION GET BPI USER services", conditions)
+
+	if err := services.DbRaw(&response, "sp_GetEmployeeByType", conditions); err != nil {
+
+		return response, fiber.StatusInternalServerError, errors.New("failed getting user data")
+	}
+
+	return response, 0, nil
+
+}
+
 func GetBpiEntityRecords(conditions map[string]interface{}) (interface{}, int, error) {
 	var response []models.BpiEntityCount
 

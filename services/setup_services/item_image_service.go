@@ -3,7 +3,6 @@ package setup_services
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/pierceperado/smpc/models"
@@ -12,10 +11,8 @@ import (
 )
 
 func GetImageURL(filename string) string {
-	host := "localhost"
-	port := os.Getenv("BIND_PORT")
 
-	return fmt.Sprintf("%s:%s/files/%s", host, port, filename)
+	return filename
 }
 
 func GetItemImages(itemImage *[]models.ItemImage, conditions map[string]interface{}) error {
@@ -34,6 +31,7 @@ func CreateItemImageChild(tx *gorm.DB, basedId uint, newImages []string, at mode
 	for _, base64Image := range newImages {
 		filePath, err := services.UploadFile(base64Image)
 		if err != nil {
+			fmt.Println("CREATE ERR:", err)
 			return errors.New("failed to upload image locally")
 		}
 
@@ -68,7 +66,8 @@ func UpdateItemImageChild(tx *gorm.DB, itemImageID uint, newImage string, at mod
 	}
 
 	// Delete old file
-	if err := services.DeleteFile(body.Image); err != nil {
+	if err := services.DeleteFile("files/" + body.Image); err != nil {
+		fmt.Println("REPLACE ERR:", err)
 		return errors.New("failed to delete old image file")
 	}
 
@@ -101,10 +100,11 @@ func UpdateItemImageChild(tx *gorm.DB, itemImageID uint, newImage string, at mod
 func DeleteItemImageChild(tx *gorm.DB, itemImageID uint) error {
 	var body models.ItemImage
 	if err := tx.Where("id = ?", itemImageID).First(&body).Error; err != nil {
+		fmt.Println("DELETE ERR:", err)
 		return errors.New("image not found")
 	}
 
-	if err := services.DeleteFile(body.Image); err != nil {
+	if err := services.DeleteFile("files/" + body.Image); err != nil {
 		fmt.Println("BODY IMAGE", body.Image, err)
 		return errors.New("failed to delete image file")
 	}
@@ -113,7 +113,7 @@ func DeleteItemImageChild(tx *gorm.DB, itemImageID uint) error {
 		fmt.Println("DELETION ERROR:", err)
 		return errors.New("failed deleting item image")
 	}
-	
+
 	if err := tx.Where("ref_id = ?", itemImageID).Delete(&models.ItemImageAt{}).Error; err != nil {
 		return errors.New("failed deleting item image at")
 	}
