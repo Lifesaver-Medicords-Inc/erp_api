@@ -1,11 +1,12 @@
 package models
 
 type SetupItemBomContent struct {
-	ItemID         uint   `json:"item_id"`
-	ProductionQty  uint   `json:"production_qty"`
-	ProductionType string `json:"production_type"`
-	Labor          string `json:"labor"`
-	ProductionCost uint   `json:"production_cost"`
+	ItemID         uint    `json:"item_id"`
+	ProductionQty  uint    `json:"production_qty"`
+	ProductionType string  `json:"production_type"`
+	ManDays        uint    `json:"man_days"`
+	LaborRate      float32 `json:"labor_rate"`
+	ProductionCost float32 `json:"production_cost"`
 }
 
 type SetupItemBom struct {

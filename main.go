@@ -63,6 +63,9 @@ func main() {
 				sampleApi.Delete("/parent", sample_handlers.DeleteParent)
 			}
 
+			//User Employee Endpoints
+			api.Get("/employee_users/:employee_id", bpi_handlers.GetBpiUsers)
+
 			// Setup Endpoints
 			setupApi := api.Group("/setup")
 			{
@@ -116,11 +119,6 @@ func main() {
 					itemApi.Post("/type", setup_handlers.CreateType)
 					itemApi.Put("/type", setup_handlers.UpdateType)
 					itemApi.Delete("/type", setup_handlers.DeleteType)
-
-					// Image Endpoints
-					// itemApi.Post("/item_image", setup_handlers.CreateItemImage)
-					// itemApi.Put("/item_image", setup_handlers.UpdateItemImage)
-					// itemApi.Delete("/item_image", setup_handlers.DeleteItemImage)
 
 					// Item Endpoints
 					itemApi.Get("", setup_handlers.GetItems)
@@ -180,8 +178,9 @@ func main() {
 				setupApi.Delete("/position", position_handlers.DeletePosition)
 
 				//BOM Endpoints
-				//setupApi.Get("/bom", setup_handlers.GetSetupItemBoms)
-				// setupApi.Get("/bom", setup_handlers.GetSetupItemBomss)
+				setupApi.Get("/bom", setup_handlers.GetSetupItemBoms)
+				//setupApi.Get("/bom", setup_handlers.GetSetupItemBomss)
+
 				setupApi.Get("/bom:/id", setup_handlers.GetSetupItemBom)
 				setupApi.Post("/bom", setup_handlers.CreateSetupItemBom)
 				setupApi.Put("/bom", setup_handlers.UpdateSetupItemBom)
@@ -205,6 +204,7 @@ func main() {
 				setupApi.Get("/templates", setup_handlers.GetProjectsTemplates)
 				setupApi.Post("/templates", setup_handlers.CreateProjectTemplate)
 
+				setupApi.Get("/boq", setup_handlers.GetItemBoqs)
 			}
 
 			// Sales Endpoints
@@ -217,8 +217,8 @@ func main() {
 				// POST for Parent
 				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
 
-				// salesApi.Post("/salescanvas", sales_handlers.CreateSalesCanvasSheet)
-				// salesApi.Get("/salescanvas", sales_handlers.GetSalesCanvasView)
+				//salesApi.Post("/salescanvas", sales_handlers.CreateSalesCanvasSheet)
+				//salesApi.Get("/salescanvas", sales_handlers.GetSalesCanvasView)
 
 				salesApi.Get("/application", setup_handlers.GetApplications)
 				salesApi.Get("/application/:id", setup_handlers.GetApplication)
@@ -245,7 +245,7 @@ func main() {
 				salesApi.Put("/project_conditions", sales_handlers.UpdateProjectCondition)
 				salesApi.Put("/project_contents", sales_handlers.UpdateProjectContent)
 
-				// salesApi.Get("/projects_pumps", sales_handlers.GetItemPumps)
+				//salesApi.Get("/projects_pumps", sales_handlers.GetItemPumps)
 
 				// CRM Endpointss //test
 				salesApi.Get("/crm", sales_handlers.GetCRMs)
@@ -276,29 +276,26 @@ func main() {
 				purchasingApi.Get("/purchase_redbox_list", purchasing_handlers.GetPurchasingRedboxList)
 
 				//Purchasing List
-				purchasingApi.Get("/purchase_list", purchasing_handlers.GetPurchasingList)
-				purchasingApi.Get("/purchase_list_supplier", purchasing_handlers.GetPurchasingListSupplier)
+				purchasingApi.Get("/purchase_list", purchasing_handlers.GetSOPurchasingList)
+				purchasingApi.Get("/purchase_list_supplier", purchasing_handlers.GetSOPurchasingListSupplier)
 				purchasingApi.Get("/purchase_canvass_sheet", purchasing_handlers.GetPurchasingCanvassSheet)
 				purchasingApi.Post("/purchase_canvass_sheet", purchasing_handlers.CreatePurchasingCanvassSheet)
 				purchasingApi.Put("/purchase_canvass_sheet", purchasing_handlers.UpdatePurchasingCanvassSheet)
 			}
 
 			//Bpi Endpoints
+
 			api.Get("/bpi/entity", bpi_handlers.GetBpiEntityRecords)
 			api.Get("/bpi/list", bpi_handlers.GetBpiItemList)
 			api.Post("/bpi", bpi_handlers.CreateBpi)
 			api.Put("/bpi", bpi_handlers.UpdateBpi)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
-			// api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
+			//api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
 
 			api.Get("/bpi", bpi_handlers.GetBpis)
 
+			// api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
 			//api.Delete("/bpi", sales_handlers.DeleteQuotation)
-
-			// positionApi := api.Group("/position")
-			// {
-
-			// }
 
 			// Websocket Endpoints
 			ws := api.Group("/ws")
@@ -317,6 +314,16 @@ func main() {
 					{
 						projectApi.Get("", websocket.New(func(c *websocket.Conn) {
 							services.HandleWs(c, setup_handlers.WsgetProjects)
+						}))
+					}
+				}
+				// Purchasing Endpoints
+				purchasingApi := ws.Group("/purchasing")
+				{
+					redboxlistApi := purchasingApi.Group("/redboxlist")
+					{
+						redboxlistApi.Get("", websocket.New(func(c *websocket.Conn) {
+							services.HandleWs(c, purchasing_handlers.WsgetRedboxList)
 						}))
 					}
 				}

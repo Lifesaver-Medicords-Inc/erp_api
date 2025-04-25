@@ -1,17 +1,17 @@
-package sales_handlers
+package setup_handlers
 
 import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/pierceperado/smpc/handlers/purchasing_handlers"
 	"github.com/pierceperado/smpc/initializers"
-	"github.com/pierceperado/smpc/services/sales_services"
+	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/services/setup_services"
 	"github.com/pierceperado/smpc/utils"
 )
 
-func GetOrders(c *fiber.Ctx) error {
-	data, status, err := sales_services.GetOrders(nil)
+func GetBoqNotes(c *fiber.Ctx) error {
+	data, status, err := setup_services.GetBoqNotes(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -19,14 +19,14 @@ func GetOrders(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func GetOrder(c *fiber.Ctx) error {
-	idParam := c.Params("order_id")
+func GetBoqNote(c *fiber.Ctx) error {
+	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	data, status, err := sales_services.GetOrder(idNum)
+	data, status, err := setup_services.GetBoqNote(idNum)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -34,13 +34,18 @@ func GetOrder(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func CreateOrder(c *fiber.Ctx) error {
+func CreateBoqNote(c *fiber.Ctx) error {
+	var boqnote models.BoqNotes
+	if err := c.BodyParser(&boqnote); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "cannot bind request")
+	}
+
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 
-	data, status, err := sales_services.CreateOrder(c, tx)
+	status, err := setup_services.CreateBoqNote(tx, &boqnote)
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
@@ -51,18 +56,16 @@ func CreateOrder(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
-	// websocket
-	purchasing_handlers.BroadcastRedboxList()
-
-	return utils.RespondSuccess(c, data)
+	return utils.RespondSuccess(c, boqnote)
 }
 
-func CreateOrderChild(c *fiber.Ctx) error {
+func UpdateBoqNote(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
-	data, status, err := sales_services.CreateOrderChild(c, tx)
+
+	data, status, err := setup_services.UpdateBoqNote(c, tx, nil)
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
@@ -76,13 +79,13 @@ func CreateOrderChild(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func UpdateOrder(c *fiber.Ctx) error {
+func DeleteBoqNote(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 
-	data, status, err := sales_services.UpdateOrder(c, tx, nil)
+	data, status, err := setup_services.DeleteBoqNote(c, tx, nil)
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
@@ -92,32 +95,6 @@ func UpdateOrder(c *fiber.Ctx) error {
 		tx.Rollback()
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
-
-	// websocket
-	purchasing_handlers.BroadcastRedboxList()
-
-	return utils.RespondSuccess(c, data)
-}
-
-func DeleteOrder(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
-	}
-
-	data, status, err := sales_services.DeleteOrder(c, tx, nil)
-	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
-	}
-
-	// websocket
-	purchasing_handlers.BroadcastRedboxList()
 
 	return utils.RespondSuccess(c, data)
 }

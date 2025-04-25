@@ -50,6 +50,9 @@ func CreatePR(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
+	// websocket
+	BroadcastRedboxList()
+
 	return utils.RespondSuccess(c, data)
 }
 
@@ -89,6 +92,9 @@ func UpdatePR(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
+	// websocket
+	BroadcastRedboxList()
+
 	return utils.RespondSuccess(c, data)
 }
 
@@ -108,6 +114,9 @@ func DeletePR(c *fiber.Ctx) error {
 		tx.Rollback()
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
+
+	// websocket
+	BroadcastRedboxList()
 
 	return utils.RespondSuccess(c, data)
 }
