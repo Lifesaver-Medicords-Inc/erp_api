@@ -1,7 +1,5 @@
 package initializers
 
-import "github.com/pierceperado/smpc/models"
-
 func MigrateDb() {
 	// Auth
 
@@ -19,11 +17,11 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.Type{}, &models.TypeAt{})
 	//DB.AutoMigrate(&models.Item{}, &models.ItemAt{})
 	// DB.AutoMigrate(&models.Position{}, &models.PositionAt{})
-	DB.AutoMigrate(&models.SetupItemBom{}, &models.SetupItemBomAt{})
-	DB.AutoMigrate(&models.SetupItemBomDetails{}, &models.SetupItemBomDetailsAt{})
-	DB.AutoMigrate(&models.ItemBoq{}, &models.ItemBoqAt{})
-	DB.AutoMigrate(&models.ItemBoqDetails{}, &models.ItemBoqDetailsAt{})
-	DB.AutoMigrate(&models.BoqNotes{}, &models.BoqNotesAt{})
+	// DB.AutoMigrate(&models.SetupItemBom{}, &models.SetupItemBomAt{})
+	// DB.AutoMigrate(&models.SetupItemBomDetails{}, &models.SetupItemBomDetailsAt{})
+	// DB.AutoMigrate(&models.ItemBoq{}, &models.ItemBoqAt{})
+	//DB.AutoMigrate(&models.ItemBoqDetails{}, &models.ItemBoqDetailsAt{})
+	// DB.AutoMigrate(&models.BoqNotes{}, &models.BoqNotesAt{})
 	// DB.AutoMigrate(&models.ItemSpecs{}, &models.ItemSpecsAt{})
 	// DB.AutoMigrate(&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{})
 	// DB.AutoMigrate(&models.TradeType{}, models.TradeTypeAt{})

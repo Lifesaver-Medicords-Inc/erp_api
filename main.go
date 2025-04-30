@@ -205,6 +205,8 @@ func main() {
 				setupApi.Post("/templates", setup_handlers.CreateProjectTemplate)
 
 				setupApi.Get("/boq", setup_handlers.GetItemBoqs)
+				setupApi.Post("/boq", setup_handlers.CreateItemBoq)
+				setupApi.Put("/boq", setup_handlers.UpdateItemBoq)
 			}
 
 			// Sales Endpoints
