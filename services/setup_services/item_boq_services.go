@@ -2,6 +2,7 @@ package setup_services
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -30,33 +31,37 @@ func GetItemBoqs(conditions map[string]interface{}) (interface{}, int, error) {
 	if err := services.DbGet(&response.SalesProjectWiring, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting canvas sheet view")
 	}
-
 	return response, 0, nil
 }
 
-func CreateItemBoq(c *fiber.Ctx, tx *gorm.DB) (BoqBody, int, error) {
-	var body BoqBody
+func CreateItemBoq(c *fiber.Ctx, tx *gorm.DB) (models.ItemBoqDetails, int, error) {
+	var body models.ItemBoqDetails
 
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	if err := services.DbInsert(tx, &body.ProjectComponent); err != nil {
+	if err := services.DbInsert(tx, &body); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating canvas sheet")
 	}
-
+	key := services.GetKey(models.ProjectComponent{}, nil)
+	services.InvalidateCache(key)
 	return body, 0, nil
 }
-
-func UpdateItemBoq(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (BoqBody, int, error) {
-	var body BoqBody
-
+func UpdateItemBoq(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.ItemBoqDetails, int, error) {
+	var body models.ItemBoqDetails
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	if err := services.DbUpdate(tx, &body.ItemBoq, conditions); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed updating setup item bom")
+	fmt.Println("Body:", body)
+
+	conditions = map[string]interface{}{
+		"id": body.ID,
+	}
+
+	if err := services.DbUpdate(tx, &body, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed updating CRM")
 	}
 
 	at, ok := c.Locals("at").(models.At)
@@ -64,21 +69,12 @@ func UpdateItemBoq(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{})
 		at = models.At{}
 	}
 
-	atdata := models.ItemBoqAt{
-		RefId: body.ID,
-		At:    at,
-	}
+	atdata := models.ItemBoqDetailsAt{RefId: body.ID, ItemBoqDetailsContent: body.ItemBoqDetailsContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed creating SetupItemBomAt")
+		return body, fiber.StatusInternalServerError, errors.New("failed creating CRMat")
 	}
-
-	for _, v := range body.BoqDetails {
-
-		if err := UpdateBoqChild(tx, v, at, body.ID); err != nil {
-			return body, fiber.StatusInternalServerError, err
-		}
-
-	}
-
+	fmt.Println("body: ", body)
+	key := services.GetKey(models.ProjectComponent{}, nil)
+	services.InvalidateCache(key)
 	return body, 0, nil
 }
