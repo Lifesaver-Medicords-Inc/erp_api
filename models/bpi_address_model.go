@@ -1,9 +1,10 @@
 package models
 
 type BpiAddressContent struct {
-	BasedId  uint   `json:"based_id"`
-	BranchId uint   `json:"branch_id"`
-	Location string `json:"location"`
+	BasedId   uint   `json:"based_id"`
+	BranchId  uint   `json:"branch_id"`
+	Location  string `json:"location"`
+	IsDeleted bool   `json:"is_deleted"`
 }
 
 type BpiAddress struct {

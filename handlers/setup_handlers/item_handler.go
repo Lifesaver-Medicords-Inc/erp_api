@@ -43,7 +43,6 @@ func CreateItem(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 	data, status, err := setup_services.CreateItem(c, tx)
-
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
