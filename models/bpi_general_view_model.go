@@ -4,6 +4,7 @@ package models
 type BpiGeneralView struct {
 	GeneralId      uint   `json:"general_id"`
 	GeneralBasedId uint   `json:"general_based_id"`
+	BranchSalesId  string `json:"branch_sales_id"`
 	BranchName     string `json:"branch_name"`
 	BpiGeneralEmbeddedContent
 	BranchIndustryIds   string `json:"branch_industry_ids" `

@@ -14,6 +14,7 @@ type BpiItemsViewContent struct {
 	ShortDesc       string  `json:"short_desc"`
 	StatusTangible  string  `json:"status_tangible"`
 	StatusTrade     string  `json:"status_trade"`
+	ItemIsDeleted   bool    `json:"item_is_deleted"`
 }
 
 type BpiItemsView struct {
