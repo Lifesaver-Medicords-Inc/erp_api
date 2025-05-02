@@ -20,12 +20,14 @@ import (
 func init() {
 	initializers.LoadEnv()
 	initializers.ConnectDb()
-	initializers.MigrateDb()
+	// initializers.MigrateDb()
 	initializers.InitRedis()
 	initializers.InitWm()
+	initializers.InitLogger()
 }
 
 func main() {
+
 	// Fiber App
 	app := fiber.New(fiber.Config{
 		BodyLimit: 50 * 1024 * 1024,
@@ -205,6 +207,32 @@ func main() {
 				setupApi.Post("/templates", setup_handlers.CreateProjectTemplate)
 
 				setupApi.Get("/boq", setup_handlers.GetItemBoqs)
+
+				// =========================== ACCOUNTING ENDPOINTS =============================
+				{
+					// Chart Group Endpoints
+					setupApi.Get("/book", setup_handlers.GetBooks)
+					setupApi.Get("/book:/id", setup_handlers.GetChartGroup)
+					setupApi.Post("/book", setup_handlers.CreateChartGroup)
+					setupApi.Put("/book", setup_handlers.UpdateChartGroup)
+					setupApi.Delete("/book", setup_handlers.DeleteChartGroup)
+
+					// Chart Group Endpoints
+					setupApi.Get("/chart_group", setup_handlers.GetChartGroups)
+					setupApi.Get("/chart_group:/id", setup_handlers.GetChartGroup)
+					setupApi.Post("/chart_group", setup_handlers.CreateChartGroup)
+					setupApi.Put("/chart_group", setup_handlers.UpdateChartGroup)
+					setupApi.Delete("/chart_group", setup_handlers.DeleteChartGroup)
+
+					// Chart Class Endpoints
+					setupApi.Get("/chart_class", setup_handlers.GetChartClasses)
+					setupApi.Get("/chart_class:/id", setup_handlers.GetChartClass)
+					setupApi.Post("/chart_class", setup_handlers.CreateChartClass)
+					setupApi.Put("/chart_class", setup_handlers.UpdateChartClass)
+					setupApi.Delete("/chart_class", setup_handlers.DeleteChartClass)
+
+				}
+				// =========================== END =============================
 			}
 
 			// Sales Endpoints
