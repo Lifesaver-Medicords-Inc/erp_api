@@ -1,13 +1,13 @@
 package setup_handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/handlers/purchasing_handlers"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/services/setup_services"
 	"github.com/pierceperado/smpc/utils"
@@ -53,7 +53,8 @@ func CreateItem(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
-	go broadcastItems()
+	//go broadcastItems() -- if used invalidate cache?
+	//purchasing_handlers.BroadcastRedboxList()
 
 	return utils.RespondSuccess(c, data)
 }
@@ -75,6 +76,8 @@ func UpdateItem(c *fiber.Ctx) error {
 		tx.Rollback()
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
+
+	purchasing_handlers.BroadcastRedboxList()
 
 	return utils.RespondSuccess(c, data)
 }
@@ -100,30 +103,30 @@ func DeleteItem(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func broadcastItems() error {
-	data, status, err := setup_services.GetItems(nil)
-	if err != nil {
-		fmt.Println(status, err)
-		return err
-	}
+// func broadcastItems() error {
+// 	data, status, err := setup_services.GetItems(nil)
+// 	if err != nil {
+// 		fmt.Println(status, err)
+// 		return err
+// 	}
 
-	items, err := json.Marshal(data)
-	if err != nil {
-		log.Println("Error marshalling users:", err)
-		return err
-	}
+// 	items, err := json.Marshal(data)
+// 	if err != nil {
+// 		log.Println("Error marshalling users:", err)
+// 		return err
+// 	}
 
-	initializers.WM.RLock()
-	defer initializers.WM.RUnlock()
+// 	initializers.WM.RLock()
+// 	defer initializers.WM.RUnlock()
 
-	for client := range initializers.WM.Clients {
-		if err := client.WriteMessage(websocket.TextMessage, items); err != nil {
-			log.Println("error sending message:", err)
-		}
-	}
+// 	for client := range initializers.WM.Clients {
+// 		if err := client.WriteMessage(websocket.TextMessage, items); err != nil {
+// 			log.Println("error sending message:", err)
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func WsgetItems(c *websocket.Conn) {
 	initializers.WM.AddClient(c)
