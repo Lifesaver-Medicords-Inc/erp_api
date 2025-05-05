@@ -224,7 +224,7 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (U
 	}
 
 	InvalidateItemCaches()
-
+	fmt.Println("UPDATE ITEM BODY: ", body)
 	return body, 0, nil
 }
 

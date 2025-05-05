@@ -1,20 +1,22 @@
 package models
 
 type PurchasingCanvassSheetContent struct {
-	SupplierId       int     `json:"supplier_id"`
-	SupplierName     string  `json:"supplier_name"`
-	ContactNo        string  `json:"contact_no"`
-	OrderSize        int     `json:"order_size"`
-	SupplierStock    int     `json:"supplier_stock"`
-	CurrentListPrice float64 `json:"current_list_price"`
-	NewListPrice     float64 `json:"new_list_price"`
-	Discount         float64 `json:"discount"`
-	NetPrice         float64 `json:"net_price"`
-	PriceValidity    string  `json:"price_validity"`
-	PaymentTerms     float64 `json:"payment_terms"`
-	LeadTime         string `json:"lead_time"`
-	ItemId           int     `json:"item_id"`
-	Date             string  `json:"date"`
+	SupplierId        int     `json:"supplier_id"`
+	SupplierName      string  `json:"supplier_name"`
+	ContactNo         string  `json:"contact_no"`
+	OrderSize         *int    `json:"order_size"`
+	SupplierStock     int     `json:"supplier_stock"`
+	PreviousListPrice float64 `json:"previous_list_price"`
+	CurrentListPrice  float64 `json:"current_list_price"`
+	NewListPrice      float64 `json:"new_list_price"`
+	Discount          string  `json:"discount"`
+	NetPrice          float64 `json:"net_price"`
+	PriceTrend        string  `json:"price_trend"`
+	PriceValidity     int     `json:"price_validity"`
+	PaymentTerms      float64 `json:"payment_terms"`
+	LeadTime          string  `json:"lead_time"`
+	ItemId            int     `json:"item_id"`
+	StartDate         string  `json:"start_date"`
 }
 
 type PurchasingCanvassSheet struct {
@@ -23,7 +25,7 @@ type PurchasingCanvassSheet struct {
 }
 
 func (PurchasingCanvassSheet) TableName() string {
-	return "tbl_purchasing_canvass_sheet"
+	return "tbl_purchasing_canvass_sheet_so"
 }
 
 type PurchasingCanvassSheetAt struct {
@@ -34,5 +36,14 @@ type PurchasingCanvassSheetAt struct {
 }
 
 func (PurchasingCanvassSheetAt) TableName() string {
-	return "z_tbl_purchasing_canvass_sheet_at"
+	return "z_tbl_purchasing_canvass_sheet_so_at"
+}
+
+type PurchasingCanvassSheetSOView struct {
+	PurchasingCanvassSheet
+	Status string `json:"status"`
+}
+
+func (PurchasingCanvassSheetSOView) TableName() string {
+	return "vw_get_purchasing_canvass_sheet_so"
 }
