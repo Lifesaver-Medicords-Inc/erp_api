@@ -8,25 +8,25 @@ import (
 	"gorm.io/gorm"
 )
 
-func CreateBpiItems(tx *gorm.DB, parentId uint, childItems []models.BpiItems, at models.At) error {
+func CreateBpiItems(tx *gorm.DB, parentId uint, generalId uint, childItems []models.BpiItems, at models.At) error {
 
 	for _, v := range childItems {
-		if err := CreateBpiItem(tx, parentId, v, at); err != nil {
+		if err := CreateBpiItem(tx, parentId, generalId, v, at); err != nil {
 			return err
 		}
 	}
-
 	return nil
-
 }
 
-func CreateBpiItem(tx *gorm.DB, parentId uint, child models.BpiItems, at models.At) error {
+func CreateBpiItem(tx *gorm.DB, parentId uint, generalId uint, child models.BpiItems, at models.At) error {
 
 	child.BpiItemContent.BasedId = parentId
+	child.BpiItemContent.BranchId = generalId
 
 	if err := services.DbInsert(tx, &child); err != nil {
 		return errors.New("failed to create bpi items")
 	}
+
 	childAt := models.BpiItemsAt{
 		RefId:          child.ID,
 		BpiItemContent: child.BpiItemContent,
@@ -39,10 +39,10 @@ func CreateBpiItem(tx *gorm.DB, parentId uint, child models.BpiItems, at models.
 	return nil
 }
 
-func UpdateBpiItems(tx *gorm.DB, childItems []models.BpiItems, at models.At, conditions map[string]interface{}) error {
+func UpdateBpiItems(tx *gorm.DB, parentId uint, generalId uint, childItems []models.BpiItems, at models.At) error {
 
 	for _, v := range childItems {
-		if err := UpdateBpiItem(tx, v, at, conditions); err != nil {
+		if err := UpdateBpiItem(tx, parentId, generalId, v, at); err != nil {
 			return err
 		}
 	}
@@ -50,10 +50,15 @@ func UpdateBpiItems(tx *gorm.DB, childItems []models.BpiItems, at models.At, con
 	return nil
 }
 
-func UpdateBpiItem(tx *gorm.DB, child models.BpiItems, at models.At, conditions map[string]interface{}) error {
+func UpdateBpiItem(tx *gorm.DB, parentId uint, generalId uint, child models.BpiItems, at models.At) error {
+
+	conditions := map[string]interface{}{
+		"id": child.ID,
+	}
 
 	if child.ID == 0 {
-		child.BpiItemContent.BasedId = conditions["based_id"].(uint)
+		child.BpiItemContent.BasedId = parentId
+		child.BpiItemContent.BranchId = generalId
 
 		if err := services.DbInsert(tx, &child); err != nil {
 			return errors.New("failed to create bpi items")
