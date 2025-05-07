@@ -207,6 +207,10 @@ func main() {
 				setupApi.Get("/boq", setup_handlers.GetItemBoqs)
 				setupApi.Post("/boq", setup_handlers.CreateItemBoq)
 				setupApi.Put("/boq", setup_handlers.UpdateItemBoq)
+
+				setupApi.Get("/wiringnotes", setup_handlers.GetWiringNotes)
+				setupApi.Post("/wiringnotes", setup_handlers.CreateWiringNote)
+				setupApi.Put("/wiringnotes", setup_handlers.UpdateWiringNote)
 			}
 
 			// Sales Endpoints

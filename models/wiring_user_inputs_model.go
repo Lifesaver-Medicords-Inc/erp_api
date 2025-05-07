@@ -1,12 +1,13 @@
 package models
 
 type WiringUserInputContent struct {
-	WiringID   uint   `json:"wiring_id"` // References SalesProjectWiring.id
+	WiringID   uint   `json:"wiring_id"`
+	ItemsID    uint   `json:"items_id"`
 	WiringNote string `json:"wiring_note"`
 }
 
 type WiringUserInput struct {
-	ID uint `gorm:"primarykey" json:"id"`
+	NoteID uint `gorm:"primarykey" json:"note_id"`
 	WiringUserInputContent
 }
 
