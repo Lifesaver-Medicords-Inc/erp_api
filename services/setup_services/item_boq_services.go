@@ -44,6 +44,17 @@ func CreateItemBoq(c *fiber.Ctx, tx *gorm.DB) (models.ItemBoqDetails, int, error
 	if err := services.DbInsert(tx, &body); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating canvas sheet")
 	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	atdata := models.ItemBoqDetailsAt{RefId: body.ID, ItemBoqDetailsContent: body.ItemBoqDetailsContent, At: at}
+
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed creating boq at")
+	}
 	key := services.GetKey(models.ProjectComponent{}, nil)
 	services.InvalidateCache(key)
 	return body, 0, nil
