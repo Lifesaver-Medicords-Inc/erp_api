@@ -7,7 +7,7 @@ type BpiAccreditationView struct {
 	DateAdded                string `json:"date_added"`
 	FileName                 string `json:"file_name"`
 	FilePath                 string `json:"file_path"`
-	AccreditationAddedById   uint   `json:"accreditation_added_by_id"`
+	AccreditationAddedBy     string `json:"accreditation_added_by"`
 }
 
 func (BpiAccreditationView) TableName() string {
