@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
+	"github.com/pierceperado/smpc/utils"
 	"gorm.io/gorm"
 )
 
@@ -42,6 +43,7 @@ func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
 		Finance        []models.BpiFinance            `json:"finance"`
 		FinancePending []models.BpiFinancePendingView `json:"finance_pending"`
 		Accreditations []models.BpiAccreditationView  `json:"accreditations"`
+		History        []models.BpiHistoryView        `json:"history"`
 	}
 
 	var response Response
@@ -68,10 +70,13 @@ func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting finance ")
 	}
 	if err := services.DbGet(&response.FinancePending, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting finance pending quotes")
+		return response, fiber.StatusInternalServerError, errors.New("failed getting finance pending quotation")
 	}
 	if err := services.DbGet(&response.Accreditations, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting accreditations pending quotes")
+		return response, fiber.StatusInternalServerError, errors.New("failed getting accreditations  ")
+	}
+	if err := services.DbGet(&response.History, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting history")
 	}
 
 	return response, 0, nil
@@ -127,6 +132,9 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 	}
 
 	at, ok := c.Locals("at").(models.At)
+	userAt := utils.GetAtData(c, models.At{})
+	at.AtUserId = userAt.AtUserId
+	fmt.Println("atBPI", at)
 	if !ok {
 		at = models.At{}
 	}
