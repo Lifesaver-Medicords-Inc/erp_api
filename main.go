@@ -14,6 +14,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/middlewares"
 	"github.com/pierceperado/smpc/services"
 )
 
@@ -51,6 +52,7 @@ func main() {
 		api.Get("/vfile/:filename", public_handlers.ViewFile)
 
 		// Protected Endpoints
+
 		//api.Use(middlewares.RequireAuth)
 		{
 			// Sample Endpoints
