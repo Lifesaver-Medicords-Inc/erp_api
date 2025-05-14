@@ -19,9 +19,9 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.Position{}, &models.PositionAt{})
 	// DB.AutoMigrate(&models.SetupItemBom{}, &models.SetupItemBomAt{})
 	// DB.AutoMigrate(&models.SetupItemBomDetails{}, &models.SetupItemBomDetailsAt{})
-	// DB.AutoMigrate(&models.ItemBoq{}, &models.ItemBoqAt{})
+	//DB.AutoMigrate(&models.ItemBoq{}, &models.ItemBoqAt{})
 	//DB.AutoMigrate(&models.ItemBoqDetails{}, &models.ItemBoqDetailsAt{})
-	// DB.AutoMigrate(&models.WiringUserInput{}, &models.WiringUserInputAt{})
+	//DB.AutoMigrate(&models.WiringUserInput{}, &models.WiringUserInputAt{})
 	// DB.AutoMigrate(&models.BoqNotes{}, &models.BoqNotesAt{})
 	// DB.AutoMigrate(&models.ItemSpecs{}, &models.ItemSpecsAt{})
 	// DB.AutoMigrate(&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{})
@@ -48,57 +48,12 @@ func MigrateDb() {
 	//	DB.AutoMigrate(&models.Application{}, &models.ApplicationAt{})
 
 	// // Sales
-	// // DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
-	// // DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})/sad
-	// DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
-
+	// DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
+	// DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
+	//DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
 	// // DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// // DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 	// DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
-
-	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
-	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
-
-	// DB.AutoMigrate(
-	// 	&models.SalesProjectMultiplier{},
-	// 	&models.SalesProjectMultiplierAt{},
-	// 	&models.SalesProjectHistory{},
-	// 	&models.SalesProjectHistoryAt{},
-	// 	&models.SalesProjectItemSet{},
-	// 	&models.SalesProjectItemSetAt{},
-	// 	&models.SalesProjectContent{},
-	// 	&models.SalesProjectContentAt{},
-	// 	&models.SalesProjectContentChild{},
-	// 	&models.SalesProjectContentChildAt{},
-	// 	&models.SalesProjectAdvancedConditions{},
-	// 	&models.SalesProjectAdvancedConditionsAt{},
-	// 	&models.SalesProjectIstems{},
-	// 	&models.SalesProjectItemsAt{},
-	// )
-
-	DB.AutoMigrate(
-		// 	&models.SalesQuotation{},
-		// 	&models.SalesQuotationAt{},
-		// 	&models.SalesQuotationQuick{},
-		// 	&models.SalesQuotationQuickAt{},
-		// 	&models.SalesProjectMultiplier{},
-		// 	&models.SalesProjectMultiplierAt{},
-		// 	&models.SalesProjectHistory{},
-		// 	&models.SalesProjectHistoryAt{},
-		// 	&models.SalesProjectItemSet{},
-		// 	&models.SalesProjectItemSetAt{},
-		&models.SalesProjectContent{},
-		&models.SalesProjectContentAt{},
-		// 	&models.SalesProjectAdvancedConditions{},
-		// 	&models.SalesProjectAdvancedConditionsAt{},
-		// 	&models.SalesProjectItems{},
-		// 	&models.SalesProjectItemsAt{},
-		// 	&models.SalesProjectWiring{},
-		// 	&models.SalesProjectWiringAt{},
-	)
-
-	// DB.AutoMigrate(&models.SalesCanvasSheet{})
-	//DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
 
 	// DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
 	//DB.AutoMigrate(&models.CRM{}, &models.CRMAt{})

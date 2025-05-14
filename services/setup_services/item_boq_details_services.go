@@ -9,9 +9,6 @@ import (
 )
 
 func BoqDetails(tx *gorm.DB, parentId uint, child models.ItemBoqDetails, at models.At) error {
-
-	child.ItemBoqDetailsContent.ItemBoqID = parentId
-
 	if err := services.DbInsert(tx, &child); err != nil {
 		return errors.New("failed to create bom details")
 	}
@@ -30,7 +27,6 @@ func BoqDetails(tx *gorm.DB, parentId uint, child models.ItemBoqDetails, at mode
 
 func UpdateBoqChild(tx *gorm.DB, ItemBoqDetails models.ItemBoqDetails, at models.At, boqId uint) error {
 	if ItemBoqDetails.ID == 0 {
-		ItemBoqDetails.ItemBoqDetailsContent.ItemBoqID = boqId
 		if err := services.DbInsert(tx, &ItemBoqDetails); err != nil {
 			return errors.New("failed to create boq details")
 		}

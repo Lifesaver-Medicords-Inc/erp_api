@@ -14,7 +14,6 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
-	"github.com/pierceperado/smpc/middlewares"
 	"github.com/pierceperado/smpc/services"
 )
 
@@ -209,6 +208,7 @@ func main() {
 				setupApi.Post("/templates", setup_handlers.CreateProjectTemplate)
 
 				setupApi.Get("/boq", setup_handlers.GetItemBoqs)
+				setupApi.Get("/boq/qq", setup_handlers.GetQQnotes)
 				setupApi.Post("/boq", setup_handlers.CreateItemBoq)
 				setupApi.Put("/boq", setup_handlers.UpdateItemBoq)
 
@@ -261,11 +261,11 @@ func main() {
 				salesApi.Put("/project_conditions", sales_handlers.UpdateProjectCondition)
 				salesApi.Put("/project_contents", sales_handlers.UpdateProjectContent)
 
-				salesApi.Post("/project_items", sales_handlers.CreateProjectItem)
-				salesApi.Put("/project_items", sales_handlers.UpdateProjectItem)
+				// salesApi.Post("/project_items", sales_handlers.CreateProjectItem)
+				// salesApi.Put("/project_items", sales_handlers.UpdateProjectItem)
 
-				salesApi.Post("/project_wiring", sales_handlers.CreateProjectWirings)
-				salesApi.Put("/project_wiring", sales_handlers.UpdateProjectWiring)
+				// salesApi.Post("/project_wiring", sales_handlers.CreateProjectWirings)
+				// salesApi.Put("/project_wiring", sales_handlers.UpdateProjectWiring)
 
 				salesApi.Get("/projects_pumps", sales_handlers.GetItemPumps)
 
