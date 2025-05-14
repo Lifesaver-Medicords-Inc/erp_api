@@ -2,6 +2,7 @@ package setup_services
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -34,28 +35,40 @@ func GetBrand(id int) (models.Brand, int, error) {
 	return brand, 0, nil
 }
 
-func CreateBrand(tx *gorm.DB, brand *models.Brand) (int, error) {
-	if err := services.DbInsert(tx, brand); err != nil {
+func CreateBrand(c *fiber.Ctx, tx *gorm.DB) (models.Brand, int, error) {
+	var body models.Brand
+
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	if err := services.DbInsert(tx, &body); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			err = errors.New("duplicate record error")
 		} else {
 			err = errors.New("failed creating brand")
 		}
 
-		return fiber.StatusInternalServerError, err
+		return body, fiber.StatusInternalServerError, err
 	}
 
-	// at, ok := c.Locals("at").(models.At)
-	// if !ok {
-	// 	at = models.At{}
-	// }
+	at, ok := c.Locals("at").(models.At)
+	fmt.Println("at  ok ", at)
 
-	// atdata := models.BrandAt{RefId: body.ID, Code: body.Code, BrandContent: models.BrandContent{Name: body.Name}, At: at}
-	// if err := services.DbInsert(tx, &atdata); err != nil {
-	// 	return body, fiber.StatusInternalServerError, errors.New("failed creating brandat")
-	// }
+	if !ok {
+		at = models.At{}
+		fmt.Println("at not ok ", at)
 
-	return 0, nil
+	}
+	// at := utils.GetAtData(c, models.At{})
+	// at.MachineName =
+
+	atdata := models.BrandAt{RefId: body.ID, Code: body.Code, BrandContent: models.BrandContent{Name: body.Name}, At: at}
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed creating brandat")
+	}
+
+	return body, 0, nil
 }
 
 func UpdateBrand(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.Brand, int, error) {
@@ -69,7 +82,10 @@ func UpdateBrand(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 	}
 
 	at, ok := c.Locals("at").(models.At)
+	fmt.Println("ATTTT", at)
 	if !ok {
+		fmt.Println("ATTTT11", at)
+
 		at = models.At{}
 	}
 

@@ -1,15 +1,10 @@
 package models
 
 type ItemBoqDetailsContent struct {
-	ItemBoqID      uint    `json:"item_boq_id"`
-	ItemsID        uint    `json:"items_id"`
-	ShortDesc      string  `json:"short_desc"`
-	Size           string  `json:"size"`
-	Qty            uint    `json:"qty"`
-	ComponentTotal float64 `json:"component_total"`
-	UnitOfMeasure  string  `json:"unit_of_measure"`
-	Remarks        string  `json:"remarks"`
-	Notes          string  `json:"notes"`
+	ItemBoqID uint   `json:"item_boq_id"`
+	ItemsID   uint   `json:"items_id"`
+	Remarks   string `json:"remarks"`
+	Notes     string `json:"notes"`
 }
 
 type ItemBoqDetails struct {

@@ -13,7 +13,11 @@ import (
 )
 
 func RequireAuth(c *fiber.Ctx) error {
-	tokenString := c.Cookies("Authorization")
+	tokenString := c.Get("Authorization")
+	if tokenString == "" {
+		tokenString = c.Cookies("Authorization") // check the cookie if the header is empty
+	}
+	fmt.Println("tokenString", tokenString)
 	if tokenString == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"success": false,
@@ -46,6 +50,7 @@ func RequireAuth(c *fiber.Ctx) error {
 				})
 			}
 		}
+		fmt.Println("claims>>>>>", claims)
 
 		userID, ok := claims["sub"].(float64)
 		if !ok {
@@ -63,6 +68,7 @@ func RequireAuth(c *fiber.Ctx) error {
 		}
 
 		var userObj models.User
+		fmt.Println("USEROBJ", userID)
 		if count := initializers.DB.First(&userObj, "id = ?", userID).RowsAffected; count == 0 {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"success": false,
@@ -85,6 +91,9 @@ func RequireAuth(c *fiber.Ctx) error {
 				"message": "Invalid at data",
 			})
 		}
+
+		fmt.Println("USER AT 1", userObj)
+		fmt.Println("USER AT 2", atObj)
 
 		c.Locals("user", userObj)
 		c.Locals("at", atObj)

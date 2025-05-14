@@ -16,6 +16,7 @@ type PurchasingListViewContent struct {
 	Qtys            string `json:"qtys"`
 	UnitOfMeasures  string `json:"unit_of_measures"`
 	TotalQty        uint   `json:"total_qty"`
+	Date            string `json:"date"`
 }
 
 type PurchasingListView struct {

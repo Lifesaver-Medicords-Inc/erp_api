@@ -10,6 +10,7 @@ type BpiItemContent struct {
 	ItemTaxCode    string  `json:"item_tax_code"`
 	Price          float64 `json:"price"`
 	Notes          string  `json:"notes"`
+	IsDeleted      bool    `json:"is_deleted"`
 }
 
 type BpiItems struct {

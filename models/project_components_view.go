@@ -38,6 +38,9 @@ type ProjectComponent struct {
 	TotalQty                  uint    `json:"total_qty"`
 	Cost                      uint    `json:"cost"`
 	TotalCost                 uint    `json:"total_cost"`
+	BOQID                     uint    `json:"boq_id"`
+	Remarks                   string  `json:"remarks"`
+	Notes                     string  `json:"notes"`
 }
 
 func (ProjectComponent) TableName() string {
