@@ -12,7 +12,7 @@ func CreateProjectItems(tx *gorm.DB, parentId uint, projectitems models.SalesPro
 	projectitems.BasedId = parentId
 
 	if err := services.DbInsert(tx, &projectitems); err != nil {
-		return errors.New("failed creating project advanced conditions")
+		return errors.New("failed creating project items")
 	}
 
 	projectconditionsat := models.SalesProjectItemsAt{

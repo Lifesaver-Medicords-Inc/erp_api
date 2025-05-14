@@ -34,6 +34,7 @@ type TestBody struct {
 }
 
 func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
+
 	type Response struct {
 		Bpi            []models.BpiView               `json:"bpi"`
 		General        []models.BpiGeneralView        `json:"general"`
