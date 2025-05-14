@@ -64,6 +64,7 @@ func main() {
 			}
 
 			//User Employee Endpoints
+
 			api.Get("/employee_users/:employee_id", bpi_handlers.GetBpiUsers)
 
 			// Setup Endpoints
@@ -206,6 +207,12 @@ func main() {
 				setupApi.Post("/templates", setup_handlers.CreateProjectTemplate)
 
 				setupApi.Get("/boq", setup_handlers.GetItemBoqs)
+				setupApi.Post("/boq", setup_handlers.CreateItemBoq)
+				setupApi.Put("/boq", setup_handlers.UpdateItemBoq)
+
+				setupApi.Get("/wiringnotes", setup_handlers.GetWiringNotes)
+				setupApi.Post("/wiringnotes", setup_handlers.CreateWiringNote)
+				setupApi.Put("/wiringnotes", setup_handlers.UpdateWiringNote)
 			}
 
 			// Sales Endpoints
@@ -291,9 +298,12 @@ func main() {
 				//Purchasing List
 				purchasingApi.Get("/purchase_list", purchasing_handlers.GetSOPurchasingList)
 				purchasingApi.Get("/purchase_list_supplier", purchasing_handlers.GetSOPurchasingListSupplier)
-				purchasingApi.Get("/purchase_canvass_sheet", purchasing_handlers.GetPurchasingCanvassSheet)
-				purchasingApi.Post("/purchase_canvass_sheet", purchasing_handlers.CreatePurchasingCanvassSheet)
-				purchasingApi.Put("/purchase_canvass_sheet", purchasing_handlers.UpdatePurchasingCanvassSheet)
+
+				//Purchasing SO Canvass Sheet
+				purchasingApi.Get("/purchase_canvass_sheet_so", purchasing_handlers.GetPurchasingCanvassSheetSO)
+				purchasingApi.Post("/purchase_canvass_sheet_so", purchasing_handlers.CreatePurchasingCanvassSheet)
+				purchasingApi.Put("/purchase_canvass_sheet_so", purchasing_handlers.UpdatePurchasingCanvassSheet)
+				purchasingApi.Delete("/purchase_canvass_sheet_so", purchasing_handlers.DeletePurchasingCanvassSheetSupplier)
 			}
 
 			//Bpi Endpoints

@@ -1,9 +1,10 @@
 package models
 
 type BpiAddressViewContent struct {
-	AddressBasedId  uint   `json:"address_based_id"`
-	AddressBranchId uint   `json:"address_branch_id"`
-	Location        string `json:"location"`
+	AddressBasedId   uint   `json:"address_based_id"`
+	AddressBranchId  uint   `json:"address_branch_id"`
+	Location         string `json:"location"`
+	AddressIsDeleted bool   `json:"address_is_deleted"`
 }
 
 type BpiAddressView struct {

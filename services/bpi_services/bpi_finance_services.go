@@ -2,6 +2,7 @@ package bpi_services
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -12,6 +13,7 @@ func CreateBpiFinance(tx *gorm.DB, parentId uint, generalId uint, child models.B
 
 	child.BpiFinanceContent.FinanceBasedId = parentId
 	child.BpiFinanceContent.FinanceBranchId = generalId
+
 	if err := services.DbInsert(tx, &child); err != nil {
 		return errors.New("failed to create bpi finance")
 	}
@@ -28,7 +30,7 @@ func CreateBpiFinance(tx *gorm.DB, parentId uint, generalId uint, child models.B
 }
 
 func UpdateBpiFinance(tx *gorm.DB, child models.BpiFinance, at models.At, parentId uint) error {
-
+	fmt.Println("BPI FINANCE")
 	conditions := map[string]interface{}{
 		"finance_based_id": parentId,
 	}

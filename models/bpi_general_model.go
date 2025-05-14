@@ -15,6 +15,7 @@ type BpiGeneralEmbeddedContent struct {
 type BpiGeneralContent struct {
 	BasedId    uint   `json:"based_id"`
 	BranchName string `gorm:"unique;size:100" json:"branch_name"`
+	SalesId    string `json:"sales_id"`
 	BpiGeneralEmbeddedContent
 }
 
