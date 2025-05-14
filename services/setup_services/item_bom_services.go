@@ -35,6 +35,25 @@ func GetSetupItemBoms(conditions map[string]interface{}) (interface{}, int, erro
 	return response, 0, nil
 }
 
+func GetSetupItemBomss(conditions map[string]interface{}) (interface{}, int, error) {
+	type Response struct {
+		BomParent []models.SetupItemBom
+		BomChild  []models.SetupItemBomDetails `json:"setup_bom_details"`
+	}
+
+	var response Response
+
+	if err := services.DbGet(&response.BomParent, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting bom list")
+	}
+
+	if err := GetBomDetails(&response.BomChild, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting bom")
+	}
+
+	return response, 0, nil
+}
+
 func GetBomItemList(conditions map[string]interface{}) (interface{}, int, error) {
 
 	var response []models.BomView

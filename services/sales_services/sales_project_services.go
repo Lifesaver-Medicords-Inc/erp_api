@@ -32,6 +32,10 @@ type CreateProjectBody struct {
 	SalesProjectWirings                  []models.SalesProjectWiring           `json:"sales_project_wiring"`
 }
 
+type CreateNewProjectItem struct {
+	SalesProjectItems models.SalesProjectItems `json:"sales_project_items"`
+}
+
 type CreateProjectBody2 struct {
 	models.SalesQuotation
 	SalesProjectMultiplier               []models.SalesProjectMultiplier       `json:"sales_project_multiplier"`
@@ -188,6 +192,25 @@ func CreateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, erro
 
 			return body, fiber.StatusInternalServerError, err
 		}
+	}
+
+	return body, 0, nil
+}
+
+func CreateNewProjectItems(c *fiber.Ctx, tx *gorm.DB) (CreateNewProjectItem, int, error) {
+	var body CreateNewProjectItem
+
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	if err := CreateProjectItems(tx, body.SalesProjectItems.BasedId, body.SalesProjectItems, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	return body, 0, nil
