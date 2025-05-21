@@ -25,3 +25,4 @@ type BrandAt struct {
 func (BrandAt) TableName() string {
 	return "z_tbl_setup_item_brand_at"
 }
+
