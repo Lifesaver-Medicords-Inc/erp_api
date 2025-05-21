@@ -128,6 +128,26 @@ func main() {
 					itemApi.Post("", setup_handlers.CreateItem)
 					itemApi.Put("", setup_handlers.UpdateItem)
 					itemApi.Delete("", setup_handlers.DeleteItem)
+
+				}
+
+				//warehouse
+				warehouseApi := setupApi.Group("/warehouse")
+				{
+					//warehouse name
+					warehouseApi.Get("/name", setup_handlers.GetWarehouseNames)
+					warehouseApi.Get("/name/:id", setup_handlers.GetWarehouseName)
+					warehouseApi.Post("/name", setup_handlers.CreateWarehouseName)
+					warehouseApi.Put("/name", setup_handlers.UpdateWarehouseName)
+					warehouseApi.Delete("/name", setup_handlers.DeleteWarehouseName)
+					warehouseApi.Get("/manager", setup_handlers.GetWarehouseManagers)
+
+					//warehouse usetypes
+					warehouseApi.Get("/usetype", setup_handlers.GetUseTypes)
+					warehouseApi.Get("/usetype/:id", setup_handlers.GetUseType)
+					warehouseApi.Post("/usetype", setup_handlers.CreateUseType)
+					warehouseApi.Put("/usetype", setup_handlers.UpdateUseType)
+					warehouseApi.Delete("/usetype", setup_handlers.DeleteUseType)
 				}
 
 				// Unit Measurement Endpoints
