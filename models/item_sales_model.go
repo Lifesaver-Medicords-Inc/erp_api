@@ -8,7 +8,7 @@ type ItemSalesViewContent struct {
 	CustomerName string `json:"customer_name"`
 }
 
-type ItemSalesView struct{
+type ItemSalesView struct {
 	ID uint `gorm:"primarykey" json:"id"`
 	ItemSalesViewContent
 }

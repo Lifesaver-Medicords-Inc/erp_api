@@ -12,7 +12,7 @@ func CreateProjectItems(tx *gorm.DB, parentId uint, projectitems models.SalesPro
 	projectitems.BasedId = parentId
 
 	if err := services.DbInsert(tx, &projectitems); err != nil {
-		return errors.New("failed creating project advanced conditions")
+		return errors.New("failed creating project items")
 	}
 
 	projectconditionsat := models.SalesProjectItemsAt{
@@ -40,13 +40,13 @@ func UpdateProjectItems(tx *gorm.DB, projectitems models.SalesProjectItems, at m
 		return errors.New("failed updating project items")
 	}
 
-	projectconditionsat := models.SalesProjectItemsAt{
+	projectitemsat := models.SalesProjectItemsAt{
 		RefID:                    projectitems.ItemsID,
 		SalesProjectItemsContent: projectitems.SalesProjectItemsContent,
 		At:                       at,
 	}
 
-	if err := services.DbInsert(tx, &projectconditionsat); err != nil {
+	if err := services.DbInsert(tx, &projectitemsat); err != nil {
 		return errors.New("failed creating content child")
 	}
 

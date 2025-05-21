@@ -3,6 +3,7 @@ package public_services
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -53,11 +54,12 @@ func CreateAccount(c *fiber.Ctx, tx *gorm.DB) (models.User, int, error) {
 
 func LoginAccount(c *fiber.Ctx) (models.User, int, error) {
 	var user models.User
-
+	fmt.Println("LOGIN ACCOUNT")
 	var body models.UserAt
 	if err := c.BodyParser(&body); err != nil {
 		return user, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
+	fmt.Println("LOGIN ACCOUNT33333")
 
 	conditions := map[string]interface{}{
 		"employee_id": body.EmployeeId,
@@ -67,13 +69,18 @@ func LoginAccount(c *fiber.Ctx) (models.User, int, error) {
 		return user, fiber.StatusUnauthorized, errors.New("invalid user credential")
 	}
 
+	fmt.Println("LOGIN ACCOUNT4444", user.ID)
+
 	if err := utils.CompareUserPassword(user.Password, body.Password); err != nil {
 		return user, fiber.StatusUnauthorized, errors.New("invalid user credential")
 	}
+	fmt.Println("LOGIN ACCOUNT555")
 
+	body.At.AtUserId = strconv.Itoa(int(user.ID))
 	if err := utils.CreateAuthToken(c, body.At, user.ID); err != nil {
 		return user, fiber.StatusUnauthorized, err
 	}
+	fmt.Println("LOGIN ACCOUNT6666")
 
 	return user, 0, nil
 }

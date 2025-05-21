@@ -19,6 +19,15 @@ func GetSetupItemBoms(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
+func GetSetupItemBomss(c *fiber.Ctx) error {
+	data, status, err := setup_services.GetSetupItemBomss(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
 func GetSetupItemBom(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
