@@ -10,6 +10,7 @@ type CRMView struct {
 	Date       string `json:"date"`
 	Remark     string `json:"remark"`
 	CRM_ID     uint   `json:"crm_id"`
+	Sales_ID   string `json:"sales_id"`
 }
 
 // test
