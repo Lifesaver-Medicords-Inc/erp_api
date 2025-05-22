@@ -12,7 +12,7 @@ type SalesQuotationQuickContent struct {
 	UnitOfMeasure   string  `json:"unit_of_measure"`
 	ListPrice       float64 `json:"list_price"`
 	UnitPrice       float64 `json:"unit_price"`
-	PercentDiscount float64 `json:"percent_discount"`
+	PercentDiscount string  `json:"percent_discount"`
 	NetDiscount     float64 `json:"net_discount"`
 	NetTotal        float64 `json:"net_total"`
 	LineTotal       float64 `json:"line_total"`
