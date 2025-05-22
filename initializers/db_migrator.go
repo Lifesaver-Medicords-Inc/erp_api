@@ -30,7 +30,7 @@ func MigrateDb() {
 
 	//warehouse
 	//DB.AutoMigrate(&models.UseType{}, &models.UseTypeAt{})
-	DB.AutoMigrate(&models.WarehouseName{}, &models.WarehouseNameAt{})
+	//DB.AutoMigrate(&models.WarehouseName{}, &models.WarehouseNameAt{})
 
 	// DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
 	// DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
