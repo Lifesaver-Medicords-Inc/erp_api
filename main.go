@@ -233,6 +233,7 @@ func main() {
 				salesApi.Post("child/order", sales_handlers.CreateOrderChild)
 				salesApi.Post("/order", sales_handlers.CreateOrder)
 				salesApi.Put("/order", sales_handlers.UpdateOrder)
+				salesApi.Put("/order_details", sales_handlers.UpdateOrderDetailOnly)
 				salesApi.Delete("/order", sales_handlers.DeleteOrder)
 				// Opportunity Endpointss
 				salesApi.Get("/opportunity", sales_handlers.GetOpportunities)
@@ -278,7 +279,7 @@ func main() {
 				purchasingApi.Get("/purchase_redbox_list", purchasing_handlers.GetPurchasingRedboxList)
 
 				//Purchasing List
-				purchasingApi.Get("/purchase_list", purchasing_handlers.GetSOPurchasingList)
+				purchasingApi.Get("/so_purchase_list", purchasing_handlers.GetSOPurchasingList)
 				purchasingApi.Get("/purchase_list_supplier", purchasing_handlers.GetSOPurchasingListSupplier)
 
 				//Purchasing SO Canvass Sheet
@@ -286,6 +287,9 @@ func main() {
 				purchasingApi.Post("/purchase_canvass_sheet_so", purchasing_handlers.CreatePurchasingCanvassSheet)
 				purchasingApi.Put("/purchase_canvass_sheet_so", purchasing_handlers.UpdatePurchasingCanvassSheet)
 				purchasingApi.Delete("/purchase_canvass_sheet_so", purchasing_handlers.DeletePurchasingCanvassSheetSupplier)
+
+				purchasingApi.Get("/purchase_order", purchasing_handlers.GetPurchaseOrder)
+				purchasingApi.Post("/purchase_order", purchasing_handlers.CreatePurchaseOrder)
 			}
 
 			//Bpi Endpoints
