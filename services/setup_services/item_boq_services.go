@@ -34,6 +34,19 @@ func GetItemBoqs(conditions map[string]interface{}) (interface{}, int, error) {
 	return response, 0, nil
 }
 
+func GetQQnotes(conditions map[string]interface{}) (interface{}, int, error) {
+	type Response struct {
+		QQView []models.QQView `json:"qq_view"`
+	}
+
+	var response Response
+
+	if err := services.DbGet(&response.QQView, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting canvas sheet view")
+	}
+	return response, 0, nil
+}
+
 func CreateItemBoq(c *fiber.Ctx, tx *gorm.DB) (models.ItemBoqDetails, int, error) {
 	var body models.ItemBoqDetails
 
@@ -44,8 +57,21 @@ func CreateItemBoq(c *fiber.Ctx, tx *gorm.DB) (models.ItemBoqDetails, int, error
 	if err := services.DbInsert(tx, &body); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating canvas sheet")
 	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	atdata := models.ItemBoqDetailsAt{RefId: body.ID, ItemBoqDetailsContent: body.ItemBoqDetailsContent, At: at}
+
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed creating boq at")
+	}
 	key := services.GetKey(models.ProjectComponent{}, nil)
 	services.InvalidateCache(key)
+	key2 := services.GetKey(models.QQView{}, nil)
+	services.InvalidateCache(key2)
 	return body, 0, nil
 }
 func UpdateItemBoq(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.ItemBoqDetails, int, error) {
@@ -76,5 +102,7 @@ func UpdateItemBoq(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{})
 	fmt.Println("body: ", body)
 	key := services.GetKey(models.ProjectComponent{}, nil)
 	services.InvalidateCache(key)
+	key2 := services.GetKey(models.QQView{}, nil)
+	services.InvalidateCache(key2)
 	return body, 0, nil
 }

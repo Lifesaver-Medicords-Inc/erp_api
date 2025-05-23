@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 )
 
 func CreateAuthToken(c *fiber.Ctx, at models.At, uid uint) error {
+	fmt.Println("UID", uid)
+	fmt.Println("UIDat", at)
 	tokenClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": uid,
 		"exp": time.Now().Add(time.Hour * 24).Unix(),

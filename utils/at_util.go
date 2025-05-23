@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -9,6 +10,7 @@ import (
 
 func GetAtData(c *fiber.Ctx, at models.At) models.At {
 	userSet := c.Locals("user")
+	fmt.Print("modelsAt", at)
 
 	var userObj models.User
 	if userSet != nil {
@@ -34,6 +36,6 @@ func GetAtData(c *fiber.Ctx, at models.At) models.At {
 	clientIP := c.IP()
 
 	atData := models.At{AtAction: action, IpAddress: clientIP, MotherboardSerialNo: at.MotherboardSerialNo, MachineName: at.MachineName, AtDate: GetCurrentDatetime(), AtUserId: strconv.Itoa(int(userObj.ID)), AtUser: userObj.EmployeeId}
-
+	fmt.Println("ATTTTTTTTTTT", at)
 	return atData
 }

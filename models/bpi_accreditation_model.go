@@ -1,12 +1,12 @@
 package models
 
 type BpiAccreditationContent struct {
-	BasedId                uint   `json:"based_id"`
-	BranchId               uint   `json:"branch_id"`
-	DateAdded              string `json:"date_added"`
-	FilePath               string `json:"file_path"`
-	FileName               string `json:"file_name"`
-	AccreditationAddedById uint   `json:"accreditation_added_by_id"`
+	BasedId              uint   `json:"based_id"`
+	BranchId             uint   `json:"branch_id"`
+	DateAdded            string `json:"date_added"`
+	FilePath             string `json:"file_path"`
+	FileName             string `json:"file_name"`
+	AccreditationAddedBy string `json:"accreditation_added_by"`
 }
 
 type BpiAccreditation struct {

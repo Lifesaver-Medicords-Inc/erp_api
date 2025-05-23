@@ -32,6 +32,18 @@ type CreateProjectBody struct {
 	SalesProjectWirings                  []models.SalesProjectWiring           `json:"sales_project_wiring"`
 }
 
+type CreateNewProjectItem struct {
+	SalesProjectItems models.SalesProjectItems `json:"sales_project_items"`
+}
+
+type CreateNewProjectItemz struct {
+	SalesProjectItems []models.SalesProjectItems `json:"sales_project_items"`
+}
+
+type CreateNewProjectWiringBody struct {
+	SalesProjectWirings []models.SalesProjectWiring `json:"sales_project_wiring"`
+}
+
 type CreateProjectBody2 struct {
 	models.SalesQuotation
 	SalesProjectMultiplier               []models.SalesProjectMultiplier       `json:"sales_project_multiplier"`
@@ -51,7 +63,7 @@ type UpdateProjectBody struct {
 	SalesProjectContent                  models.SalesProjectContent            `json:"sales_project_content"`
 	SalesProjectContentAdvancedCondition models.SalesProjectAdvancedConditions `json:"sales_project_content_advanced_condition"`
 	SalesProjectItems                    []models.SalesProjectItems            `json:"sales_project_items"`
-	SalesProjectWirings                  models.SalesProjectWiring             `json:"sales_project_wiring"`
+	SalesProjectWirings                  []models.SalesProjectWiring           `json:"sales_project_wiring"`
 }
 
 func GetBpiSuppliers(conditions map[string]interface{}) (interface{}, int, error) {
@@ -193,6 +205,48 @@ func CreateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, erro
 	return body, 0, nil
 }
 
+func CreateNewProjectItemss(c *fiber.Ctx, tx *gorm.DB) (CreateNewProjectItemz, int, error) {
+	var body CreateNewProjectItemz
+
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	for _, item := range body.SalesProjectItems {
+		if err := CreateProjectItems(tx, item.BasedId, item, at); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+
+	return body, 0, nil
+}
+
+func CreateNewProjectWiring(c *fiber.Ctx, tx *gorm.DB) (CreateNewProjectWiringBody, int, error) {
+	var body CreateNewProjectWiringBody
+
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	for _, item := range body.SalesProjectWirings {
+		if err := CreateProjectWiring(tx, item.BasedId, item, at); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+
+	return body, 0, nil
+}
+
 // CREATE NEW TAB WITH ITS CHILD ITEMS
 func CreateNewItems(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, error) {
 	var body CreateProjectBody
@@ -268,6 +322,47 @@ func UpdateProjectContents(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inte
 
 	if err := UpdateProjectContent(tx, body.SalesProjectContent, at, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
+	}
+
+	return body, 0, nil
+}
+
+func UpdateProjectItemss(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (CreateNewProjectItemz, int, error) {
+	var body CreateNewProjectItemz
+	if err := c.BodyParser(&body); err != nil {
+		fmt.Println(err)
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	for _, item := range body.SalesProjectItems {
+		if err := UpdateProjectItems(tx, item, at, conditions); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+
+	return body, 0, nil
+}
+
+func UpdateProjectWirings(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (CreateNewProjectWiringBody, int, error) {
+	var body CreateNewProjectWiringBody
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	for _, item := range body.SalesProjectWirings {
+		if err := UpdateProjectWiring(tx, item, at, conditions); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
 	}
 
 	return body, 0, nil

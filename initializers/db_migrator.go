@@ -19,13 +19,18 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.Position{}, &models.PositionAt{})
 	// DB.AutoMigrate(&models.SetupItemBom{}, &models.SetupItemBomAt{})
 	// DB.AutoMigrate(&models.SetupItemBomDetails{}, &models.SetupItemBomDetailsAt{})
-	// DB.AutoMigrate(&models.ItemBoq{}, &models.ItemBoqAt{})
+	//DB.AutoMigrate(&models.ItemBoq{}, &models.ItemBoqAt{})
 	//DB.AutoMigrate(&models.ItemBoqDetails{}, &models.ItemBoqDetailsAt{})
+	//DB.AutoMigrate(&models.WiringUserInput{}, &models.WiringUserInputAt{})
 	// DB.AutoMigrate(&models.BoqNotes{}, &models.BoqNotesAt{})
 	// DB.AutoMigrate(&models.ItemSpecs{}, &models.ItemSpecsAt{})
 	// DB.AutoMigrate(&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{})
 	// DB.AutoMigrate(&models.TradeType{}, models.TradeTypeAt{})
 	// DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
+
+	//warehouse
+	//DB.AutoMigrate(&models.UseType{}, &models.UseTypeAt{})
+	//DB.AutoMigrate(&models.WarehouseName{}, &models.WarehouseNameAt{})
 
 	// DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
 	// DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
@@ -87,7 +92,9 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.BpiBranchIndustries{}, &models.BpiBranchIndustriesAt{})
 	// DB.AutoMigrate(&models.BpiEntity{}, &models.BpiEntityAt{})
 	// DB.AutoMigrate(&models.BpiAddress{}, &models.BpiAddressAt{})
+
 	//DB.AutoMigrate(&models.BpiItems{}, &models.BpiItemsAt{})
+
 	// DB.AutoMigrate(&models.BpiFinance{}, &models.BpiFinanceAt{})
 	// DB.AutoMigrate(&models.BpiAccreditation{}, &models.BpiAccreditationAt{})
 

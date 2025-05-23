@@ -34,3 +34,21 @@ func GetProjectWiring(ProjectWiring *[]models.SalesProjectWiring, conditions map
 	}
 	return nil
 }
+
+func UpdateProjectWiring(tx *gorm.DB, projectWirings models.SalesProjectWiring, at models.At, conditions map[string]interface{}) error {
+	if err := services.DbUpdate(tx, &projectWirings, conditions); err != nil {
+		return errors.New("failed updating project wirings")
+	}
+
+	projectwiringsat := models.SalesProjectWiringAt{
+		RefId:                     projectWirings.ID,
+		SalesProjectWiringContent: projectWirings.SalesProjectWiringContent,
+		At:                        at,
+	}
+
+	if err := services.DbInsert(tx, &projectwiringsat); err != nil {
+		return errors.New("failed creating project wirings at")
+	}
+
+	return nil
+}

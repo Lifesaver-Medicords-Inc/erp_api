@@ -51,7 +51,8 @@ func main() {
 		api.Get("/vfile/:filename", public_handlers.ViewFile)
 
 		// Protected Endpoints
-		// api.Use(middlewares.RequireAuth)
+
+		//api.Use(middlewares.RequireAuth)
 		{
 			// Sample Endpoints
 			sampleApi := api.Group("/sample")
@@ -64,6 +65,7 @@ func main() {
 			}
 
 			//User Employee Endpoints
+
 			api.Get("/employee_users/:employee_id", bpi_handlers.GetBpiUsers)
 
 			// Setup Endpoints
@@ -126,6 +128,26 @@ func main() {
 					itemApi.Post("", setup_handlers.CreateItem)
 					itemApi.Put("", setup_handlers.UpdateItem)
 					itemApi.Delete("", setup_handlers.DeleteItem)
+
+				}
+
+				//warehouse
+				warehouseApi := setupApi.Group("/warehouse")
+				{
+					//warehouse name
+					warehouseApi.Get("/name", setup_handlers.GetWarehouseNames)
+					warehouseApi.Get("/name/:id", setup_handlers.GetWarehouseName)
+					warehouseApi.Post("/name", setup_handlers.CreateWarehouseName)
+					warehouseApi.Put("/name", setup_handlers.UpdateWarehouseName)
+					warehouseApi.Delete("/name", setup_handlers.DeleteWarehouseName)
+					warehouseApi.Get("/manager", setup_handlers.GetWarehouseManagers)
+
+					//warehouse usetypes
+					warehouseApi.Get("/usetype", setup_handlers.GetUseTypes)
+					warehouseApi.Get("/usetype/:id", setup_handlers.GetUseType)
+					warehouseApi.Post("/usetype", setup_handlers.CreateUseType)
+					warehouseApi.Put("/usetype", setup_handlers.UpdateUseType)
+					warehouseApi.Delete("/usetype", setup_handlers.DeleteUseType)
 				}
 
 				// Unit Measurement Endpoints
@@ -196,6 +218,7 @@ func main() {
 				// setupApi.Put("/bom/detail", setup_handlers.UpdateSetupItemBomDetail)
 				// setupApi.Delete("/bom/detail", setup_handlers.DeleteSetupItemBomDetail)
 
+				// test project
 				setupApi.Get("/project", setup_handlers.GetProjects)
 				setupApi.Post("/project", setup_handlers.CreateProject)
 				setupApi.Put("/project", setup_handlers.UpdateProject)
@@ -205,8 +228,13 @@ func main() {
 				setupApi.Post("/templates", setup_handlers.CreateProjectTemplate)
 
 				setupApi.Get("/boq", setup_handlers.GetItemBoqs)
+				setupApi.Get("/boq/qq", setup_handlers.GetQQnotes)
 				setupApi.Post("/boq", setup_handlers.CreateItemBoq)
 				setupApi.Put("/boq", setup_handlers.UpdateItemBoq)
+
+				setupApi.Get("/wiringnotes", setup_handlers.GetWiringNotes)
+				setupApi.Post("/wiringnotes", setup_handlers.CreateWiringNote)
+				setupApi.Put("/wiringnotes", setup_handlers.UpdateWiringNote)
 			}
 
 			// Sales Endpoints
@@ -218,6 +246,7 @@ func main() {
 				//salesApi.Post("child/quotation", sales_handlers.CreateSalesQuotationChild)
 				// POST for Parent
 				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
+				salesApi.Put("/quotation", sales_handlers.UpdateQuotation)
 
 				//salesApi.Post("/salescanvas", sales_handlers.CreateSalesCanvasSheet)
 				//salesApi.Get("/salescanvas", sales_handlers.GetSalesCanvasView)
@@ -227,6 +256,7 @@ func main() {
 				salesApi.Post("/application", setup_handlers.CreateApplication)
 				salesApi.Put("/application", setup_handlers.UpdateApplication)
 				salesApi.Delete("/application", setup_handlers.DeleteApplication)
+
 				// Order Endpoints
 				salesApi.Get("/order", sales_handlers.GetOrders)
 				salesApi.Get("/order/:id", sales_handlers.GetOrder)
@@ -243,12 +273,22 @@ func main() {
 
 				//projects
 				salesApi.Get("/projects", sales_handlers.GetSalesProject)
+
 				salesApi.Post("/projects", sales_handlers.CreateSalesProject)
 				salesApi.Post("/projects_tab", sales_handlers.CreateItemSetTab)
+				//salesApi.Post("/project_item", sales_handlers.CreateNewProjectItem)
+
+				// project update
 				salesApi.Put("/project_conditions", sales_handlers.UpdateProjectCondition)
 				salesApi.Put("/project_contents", sales_handlers.UpdateProjectContent)
 
-				//salesApi.Get("/projects_pumps", sales_handlers.GetItemPumps)
+				// salesApi.Post("/project_items", sales_handlers.CreateProjectItem)
+				// salesApi.Put("/project_items", sales_handlers.UpdateProjectItem)
+
+				// salesApi.Post("/project_wiring", sales_handlers.CreateProjectWirings)
+				// salesApi.Put("/project_wiring", sales_handlers.UpdateProjectWiring)
+
+				salesApi.Get("/projects_pumps", sales_handlers.GetItemPumps)
 
 				// CRM Endpointss //test
 				salesApi.Get("/crm", sales_handlers.GetCRMs)

@@ -52,6 +52,12 @@ func UpdateChild(tx *gorm.DB, setupItemBomDetails models.SetupItemBomDetails, at
 	if err := services.DbInsert(tx, &setupItemBomDetailsAt); err != nil {
 		return errors.New("failed creating SetupItemBomDetailsAt")
 	}
+	return nil
+}
 
+func GetBomDetails(child *[]models.SetupItemBomDetails, conditions map[string]interface{}) error {
+	if err := services.DbGet(child, conditions); err != nil {
+		return errors.New("failed getting bom details")
+	}
 	return nil
 }

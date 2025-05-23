@@ -22,6 +22,14 @@ func BpiGeneral(tx *gorm.DB, parentId uint, child *models.BpiGeneralSchema, at m
 
 		return err
 	}
+	childAt := models.BpiGeneralAt{
+		RefId:             child.ID,
+		BpiGeneralContent: child.BpiGeneralContent,
+		At:                at,
+	}
+	if err := services.DbInsert(tx, &childAt); err != nil {
+		return errors.New("failed creating bpi_generals_at")
+	}
 
 	for _, v := range child.BranchIndustryId {
 		if err := CreateBpiBranchIndustries(tx, child.BpiGeneral.ID, uint(v), at); err != nil {

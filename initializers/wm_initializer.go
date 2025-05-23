@@ -6,9 +6,25 @@ import (
 )
 
 var WM *models.WsManager
+var WM2 *models.WsManager2
+var WM3 *models.WsProjectManager
 
 func InitWm() {
 	WM = &models.WsManager{
 		Clients: make(map[*websocket.Conn]bool),
+	}
+}
+
+// redbox
+func InitWm2() {
+	WM2 = &models.WsManager2{
+		Clients: make(map[*websocket.Conn]models.ClientInfo),
+	}
+}
+
+// project
+func InitProjectWM() {
+	WM3 = &models.WsProjectManager{
+		ProjectInfo: make(map[*websocket.Conn]models.ProjectClientInfo),
 	}
 }
