@@ -15,7 +15,7 @@ import (
 func RequireAuth(c *fiber.Ctx) error {
 	tokenString := c.Query("Authorization")
 	if tokenString == "" {
-		tokenString = c.Cookies("Authorization") // check the cookie if the header is empty
+		tokenString = c.Get("Authorization") // check the cookie if the header is empty
 	}
 	fmt.Println("tokenString", tokenString)
 	if tokenString == "" {
