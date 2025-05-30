@@ -231,6 +231,30 @@ func main() {
 					setupApi.Put("/chart_class", setup_handlers.UpdateChartClass)
 					setupApi.Delete("/chart_class", setup_handlers.DeleteChartClass)
 
+					// Chart Of Account Endpoints
+					setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
+					setupApi.Get("/chart_of_account:/id", setup_handlers.GetChartOfAccount)
+					setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
+					setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
+					setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
+
+					// GetGeneralLedgerMappers
+					setupApi.Get("/general_ledger", setup_handlers.GetGeneralLedgerMappers)
+					setupApi.Get("/general_ledger:/id", setup_handlers.GetChartOfAccount)
+					setupApi.Put("/general_ledger", setup_handlers.UpdateGeneralLedgerMappers)
+
+					// Expanded Withholding Tax Endpoints
+					setupApi.Get("/expanded_tax", setup_handlers.GetExpandedWithholdingTax)
+					setupApi.Post("/expanded_tax", setup_handlers.CreateExpandedWithholdingTax)
+					setupApi.Put("/expanded_tax", setup_handlers.UpdateExpandedWithholdingTax)
+					setupApi.Delete("/expanded_tax", setup_handlers.DeleteExpandedWithholdingTax)
+
+					// Expanded Withholding Tax Endpoints
+					setupApi.Get("/final_tax", setup_handlers.GetFinalTax)
+					setupApi.Post("/final_tax", setup_handlers.CreateFinalTax)
+					setupApi.Put("/final_tax", setup_handlers.UpdateFinalTax)
+					setupApi.Delete("/final_tax", setup_handlers.DeleteFinalTax)
+
 				}
 				// =========================== END =============================
 			}
