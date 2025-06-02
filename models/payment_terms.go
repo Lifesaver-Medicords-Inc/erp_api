@@ -1,7 +1,8 @@
 package models
 
 type PaymentTermsContent struct {
-	Name string `json:"name"`
+	Name       string `json:"name"`
+	IsSelected *bool  `json:"is_selected"`
 }
 
 type PaymentTerms struct {

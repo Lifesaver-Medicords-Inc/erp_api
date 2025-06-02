@@ -17,6 +17,10 @@ type CustomerBody struct {
 	Address  models.BpiAddress  `json:"address"`
 }
 
+type FinalizeBody struct {
+	SalesQuotation models.SalesQuotation
+}
+
 type Body struct {
 	models.SalesQuotation
 	//Child 1
@@ -194,4 +198,44 @@ func GetItem(id int) (ItemBody, int, error) {
 		return record, fiber.StatusInternalServerError, err
 	}
 	return record, 0, nil
+}
+
+func UpdateFinalizeQuote(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (FinalizeBody, int, error) {
+	var body FinalizeBody
+
+	fmt.Print(body)
+
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	if err := UpdateQuotationQuick(tx, body.SalesQuotation, at, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	return body, 0, nil
+}
+
+// for finalizing the quotation
+func UpdateQuotationQuick(tx *gorm.DB, Quotation models.SalesQuotation, at models.At, conditions map[string]interface{}) error {
+	if err := services.DbUpdate(tx, &Quotation, conditions); err != nil {
+		return errors.New("failed updating quotation")
+	}
+
+	quotationat := models.SalesQuotationAt{
+		RefId:                 Quotation.ID,
+		SalesQuotationContent: Quotation.SalesQuotationContent,
+		At:                    at,
+	}
+
+	if err := services.DbInsert(tx, &quotationat); err != nil {
+		return errors.New("failed creating project content")
+	}
+
+	return nil
 }

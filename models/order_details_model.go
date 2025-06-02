@@ -13,6 +13,7 @@ type OrderDetailsContent struct {
 	ItemDescription    string  `json:"item_description"`
 	ListPrice          float64 `json:"list_price"`
 	TotalPrice         float64 `json:"total_price"`
+	AllocatedQty       int     `json:"allocated_qty"`
 }
 
 type OrderDetails struct {

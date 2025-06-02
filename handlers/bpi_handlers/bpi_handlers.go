@@ -20,11 +20,8 @@ func GetBpis(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 func GetBpiUsers(c *fiber.Ctx) error {
-	fmt.Println("GET BPI USERS")
-
+	fmt.Println("FMT GET BPI USERS")
 	idParam := c.Params("employee_id")
-
-	fmt.Println("GET BPI USERS>>", idParam)
 
 	data, status, err := bpi_services.GetBpiUsers(idParam)
 	fmt.Println("DATA USER", data)

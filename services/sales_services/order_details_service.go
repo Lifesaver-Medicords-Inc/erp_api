@@ -81,6 +81,32 @@ func UpdateOrderDetail(tx *gorm.DB, orderdetails models.OrderDetails, at models.
 	return nil
 }
 
+func UpdateOrderDetails(tx *gorm.DB, orderdetails models.OrderDetails, at models.At, conditions map[string]interface{}) error {
+	// If no conditions passed, fallback to primary key condition
+	if len(conditions) == 0 {
+		conditions = map[string]interface{}{
+			"order_details_id": orderdetails.Order_Details_ID,
+		}
+	}
+
+	if err := services.DbUpdate(tx, &orderdetails, conditions); err != nil {
+		return errors.New("failed updating order details")
+	}
+
+	orderdetailsat := models.OrderDetailsAt{
+		RefId:               orderdetails.Order_Details_ID,
+		OrderDetailsContent: orderdetails.OrderDetailsContent,
+		At:                  at,
+	}
+
+	if err := services.DbInsert(tx, &orderdetailsat); err != nil {
+		return errors.New("failed creating orderdetailsat")
+	}
+
+	return nil
+}
+
+
 func DeleteOrderDetail(tx *gorm.DB, orderdetails models.OrderDetails, at models.At, conditions map[string]interface{}) error {
 	if err := services.DbDelete(tx, &orderdetails, conditions); err != nil {
 		return errors.New("failed deleting order details")

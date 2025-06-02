@@ -22,3 +22,63 @@ func (wm *WsManager) RemoveClient(c *websocket.Conn) {
 	defer wm.Unlock()
 	delete(wm.Clients, c)
 }
+
+// /// testing
+// filter user
+type ClientInfo struct {
+	Conn       *websocket.Conn
+	Department string
+}
+
+type ProjectClientInfo struct {
+	Conn      *websocket.Conn
+	Branch    string
+	ProjectId string
+}
+
+type WsManager2 struct {
+	sync.RWMutex
+	Clients map[*websocket.Conn]ClientInfo
+}
+
+type WsProjectManager struct {
+	sync.RWMutex
+	ProjectInfo map[*websocket.Conn]ProjectClientInfo
+}
+
+func (wm *WsProjectManager) AddProjectClient(c *websocket.Conn, branch string, projectid string) {
+	wm.Lock()
+	defer wm.Unlock()
+	if wm.ProjectInfo == nil {
+		wm.ProjectInfo = make(map[*websocket.Conn]ProjectClientInfo)
+	}
+	wm.ProjectInfo[c] = ProjectClientInfo{
+		Conn:      c,
+		Branch:    branch,
+		ProjectId: projectid,
+	}
+}
+
+func (wm *WsProjectManager) RemoveProjectClient(c *websocket.Conn) {
+	wm.Lock()
+	defer wm.Unlock()
+	delete(wm.ProjectInfo, c)
+}
+
+func (wm *WsManager2) AddClient2(c *websocket.Conn, department string) {
+	wm.Lock()
+	defer wm.Unlock()
+	if wm.Clients == nil {
+		wm.Clients = make(map[*websocket.Conn]ClientInfo) // Defensive init
+	}
+	wm.Clients[c] = ClientInfo{
+		Conn:       c,
+		Department: department,
+	}
+}
+
+func (wm *WsManager2) RemoveClient2(c *websocket.Conn) {
+	wm.Lock()
+	defer wm.Unlock()
+	delete(wm.Clients, c)
+}
