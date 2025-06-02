@@ -21,12 +21,14 @@ import (
 func init() {
 	initializers.LoadEnv()
 	initializers.ConnectDb()
-	initializers.MigrateDb()
+	// initializers.MigrateDb()
 	initializers.InitRedis()
 	initializers.InitWm()
+	initializers.InitLogger()
 }
 
 func main() {
+
 	// Fiber App
 	app := fiber.New(fiber.Config{
 		BodyLimit: 50 * 1024 * 1024,
@@ -229,6 +231,57 @@ func main() {
 				setupApi.Post("/templates", setup_handlers.CreateProjectTemplate)
 
 				setupApi.Get("/boq", setup_handlers.GetItemBoqs)
+ 
+				// =========================== ACCOUNTING ENDPOINTS =============================
+				{
+					// Chart Group Endpoints
+					setupApi.Get("/book", setup_handlers.GetBooks)
+					setupApi.Get("/book:/id", setup_handlers.GetChartGroup)
+					setupApi.Post("/book", setup_handlers.CreateChartGroup)
+					setupApi.Put("/book", setup_handlers.UpdateChartGroup)
+					setupApi.Delete("/book", setup_handlers.DeleteChartGroup)
+
+					// Chart Group Endpoints
+					setupApi.Get("/chart_group", setup_handlers.GetChartGroups)
+					setupApi.Get("/chart_group:/id", setup_handlers.GetChartGroup)
+					setupApi.Post("/chart_group", setup_handlers.CreateChartGroup)
+					setupApi.Put("/chart_group", setup_handlers.UpdateChartGroup)
+					setupApi.Delete("/chart_group", setup_handlers.DeleteChartGroup)
+
+					// Chart Class Endpoints
+					setupApi.Get("/chart_class", setup_handlers.GetChartClasses)
+					setupApi.Get("/chart_class:/id", setup_handlers.GetChartClass)
+					setupApi.Post("/chart_class", setup_handlers.CreateChartClass)
+					setupApi.Put("/chart_class", setup_handlers.UpdateChartClass)
+					setupApi.Delete("/chart_class", setup_handlers.DeleteChartClass)
+
+					// Chart Of Account Endpoints
+					setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
+					setupApi.Get("/chart_of_account:/id", setup_handlers.GetChartOfAccount)
+					setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
+					setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
+					setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
+
+					// GetGeneralLedgerMappers
+					setupApi.Get("/general_ledger", setup_handlers.GetGeneralLedgerMappers)
+					setupApi.Get("/general_ledger:/id", setup_handlers.GetChartOfAccount)
+					setupApi.Put("/general_ledger", setup_handlers.UpdateGeneralLedgerMappers)
+
+					// Expanded Withholding Tax Endpoints
+					setupApi.Get("/expanded_tax", setup_handlers.GetExpandedWithholdingTax)
+					setupApi.Post("/expanded_tax", setup_handlers.CreateExpandedWithholdingTax)
+					setupApi.Put("/expanded_tax", setup_handlers.UpdateExpandedWithholdingTax)
+					setupApi.Delete("/expanded_tax", setup_handlers.DeleteExpandedWithholdingTax)
+
+					// Expanded Withholding Tax Endpoints
+					setupApi.Get("/final_tax", setup_handlers.GetFinalTax)
+					setupApi.Post("/final_tax", setup_handlers.CreateFinalTax)
+					setupApi.Put("/final_tax", setup_handlers.UpdateFinalTax)
+					setupApi.Delete("/final_tax", setup_handlers.DeleteFinalTax)
+
+				}
+				// =========================== END =============================
+ 
 				setupApi.Get("/boq/qq", setup_handlers.GetQQnotes)
 				setupApi.Post("/boq", setup_handlers.CreateItemBoq)
 				setupApi.Put("/boq", setup_handlers.UpdateItemBoq)
@@ -236,6 +289,7 @@ func main() {
 				setupApi.Get("/wiringnotes", setup_handlers.GetWiringNotes)
 				setupApi.Post("/wiringnotes", setup_handlers.CreateWiringNote)
 				setupApi.Put("/wiringnotes", setup_handlers.UpdateWiringNote)
+ 
 			}
 
 			// Sales Endpoints
