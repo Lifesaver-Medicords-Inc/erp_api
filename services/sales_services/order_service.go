@@ -194,14 +194,7 @@ func UpdateOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 	fmt.Println(bodyorder)
 	// If everything goes well, return success
 
-	purchasinglistview := services.GetKey(models.SOPurchasingListView{}, nil)
-	services.InvalidateCache(purchasinglistview)
-
-	purchasinsupplierlist := services.GetKey(models.PurchasingListSupplierView{}, nil)
-	services.InvalidateCache(purchasinsupplierlist)
-
-	redboxpurchasinglistview := services.GetKey(models.PurchasingRedboxPurchaseListView{}, nil)
-	services.InvalidateCache(redboxpurchasinglistview)
+	InvalidateSOCaches()
 
 	return bodyorder, 0, nil
 }
@@ -227,6 +220,8 @@ func UpdateOrderDetailOnly(c *fiber.Ctx, tx *gorm.DB) (UpdateBodyOrderDetails, i
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
+
+	InvalidateSOCaches()
 
 	return body, fiber.StatusOK, nil
 }
@@ -284,3 +279,14 @@ func DeleteOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 
 // 	return body, 0, nil
 // }
+
+func InvalidateSOCaches() {
+	cacheKeys := []interface{}{
+		models.SOPurchasingListView{},
+		models.PurchasingListSupplierView{},
+		models.PurchasingRedboxPurchaseListView{},
+	}
+	for _, key := range cacheKeys {
+		services.InvalidateCache(services.GetKey(key, nil))
+	}
+}

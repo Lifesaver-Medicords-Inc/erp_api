@@ -8,6 +8,7 @@ type SOPurchasingListView struct {
 	SalesOrderNos   string `json:"sales_order_nos"`
 	ProjectNames    string `json:"project_names"`
 	SalesExecutives string `json:"sales_executives"`
+	Discounts       string `json:"discounts"`
 	UnitPrices      string `json:"unit_prices"`
 	QuoteSupplier   string `json:"quote_supplier"`
 	ItemCode        string `json:"item_code"`

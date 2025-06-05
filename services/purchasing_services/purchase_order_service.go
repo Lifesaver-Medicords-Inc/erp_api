@@ -67,5 +67,18 @@ func CreatePurchaseOrder(c *fiber.Ctx, tx *gorm.DB) (PurchaseOrderBody, int, err
 		}
 	}
 
+	InvalidateSOCaches()
+
 	return body, 0, nil
+}
+
+func InvalidateSOCaches() {
+	cacheKeys := []interface{}{
+		models.SOPurchasingListView{},
+		models.PurchasingListSupplierView{},
+		models.PurchasingRedboxPurchaseListView{},
+	}
+	for _, key := range cacheKeys {
+		services.InvalidateCache(services.GetKey(key, nil))
+	}
 }

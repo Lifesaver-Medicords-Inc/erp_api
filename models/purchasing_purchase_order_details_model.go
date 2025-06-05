@@ -13,6 +13,7 @@ type PurchaseOrderDetailsContent struct {
 	TotalPrice      float64 `json:"total_price"`
 	OrderDetailIds  string  `json:"order_detail_ids"`
 	AllocatedQtys   string  `json:"allocated_qtys"`
+	Qtys            string  `json:"qtys"`
 }
 
 type PurchaseOrderDetails struct {
