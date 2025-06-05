@@ -14,14 +14,13 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
-	"github.com/pierceperado/smpc/middlewares"
 	"github.com/pierceperado/smpc/services"
 )
 
 func init() {
 	initializers.LoadEnv()
 	initializers.ConnectDb()
-	// initializers.MigrateDb()
+	initializers.MigrateDb()
 	initializers.InitRedis()
 	initializers.InitWm()
 	initializers.InitLogger()
@@ -55,7 +54,7 @@ func main() {
 
 		// Protected Endpoints
 
-		api.Use(middlewares.RequireAuth)
+		// api.Use(middlewares.RequireAuth)
 		{
 			// Sample Endpoints
 			sampleApi := api.Group("/sample")
@@ -231,7 +230,7 @@ func main() {
 				setupApi.Post("/templates", setup_handlers.CreateProjectTemplate)
 
 				setupApi.Get("/boq", setup_handlers.GetItemBoqs)
- 
+
 				// =========================== ACCOUNTING ENDPOINTS =============================
 				{
 					// Chart Group Endpoints
@@ -256,15 +255,17 @@ func main() {
 					setupApi.Delete("/chart_class", setup_handlers.DeleteChartClass)
 
 					// Chart Of Account Endpoints
+					// setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
+					// setupApi.Get("/chart_of_account:/id", setup_handlers.GetChartOfAccount)
+					// setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
+					// setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
+					// setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
+
 					setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
-					setupApi.Get("/chart_of_account:/id", setup_handlers.GetChartOfAccount)
-					setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
-					setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
-					setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
 
 					// GetGeneralLedgerMappers
 					setupApi.Get("/general_ledger", setup_handlers.GetGeneralLedgerMappers)
-					setupApi.Get("/general_ledger:/id", setup_handlers.GetChartOfAccount)
+					//	setupApi.Get("/general_ledger:/id", setup_handlers.GetChartOfAccount)
 					setupApi.Put("/general_ledger", setup_handlers.UpdateGeneralLedgerMappers)
 
 					// Expanded Withholding Tax Endpoints
@@ -281,7 +282,7 @@ func main() {
 
 				}
 				// =========================== END =============================
- 
+
 				setupApi.Get("/boq/qq", setup_handlers.GetQQnotes)
 				setupApi.Post("/boq", setup_handlers.CreateItemBoq)
 				setupApi.Put("/boq", setup_handlers.UpdateItemBoq)
@@ -289,7 +290,7 @@ func main() {
 				setupApi.Get("/wiringnotes", setup_handlers.GetWiringNotes)
 				setupApi.Post("/wiringnotes", setup_handlers.CreateWiringNote)
 				setupApi.Put("/wiringnotes", setup_handlers.UpdateWiringNote)
- 
+
 			}
 
 			// Sales Endpoints
