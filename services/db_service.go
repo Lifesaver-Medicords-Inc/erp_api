@@ -138,8 +138,6 @@ func GetKey(model interface{}, conditions map[string]interface{}) string {
 }
 
 func fetchDB(model interface{}, conditions map[string]interface{}) error {
-	fmt.Println("Getting from DB")
-	fmt.Println("Getting from DB111", conditions)
 
 	query := initializers.DB.Model(model)
 

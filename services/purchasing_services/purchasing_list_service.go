@@ -16,6 +16,14 @@ func GetSOPurchasingList(conditions map[string]interface{}) (interface{}, int, e
 	}
 	return response, 0, nil
 }
+func GetPRPurchasingList(conditions map[string]interface{}) (interface{}, int, error) {
+	var response []models.PRPurchasingListView
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting purchasing list")
+	}
+	return response, 0, nil
+}
 func GetSOPurchasingListSupplier(conditions map[string]interface{}) (interface{}, int, error) {
 	var response []models.PurchasingListSupplierView
 
