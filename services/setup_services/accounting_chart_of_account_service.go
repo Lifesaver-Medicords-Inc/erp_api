@@ -2,10 +2,12 @@ package setup_services
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
+	"gorm.io/gorm"
 )
 
 // "errors"
@@ -102,4 +104,86 @@ func GetChartOfAccounts(conditions map[string]interface{}) ([]models.ChartOfAcco
 		return response, fiber.StatusInternalServerError, errors.New("failed to get chart of account")
 	}
 	return response, 0, nil
+}
+func CreateChartOfAccounts(c *fiber.Ctx, tx *gorm.DB) (models.ChartOfAccounts, int, error) {
+
+	var body models.ChartOfAccounts
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	if err := services.DbInsert(tx, &body); err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
+			err = errors.New("duplicate record error")
+		} else {
+			err = errors.New("failed creating chart of accounts")
+		}
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+	atdata := models.ChartOfAccountsAt{RefId: body.ID, ChartOfAccountContent: models.ChartOfAccountContent{Code: body.Code, Name: body.Name, ClassId: body.ClassId, GroupId: body.GroupId}, At: at}
+
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	key := services.GetKey(models.ChartOfAccountViewList{}, nil)
+	services.InvalidateCache(key)
+	return body, 0, nil
+}
+
+func UpdateChartOfAccount(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.ChartOfAccounts, int, error) {
+
+	var body models.ChartOfAccounts
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	if err := services.DbUpdate(tx, &body, conditions); err != nil {
+
+		return body, fiber.StatusInternalServerError, err
+	}
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+	atdata := models.ChartOfAccountsAt{RefId: body.ID, ChartOfAccountContent: models.ChartOfAccountContent{Code: body.Code, Name: body.Name, ClassId: body.ClassId, GroupId: body.GroupId}, At: at}
+
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	key := services.GetKey(models.ChartOfAccountViewList{}, nil)
+	services.InvalidateCache(key)
+	return body, 0, nil
+}
+
+func DeleteChartOfAccount(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.ChartOfAccounts, int, error) {
+
+	var body models.ChartOfAccounts
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	if err := services.DbDelete(tx, &body, conditions); err != nil {
+
+		return body, fiber.StatusInternalServerError, err
+	}
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+	atdata := models.ChartOfAccountsAt{RefId: body.ID, ChartOfAccountContent: models.ChartOfAccountContent{Code: body.Code, Name: body.Name, ClassId: body.ClassId, GroupId: body.GroupId}, At: at}
+
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	key := services.GetKey(models.ChartOfAccountViewList{}, nil)
+	services.InvalidateCache(key)
+	return body, 0, nil
 }
