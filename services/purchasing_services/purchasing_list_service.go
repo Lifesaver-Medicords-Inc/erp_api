@@ -32,3 +32,12 @@ func GetSOPurchasingListSupplier(conditions map[string]interface{}) (interface{}
 	}
 	return response, 0, nil
 }
+
+func GetPurchasingGuidingPrice(conditions map[string]interface{}) (interface{}, int, error) {
+	var response []models.PurchasingGuidingPriceView
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting purchasing guiding price")
+	}
+	return response, 0, nil
+}

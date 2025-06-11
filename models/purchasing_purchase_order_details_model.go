@@ -7,6 +7,7 @@ type PurchaseOrderDetailsContent struct {
 	ItemName        string  `json:"item_name"`
 	ReqQty          int     `json:"req_qty"`
 	OrderQty        int     `json:"order_qty"`
+	UnitOfMeasure   string  `json:"unit_of_measure"`
 	UnitPrice       float64 `json:"unit_price"`
 	Discount        string  `json:"discount"`
 	DiscountedPrice float64 `json:"discounted_price"`

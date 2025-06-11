@@ -35,6 +35,15 @@ func GetSOPurchasingListSupplier(c *fiber.Ctx) error {
 
 	return utils.RespondSuccess(c, data)
 }
+
+func GetPurchasingGuidingPrice(c *fiber.Ctx) error {
+	data, status, err := purchasing_services.GetPurchasingGuidingPrice(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
 func BroadcastSOPurchasingList() error {
 	data, status, err := purchasing_services.GetSOPurchasingListSupplier(nil)
 	if err != nil {

@@ -20,7 +20,7 @@ import (
 func init() {
 	initializers.LoadEnv()
 	initializers.ConnectDb()
-	// initializers.MigrateDb()
+	initializers.MigrateDb()
 	initializers.InitRedis()
 	initializers.InitWm()
 	initializers.InitLogger()
@@ -255,15 +255,17 @@ func main() {
 					setupApi.Delete("/chart_class", setup_handlers.DeleteChartClass)
 
 					// Chart Of Account Endpoints
+					// setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
+					// setupApi.Get("/chart_of_account:/id", setup_handlers.GetChartOfAccount)
+					// setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
+					// setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
+					// setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
+
 					setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
-					setupApi.Get("/chart_of_account:/id", setup_handlers.GetChartOfAccount)
-					setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
-					setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
-					setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
 
 					// GetGeneralLedgerMappers
 					setupApi.Get("/general_ledger", setup_handlers.GetGeneralLedgerMappers)
-					setupApi.Get("/general_ledger:/id", setup_handlers.GetChartOfAccount)
+					//	setupApi.Get("/general_ledger:/id", setup_handlers.GetChartOfAccount)
 					setupApi.Put("/general_ledger", setup_handlers.UpdateGeneralLedgerMappers)
 
 					// Expanded Withholding Tax Endpoints
@@ -376,6 +378,7 @@ func main() {
 				purchasingApi.Get("/so_purchase_list", purchasing_handlers.GetSOPurchasingList)
 				purchasingApi.Get("/pr_purchase_list", purchasing_handlers.GetPRPurchasingList)
 				purchasingApi.Get("/purchase_list_supplier", purchasing_handlers.GetSOPurchasingListSupplier)
+				purchasingApi.Get("/purchase_guiding_price", purchasing_handlers.GetPurchasingGuidingPrice)
 
 				//Purchasing SO Canvass Sheet
 				purchasingApi.Get("/purchase_canvass_sheet_so", purchasing_handlers.GetPurchasingCanvassSheetSO)
