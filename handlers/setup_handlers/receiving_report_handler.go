@@ -5,13 +5,12 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
-	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services/setup_services"
 	"github.com/pierceperado/smpc/utils"
 )
 
-func GetUseTypes(c *fiber.Ctx) error {
-	data, status, err := setup_services.GetUseTypes(nil)
+func GetReceivingReports(c *fiber.Ctx) error {
+	data, status, err := setup_services.GetReceivingReports(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -19,14 +18,14 @@ func GetUseTypes(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func GetUseType(c *fiber.Ctx) error {
+func GetReceivingReport(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	data, status, err := setup_services.GetUseType(idNum)
+	data, status, err := setup_services.GetReceivingReport(idNum)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -34,38 +33,13 @@ func GetUseType(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func CreateUseType(c *fiber.Ctx) error {
-	var usetype models.WarehouseUseType
-	if err := c.BodyParser(&usetype); err != nil {
-		return utils.RespondError(c, fiber.StatusBadGateway, "cannot bind request")
-	}
-
+func CreateReceivingReport(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 
-	status, err := setup_services.CreateUseType(tx, &usetype)
-	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
-	}
-
-	return utils.RespondSuccess(c, usetype)
-}
-
-func UpdateUseType(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
-	}
-
-	data, status, err := setup_services.UpdateUseType(c, tx, nil)
+	data, status, err := setup_services.CreateReceivingReport(c, tx)
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
@@ -79,18 +53,39 @@ func UpdateUseType(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func DeleteUseType(c *fiber.Ctx) error {
+func UpdateReceivingReport(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 
-	data, status, err := setup_services.DeleteUseType(c, tx, nil)
+	data, status, err := setup_services.UpdateReceivingReport(c, tx, nil)
 	if err != nil {
+		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+func DeleteReceivingReport(c *fiber.Ctx) error {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+	}
+
+	data, status, err := setup_services.DeleteReceivingReport(c, tx, nil)
+	if err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}

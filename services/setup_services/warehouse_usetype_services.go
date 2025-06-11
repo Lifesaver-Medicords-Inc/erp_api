@@ -10,8 +10,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetUseTypes(conditions map[string]interface{}) ([]models.UseType, int, error) {
-	var usetypes []models.UseType
+func GetUseTypes(conditions map[string]interface{}) ([]models.WarehouseUseType, int, error) {
+	var usetypes []models.WarehouseUseType
 
 	if err := services.DbGet(&usetypes, conditions); err != nil {
 		return usetypes, fiber.StatusInternalServerError, errors.New("failed getting use types")
@@ -20,12 +20,12 @@ func GetUseTypes(conditions map[string]interface{}) ([]models.UseType, int, erro
 	return usetypes, 0, nil
 }
 
-func GetUseType(id int) (models.UseType, int, error) {
+func GetUseType(id int) (models.WarehouseUseType, int, error) {
 	conditions := map[string]interface{}{
 		"id": id,
 	}
 
-	var usetype models.UseType
+	var usetype models.WarehouseUseType
 
 	if err := services.DbGet(&usetype, conditions); err != nil {
 		return usetype, fiber.StatusInternalServerError, errors.New("failed getting use types")
@@ -34,7 +34,7 @@ func GetUseType(id int) (models.UseType, int, error) {
 	return usetype, 0, nil
 }
 
-func CreateUseType(tx *gorm.DB, usetype *models.UseType) (int, error) {
+func CreateUseType(tx *gorm.DB, usetype *models.WarehouseUseType) (int, error) {
 
 	if err := services.DbInsert(tx, usetype); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
@@ -49,8 +49,8 @@ func CreateUseType(tx *gorm.DB, usetype *models.UseType) (int, error) {
 	return 0, nil
 }
 
-func UpdateUseType(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.UseType, int, error) {
-	var body models.UseType
+func UpdateUseType(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.WarehouseUseType, int, error) {
+	var body models.WarehouseUseType
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
@@ -64,7 +64,7 @@ func UpdateUseType(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{})
 		at = models.At{}
 	}
 
-	atdata := models.UseTypeAt{RefID: body.ID, Code: body.Code, UseTypeContent: models.UseTypeContent{Name: body.Name}, At: at}
+	atdata := models.WarehouseUseTypeAt{RefID: body.ID, Code: body.Code, WarehouseUseTypeContent: models.WarehouseUseTypeContent{Name: body.Name}, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating use type")
 	}
@@ -72,8 +72,8 @@ func UpdateUseType(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{})
 	return body, 0, nil
 }
 
-func DeleteUseType(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.UseType, int, error) {
-	var body models.UseType
+func DeleteUseType(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.WarehouseUseType, int, error) {
+	var body models.WarehouseUseType
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
@@ -87,7 +87,7 @@ func DeleteUseType(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{})
 		at = models.At{}
 	}
 
-	atdata := models.UseTypeAt{RefID: body.ID, Code: body.Code, UseTypeContent: models.UseTypeContent{Name: body.Name}, At: at}
+	atdata := models.WarehouseUseTypeAt{RefID: body.ID, Code: body.Code, WarehouseUseTypeContent: models.WarehouseUseTypeContent{Name: body.Name}, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed at creating usetypeat")
 	}
