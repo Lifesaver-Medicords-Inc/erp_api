@@ -76,11 +76,11 @@ func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 	if err := services.DbGet(&response.Items, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting items")
 	}
-
+	//child 1
 	if err := GetItemSpecs(&response.ItemSpecs, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, err
 	}
-
+	//child 2
 	if err := GetAdditionalSpecs(&response.AdditionalSpecs, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, err
 	}

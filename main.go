@@ -136,13 +136,13 @@ func main() {
 				//warehouse
 				warehouseApi := setupApi.Group("/warehouse")
 				{
+					warehouseApi.Get("/manager", setup_handlers.GetWarehouseManagers) //for warehouse manager
 					//warehouse name
 					warehouseApi.Get("/name", setup_handlers.GetWarehouseNames)
 					warehouseApi.Get("/name/:id", setup_handlers.GetWarehouseName)
 					warehouseApi.Post("/name", setup_handlers.CreateWarehouseName)
 					warehouseApi.Put("/name", setup_handlers.UpdateWarehouseName)
 					warehouseApi.Delete("/name", setup_handlers.DeleteWarehouseName)
-					warehouseApi.Get("/manager", setup_handlers.GetWarehouseManagers)
 
 					//warehouse usetypes
 					warehouseApi.Get("/usetype", setup_handlers.GetUseTypes)
@@ -150,6 +150,31 @@ func main() {
 					warehouseApi.Post("/usetype", setup_handlers.CreateUseType)
 					warehouseApi.Put("/usetype", setup_handlers.UpdateUseType)
 					warehouseApi.Delete("/usetype", setup_handlers.DeleteUseType)
+
+					//no endpoint (saved as a package with parent(warehousename))
+					//warehouse address and for warehouse area
+					// warehouseApi.Get("/address", setup_handlers.GetWarehouseAddresses)
+					// warehouseApi.Get("/address/:id", setup_handlers.GetWarehouseAddress)
+					// warehouseApi.Post("/address", setup_handlers.CreateWarehouseAddress)
+					// warehouseApi.Put("/address", setup_handlers.UpdateWarehouseAddress)
+					// warehouseApi.Delete("/address", setup_handlers.DeleteWarehouseAddress)
+
+					//Warehouse Areas (used for seperate saving, tentative)
+					warehouseApi.Get("/area", setup_handlers.GetWarehouseAreas)
+					warehouseApi.Get("/area/:id", setup_handlers.GetWarehouseArea)
+					warehouseApi.Post("/area", setup_handlers.CreateWarehouseArea)
+					warehouseApi.Put("/area", setup_handlers.UpdateWarehouseArea)
+					warehouseApi.Delete("/area", setup_handlers.DeleteWarehouseArea)
+				}
+
+				reportsApi := setupApi.Group("/report")
+				{
+					//receiving report
+					reportsApi.Get("/receiving", setup_handlers.GetReceivingReports)
+					reportsApi.Get("/receiving/:id", setup_handlers.GetReceivingReport)
+					reportsApi.Post("/receiving", setup_handlers.CreateReceivingReport)
+					reportsApi.Put("/receiving", setup_handlers.UpdateReceivingReport)
+					reportsApi.Delete("/receiving", setup_handlers.DeleteReceivingReport)
 				}
 
 				// Unit Measurement Endpoints
