@@ -20,7 +20,7 @@ type AdditionalSpecsContent struct {
 	// LengthUnitOfMeasureId    uint    `json:"length_unit_of_measure_id"`
 	// Height                   float64 `json:"height"`
 	// HeightUnitOfMeasureId    uint    `json:"height_unit_of_measure_id"`
-	// LongDescription          string  `json:"long_desc"`
+	LongDescription string `json:"long_description"`
 }
 
 type AdditionalSpecs struct {
