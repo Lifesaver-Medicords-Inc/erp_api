@@ -231,7 +231,7 @@ func main() {
 
 				setupApi.Get("/boq", setup_handlers.GetItemBoqs)
 
-				// =========================== ACCOUNTING ENDPOINTS =============================
+				// =========================== ACCOUNTING ENDPOINTS SETUP =============================
 				{
 					// Chart Group Endpoints
 					setupApi.Get("/book", setup_handlers.GetBooks)
@@ -324,6 +324,7 @@ func main() {
 				salesApi.Put("/order", sales_handlers.UpdateOrder)
 				salesApi.Put("/order_details", sales_handlers.UpdateOrderDetailOnly)
 				salesApi.Delete("/order", sales_handlers.DeleteOrder)
+
 				// Opportunity Endpointss
 				salesApi.Get("/opportunity", sales_handlers.GetOpportunities)
 				salesApi.Get("/opportunity/:id", sales_handlers.GetOpportunity)
@@ -361,7 +362,22 @@ func main() {
 				// sales_api.Post("/return/create", handlers.Register)
 				// sales_api.Patch("/return/update", handlers.Register)
 				// sales_api.Delete("/return/delete", handlers.Register)
+
+				// Temporary  Completely S.O to DR Endpoints
+
+				salesApi.Get("/order_dr/:id", sales_handlers.GetSalesOrderDR)
+				salesApi.Get("/order_dr", sales_handlers.GetSalesOrdersDr)
 			}
+
+			// accountingApi := api.Group("accounting")
+			// {
+			// 	accountingApi.Get("/sales_invoice")
+			// 	accountingApi.Get("/sales_invoice/:id")
+			// 	accountingApi.Post("/sales_invoice")
+			// 	accountingApi.Put("/sales_invoice")
+			// 	accountingApi.Delete("/sales_invoice")
+
+			// }
 
 			// Purchasing Endpoints
 			purchasingApi := api.Group("/purchasing")

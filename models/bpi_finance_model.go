@@ -1,10 +1,12 @@
 package models
 
 type BpiFinanceContent struct {
-	FinanceBasedId        uint `json:"finance_based_id"`
-	FinanceAccountId      uint `json:"finance_account_id"`
-	FinancePaymentTermsId uint `json:"finance_payment_terms_id"`
-	FinanceBranchId       uint `json:"finance_branch_id"`
+	FinanceBasedId        uint   `json:"finance_based_id"`
+	FinanceAccountId      uint   `json:"finance_account_id"`
+	FinancePaymentTermsId uint   `json:"finance_payment_terms_id"`
+	FinanceBranchId       uint   `json:"finance_branch_id"`
+	FinanceTaxCode        string `json:"finance_tax_code"`
+	FinanceTax            string `json:"finance_tax"`
 }
 
 type BpiFinance struct {

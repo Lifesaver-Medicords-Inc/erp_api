@@ -73,34 +73,36 @@ func GetOrder(Order_ID int) (BodyOrder, int, error) {
 	return orderrecord, 0, nil
 }
 
-// func GetOrder(Order_ID int) (Body, int, error) {
-// 	conditions := map[string]interface{}{
-// 		"order_id": Order_ID,
-// 	}
+func GetSalesOrderDR(id int) (interface{}, int, error) {
+	conditions := map[string]interface{}{
+		"order_id": id,
+	}
+	type Response struct {
+		Order        []models.SalesOrderWithDeliveryReceipt `json:"orders"`
+		OrderDetails []models.SalesOrderWithDRDetails       `json:"order_details"`
+	}
 
-// 	var record Body
+	var response Response
+	if err := services.DbGet(&response.Order, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting each sales order delivered")
+	}
 
-// 	if err := services.DbGet(&record.Order, conditions); err != nil {
-// 		return record, fiber.StatusInternalServerError, errors.New("failed getting order")
-// 	}
+	if err := services.DbGet(&response.OrderDetails, nil); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting each sales order delivered")
+	}
+	return response, 0, nil
+}
 
-// 	conditions = map[string]interface{}{
-// 		// based on parent ID
-// 		"based_id": record.Order.Order_ID,
-// 	}
+func GetSalesOrdersDr(conditions map[string]interface{}) (interface{}, int, error) {
 
-// 	//Child 1
-// 	if err := GetOrderDetails(&record.OrderDetails, conditions); err != nil {
-// 		return record, fiber.StatusInternalServerError, err
-// 	}
+	var response []models.SalesOrderDrView
 
-// 	// //Child 2 for project quote
-// 	// if err := GetSalesQuotationQuick(&record.QuickQuote, conditions); err != nil {
-// 	// 	return record, fiber.StatusInternalServerError, err
-// 	// }
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting sales order dr")
+	}
 
-// 	return record, 0, nil
-// }
+	return response, 0, nil
+}
 
 // CREATE CHILD SERVICE
 func CreateOrderChild(c *fiber.Ctx, tx *gorm.DB) (BodyOrder, int, error) {
@@ -261,26 +263,3 @@ func DeleteOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 
 	return bodyorder, 0, nil
 }
-
-// func DeleteOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.Order, int, error) {
-// 	var body models.Order
-// 	if err := c.BodyParser(&body); err != nil {
-// 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
-// 	}
-
-// 	if err := services.DbDelete(tx, &body, conditions); err != nil {
-// 		return body, fiber.StatusInternalServerError, errors.New("failed deleting order")
-// 	}
-
-// 	at, ok := c.Locals("at").(models.At)
-// 	if !ok {
-// 		at = models.At{}
-// 	}
-
-// 	atdata := models.OrderAt{RefId: body.Order_ID, OrderContent: body.OrderContent, At: at}
-// 	if err := services.DbInsert(tx, &atdata); err != nil {
-// 		return body, fiber.StatusInternalServerError, errors.New("failed creating orderat")
-// 	}
-
-// 	return body, 0, nil
-// }
