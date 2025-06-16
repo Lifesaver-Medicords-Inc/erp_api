@@ -32,6 +32,7 @@ func GetProjectItems(ProjectItems *[]models.SalesProjectItems, conditions map[st
 	if err := services.DbGet(ProjectItems, conditions); err != nil {
 		return errors.New("failed getting project items")
 	}
+
 	return nil
 }
 

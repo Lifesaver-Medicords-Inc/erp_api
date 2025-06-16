@@ -24,6 +24,8 @@ func init() {
 	initializers.MigrateDb()
 	initializers.InitRedis()
 	initializers.InitWm()
+	initializers.InitWm2()
+	initializers.InitProjectWM()
 }
 
 func main() {
@@ -53,7 +55,7 @@ func main() {
 
 		// Protected Endpoints
 
-		//api.Use(middlewares.RequireAuth)
+		api.Use(middlewares.RequireAuth)
 		{
 			// Sample Endpoints
 			sampleApi := api.Group("/sample")
@@ -261,13 +263,7 @@ func main() {
 				salesApi.Put("/project_conditions", sales_handlers.UpdateProjectCondition)
 				salesApi.Put("/project_contents", sales_handlers.UpdateProjectContent)
 
-				salesApi.Post("/project_items", sales_handlers.CreateProjectItem)
-				salesApi.Put("/project_items", sales_handlers.UpdateProjectItem)
-
-				salesApi.Post("/project_wiring", sales_handlers.CreateProjectWirings)
-				salesApi.Put("/project_wiring", sales_handlers.UpdateProjectWiring)
-
-				salesApi.Get("/projects_pumps", sales_handlers.GetItemPumps)
+				//salesApi.Get("/projects_pumps", sales_handlers.GetItemPumps)
 
 				// CRM Endpointss //test
 				salesApi.Get("/crm", sales_handlers.GetCRMs)
@@ -315,7 +311,7 @@ func main() {
 			api.Post("/bpi", bpi_handlers.CreateBpi)
 			api.Put("/bpi", bpi_handlers.UpdateBpi)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
-			//api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
+			api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
 
 			api.Get("/bpi", bpi_handlers.GetBpis)
 
@@ -334,13 +330,13 @@ func main() {
 						itemApi.Get("", websocket.New(setup_handlers.WsgetItems))
 					}
 
-					// Project Endpoints
-					projectApi := setupApi.Group("/project")
+					testApi := setupApi.Group("/test")
 					{
-						projectApi.Get("", websocket.New(func(c *websocket.Conn) {
-							services.HandleWs(c, setup_handlers.WsgetProjects)
+						testApi.Get("", websocket.New(func(c *websocket.Conn) {
+							services.HandleProjectWs(c, sales_handlers.WsProjects)
 						}))
 					}
+
 				}
 				// Purchasing Endpoints
 				purchasingApi := ws.Group("/purchasing")

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
@@ -61,8 +62,21 @@ func GetProjectItemSet(itemset *[]models.SalesProjectItemSet, conditions map[str
 	return nil
 }
 
-// DO UDPATE SOON
+func GetProjectItemSets(id int) (models.SalesProjectItemSet, int, error) {
+	conditions := map[string]interface{}{
+		"based_id": id,
+	}
 
+	var itemset models.SalesProjectItemSet
+
+	if err := services.DbGet(&itemset, conditions); err != nil {
+		return itemset, fiber.StatusInternalServerError, errors.New("failed getting brand")
+	}
+
+	return itemset, 0, nil
+}
+
+// DO UDPATE SOON
 func UpdateProjectItemSet(tx *gorm.DB, itemset models.SalesProjectItemSet, at models.At, conditions map[string]interface{}) error {
 	if err := services.DbUpdate(tx, &itemset, conditions); err != nil {
 		return errors.New("failed updating project item set")
