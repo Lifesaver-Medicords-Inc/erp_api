@@ -33,6 +33,33 @@ func GetOrder(c *fiber.Ctx) error {
 
 	return utils.RespondSuccess(c, data)
 }
+func GetSalesOrderDR(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	orderId, err := strconv.Atoi(idParam)
+
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	data, status, err := sales_services.GetSalesOrderDR(orderId)
+
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+func GetSalesOrdersDr(c *fiber.Ctx) error {
+
+	data, status, err := sales_services.GetSalesOrdersDr(nil)
+
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
 
 func CreateOrder(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
