@@ -127,7 +127,6 @@ func CreateSetupItemBom(c *fiber.Ctx, tx *gorm.DB) (BodyParse, int, error) {
 	}
 
 	//Create Bom Details
-
 	for _, v := range body.BomDetails {
 		if err := BomDetails(tx, body.ID, v, at); err != nil {
 			return body, fiber.StatusInternalServerError, err

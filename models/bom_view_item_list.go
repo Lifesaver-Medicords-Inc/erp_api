@@ -7,6 +7,7 @@ type BomViewItemList struct {
 	Size      string  `json:"size"`
 	BomQty    uint    `json:"bom_qty"`
 	ItemCode  string  `json:"item_code"`
+	ItemName  string  `json:"item_name"`
 	ShortDesc string  `json:"short_desc"`
 	UomName   string  `json:"uom_name"`
 	UnitPrice uint    `json:"unit_price"`

@@ -109,6 +109,16 @@ func DbGet(model interface{}, conditions map[string]interface{}) error {
 	return nil
 }
 
+func DbGetNoCache(model interface{}, conditions map[string]interface{}) error {
+	fmt.Println("Direct DB Fetch, conditions:", conditions)
+
+	if err := fetchDB(model, conditions); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func GetKey(model interface{}, conditions map[string]interface{}) string {
 	modelType := reflect.TypeOf(model)
 
