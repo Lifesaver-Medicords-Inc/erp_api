@@ -76,7 +76,7 @@ func buildParams(conditions map[string]interface{}) []interface{} {
 }
 
 func DbGet(model interface{}, conditions map[string]interface{}) error {
-	fmt.Println("CONDITION GET BPI USER DB SERVICES", conditions)
+	fmt.Println("CONDITION GET SERVICES", conditions)
 
 	ctx := context.Background()
 	key := GetKey(model, conditions)
@@ -148,8 +148,6 @@ func GetKey(model interface{}, conditions map[string]interface{}) string {
 }
 
 func fetchDB(model interface{}, conditions map[string]interface{}) error {
-	fmt.Println("Getting from DB")
-	fmt.Println("Getting from DB111", conditions)
 
 	query := initializers.DB.Model(model)
 
@@ -184,7 +182,7 @@ func DbInsert(tx *gorm.DB, model interface{}) error {
 
 	key := GetKey(model, nil)
 
-	fmt.Println("Insert KEY:", key)
+	fmt.Println("Insert KEY", key)
 
 	if err := InvalidateCache(key); err != nil {
 		return err

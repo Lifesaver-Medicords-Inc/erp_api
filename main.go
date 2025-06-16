@@ -14,7 +14,6 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
-	"github.com/pierceperado/smpc/middlewares"
 	"github.com/pierceperado/smpc/services"
 )
 
@@ -26,9 +25,13 @@ func init() {
 	initializers.InitWm()
 	initializers.InitWm2()
 	initializers.InitProjectWM()
+
+	initializers.InitLogger()
+
 }
 
 func main() {
+
 	// Fiber App
 	app := fiber.New(fiber.Config{
 		BodyLimit: 50 * 1024 * 1024,
@@ -54,7 +57,6 @@ func main() {
 		api.Get("/vfile/:filename", public_handlers.ViewFile)
 
 		// Protected Endpoints
-
 		api.Use(middlewares.RequireAuth)
 		{
 			// Sample Endpoints
@@ -131,6 +133,51 @@ func main() {
 					itemApi.Post("", setup_handlers.CreateItem)
 					itemApi.Put("", setup_handlers.UpdateItem)
 					itemApi.Delete("", setup_handlers.DeleteItem)
+
+				}
+
+				//warehouse
+				warehouseApi := setupApi.Group("/warehouse")
+				{
+					warehouseApi.Get("/manager", setup_handlers.GetWarehouseManagers) //for warehouse manager
+					//warehouse name
+					warehouseApi.Get("/name", setup_handlers.GetWarehouseNames)
+					warehouseApi.Get("/name/:id", setup_handlers.GetWarehouseName)
+					warehouseApi.Post("/name", setup_handlers.CreateWarehouseName)
+					warehouseApi.Put("/name", setup_handlers.UpdateWarehouseName)
+					warehouseApi.Delete("/name", setup_handlers.DeleteWarehouseName)
+
+					//warehouse usetypes
+					warehouseApi.Get("/usetype", setup_handlers.GetUseTypes)
+					warehouseApi.Get("/usetype/:id", setup_handlers.GetUseType)
+					warehouseApi.Post("/usetype", setup_handlers.CreateUseType)
+					warehouseApi.Put("/usetype", setup_handlers.UpdateUseType)
+					warehouseApi.Delete("/usetype", setup_handlers.DeleteUseType)
+
+					//no endpoint (saved as a package with parent(warehousename))
+					//warehouse address and for warehouse area
+					// warehouseApi.Get("/address", setup_handlers.GetWarehouseAddresses)
+					// warehouseApi.Get("/address/:id", setup_handlers.GetWarehouseAddress)
+					// warehouseApi.Post("/address", setup_handlers.CreateWarehouseAddress)
+					// warehouseApi.Put("/address", setup_handlers.UpdateWarehouseAddress)
+					// warehouseApi.Delete("/address", setup_handlers.DeleteWarehouseAddress)
+
+					//Warehouse Areas (used for seperate saving, tentative)
+					warehouseApi.Get("/area", setup_handlers.GetWarehouseAreas)
+					warehouseApi.Get("/area/:id", setup_handlers.GetWarehouseArea)
+					warehouseApi.Post("/area", setup_handlers.CreateWarehouseArea)
+					warehouseApi.Put("/area", setup_handlers.UpdateWarehouseArea)
+					warehouseApi.Delete("/area", setup_handlers.DeleteWarehouseArea)
+				}
+
+				reportsApi := setupApi.Group("/report")
+				{
+					//receiving report
+					reportsApi.Get("/receiving", setup_handlers.GetReceivingReports)
+					reportsApi.Get("/receiving/:id", setup_handlers.GetReceivingReport)
+					reportsApi.Post("/receiving", setup_handlers.CreateReceivingReport)
+					reportsApi.Put("/receiving", setup_handlers.UpdateReceivingReport)
+					reportsApi.Delete("/receiving", setup_handlers.DeleteReceivingReport)
 				}
 
 				// Unit Measurement Endpoints
@@ -211,12 +258,70 @@ func main() {
 				setupApi.Post("/templates", setup_handlers.CreateProjectTemplate)
 
 				setupApi.Get("/boq", setup_handlers.GetItemBoqs)
+
+				// =========================== ACCOUNTING ENDPOINTS =============================
+				{
+					// Chart Group Endpoints
+					setupApi.Get("/book", setup_handlers.GetBooks)
+					setupApi.Get("/book:/id", setup_handlers.GetChartGroup)
+					setupApi.Post("/book", setup_handlers.CreateChartGroup)
+					setupApi.Put("/book", setup_handlers.UpdateChartGroup)
+					setupApi.Delete("/book", setup_handlers.DeleteChartGroup)
+
+					// Chart Group Endpoints
+					setupApi.Get("/chart_group", setup_handlers.GetChartGroups)
+					setupApi.Get("/chart_group:/id", setup_handlers.GetChartGroup)
+					setupApi.Post("/chart_group", setup_handlers.CreateChartGroup)
+					setupApi.Put("/chart_group", setup_handlers.UpdateChartGroup)
+					setupApi.Delete("/chart_group", setup_handlers.DeleteChartGroup)
+
+					// Chart Class Endpoints
+					setupApi.Get("/chart_class", setup_handlers.GetChartClasses)
+					setupApi.Get("/chart_class:/id", setup_handlers.GetChartClass)
+					setupApi.Post("/chart_class", setup_handlers.CreateChartClass)
+					setupApi.Put("/chart_class", setup_handlers.UpdateChartClass)
+					setupApi.Delete("/chart_class", setup_handlers.DeleteChartClass)
+
+					// Chart Of Account Endpoints
+					// setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
+					// setupApi.Get("/chart_of_account:/id", setup_handlers.GetChartOfAccount)
+					// setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
+					// setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
+					// setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
+
+					setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
+					setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
+					setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
+					setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
+
+					// GetGeneralLedgerMappers
+					setupApi.Get("/general_ledger", setup_handlers.GetGeneralLedgerMappers)
+					//	setupApi.Get("/general_ledger:/id", setup_handlers.GetChartOfAccount)
+					setupApi.Put("/general_ledger", setup_handlers.UpdateGeneralLedgerMappers)
+
+					// Expanded Withholding Tax Endpoints
+					setupApi.Get("/expanded_tax", setup_handlers.GetExpandedWithholdingTax)
+					setupApi.Post("/expanded_tax", setup_handlers.CreateExpandedWithholdingTax)
+					setupApi.Put("/expanded_tax", setup_handlers.UpdateExpandedWithholdingTax)
+					setupApi.Delete("/expanded_tax", setup_handlers.DeleteExpandedWithholdingTax)
+
+					// Expanded Withholding Tax Endpoints
+					setupApi.Get("/final_tax", setup_handlers.GetFinalTax)
+					setupApi.Post("/final_tax", setup_handlers.CreateFinalTax)
+					setupApi.Put("/final_tax", setup_handlers.UpdateFinalTax)
+					setupApi.Delete("/final_tax", setup_handlers.DeleteFinalTax)
+
+				}
+				// =========================== END =============================
+
+				setupApi.Get("/boq/qq", setup_handlers.GetQQnotes)
 				setupApi.Post("/boq", setup_handlers.CreateItemBoq)
 				setupApi.Put("/boq", setup_handlers.UpdateItemBoq)
 
 				setupApi.Get("/wiringnotes", setup_handlers.GetWiringNotes)
 				setupApi.Post("/wiringnotes", setup_handlers.CreateWiringNote)
 				setupApi.Put("/wiringnotes", setup_handlers.UpdateWiringNote)
+
 			}
 
 			// Sales Endpoints
@@ -245,6 +350,7 @@ func main() {
 				salesApi.Post("child/order", sales_handlers.CreateOrderChild)
 				salesApi.Post("/order", sales_handlers.CreateOrder)
 				salesApi.Put("/order", sales_handlers.UpdateOrder)
+				salesApi.Put("/order_details", sales_handlers.UpdateOrderDetailOnly)
 				salesApi.Delete("/order", sales_handlers.DeleteOrder)
 				// Opportunity Endpointss
 				salesApi.Get("/opportunity", sales_handlers.GetOpportunities)
@@ -263,7 +369,14 @@ func main() {
 				salesApi.Put("/project_conditions", sales_handlers.UpdateProjectCondition)
 				salesApi.Put("/project_contents", sales_handlers.UpdateProjectContent)
 
-				//salesApi.Get("/projects_pumps", sales_handlers.GetItemPumps)
+				// salesApi.Post("/project_items", sales_handlers.CreateProjectItem)
+				// salesApi.Put("/project_items", sales_handlers.UpdateProjectItem)
+
+				// salesApi.Post("/project_wiring", sales_handlers.CreateProjectWirings)
+				// salesApi.Put("/project_wiring", sales_handlers.UpdateProjectWiring)
+
+				salesApi.Get("/projects_pumps", sales_handlers.GetItemPumps)
+
 
 				// CRM Endpointss //test
 				salesApi.Get("/crm", sales_handlers.GetCRMs)
@@ -294,7 +407,7 @@ func main() {
 				purchasingApi.Get("/purchase_redbox_list", purchasing_handlers.GetPurchasingRedboxList)
 
 				//Purchasing List
-				purchasingApi.Get("/purchase_list", purchasing_handlers.GetSOPurchasingList)
+				purchasingApi.Get("/so_purchase_list", purchasing_handlers.GetSOPurchasingList)
 				purchasingApi.Get("/purchase_list_supplier", purchasing_handlers.GetSOPurchasingListSupplier)
 
 				//Purchasing SO Canvass Sheet
@@ -302,6 +415,9 @@ func main() {
 				purchasingApi.Post("/purchase_canvass_sheet_so", purchasing_handlers.CreatePurchasingCanvassSheet)
 				purchasingApi.Put("/purchase_canvass_sheet_so", purchasing_handlers.UpdatePurchasingCanvassSheet)
 				purchasingApi.Delete("/purchase_canvass_sheet_so", purchasing_handlers.DeletePurchasingCanvassSheetSupplier)
+
+				purchasingApi.Get("/purchase_order", purchasing_handlers.GetPurchaseOrder)
+				purchasingApi.Post("/purchase_order", purchasing_handlers.CreatePurchaseOrder)
 			}
 
 			//Bpi Endpoints

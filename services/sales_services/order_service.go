@@ -20,6 +20,9 @@ type BodyOrderDetails struct {
 	//Child 1
 	OrderDetails []models.OrderDetails `json:"sales_order_details"`
 }
+type UpdateBodyOrderDetails struct {
+	OrderDetails []models.OrderDetails `json:"sales_order_details"`
+}
 
 func GetOrders(conditions map[string]interface{}) (interface{}, int, error) {
 	type Response struct {
@@ -191,7 +194,7 @@ func UpdateOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 	fmt.Println(bodyorder)
 	// If everything goes well, return success
 
-	purchasinglistview := services.GetKey(models.PurchasingListView{}, nil)
+	purchasinglistview := services.GetKey(models.SOPurchasingListView{}, nil)
 	services.InvalidateCache(purchasinglistview)
 
 	purchasinsupplierlist := services.GetKey(models.PurchasingListSupplierView{}, nil)
@@ -201,6 +204,31 @@ func UpdateOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 	services.InvalidateCache(redboxpurchasinglistview)
 
 	return bodyorder, 0, nil
+}
+
+func UpdateOrderDetailOnly(c *fiber.Ctx, tx *gorm.DB) (UpdateBodyOrderDetails, int, error) {
+	var body UpdateBodyOrderDetails
+	if err := c.BodyParser(&body); err != nil {
+		fmt.Println("BODY:", body)
+		fmt.Println("ERROR:", err)
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	for _, detail := range body.OrderDetails {
+		conditions := map[string]interface{}{
+			"order_details_id": detail.Order_Details_ID,
+		}
+		if err := UpdateOrderDetails(tx, detail, at, conditions); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+
+	return body, fiber.StatusOK, nil
 }
 
 func DeleteOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (BodyOrder, int, error) {

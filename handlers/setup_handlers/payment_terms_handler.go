@@ -10,7 +10,10 @@ import (
 )
 
 func GetPaymentTerms(c *fiber.Ctx) error {
-	data, status, err := setup_services.GetPaymentTerms(nil)
+	conditions := map[string]interface{}{
+		"is_selected": true,
+	}
+	data, status, err := setup_services.GetPaymentTerms(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

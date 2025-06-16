@@ -1,10 +1,10 @@
 package models
 
 type ItemBoqDetailsContent struct {
-	ItemBoqID uint   `json:"item_boq_id"`
-	ItemsID   uint   `json:"items_id"`
-	Remarks   string `json:"remarks"`
-	Notes     string `json:"notes"`
+	QQID    uint   `json:"qq_id"`
+	ItemsID uint   `json:"items_id"`
+	Remarks string `json:"remarks"`
+	Notes   string `json:"notes"`
 }
 
 type ItemBoqDetails struct {
@@ -25,4 +25,26 @@ type ItemBoqDetailsAt struct {
 
 func (ItemBoqDetailsAt) TableName() string {
 	return "z_tbl_setup_item_boq_details_at"
+}
+
+type QQView struct {
+	QQID          uint   `json:"qq_id"`
+	BasedID       uint   `json:"based_id"`
+	Components    string `json:"components"`
+	Model         string `json:"model"`
+	ItemID        uint   `json:"item_id"`
+	BomID         uint   `json:"bom_id"`
+	IsChild       bool   `json:"is_child"`
+	Qty           uint   `json:"qty"`
+	UnitOfMeasure string `json:"unit_of_measure"`
+	Remarks       string `json:"remarks"`
+	Notes         string `json:"notes"`
+	CustomerName  string `json:"customer_name"`
+	QQNoteID      uint   `json:"qq_note_id"`
+}
+
+// test
+// test
+func (QQView) TableName() string {
+	return "vw_qqnotes"
 }

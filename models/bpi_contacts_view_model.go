@@ -9,6 +9,7 @@ type BpiViewContactsContent struct {
 	Preferences      string `json:"preferences"`
 	Position         uint   `json:"position"`
 	IsDefaultContact bool   `json:"is_default_contact"`
+	ContactNotes     string `json:"contact_notes"`
 }
 
 type BpiContactView struct {
