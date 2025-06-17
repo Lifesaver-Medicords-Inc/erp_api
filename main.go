@@ -262,6 +262,9 @@ func main() {
 					// setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
 
 					setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
+					setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
+					setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
+					setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
 
 					// GetGeneralLedgerMappers
 					setupApi.Get("/general_ledger", setup_handlers.GetGeneralLedgerMappers)
@@ -368,6 +371,7 @@ func main() {
 				purchasingApi.Post("child/purchase_requisition", purchasing_handlers.CreatePRChild)
 				purchasingApi.Post("/purchase_requisition", purchasing_handlers.CreatePR)
 				purchasingApi.Put("/purchase_requisition", purchasing_handlers.UpdatePR)
+				purchasingApi.Put("/purchase_requisition_details", purchasing_handlers.UpdateRequisitionDetailOnly)
 				purchasingApi.Delete("/purchase_requisition", purchasing_handlers.DeletePR)
 				purchasingApi.Delete("child/purchase_requisition", purchasing_handlers.DeletePROrderByID)
 

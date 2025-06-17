@@ -7,7 +7,7 @@ type PROrdersContent struct {
 	Status          string `json:"status"`
 	ItemCode        string `json:"item_code"`
 	ItemDescription string `json:"item_description"`
-	AllocatedQty    string `json:"allocated_qty"`
+	AllocatedQty    int    `json:"allocated_qty"`
 }
 
 type PROrders struct {

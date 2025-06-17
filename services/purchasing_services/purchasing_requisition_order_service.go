@@ -80,6 +80,31 @@ func UpdatePROrder(tx *gorm.DB, prorders models.PROrders, at models.At, conditio
 	return nil
 }
 
+func UpdateRequisitionDetails(tx *gorm.DB, orderdetails models.PROrders, at models.At, conditions map[string]interface{}) error {
+	// If no conditions passed, fallback to primary key condition
+	if len(conditions) == 0 {
+		conditions = map[string]interface{}{
+			"pr_order_id": orderdetails.PR_Order_ID,
+		}
+	}
+
+	if err := services.DbUpdate(tx, &orderdetails, conditions); err != nil {
+		return errors.New("failed updating requisition orders")
+	}
+
+	orderdetailsat := models.PROrdersAt{
+		RefId:           orderdetails.PR_Order_ID,
+		PROrdersContent: orderdetails.PROrdersContent,
+		At:              at,
+	}
+
+	if err := services.DbInsert(tx, &orderdetailsat); err != nil {
+		return errors.New("failed creating requisition orders at")
+	}
+
+	return nil
+}
+
 func DeletePROrder(tx *gorm.DB, prorder models.PROrders, at models.At, conditions map[string]interface{}) error {
 	if err := services.DbDelete(tx, &prorder, conditions); err != nil {
 		return errors.New("failed deleting purchase requisition orders")

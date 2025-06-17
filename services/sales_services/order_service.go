@@ -20,6 +20,7 @@ type BodyOrderDetails struct {
 	//Child 1
 	OrderDetails []models.OrderDetails `json:"sales_order_details"`
 }
+
 type UpdateBodyOrderDetails struct {
 	OrderDetails []models.OrderDetails `json:"sales_order_details"`
 }
@@ -202,8 +203,6 @@ func UpdateOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 func UpdateOrderDetailOnly(c *fiber.Ctx, tx *gorm.DB) (UpdateBodyOrderDetails, int, error) {
 	var body UpdateBodyOrderDetails
 	if err := c.BodyParser(&body); err != nil {
-		fmt.Println("BODY:", body)
-		fmt.Println("ERROR:", err)
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
