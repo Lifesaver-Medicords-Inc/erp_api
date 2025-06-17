@@ -14,6 +14,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/middlewares"
 	"github.com/pierceperado/smpc/services"
 )
 
@@ -377,7 +378,6 @@ func main() {
 				// salesApi.Put("/project_wiring", sales_handlers.UpdateProjectWiring)
 
 				salesApi.Get("/projects_pumps", sales_handlers.GetItemPumps)
-
 
 				// CRM Endpointss //test
 				salesApi.Get("/crm", sales_handlers.GetCRMs)
