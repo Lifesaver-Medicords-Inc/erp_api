@@ -40,7 +40,7 @@ func MigrateDb() {
 
 	// DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
 	// DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
-	DB.AutoMigrate(&models.Application{}, &models.ApplicationAt{})
+	// DB.AutoMigrate(&models.Application{}, &models.ApplicationAt{})
 	// DB.AutoMigrate(&models.User{}, &models.UserAt{})
 
 	// Setup

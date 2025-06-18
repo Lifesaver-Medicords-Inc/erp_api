@@ -77,6 +77,11 @@ func GetSalesOrderDR(id int) (interface{}, int, error) {
 	conditions := map[string]interface{}{
 		"order_id": id,
 	}
+
+	childCondition := map[string]interface{}{
+		"based_id": id,
+	}
+
 	type Response struct {
 		Order        []models.SalesOrderWithDeliveryReceipt `json:"orders"`
 		OrderDetails []models.SalesOrderWithDRDetails       `json:"order_details"`
@@ -87,7 +92,7 @@ func GetSalesOrderDR(id int) (interface{}, int, error) {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting each sales order delivered")
 	}
 
-	if err := services.DbGet(&response.OrderDetails, nil); err != nil {
+	if err := services.DbGet(&response.OrderDetails, childCondition); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting each sales order delivered")
 	}
 	return response, 0, nil
