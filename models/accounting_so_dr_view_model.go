@@ -12,6 +12,7 @@ type SalesOrderWithDeliveryReceipt struct {
 	Address        string  `json:"address"`
 	DocSoNo        string  `json:"doc_so_no"`
 	DocDate        string  `json:"doc_date"`
+	VatAmount      string  `json:"vat_amount"`
 	NetAmount      float64 `json:"net_amount"`
 	SalesExecutive string  `json:"sales_executive"`
 }

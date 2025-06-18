@@ -11,7 +11,7 @@ type SalesOrderWithDRDetails struct {
 	TotalCost      float64 `json:"total_cost"`
 	Discount       uint    `json:"discount"`
 	Status         string  `json:"status"`
-	DeliverDate    string  `json:"delivery_date"`
+	DeliveryDate   string  `json:"delivery_date"`
 }
 
 func (SalesOrderWithDRDetails) TableName() string {
