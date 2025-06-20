@@ -20,6 +20,7 @@ type BodyOrderDetails struct {
 	//Child 1
 	OrderDetails []models.OrderDetails `json:"sales_order_details"`
 }
+
 type UpdateBodyOrderDetails struct {
 	OrderDetails []models.OrderDetails `json:"sales_order_details"`
 }
@@ -201,14 +202,7 @@ func UpdateOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 	fmt.Println(bodyorder)
 	// If everything goes well, return success
 
-	purchasinglistview := services.GetKey(models.SOPurchasingListView{}, nil)
-	services.InvalidateCache(purchasinglistview)
-
-	purchasinsupplierlist := services.GetKey(models.PurchasingListSupplierView{}, nil)
-	services.InvalidateCache(purchasinsupplierlist)
-
-	redboxpurchasinglistview := services.GetKey(models.PurchasingRedboxPurchaseListView{}, nil)
-	services.InvalidateCache(redboxpurchasinglistview)
+	InvalidateSOCaches()
 
 	return bodyorder, 0, nil
 }
@@ -216,8 +210,6 @@ func UpdateOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 func UpdateOrderDetailOnly(c *fiber.Ctx, tx *gorm.DB) (UpdateBodyOrderDetails, int, error) {
 	var body UpdateBodyOrderDetails
 	if err := c.BodyParser(&body); err != nil {
-		fmt.Println("BODY:", body)
-		fmt.Println("ERROR:", err)
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
@@ -234,6 +226,8 @@ func UpdateOrderDetailOnly(c *fiber.Ctx, tx *gorm.DB) (UpdateBodyOrderDetails, i
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
+
+	InvalidateSOCaches()
 
 	return body, fiber.StatusOK, nil
 }
@@ -267,4 +261,38 @@ func DeleteOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 	}
 
 	return bodyorder, 0, nil
+}
+
+// func DeleteOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.Order, int, error) {
+// 	var body models.Order
+// 	if err := c.BodyParser(&body); err != nil {
+// 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+// 	}
+
+// 	if err := services.DbDelete(tx, &body, conditions); err != nil {
+// 		return body, fiber.StatusInternalServerError, errors.New("failed deleting order")
+// 	}
+
+// 	at, ok := c.Locals("at").(models.At)
+// 	if !ok {
+// 		at = models.At{}
+// 	}
+
+// 	atdata := models.OrderAt{RefId: body.Order_ID, OrderContent: body.OrderContent, At: at}
+// 	if err := services.DbInsert(tx, &atdata); err != nil {
+// 		return body, fiber.StatusInternalServerError, errors.New("failed creating orderat")
+// 	}
+
+// 	return body, 0, nil
+// }
+
+func InvalidateSOCaches() {
+	cacheKeys := []interface{}{
+		models.SOPurchasingListView{},
+		models.PurchasingListSupplierView{},
+		models.PurchasingRedboxPurchaseListView{},
+	}
+	for _, key := range cacheKeys {
+		services.InvalidateCache(services.GetKey(key, nil))
+	}
 }

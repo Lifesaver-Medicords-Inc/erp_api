@@ -103,31 +103,6 @@ func DeleteItem(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-// func broadcastItems() error {
-// 	data, status, err := setup_services.GetItems(nil)
-// 	if err != nil {
-// 		fmt.Println(status, err)
-// 		return err
-// 	}
-
-// 	items, err := json.Marshal(data)
-// 	if err != nil {
-// 		log.Println("Error marshalling users:", err)
-// 		return err
-// 	}
-
-// 	initializers.WM.RLock()
-// 	defer initializers.WM.RUnlock()
-
-// 	for client := range initializers.WM.Clients {
-// 		if err := client.WriteMessage(websocket.TextMessage, items); err != nil {
-// 			log.Println("error sending message:", err)
-// 		}
-// 	}
-
-// 	return nil
-// }
-
 func WsgetItems(c *websocket.Conn) {
 	initializers.WM.AddClient(c)
 

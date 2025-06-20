@@ -10,7 +10,7 @@ type ItemContent struct {
 	ItemBrandId         uint    `json:"item_brand_id"`
 	UnitOfMeasureId     uint    `json:"unit_of_measure_id"`
 	ItemTangibilityType string  `json:"item_tangibility_type"`
-	IsStopSelling       *int   `json:"is_stop_selling"`
+	IsStopSelling       *int    `json:"is_stop_selling"`
 	Price               float64 `json:"price"`
 }
 type Item struct {

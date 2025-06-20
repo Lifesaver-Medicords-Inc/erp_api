@@ -17,7 +17,7 @@ func RespondError(c *fiber.Ctx, status int, message string) error {
 
 func RespondSuccess(c *fiber.Ctx, data interface{}) error {
 
-	log.Infof("SUCCESS: %s", data)
+	//log.Infof("SUCCESS: %s", data)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,

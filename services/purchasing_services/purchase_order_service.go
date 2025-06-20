@@ -67,5 +67,46 @@ func CreatePurchaseOrder(c *fiber.Ctx, tx *gorm.DB) (PurchaseOrderBody, int, err
 		}
 	}
 
+	InvalidateSOCaches()
+
 	return body, 0, nil
+}
+
+func InvalidateSOCaches() {
+	cacheKeys := []interface{}{
+		models.SOPurchasingListView{},
+		models.PurchasingListSupplierView{},
+		models.PurchasingRedboxPurchaseListView{},
+	}
+	for _, key := range cacheKeys {
+		services.InvalidateCache(services.GetKey(key, nil))
+	}
+}
+
+func UpdatePurchaseOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (PurchaseOrderBody, int, error) {
+	var body PurchaseOrderBody
+
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	if err := services.DbUpdate(tx, &body.PurchaseOrder, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed updating purchase order")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+
+	if !ok {
+		at = models.At{}
+	}
+
+	atdata := models.PurchaseOrderAt{
+		RefId:                body.ID,
+		PurchaseOrderContent: body.PurchaseOrderContent,
+		At:                   at,
+	}
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed creating purchaseorderat")
+	}
+	return body, fiber.StatusInternalServerError, nil
 }

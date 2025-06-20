@@ -5,14 +5,17 @@ type PurchaseOrderDetailsContent struct {
 	ItemId          int     `json:"item_id"`
 	ItemCode        string  `json:"item_code"`
 	ItemName        string  `json:"item_name"`
+	ItemDescription string  `json:"item_description"`
 	ReqQty          int     `json:"req_qty"`
 	OrderQty        int     `json:"order_qty"`
+	UnitOfMeasure   string  `json:"unit_of_measure"`
 	UnitPrice       float64 `json:"unit_price"`
 	Discount        string  `json:"discount"`
 	DiscountedPrice float64 `json:"discounted_price"`
 	TotalPrice      float64 `json:"total_price"`
 	OrderDetailIds  string  `json:"order_detail_ids"`
 	AllocatedQtys   string  `json:"allocated_qtys"`
+	Qtys            string  `json:"qtys"`
 }
 
 type PurchaseOrderDetails struct {

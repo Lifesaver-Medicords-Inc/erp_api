@@ -89,8 +89,20 @@ func UpdateOrderDetails(tx *gorm.DB, orderdetails models.OrderDetails, at models
 		}
 	}
 
+	var existing models.OrderDetails
+
+	if err := tx.Model(&models.OrderDetails{}).Where(conditions).First(&existing).Error; err != nil {
+		return errors.New("failed getting existing order details")
+	}
+
+	orderdetails.AllocatedQty += existing.AllocatedQty
+
 	if err := services.DbUpdate(tx, &orderdetails, conditions); err != nil {
 		return errors.New("failed updating order details")
+	}
+
+	if err := tx.Exec("EXEC sp_SetSalesOrderStatus ?", orderdetails.Order_Details_ID).Error; err != nil {
+		return errors.New("failed executing stored procedure")
 	}
 
 	orderdetailsat := models.OrderDetailsAt{
@@ -100,12 +112,11 @@ func UpdateOrderDetails(tx *gorm.DB, orderdetails models.OrderDetails, at models
 	}
 
 	if err := services.DbInsert(tx, &orderdetailsat); err != nil {
-		return errors.New("failed creating orderdetailsat")
+		return errors.New("failed creating order details at")
 	}
 
 	return nil
 }
-
 
 func DeleteOrderDetail(tx *gorm.DB, orderdetails models.OrderDetails, at models.At, conditions map[string]interface{}) error {
 	if err := services.DbDelete(tx, &orderdetails, conditions); err != nil {

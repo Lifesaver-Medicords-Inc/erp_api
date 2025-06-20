@@ -14,6 +14,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/middlewares"
 	"github.com/pierceperado/smpc/services"
 )
 
@@ -57,7 +58,8 @@ func main() {
 		api.Get("/vfile/:filename", public_handlers.ViewFile)
 
 		// Protected Endpoints
-		// api.Use(middlewares.RequireAuth)
+
+		api.Use(middlewares.RequireAuth)
 		{
 			// Sample Endpoints
 			sampleApi := api.Group("/sample")
@@ -415,6 +417,7 @@ func main() {
 				purchasingApi.Post("child/purchase_requisition", purchasing_handlers.CreatePRChild)
 				purchasingApi.Post("/purchase_requisition", purchasing_handlers.CreatePR)
 				purchasingApi.Put("/purchase_requisition", purchasing_handlers.UpdatePR)
+				purchasingApi.Put("/purchase_requisition_details", purchasing_handlers.UpdateRequisitionDetailOnly)
 				purchasingApi.Delete("/purchase_requisition", purchasing_handlers.DeletePR)
 				purchasingApi.Delete("child/purchase_requisition", purchasing_handlers.DeletePROrderByID)
 
@@ -423,7 +426,9 @@ func main() {
 
 				//Purchasing List
 				purchasingApi.Get("/so_purchase_list", purchasing_handlers.GetSOPurchasingList)
+				purchasingApi.Get("/pr_purchase_list", purchasing_handlers.GetPRPurchasingList)
 				purchasingApi.Get("/purchase_list_supplier", purchasing_handlers.GetSOPurchasingListSupplier)
+				purchasingApi.Get("/purchase_guiding_price", purchasing_handlers.GetPurchasingGuidingPrice)
 
 				//Purchasing SO Canvass Sheet
 				purchasingApi.Get("/purchase_canvass_sheet_so", purchasing_handlers.GetPurchasingCanvassSheetSO)
@@ -433,6 +438,7 @@ func main() {
 
 				purchasingApi.Get("/purchase_order", purchasing_handlers.GetPurchaseOrder)
 				purchasingApi.Post("/purchase_order", purchasing_handlers.CreatePurchaseOrder)
+				purchasingApi.Put("/purchase_order", purchasing_handlers.UpdatePurchaseOrder)
 			}
 
 			//Bpi Endpoints

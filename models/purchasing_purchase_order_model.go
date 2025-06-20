@@ -17,7 +17,7 @@ type PurchaseOrderContent struct {
 	TaxCodePercent string  `json:"tax_code_percent"`
 	PaymentTermsId int     `json:"payment_terms_id"`
 	BillTo         string  `json:"bill_to"`
-	ReferenceDocs  string  `json:"reference_docs"`
+	RefDocNo       string  `json:"ref_doc_no"`
 	Status         string  `json:"status"`
 	Remarks        string  `json:"remarks"`
 	NetOfVat       float64 `json:"net_of_vat"`
