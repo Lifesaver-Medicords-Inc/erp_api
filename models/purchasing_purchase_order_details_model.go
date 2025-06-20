@@ -5,6 +5,7 @@ type PurchaseOrderDetailsContent struct {
 	ItemId          int     `json:"item_id"`
 	ItemCode        string  `json:"item_code"`
 	ItemName        string  `json:"item_name"`
+	ItemDescription string  `json:"item_description"`
 	ReqQty          int     `json:"req_qty"`
 	OrderQty        int     `json:"order_qty"`
 	UnitOfMeasure   string  `json:"unit_of_measure"`

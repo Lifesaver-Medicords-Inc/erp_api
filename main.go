@@ -392,6 +392,7 @@ func main() {
 
 				purchasingApi.Get("/purchase_order", purchasing_handlers.GetPurchaseOrder)
 				purchasingApi.Post("/purchase_order", purchasing_handlers.CreatePurchaseOrder)
+				purchasingApi.Put("/purchase_order", purchasing_handlers.UpdatePurchaseOrder)
 			}
 
 			//Bpi Endpoints
