@@ -1,6 +1,7 @@
 package setup_handlers
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -89,6 +90,7 @@ func DeleteWarehouseName(c *fiber.Ctx) error {
 	}
 
 	data, status, err := setup_services.DeleteWarehouseName(c, tx, nil)
+	fmt.Println("DELETION ERROR:", err)
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
