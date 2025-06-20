@@ -13,7 +13,6 @@ type ItemContent struct {
 	IsStopSelling       *int   `json:"is_stop_selling"`
 	Price               float64 `json:"price"`
 }
-
 type Item struct {
 	ID uint `gorm:"primarykey" json:"id"`
 	ItemContent

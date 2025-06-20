@@ -14,16 +14,21 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/middlewares"
 	"github.com/pierceperado/smpc/services"
 )
 
 func init() {
 	initializers.LoadEnv()
 	initializers.ConnectDb()
-	initializers.MigrateDb()
+	// initializers.MigrateDb()
 	initializers.InitRedis()
 	initializers.InitWm()
+	initializers.InitWm2()
+	initializers.InitProjectWM()
+
 	initializers.InitLogger()
+
 }
 
 func main() {
@@ -53,7 +58,6 @@ func main() {
 		api.Get("/vfile/:filename", public_handlers.ViewFile)
 
 		// Protected Endpoints
-
 		// api.Use(middlewares.RequireAuth)
 		{
 			// Sample Endpoints
@@ -256,7 +260,7 @@ func main() {
 
 				setupApi.Get("/boq", setup_handlers.GetItemBoqs)
 
-				// =========================== ACCOUNTING ENDPOINTS =============================
+				// =========================== ACCOUNTING ENDPOINTS SETUP =============================
 				{
 					// Chart Group Endpoints
 					setupApi.Get("/book", setup_handlers.GetBooks)
@@ -349,6 +353,7 @@ func main() {
 				salesApi.Put("/order", sales_handlers.UpdateOrder)
 				salesApi.Put("/order_details", sales_handlers.UpdateOrderDetailOnly)
 				salesApi.Delete("/order", sales_handlers.DeleteOrder)
+
 				// Opportunity Endpointss
 				salesApi.Get("/opportunity", sales_handlers.GetOpportunities)
 				salesApi.Get("/opportunity/:id", sales_handlers.GetOpportunity)
@@ -386,7 +391,22 @@ func main() {
 				// sales_api.Post("/return/create", handlers.Register)
 				// sales_api.Patch("/return/update", handlers.Register)
 				// sales_api.Delete("/return/delete", handlers.Register)
+
+				// Temporary  Completely S.O to DR Endpoints
+
+				salesApi.Get("/order_dr/:id", sales_handlers.GetSalesOrderDR)
+				salesApi.Get("/order_dr", sales_handlers.GetSalesOrdersDr)
 			}
+
+			// accountingApi := api.Group("accounting")
+			// {
+			// 	accountingApi.Get("/sales_invoice")
+			// 	accountingApi.Get("/sales_invoice/:id")
+			// 	accountingApi.Post("/sales_invoice")
+			// 	accountingApi.Put("/sales_invoice")
+			// 	accountingApi.Delete("/sales_invoice")
+
+			// }
 
 			// Purchasing Endpoints
 			purchasingApi := api.Group("/purchasing")
@@ -423,7 +443,7 @@ func main() {
 			api.Post("/bpi", bpi_handlers.CreateBpi)
 			api.Put("/bpi", bpi_handlers.UpdateBpi)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
-			//api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
+			api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
 
 			api.Get("/bpi", bpi_handlers.GetBpis)
 
@@ -442,13 +462,13 @@ func main() {
 						itemApi.Get("", websocket.New(setup_handlers.WsgetItems))
 					}
 
-					// Project Endpoints
-					projectApi := setupApi.Group("/project")
+					testApi := setupApi.Group("/test")
 					{
-						projectApi.Get("", websocket.New(func(c *websocket.Conn) {
-							services.HandleWs(c, setup_handlers.WsgetProjects)
+						testApi.Get("", websocket.New(func(c *websocket.Conn) {
+							services.HandleProjectWs(c, sales_handlers.WsProjects)
 						}))
 					}
+
 				}
 				// Purchasing Endpoints
 				purchasingApi := ws.Group("/purchasing")

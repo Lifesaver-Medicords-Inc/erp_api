@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
@@ -36,6 +37,20 @@ func GetSalesProjectContent(ProjectContent *[]models.SalesProjectContent, condit
 		return errors.New("failed getting multipliers")
 	}
 	return nil
+}
+
+func GetSalesProjectCont(id int) (models.SalesProjectContent, int, error) {
+	conditions := map[string]interface{}{
+		"based_id": id,
+	}
+
+	var projectcontent models.SalesProjectContent
+
+	if err := services.DbGet(&projectcontent, conditions); err != nil {
+		return projectcontent, fiber.StatusInternalServerError, errors.New("failed getting brand")
+	}
+
+	return projectcontent, 0, nil
 }
 
 func UpdateProjectContent(tx *gorm.DB, projectcontent models.SalesProjectContent, at models.At, conditions map[string]interface{}) error {

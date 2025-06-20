@@ -61,18 +61,19 @@ func HandleWs2(client *websocket.Conn, handler func(*websocket.Conn, string)) {
 }
 
 // entry point
-func HandleProjectWs(client *websocket.Conn, handler func(*websocket.Conn, string, string)) {
+func HandleProjectWs(client *websocket.Conn, handler func(*websocket.Conn, string, string, string)) {
+	userid := client.Query("userid")
 	branch := client.Query("branch")
 	projectid := client.Query("projectid")
-	initializers.WM3.AddProjectClient(client, branch, projectid)
-	fmt.Println("Client Connected:", client.IP(), "BRANCH: ", branch, "PROJECT ID: ", projectid)
+	initializers.WM3.AddProjectClient(client, userid, branch, projectid)
+	fmt.Println("Client Connected:", client.IP(), "USER ID: ", userid, "BRANCH: ", branch, "PROJECT ID: ", projectid)
 
 	defer func() {
 		initializers.WM3.RemoveProjectClient(client)
 		fmt.Println("Client Disconnected:", client.IP(), "BRANCH: ", branch, "PROJECT ID: ", projectid)
 	}()
 
-	handler(client, branch, projectid)
+	handler(client, userid, branch, projectid)
 }
 
 func BroadcastToDepartment(dept string, data interface{}) error {
