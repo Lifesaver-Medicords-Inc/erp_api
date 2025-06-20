@@ -14,16 +14,21 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/middlewares"
 	"github.com/pierceperado/smpc/services"
 )
 
 func init() {
 	initializers.LoadEnv()
 	initializers.ConnectDb()
-	initializers.MigrateDb()
+	// initializers.MigrateDb()
 	initializers.InitRedis()
 	initializers.InitWm()
+	initializers.InitWm2()
+	initializers.InitProjectWM()
+
 	initializers.InitLogger()
+
 }
 
 func main() {
@@ -54,7 +59,7 @@ func main() {
 
 		// Protected Endpoints
 
-		//api.Use(middlewares.RequireAuth)
+		api.Use(middlewares.RequireAuth)
 		{
 			// Sample Endpoints
 			sampleApi := api.Group("/sample")
@@ -136,13 +141,13 @@ func main() {
 				//warehouse
 				warehouseApi := setupApi.Group("/warehouse")
 				{
+					warehouseApi.Get("/manager", setup_handlers.GetWarehouseManagers) //for warehouse manager
 					//warehouse name
 					warehouseApi.Get("/name", setup_handlers.GetWarehouseNames)
 					warehouseApi.Get("/name/:id", setup_handlers.GetWarehouseName)
 					warehouseApi.Post("/name", setup_handlers.CreateWarehouseName)
 					warehouseApi.Put("/name", setup_handlers.UpdateWarehouseName)
 					warehouseApi.Delete("/name", setup_handlers.DeleteWarehouseName)
-					warehouseApi.Get("/manager", setup_handlers.GetWarehouseManagers)
 
 					//warehouse usetypes
 					warehouseApi.Get("/usetype", setup_handlers.GetUseTypes)
@@ -150,6 +155,31 @@ func main() {
 					warehouseApi.Post("/usetype", setup_handlers.CreateUseType)
 					warehouseApi.Put("/usetype", setup_handlers.UpdateUseType)
 					warehouseApi.Delete("/usetype", setup_handlers.DeleteUseType)
+
+					//no endpoint (saved as a package with parent(warehousename))
+					//warehouse address and for warehouse area
+					// warehouseApi.Get("/address", setup_handlers.GetWarehouseAddresses)
+					// warehouseApi.Get("/address/:id", setup_handlers.GetWarehouseAddress)
+					// warehouseApi.Post("/address", setup_handlers.CreateWarehouseAddress)
+					// warehouseApi.Put("/address", setup_handlers.UpdateWarehouseAddress)
+					// warehouseApi.Delete("/address", setup_handlers.DeleteWarehouseAddress)
+
+					//Warehouse Areas (used for seperate saving, tentative)
+					warehouseApi.Get("/area", setup_handlers.GetWarehouseAreas)
+					warehouseApi.Get("/area/:id", setup_handlers.GetWarehouseArea)
+					warehouseApi.Post("/area", setup_handlers.CreateWarehouseArea)
+					warehouseApi.Put("/area", setup_handlers.UpdateWarehouseArea)
+					warehouseApi.Delete("/area", setup_handlers.DeleteWarehouseArea)
+				}
+
+				reportsApi := setupApi.Group("/report")
+				{
+					//receiving report
+					reportsApi.Get("/receiving", setup_handlers.GetReceivingReports)
+					reportsApi.Get("/receiving/:id", setup_handlers.GetReceivingReport)
+					reportsApi.Post("/receiving", setup_handlers.CreateReceivingReport)
+					reportsApi.Put("/receiving", setup_handlers.UpdateReceivingReport)
+					reportsApi.Delete("/receiving", setup_handlers.DeleteReceivingReport)
 				}
 
 				// Unit Measurement Endpoints
@@ -231,7 +261,7 @@ func main() {
 
 				setupApi.Get("/boq", setup_handlers.GetItemBoqs)
 
-				// =========================== ACCOUNTING ENDPOINTS =============================
+				// =========================== ACCOUNTING ENDPOINTS SETUP =============================
 				{
 					// Chart Group Endpoints
 					setupApi.Get("/book", setup_handlers.GetBooks)
@@ -324,6 +354,7 @@ func main() {
 				salesApi.Put("/order", sales_handlers.UpdateOrder)
 				salesApi.Put("/order_details", sales_handlers.UpdateOrderDetailOnly)
 				salesApi.Delete("/order", sales_handlers.DeleteOrder)
+
 				// Opportunity Endpointss
 				salesApi.Get("/opportunity", sales_handlers.GetOpportunities)
 				salesApi.Get("/opportunity/:id", sales_handlers.GetOpportunity)
@@ -361,7 +392,22 @@ func main() {
 				// sales_api.Post("/return/create", handlers.Register)
 				// sales_api.Patch("/return/update", handlers.Register)
 				// sales_api.Delete("/return/delete", handlers.Register)
+
+				// Temporary  Completely S.O to DR Endpoints
+
+				salesApi.Get("/order_dr/:id", sales_handlers.GetSalesOrderDR)
+				salesApi.Get("/order_dr", sales_handlers.GetSalesOrdersDr)
 			}
+
+			// accountingApi := api.Group("accounting")
+			// {
+			// 	accountingApi.Get("/sales_invoice")
+			// 	accountingApi.Get("/sales_invoice/:id")
+			// 	accountingApi.Post("/sales_invoice")
+			// 	accountingApi.Put("/sales_invoice")
+			// 	accountingApi.Delete("/sales_invoice")
+
+			// }
 
 			// Purchasing Endpoints
 			purchasingApi := api.Group("/purchasing")
@@ -402,7 +448,7 @@ func main() {
 			api.Post("/bpi", bpi_handlers.CreateBpi)
 			api.Put("/bpi", bpi_handlers.UpdateBpi)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
-			//api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
+			api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
 
 			api.Get("/bpi", bpi_handlers.GetBpis)
 
@@ -421,13 +467,13 @@ func main() {
 						itemApi.Get("", websocket.New(setup_handlers.WsgetItems))
 					}
 
-					// Project Endpoints
-					projectApi := setupApi.Group("/project")
+					testApi := setupApi.Group("/test")
 					{
-						projectApi.Get("", websocket.New(func(c *websocket.Conn) {
-							services.HandleWs(c, setup_handlers.WsgetProjects)
+						testApi.Get("", websocket.New(func(c *websocket.Conn) {
+							services.HandleProjectWs(c, sales_handlers.WsProjects)
 						}))
 					}
+
 				}
 				// Purchasing Endpoints
 				purchasingApi := ws.Group("/purchasing")

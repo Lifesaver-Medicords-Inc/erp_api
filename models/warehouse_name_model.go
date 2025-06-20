@@ -21,6 +21,7 @@ type WarehouseNameAt struct {
 	RefId uint   `json:"ref_id"`
 	Code  string `json:"code"`
 	WarehouseNameContent
+
 	At
 }
 

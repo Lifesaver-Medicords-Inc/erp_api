@@ -51,6 +51,15 @@ func GetSalesQuotations(conditions map[string]interface{}) (interface{}, int, er
 		return response, fiber.StatusInternalServerError, errors.New("failed getting sales quotations")
 	}
 
+	var filteredQuotations []models.SalesQuotation
+	for _, quotation := range response.SalesQuotation {
+		if quotation.ProjectName == "" {
+			filteredQuotations = append(filteredQuotations, quotation)
+		}
+	}
+
+	response.SalesQuotation = filteredQuotations
+
 	if err := GetSalesQuotationQuicks(&response.SalesQuotationQuick, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, err
 	}
@@ -223,6 +232,7 @@ func UpdateFinalizeQuote(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 
 // for finalizing the quotation
 func UpdateQuotationQuick(tx *gorm.DB, Quotation models.SalesQuotation, at models.At, conditions map[string]interface{}) error {
+
 	if err := services.DbUpdate(tx, &Quotation, conditions); err != nil {
 		return errors.New("failed updating quotation")
 	}

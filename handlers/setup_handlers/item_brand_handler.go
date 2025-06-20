@@ -19,8 +19,10 @@ func GetBrands(c *fiber.Ctx) error {
 }
 
 func GetBrand(c *fiber.Ctx) error {
+
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
+
 	if err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
 	}

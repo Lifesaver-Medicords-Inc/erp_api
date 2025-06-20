@@ -32,6 +32,7 @@ type ClientInfo struct {
 
 type ProjectClientInfo struct {
 	Conn      *websocket.Conn
+	UserID    string
 	Branch    string
 	ProjectId string
 }
@@ -46,14 +47,16 @@ type WsProjectManager struct {
 	ProjectInfo map[*websocket.Conn]ProjectClientInfo
 }
 
-func (wm *WsProjectManager) AddProjectClient(c *websocket.Conn, branch string, projectid string) {
+func (wm *WsProjectManager) AddProjectClient(c *websocket.Conn, userid string, branch string, projectid string) {
 	wm.Lock()
 	defer wm.Unlock()
 	if wm.ProjectInfo == nil {
 		wm.ProjectInfo = make(map[*websocket.Conn]ProjectClientInfo)
 	}
+
 	wm.ProjectInfo[c] = ProjectClientInfo{
 		Conn:      c,
+		UserID:    userid,
 		Branch:    branch,
 		ProjectId: projectid,
 	}

@@ -1,5 +1,7 @@
 package initializers
 
+import "github.com/pierceperado/smpc/models"
+
 func MigrateDb() {
 	// Auth
 
@@ -31,10 +33,14 @@ func MigrateDb() {
 	//warehouse
 	//DB.AutoMigrate(&models.UseType{}, &models.UseTypeAt{})
 	//DB.AutoMigrate(&models.WarehouseName{}, &models.WarehouseNameAt{})
+	//DB.AutoMigrate(&models.WarehouseAddress{}, &models.WarehouseAddressAt{})
+	//DB.AutoMigrate(&models.WarehouseArea{}, &models.WarehouseAreaAt{})
+
+	//DB.AutoMigrate(&models.ReceivingReport{}, &models.ReceivingReportAt{})
 
 	// DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
 	// DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
-
+	// DB.AutoMigrate(&models.Application{}, &models.ApplicationAt{})
 	// DB.AutoMigrate(&models.User{}, &models.UserAt{})
 
 	// Setup
@@ -52,6 +58,55 @@ func MigrateDb() {
 	//	DB.AutoMigrate(&models.Application{}, &models.ApplicationAt{})
 
 	// // Sales
+
+	// // DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
+	// // DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})/sad
+	// DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
+
+	DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
+	DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
+	// DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
+
+	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
+	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
+
+	DB.AutoMigrate(
+		&models.SalesProjectMultiplier{},
+		&models.SalesProjectMultiplierAt{},
+		&models.SalesProjectHistory{},
+		&models.SalesProjectHistoryAt{},
+		&models.SalesProjectItemSet{},
+		&models.SalesProjectItemSetAt{},
+		&models.SalesProjectContent{},
+		&models.SalesProjectContentAt{},
+		&models.SalesProjectAdvancedConditions{},
+		&models.SalesProjectAdvancedConditionsAt{},
+		&models.SalesProjectItems{},
+		&models.SalesProjectItemsAt{},
+	)
+
+	DB.AutoMigrate(
+		&models.SalesQuotation{},
+		&models.SalesQuotationAt{},
+		&models.SalesQuotationQuick{},
+		&models.SalesQuotationQuickAt{},
+		// 	&models.SalesProjectMultiplier{},
+		// 	&models.SalesProjectMultiplierAt{},
+		// 	&models.SalesProjectHistory{},
+		// 	&models.SalesProjectHistoryAt{},
+		// 	&models.SalesProjectItemSet{},
+		// 	&models.SalesProjectItemSetAt{},
+		// 	&models.SalesProjectAdvancedConditions{},
+		// 	&models.SalesProjectAdvancedConditionsAt{},
+		// 	&models.SalesProjectItems{},
+		// 	&models.SalesProjectItemsAt{},
+		// 	&models.SalesProjectWiring{},
+		// 	&models.SalesProjectWiringAt{},
+	)
+
+	// DB.AutoMigrate(&models.SalesCanvasSheet{})
+	//DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
+
 	// DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
 	// DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
 	//DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
@@ -95,7 +150,7 @@ func MigrateDb() {
 
 	//DB.AutoMigrate(&models.BpiItems{}, &models.BpiItemsAt{})
 
-	// DB.AutoMigrate(&models.BpiFinance{}, &models.BpiFinanceAt{})
+	//DB.AutoMigrate(&models.BpiFinance{}, &models.BpiFinanceAt{})
 	// DB.AutoMigrate(&models.BpiAccreditation{}, &models.BpiAccreditationAt{})
 
 	// ACCOUNTING

@@ -1,6 +1,7 @@
 package setup_handlers
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -8,6 +9,15 @@ import (
 	"github.com/pierceperado/smpc/services/setup_services"
 	"github.com/pierceperado/smpc/utils"
 )
+
+func GetWarehouseManagers(c *fiber.Ctx) error {
+	data, status, err := setup_services.GetWarehouseManagers(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
 
 func GetWarehouseNames(c *fiber.Ctx) error {
 	data, status, err := setup_services.GetWarehouseNames(nil)
@@ -80,6 +90,7 @@ func DeleteWarehouseName(c *fiber.Ctx) error {
 	}
 
 	data, status, err := setup_services.DeleteWarehouseName(c, tx, nil)
+	fmt.Println("DELETION ERROR:", err)
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
@@ -88,15 +99,6 @@ func DeleteWarehouseName(c *fiber.Ctx) error {
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
-	}
-
-	return utils.RespondSuccess(c, data)
-}
-
-func GetWarehouseManagers(c *fiber.Ctx) error {
-	data, status, err := setup_services.GetWarehouseManagers(nil)
-	if err != nil {
-		return utils.RespondError(c, status, err.Error())
 	}
 
 	return utils.RespondSuccess(c, data)

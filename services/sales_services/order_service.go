@@ -74,34 +74,41 @@ func GetOrder(Order_ID int) (BodyOrder, int, error) {
 	return orderrecord, 0, nil
 }
 
-// func GetOrder(Order_ID int) (Body, int, error) {
-// 	conditions := map[string]interface{}{
-// 		"order_id": Order_ID,
-// 	}
+func GetSalesOrderDR(id int) (interface{}, int, error) {
+	conditions := map[string]interface{}{
+		"order_id": id,
+	}
 
-// 	var record Body
+	childCondition := map[string]interface{}{
+		"based_id": id,
+	}
 
-// 	if err := services.DbGet(&record.Order, conditions); err != nil {
-// 		return record, fiber.StatusInternalServerError, errors.New("failed getting order")
-// 	}
+	type Response struct {
+		Order        []models.SalesOrderWithDeliveryReceipt `json:"orders"`
+		OrderDetails []models.SalesOrderWithDRDetails       `json:"order_details"`
+	}
 
-// 	conditions = map[string]interface{}{
-// 		// based on parent ID
-// 		"based_id": record.Order.Order_ID,
-// 	}
+	var response Response
+	if err := services.DbGet(&response.Order, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting each sales order delivered")
+	}
 
-// 	//Child 1
-// 	if err := GetOrderDetails(&record.OrderDetails, conditions); err != nil {
-// 		return record, fiber.StatusInternalServerError, err
-// 	}
+	if err := services.DbGet(&response.OrderDetails, childCondition); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting each sales order delivered")
+	}
+	return response, 0, nil
+}
 
-// 	// //Child 2 for project quote
-// 	// if err := GetSalesQuotationQuick(&record.QuickQuote, conditions); err != nil {
-// 	// 	return record, fiber.StatusInternalServerError, err
-// 	// }
+func GetSalesOrdersDr(conditions map[string]interface{}) (interface{}, int, error) {
 
-// 	return record, 0, nil
-// }
+	var response []models.SalesOrderDrView
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting sales order dr")
+	}
+
+	return response, 0, nil
+}
 
 // CREATE CHILD SERVICE
 func CreateOrderChild(c *fiber.Ctx, tx *gorm.DB) (BodyOrder, int, error) {
