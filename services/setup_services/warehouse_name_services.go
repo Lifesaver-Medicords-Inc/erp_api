@@ -2,6 +2,7 @@ package setup_services
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -189,6 +190,8 @@ func UpdateWarehouseName(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 func DeleteWarehouseName(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (WarehouseBody, int, error) {
 	var body WarehouseBody
 	if err := c.BodyParser(&body); err != nil {
+		fmt.Println("DEL ERR", err)
+		fmt.Println("DEL body", body)
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 

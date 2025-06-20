@@ -2,7 +2,7 @@ package models
 
 type ReceivingReportContent struct {
 	SupplierName    string `json:"supplier_name"`
-	Code            string `json:"code"`
+	SupplierCode    string `json:"supplier_code"`
 	DateReceived    string `json:"date_received"`
 	Address         string `json:"address"`
 	SupplierID      uint   `json:"supplier_id"`
