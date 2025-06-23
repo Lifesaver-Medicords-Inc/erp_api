@@ -1,4 +1,4 @@
-package models
+package accounting_models
 
 type SalesOrderWithDeliveryReceipt struct {
 	OrderId        uint    `json:"order_id"`

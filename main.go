@@ -14,7 +14,6 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
-	"github.com/pierceperado/smpc/middlewares"
 	"github.com/pierceperado/smpc/services"
 )
 
@@ -295,6 +294,8 @@ func main() {
 					setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
 					setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
 					setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
+
+					setupApi.Get("/chart_of_account_classification/:code", setup_handlers.GetChartOfAccountClassification)
 
 					// GetGeneralLedgerMappers
 					setupApi.Get("/general_ledger", setup_handlers.GetGeneralLedgerMappers)

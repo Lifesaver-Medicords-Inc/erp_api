@@ -17,6 +17,16 @@ func GetChartOfAccounts(c *fiber.Ctx) error {
 
 	return utils.RespondSuccess(c, data)
 }
+func GetChartOfAccountClassification(c *fiber.Ctx) error {
+
+	codeParams := c.Params("code")
+
+	data, status, err := setup_services.GetChartOfAccountsClassifications(codeParams)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
 
 // func GetChartOfAccount(c *fiber.Ctx) error {
 
