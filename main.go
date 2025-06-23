@@ -11,6 +11,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/public_handlers"
 	"github.com/pierceperado/smpc/handlers/purchasing_handlers"
 	"github.com/pierceperado/smpc/handlers/sales_handlers"
+	"github.com/pierceperado/smpc/handlers/sales_invoice_handlers"
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
@@ -58,7 +59,7 @@ func main() {
 
 		// Protected Endpoints
 
-		api.Use(middlewares.RequireAuth)
+		//	api.Use(middlewares.RequireAuth)
 		{
 			// Sample Endpoints
 			sampleApi := api.Group("/sample")
@@ -400,15 +401,15 @@ func main() {
 				salesApi.Get("/order_dr", sales_handlers.GetSalesOrdersDr)
 			}
 
-			// accountingApi := api.Group("accounting")
-			// {
-			// 	accountingApi.Get("/sales_invoice")
-			// 	accountingApi.Get("/sales_invoice/:id")
-			// 	accountingApi.Post("/sales_invoice")
-			// 	accountingApi.Put("/sales_invoice")
-			// 	accountingApi.Delete("/sales_invoice")
+			accountingApi := api.Group("accounting")
+			{
+				accountingApi.Get("/sales_invoice_doc_no", sales_invoice_handlers.GetSalesInvoiceDocNo)
+				// accountingApi.Get("/sales_invoice/:id")
+				// accountingApi.Post("/sales_invoice")
+				// accountingApi.Put("/sales_invoice")
+				// accountingApi.Delete("/sales_invoice")
 
-			// }
+			}
 
 			// Purchasing Endpoints
 			purchasingApi := api.Group("/purchasing")
