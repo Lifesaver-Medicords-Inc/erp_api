@@ -17,3 +17,12 @@ func GetSalesInvoices(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 
 }
+
+func GetSalesInvoiceDocNo(c *fiber.Ctx) error {
+	data, status, err := sales_invoices_services.GetSalesInvoiceDocNo(nil)
+
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
