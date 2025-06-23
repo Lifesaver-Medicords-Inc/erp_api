@@ -1,4 +1,6 @@
-package models
+package accounting_models
+
+import "github.com/pierceperado/smpc/models"
 
 type GeneralLedgerMapperPayload struct {
 	Payload []GeneralLedgerMapper `json:"Payload"`
@@ -19,7 +21,7 @@ type GeneralLedgerMapperAt struct {
 	RefId         uint   `json:"ref_id"`
 	PseudoAccount string `gorm:"unique" json:"pseudo_account"`
 	AccountId     uint   `json:"account_id"`
-	At
+	models.At
 }
 
 func (GeneralLedgerMapperAt) TableName() string {

@@ -1,4 +1,6 @@
-package models
+package accounting_models
+
+import "github.com/pierceperado/smpc/models"
 
 type ChartClassContent struct {
 	Type string `json:"type"`
@@ -20,7 +22,7 @@ type ChartClassAt struct {
 	Code  string `json:"code"`
 	Name  string `json:"name"`
 	ChartClassContent
-	At
+	models.At
 }
 
 func (ChartClassAt) TableName() string {
