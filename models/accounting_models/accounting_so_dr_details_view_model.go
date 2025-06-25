@@ -10,7 +10,7 @@ type SalesOrderWithDRDetails struct {
 	UnitPrice      float64 `json:"unit_price"`
 	UomName        string  `json:"uom_name"`
 	TotalCost      float64 `json:"total_cost"`
-	Discount       uint    `json:"discount"`
+	Discount       float32 `json:"discount"`
 	Status         string  `json:"status"`
 	DeliveryDate   string  `json:"delivery_date"`
 }

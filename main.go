@@ -284,13 +284,6 @@ func main() {
 					setupApi.Put("/chart_class", setup_handlers.UpdateChartClass)
 					setupApi.Delete("/chart_class", setup_handlers.DeleteChartClass)
 
-					// Chart Of Account Endpoints
-					// setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
-					// setupApi.Get("/chart_of_account:/id", setup_handlers.GetChartOfAccount)
-					// setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
-					// setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
-					// setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
-
 					setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
 					setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
 					setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
@@ -405,7 +398,7 @@ func main() {
 			{
 				accountingApi.Get("/sales_invoice_doc_no", sales_invoice_handlers.GetSalesInvoiceDocNo)
 				// accountingApi.Get("/sales_invoice/:id")
-				// accountingApi.Post("/sales_invoice")
+				accountingApi.Post("/sales_invoice", sales_invoice_handlers.CreateSalesInvoice)
 				// accountingApi.Put("/sales_invoice")
 				// accountingApi.Delete("/sales_invoice")
 
@@ -450,7 +443,7 @@ func main() {
 			api.Post("/bpi", bpi_handlers.CreateBpi)
 			api.Put("/bpi", bpi_handlers.UpdateBpi)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
-			api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
+			api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers) // change naming convention to snake case
 
 			api.Get("/bpi", bpi_handlers.GetBpis)
 

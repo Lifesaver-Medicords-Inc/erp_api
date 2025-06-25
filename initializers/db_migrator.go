@@ -1,7 +1,5 @@
 package initializers
 
-import "github.com/pierceperado/smpc/models"
-
 func MigrateDb() {
 	// Auth
 
@@ -63,46 +61,46 @@ func MigrateDb() {
 	// // DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})/sad
 	// DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
 
-	DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
-	DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
+	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
+	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 	// DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
 
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 
-	DB.AutoMigrate(
-		&models.SalesProjectMultiplier{},
-		&models.SalesProjectMultiplierAt{},
-		&models.SalesProjectHistory{},
-		&models.SalesProjectHistoryAt{},
-		&models.SalesProjectItemSet{},
-		&models.SalesProjectItemSetAt{},
-		&models.SalesProjectContent{},
-		&models.SalesProjectContentAt{},
-		&models.SalesProjectAdvancedConditions{},
-		&models.SalesProjectAdvancedConditionsAt{},
-		&models.SalesProjectItems{},
-		&models.SalesProjectItemsAt{},
-	)
+	// DB.AutoMigrate(
+	// 	&models.SalesProjectMultiplier{},
+	// 	&models.SalesProjectMultiplierAt{},
+	// 	&models.SalesProjectHistory{},
+	// 	&models.SalesProjectHistoryAt{},
+	// 	&models.SalesProjectItemSet{},
+	// 	&models.SalesProjectItemSetAt{},
+	// 	&models.SalesProjectContent{},
+	// 	&models.SalesProjectContentAt{},
+	// 	&models.SalesProjectAdvancedConditions{},
+	// 	&models.SalesProjectAdvancedConditionsAt{},
+	// 	&models.SalesProjectItems{},
+	// 	&models.SalesProjectItemsAt{},
+	// )
 
-	DB.AutoMigrate(
-		&models.SalesQuotation{},
-		&models.SalesQuotationAt{},
-		&models.SalesQuotationQuick{},
-		&models.SalesQuotationQuickAt{},
-		// 	&models.SalesProjectMultiplier{},
-		// 	&models.SalesProjectMultiplierAt{},
-		// 	&models.SalesProjectHistory{},
-		// 	&models.SalesProjectHistoryAt{},
-		// 	&models.SalesProjectItemSet{},
-		// 	&models.SalesProjectItemSetAt{},
-		// 	&models.SalesProjectAdvancedConditions{},
-		// 	&models.SalesProjectAdvancedConditionsAt{},
-		// 	&models.SalesProjectItems{},
-		// 	&models.SalesProjectItemsAt{},
-		// 	&models.SalesProjectWiring{},
-		// 	&models.SalesProjectWiringAt{},
-	)
+	// DB.AutoMigrate(
+	// 	&models.SalesQuotation{},
+	// 	&models.SalesQuotationAt{},
+	// 	&models.SalesQuotationQuick{},
+	// 	&models.SalesQuotationQuickAt{},
+	// 	&models.SalesProjectMultiplier{},
+	// 	&models.SalesProjectMultiplierAt{},
+	// 	&models.SalesProjectHistory{},
+	// 	&models.SalesProjectHistoryAt{},
+	// 	&models.SalesProjectItemSet{},
+	// 	&models.SalesProjectItemSetAt{},
+	// 	&models.SalesProjectAdvancedConditions{},
+	// 	&models.SalesProjectAdvancedConditionsAt{},
+	// 	&models.SalesProjectItems{},
+	// 	&models.SalesProjectItemsAt{},
+	// 	&models.SalesProjectWiring{},
+	// 	&models.SalesProjectWiringAt{},
+	// )
 
 	// DB.AutoMigrate(&models.SalesCanvasSheet{})
 	//DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
@@ -155,5 +153,7 @@ func MigrateDb() {
 
 	// ACCOUNTING
 	//DB.AutoMigrate(&models.ChartOfAccounts{}, &models.ChartOfAccountsAt{})
+	// DB.AutoMigrate(&accounting_models.SalesInvoice{}, &accounting_models.SalesInvoiceAt{})
+	// DB.AutoMigrate(&accounting_models.SalesInvoiceDetail{}, &accounting_models.SalesInvoiceDetailAt{})
 
 }
