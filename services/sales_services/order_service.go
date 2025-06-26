@@ -208,31 +208,6 @@ func UpdateOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 	return bodyorder, 0, nil
 }
 
-func UpdateOrderDetailOnly(c *fiber.Ctx, tx *gorm.DB) (UpdateBodyOrderDetails, int, error) {
-	var body UpdateBodyOrderDetails
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
-	}
-
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
-
-	for _, detail := range body.OrderDetails {
-		conditions := map[string]interface{}{
-			"order_details_id": detail.Order_Details_ID,
-		}
-		if err := UpdateOrderDetails(tx, detail, at, conditions); err != nil {
-			return body, fiber.StatusInternalServerError, err
-		}
-	}
-
-	InvalidateSOCaches()
-
-	return body, fiber.StatusOK, nil
-}
-
 func DeleteOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (BodyOrder, int, error) {
 	var bodyorder BodyOrder
 	if err := c.BodyParser(&bodyorder); err != nil {

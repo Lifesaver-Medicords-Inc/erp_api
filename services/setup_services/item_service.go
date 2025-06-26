@@ -198,7 +198,11 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (U
 		at = models.At{}
 	}
 
-	atdata := models.ItemAt{RefId: body.ID, ItemContent: body.ItemContent, At: at}
+	atdata := models.ItemAt{
+		RefId:       body.ID,
+		ItemContent: body.ItemContent,
+		At:          at}
+
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed inserting itemat")
 	}

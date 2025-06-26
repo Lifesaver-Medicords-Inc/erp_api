@@ -170,31 +170,7 @@ func UpdatePR(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bod
 
 	return bodyPR, 0, nil
 }
-func UpdateRequisitionDetailOnly(c *fiber.Ctx, tx *gorm.DB) (UpdateBodyOrderDetails, int, error) {
-	var body UpdateBodyOrderDetails
-	if err := c.BodyParser(&body); err != nil {
-		fmt.Println("ERROR:", err)
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
-	}
 
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
-
-	for _, detail := range body.OrderDetails {
-		conditions := map[string]interface{}{
-			"pr_order_id": detail.PR_Order_ID,
-		}
-		if err := UpdateRequisitionDetails(tx, detail, at, conditions); err != nil {
-			return body, fiber.StatusInternalServerError, err
-		}
-	}
-
-	InvalidateSOCaches()
-
-	return body, fiber.StatusOK, nil
-}
 
 func DeletePR(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (BodyPR, int, error) {
 	var bodyPR BodyPR

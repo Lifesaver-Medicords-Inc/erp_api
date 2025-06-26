@@ -2,6 +2,8 @@ package sales_services
 
 import (
 	"errors"
+	"fmt"
+
 	// "fmt"
 
 	"github.com/pierceperado/smpc/models"
@@ -81,7 +83,7 @@ func UpdateOrderDetail(tx *gorm.DB, orderdetails models.OrderDetails, at models.
 	return nil
 }
 
-func UpdateOrderDetails(tx *gorm.DB, orderdetails models.OrderDetails, at models.At, conditions map[string]interface{}) error {
+func UpdateSalesOrderDetails(tx *gorm.DB, orderdetails models.OrderDetails, at models.At, conditions map[string]interface{}, orderType string, status string, mode string) error {
 	// If no conditions passed, fallback to primary key condition
 	if len(conditions) == 0 {
 		conditions = map[string]interface{}{
@@ -95,16 +97,63 @@ func UpdateOrderDetails(tx *gorm.DB, orderdetails models.OrderDetails, at models
 		return errors.New("failed getting existing order details")
 	}
 
-	orderdetails.AllocatedQty += existing.AllocatedQty
+	fmt.Printf("Fetched existing order details: %+v\n", existing)
 
-	if err := services.DbUpdate(tx, &orderdetails, conditions); err != nil {
-		return errors.New("failed updating order details")
+	if status == "CANCELLED" && mode == "update" {
+		fmt.Println("ORDER DATA: ", orderdetails)
+
+		// Defensive checks in case pointers are nil
+		if existing.AllocatedQty == nil {
+			existing.AllocatedQty = new(int)
+		}
+		if orderdetails.AllocatedQty == nil {
+			orderdetails.AllocatedQty = new(int)
+		}
+
+		result := *existing.AllocatedQty - *orderdetails.AllocatedQty
+		if result < 0 {
+			result = 0
+		}
+
+		fmt.Printf("EXISTING ALLOC: %d, CANCELLED: %d, RESULT: %d\n",
+			*existing.AllocatedQty,
+			*orderdetails.AllocatedQty,
+			result)
+
+		fmt.Println("PO CANCELLED, DEDUCT ALLOC QTY")
+
+		*orderdetails.AllocatedQty = result
+
+	} else if mode == "create" {
+		fmt.Println("CREATE MODE")
+
+		// Ensure both pointers are initialized
+		if existing.AllocatedQty == nil {
+			existing.AllocatedQty = new(int)
+		}
+		if orderdetails.AllocatedQty == nil {
+			orderdetails.AllocatedQty = new(int)
+		}
+
+		result := *existing.AllocatedQty + *orderdetails.AllocatedQty
+
+		fmt.Printf("EXISTING ALLOC: %d, NEW ALLOC: %d, RESULT: %d\n",
+			*existing.AllocatedQty,
+			*orderdetails.AllocatedQty,
+			result)
+
+		*orderdetails.AllocatedQty = result
 	}
 
-	if err := tx.Exec("EXEC sp_SetSalesOrderStatus ?", orderdetails.Order_Details_ID).Error; err != nil {
+	fmt.Println("BODY: ", orderdetails)
+	if err := services.DbUpdate(tx, &orderdetails, conditions); err != nil {
+		return errors.New("failed updating requisition details")
+	}
+	fmt.Println("STORED PROC WAITNG", orderdetails.Order_Details_ID, orderType)
+	if err := tx.Exec("EXEC sp_SetOrderStatus ?, ?", orderdetails.Order_Details_ID, orderType).Error; err != nil {
 		return errors.New("failed executing stored procedure")
 	}
-
+	fmt.Println("STORED PROC EXECUTED")
 	orderdetailsat := models.OrderDetailsAt{
 		RefId:               orderdetails.Order_Details_ID,
 		OrderDetailsContent: orderdetails.OrderDetailsContent,

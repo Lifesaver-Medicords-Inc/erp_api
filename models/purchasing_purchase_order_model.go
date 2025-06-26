@@ -13,6 +13,7 @@ type PurchaseOrderContent struct {
 	DeliverVia     string  `json:"deliver_via"`
 	DocNo          string  `json:"doc_no"`
 	Date           string  `json:"date"`
+	OrderType      string  `json:"order_type"`
 	TaxCode        string  `json:"tax_code"`
 	TaxCodePercent string  `json:"tax_code_percent"`
 	PaymentTermsId int     `json:"payment_terms_id"`
