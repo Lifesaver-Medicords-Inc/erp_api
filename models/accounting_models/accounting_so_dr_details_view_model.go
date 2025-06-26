@@ -1,4 +1,4 @@
-package models
+package accounting_models
 
 type SalesOrderWithDRDetails struct {
 	OrderDetailsId uint    `json:"order_details_id"`
@@ -8,8 +8,9 @@ type SalesOrderWithDRDetails struct {
 	ItemDesc       string  `json:"item_desc"`
 	Qty            uint    `json:"qty"`
 	UnitPrice      float64 `json:"unit_price"`
+	UomName        string  `json:"uom_name"`
 	TotalCost      float64 `json:"total_cost"`
-	Discount       uint    `json:"discount"`
+	Discount       float32 `json:"discount"`
 	Status         string  `json:"status"`
 	DeliveryDate   string  `json:"delivery_date"`
 }

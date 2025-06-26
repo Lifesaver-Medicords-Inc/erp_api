@@ -1,4 +1,4 @@
-package models
+package accounting_models
 
 type ChartOfAccountViewList struct {
 	ID        uint   `json:"id"`

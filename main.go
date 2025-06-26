@@ -11,6 +11,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/public_handlers"
 	"github.com/pierceperado/smpc/handlers/purchasing_handlers"
 	"github.com/pierceperado/smpc/handlers/sales_handlers"
+	"github.com/pierceperado/smpc/handlers/sales_invoice_handlers"
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
@@ -284,17 +285,12 @@ func main() {
 					setupApi.Put("/chart_class", setup_handlers.UpdateChartClass)
 					setupApi.Delete("/chart_class", setup_handlers.DeleteChartClass)
 
-					// Chart Of Account Endpoints
-					// setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
-					// setupApi.Get("/chart_of_account:/id", setup_handlers.GetChartOfAccount)
-					// setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
-					// setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
-					// setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
-
 					setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
 					setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
 					setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
 					setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
+
+					setupApi.Get("/chart_of_account_classification/:code", setup_handlers.GetChartOfAccountClassification)
 
 					// GetGeneralLedgerMappers
 					setupApi.Get("/general_ledger", setup_handlers.GetGeneralLedgerMappers)
@@ -398,15 +394,15 @@ func main() {
 				salesApi.Get("/order_dr", sales_handlers.GetSalesOrdersDr)
 			}
 
-			// accountingApi := api.Group("accounting")
-			// {
-			// 	accountingApi.Get("/sales_invoice")
-			// 	accountingApi.Get("/sales_invoice/:id")
-			// 	accountingApi.Post("/sales_invoice")
-			// 	accountingApi.Put("/sales_invoice")
-			// 	accountingApi.Delete("/sales_invoice")
+			accountingApi := api.Group("accounting")
+			{
+				accountingApi.Get("/sales_invoice_doc_no", sales_invoice_handlers.GetSalesInvoiceDocNo)
+				// accountingApi.Get("/sales_invoice/:id")
+				accountingApi.Post("/sales_invoice", sales_invoice_handlers.CreateSalesInvoice)
+				// accountingApi.Put("/sales_invoice")
+				// accountingApi.Delete("/sales_invoice")
 
-			// }
+			}
 
 			// Purchasing Endpoints
 			purchasingApi := api.Group("/purchasing")
@@ -446,7 +442,7 @@ func main() {
 			api.Post("/bpi", bpi_handlers.CreateBpi)
 			api.Put("/bpi", bpi_handlers.UpdateBpi)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
-			api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
+			api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers) // change naming convention to snake case
 
 			api.Get("/bpi", bpi_handlers.GetBpis)
 

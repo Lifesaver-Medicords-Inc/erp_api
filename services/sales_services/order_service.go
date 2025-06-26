@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
 )
@@ -84,8 +85,8 @@ func GetSalesOrderDR(id int) (interface{}, int, error) {
 	}
 
 	type Response struct {
-		Order        []models.SalesOrderWithDeliveryReceipt `json:"orders"`
-		OrderDetails []models.SalesOrderWithDRDetails       `json:"order_details"`
+		Order        []accounting_models.SalesOrderWithDeliveryReceipt `json:"orders"`
+		OrderDetails []accounting_models.SalesOrderWithDRDetails       `json:"order_details"`
 	}
 
 	var response Response
