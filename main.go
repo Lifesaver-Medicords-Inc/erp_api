@@ -21,7 +21,7 @@ import (
 func init() {
 	initializers.LoadEnv()
 	initializers.ConnectDb()
-	// initializers.MigrateDb()
+	initializers.MigrateDb()
 	initializers.InitRedis()
 	initializers.InitWm()
 	initializers.InitWm2()
@@ -352,7 +352,6 @@ func main() {
 				salesApi.Post("child/order", sales_handlers.CreateOrderChild)
 				salesApi.Post("/order", sales_handlers.CreateOrder)
 				salesApi.Put("/order", sales_handlers.UpdateOrder)
-				salesApi.Put("/order_details", sales_handlers.UpdateOrderDetailOnly)
 				salesApi.Delete("/order", sales_handlers.DeleteOrder)
 
 				// Opportunity Endpointss
@@ -417,7 +416,6 @@ func main() {
 				purchasingApi.Post("child/purchase_requisition", purchasing_handlers.CreatePRChild)
 				purchasingApi.Post("/purchase_requisition", purchasing_handlers.CreatePR)
 				purchasingApi.Put("/purchase_requisition", purchasing_handlers.UpdatePR)
-				purchasingApi.Put("/purchase_requisition_details", purchasing_handlers.UpdateRequisitionDetailOnly)
 				purchasingApi.Delete("/purchase_requisition", purchasing_handlers.DeletePR)
 				purchasingApi.Delete("child/purchase_requisition", purchasing_handlers.DeletePROrderByID)
 
