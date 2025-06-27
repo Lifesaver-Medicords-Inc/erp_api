@@ -106,6 +106,7 @@ func GetChartOfAccounts(conditions map[string]interface{}) ([]accounting_models.
 	}
 	return response, 0, nil
 }
+
 func GetChartOfAccountsClassifications(code string) ([]accounting_models.ChartOfAccounts, int, error) {
 
 	conditions := map[string]interface{}{

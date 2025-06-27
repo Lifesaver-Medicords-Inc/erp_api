@@ -468,7 +468,6 @@ func main() {
 							services.HandleProjectWs(c, sales_handlers.WsProjects)
 						}))
 					}
-
 				}
 				// Purchasing Endpoints
 				purchasingApi := ws.Group("/purchasing")
