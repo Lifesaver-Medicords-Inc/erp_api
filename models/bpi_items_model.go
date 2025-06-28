@@ -6,6 +6,7 @@ type BpiItemContent struct {
 	PaymentTermsId uint    `json:"payment_terms_id"`
 	ItemAccountId  uint    `json:"item_account_id"`
 	ItemId         uint    `json:"item_id"`
+	CanvassId      uint    `json:"canvass_id"`
 	TaxCode        string  `json:"tax_code"`
 	ItemTaxCode    string  `json:"item_tax_code"`
 	Price          float64 `json:"price"`
