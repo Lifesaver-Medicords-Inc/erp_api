@@ -145,15 +145,12 @@ func UpdateSalesOrderDetails(tx *gorm.DB, orderdetails models.OrderDetails, at m
 		*orderdetails.AllocatedQty = result
 	}
 
-	fmt.Println("BODY: ", orderdetails)
 	if err := services.DbUpdate(tx, &orderdetails, conditions); err != nil {
 		return errors.New("failed updating requisition details")
 	}
-	fmt.Println("STORED PROC WAITNG", orderdetails.Order_Details_ID, orderType)
 	if err := tx.Exec("EXEC sp_SetOrderStatus ?, ?", orderdetails.Order_Details_ID, orderType).Error; err != nil {
 		return errors.New("failed executing stored procedure")
 	}
-	fmt.Println("STORED PROC EXECUTED")
 	orderdetailsat := models.OrderDetailsAt{
 		RefId:               orderdetails.Order_Details_ID,
 		OrderDetailsContent: orderdetails.OrderDetailsContent,

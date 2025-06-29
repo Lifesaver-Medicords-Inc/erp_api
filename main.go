@@ -333,7 +333,7 @@ func main() {
 				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
 				salesApi.Put("/quotation", sales_handlers.UpdateQuotation)
 
-				//salesApi.Post("/salescanvas", sales_handlers.CreateSalesCanvasSheet)
+				salesApi.Post("/salescanvas", sales_handlers.CreateSalesCanvasSheet)
 				//salesApi.Get("/salescanvas", sales_handlers.GetSalesCanvasView)
 
 				salesApi.Get("/application", setup_handlers.GetApplications)
@@ -442,7 +442,7 @@ func main() {
 			api.Post("/bpi", bpi_handlers.CreateBpi)
 			api.Put("/bpi", bpi_handlers.UpdateBpi)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
-			api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers) // change naming convention to snake case
+			api.Get("/bpi_suppliers", sales_handlers.GetBpiSuppliers) // change naming convention to snake case
 
 			api.Get("/bpi", bpi_handlers.GetBpis)
 

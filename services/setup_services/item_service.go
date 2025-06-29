@@ -149,7 +149,11 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 		at = models.At{}
 	}
 
-	atdata := models.ItemAt{RefId: savebody.ID, ItemContent: savebody.ItemContent, At: at}
+	atdata := models.ItemAt{
+		RefId:       savebody.ID,
+		ItemContent: savebody.ItemContent,
+		At:          at}
+
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return savebody, fiber.StatusInternalServerError, errors.New("failed creating itemat")
 	}

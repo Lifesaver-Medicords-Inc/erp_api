@@ -102,8 +102,7 @@ func UpdatePurchaseOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 	var body PurchaseOrderBody
 
 	if err := c.BodyParser(&body); err != nil {
-		fmt.Println("UPDATE ERR: ", err)
-		fmt.Println("BODY: ", body)
+
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
