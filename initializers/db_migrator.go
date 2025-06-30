@@ -155,5 +155,7 @@ func MigrateDb() {
 	//DB.AutoMigrate(&models.ChartOfAccounts{}, &models.ChartOfAccountsAt{})
 	// DB.AutoMigrate(&accounting_models.SalesInvoice{}, &accounting_models.SalesInvoiceAt{})
 	// DB.AutoMigrate(&accounting_models.SalesInvoiceDetail{}, &accounting_models.SalesInvoiceDetailAt{})
+	// DB.AutoMigrate(&accounting_models.JournalEntry{}, &accounting_models.JournalEntryAt{})
+	// DB.AutoMigrate(&accounting_models.JournalEntryDetails{}, &accounting_models.JournalEntryDetailsAt{})
 
 }
