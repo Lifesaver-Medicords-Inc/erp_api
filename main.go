@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
+	"github.com/pierceperado/smpc/handlers/journal_entry_handlers"
 	"github.com/pierceperado/smpc/handlers/position_handlers"
 	"github.com/pierceperado/smpc/handlers/public_handlers"
 	"github.com/pierceperado/smpc/handlers/purchasing_handlers"
@@ -402,6 +403,9 @@ func main() {
 				// accountingApi.Put("/sales_invoice")
 				// accountingApi.Delete("/sales_invoice")
 
+				// Journal Entry Endpoints
+				accountingApi.Post("/journal_entry", journal_entry_handlers.CreateJournalEntries)
+
 			}
 
 			// Purchasing Endpoints
@@ -467,7 +471,6 @@ func main() {
 							services.HandleProjectWs(c, sales_handlers.WsProjects)
 						}))
 					}
-
 				}
 				// Purchasing Endpoints
 				purchasingApi := ws.Group("/purchasing")

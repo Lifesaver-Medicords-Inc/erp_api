@@ -25,6 +25,7 @@ func GetChartOfAccountClassification(c *fiber.Ctx) error {
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
+
 	return utils.RespondSuccess(c, data)
 }
 
