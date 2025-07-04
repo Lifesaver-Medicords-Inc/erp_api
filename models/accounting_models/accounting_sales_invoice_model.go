@@ -18,6 +18,7 @@ type SalesInvoiceContent struct {
 	ExchangeRate             float64 `json:"exchange_rate"`
 	DocNo                    string  `json:"doc_no"`
 	DocDate                  string  `json:"doc_date"`
+	PostingDate              string  `json:"posting_date"`
 	ReferenceDrNo            string  `json:"reference_dr_no"`
 	DocSoNo                  string  `json:"doc_so_no"`
 	ReferencePo              string  `json:"reference_po"`
