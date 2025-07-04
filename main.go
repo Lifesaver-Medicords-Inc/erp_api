@@ -16,14 +16,13 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
-	"github.com/pierceperado/smpc/middlewares"
 	"github.com/pierceperado/smpc/services"
 )
 
 func init() {
 	initializers.LoadEnv()
 	initializers.ConnectDb()
-	initializers.MigrateDb()
+	//	initializers.MigrateDb()
 	initializers.InitRedis()
 	initializers.InitWm()
 	initializers.InitWm2()
@@ -61,7 +60,7 @@ func main() {
 
 		// Protected Endpoints
 
-		api.Use(middlewares.RequireAuth)
+		// api.Use(middlewares.RequireAuth)
 		{
 			// Sample Endpoints
 			sampleApi := api.Group("/sample")
@@ -398,7 +397,7 @@ func main() {
 			accountingApi := api.Group("accounting")
 			{
 				accountingApi.Get("/sales_invoice_doc_no", sales_invoice_handlers.GetSalesInvoiceDocNo)
-				// accountingApi.Get("/sales_invoice/:id")
+				accountingApi.Get("/sales_invoice", sales_invoice_handlers.GetSalesInvoices)
 				accountingApi.Post("/sales_invoice", sales_invoice_handlers.CreateSalesInvoice)
 				// accountingApi.Put("/sales_invoice")
 				// accountingApi.Delete("/sales_invoice")
