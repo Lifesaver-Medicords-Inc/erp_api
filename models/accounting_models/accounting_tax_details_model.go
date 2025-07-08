@@ -1,4 +1,5 @@
 package accounting_models
+
 import "github.com/pierceperado/smpc/models"
 
 type TaxDetailsContent struct {
@@ -11,6 +12,7 @@ type TaxDetails struct {
 	ID uint `gorm:"primarykey" json:"id"`
 	TaxDetailsContent
 }
+
 func (TaxDetails) TableName() string {
 	return "tbl_setup_tax_details"
 }
