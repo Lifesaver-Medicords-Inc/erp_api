@@ -138,22 +138,20 @@ func MigrateDb() {
 	//BPI
 	// DB.AutoMigrate(&models.Bpi{}, &models.BpiAt{})
 	// DB.AutoMigrate(&models.BpiGeneral{}, &models.BpiGeneralAt{})
-
 	// DB.AutoMigrate(&models.BpiContacts{}, &models.BpiContactsAt{})
-
 	// DB.AutoMigrate(&models.BpiIndustries{}, &models.BpiIndustriesAt{})
 	// DB.AutoMigrate(&models.BpiBranchIndustries{}, &models.BpiBranchIndustriesAt{})
 	// DB.AutoMigrate(&models.BpiEntity{}, &models.BpiEntityAt{})
 	// DB.AutoMigrate(&models.BpiAddress{}, &models.BpiAddressAt{})
-
 	//DB.AutoMigrate(&models.BpiItems{}, &models.BpiItemsAt{})
-
 	//DB.AutoMigrate(&models.BpiFinance{}, &models.BpiFinanceAt{})
 	// DB.AutoMigrate(&models.BpiAccreditation{}, &models.BpiAccreditationAt{})
 
 	// ACCOUNTING
-	//DB.AutoMigrate(&models.ChartOfAccounts{}, &models.ChartOfAccountsAt{})
-	//DB.AutoMigrate(&accounting_models.SalesInvoice{}, &accounting_models.SalesInvoiceAt{})
+	// DB.AutoMigrate(&models.ChartOfAccounts{}, &models.ChartOfAccountsAt{})
+	// DB.AutoMigrate(&accounting_models.SalesInvoice{}, &accounting_models.SalesInvoiceAt{})
+	// DB.AutoMigrate(&accounting_models.Tax{}, &accounting_models.TaxAt{})
+	// DB.AutoMigrate(&accounting_models.TaxDetails{}, &accounting_models.TaxDetailsAt{})
 	// DB.AutoMigrate(&accounting_models.SalesInvoiceDetail{}, &accounting_models.SalesInvoiceDetailAt{})
 	// DB.AutoMigrate(&accounting_models.JournalEntry{}, &accounting_models.JournalEntryAt{})
 	// DB.AutoMigrate(&accounting_models.JournalEntryDetails{}, &accounting_models.JournalEntryDetailsAt{})

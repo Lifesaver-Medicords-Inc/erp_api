@@ -22,7 +22,7 @@ import (
 func init() {
 	initializers.LoadEnv()
 	initializers.ConnectDb()
-	//	initializers.MigrateDb()
+	//initializers.MigrateDb()
 	initializers.InitRedis()
 	initializers.InitWm()
 	initializers.InitWm2()
@@ -264,7 +264,7 @@ func main() {
 
 				// =========================== ACCOUNTING ENDPOINTS SETUP =============================
 				{
-					// Chart Group Endpoints
+					// Chart Book Endpoints
 					setupApi.Get("/book", setup_handlers.GetBooks)
 					setupApi.Get("/book:/id", setup_handlers.GetChartGroup)
 					setupApi.Post("/book", setup_handlers.CreateChartGroup)
@@ -285,12 +285,19 @@ func main() {
 					setupApi.Put("/chart_class", setup_handlers.UpdateChartClass)
 					setupApi.Delete("/chart_class", setup_handlers.DeleteChartClass)
 
+					//Chart of Account Endpoints
 					setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
 					setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
 					setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
 					setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
-
 					setupApi.Get("/chart_of_account_classification/:code", setup_handlers.GetChartOfAccountClassification)
+
+					// Tax Setup
+					setupApi.Get("/tax", setup_handlers.GetChartOfAccounts)
+					setupApi.Post("/tax", setup_handlers.CreateTaxSetup)
+					setupApi.Put("/tax", setup_handlers.UpdateChartOfAccount)
+					setupApi.Delete("/tax", setup_handlers.DeleteChartOfAccount)
+					//	setupApi.Get("/chart_of_account_classification/:code", setup_handlers.GetChartOfAccountClassification)
 
 					// GetGeneralLedgerMappers
 					setupApi.Get("/general_ledger", setup_handlers.GetGeneralLedgerMappers)
