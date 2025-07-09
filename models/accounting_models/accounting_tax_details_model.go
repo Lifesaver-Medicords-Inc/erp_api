@@ -3,10 +3,11 @@ package accounting_models
 import "github.com/pierceperado/smpc/models"
 
 type TaxDetailsContent struct {
-	TaxCodeId uint    `json:"tax_code_id"`
-	ValidFrom string  `json:"valid_from"`
-	ValidTo   string  `json:"valid_to"`
-	TaxRate   float64 `json:"tax_rate"`
+	TaxCodeId   uint    `json:"tax_code_id"`
+	ValidFrom   string  `json:"valid_from"`
+	ValidTo     string  `json:"valid_to"`
+	ValidStatus string  `json:"valid_status"`
+	TaxRate     float64 `json:"tax_rate"`
 }
 type TaxDetails struct {
 	ID uint `gorm:"primarykey" json:"id"`
