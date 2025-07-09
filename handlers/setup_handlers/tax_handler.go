@@ -7,6 +7,16 @@ import (
 	"github.com/pierceperado/smpc/utils"
 )
 
+func GetTaxSetup(c *fiber.Ctx) error {
+
+	data, status, err := setup_services.GetTaxSetup(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
 func CreateTaxSetup(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 
