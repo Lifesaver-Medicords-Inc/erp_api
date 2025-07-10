@@ -63,6 +63,7 @@ func main() {
 		// api.Use(middlewares.RequireAuth)
 		{
 			// Sample Endpoints
+
 			sampleApi := api.Group("/sample")
 			{
 				sampleApi.Get("/parent", sample_handlers.GetParents)
@@ -295,8 +296,8 @@ func main() {
 					// Tax Setup
 					setupApi.Get("/tax", setup_handlers.GetTaxSetup)
 					setupApi.Post("/tax", setup_handlers.CreateTaxSetup)
-					setupApi.Put("/tax", setup_handlers.UpdateChartOfAccount)
-					setupApi.Delete("/tax", setup_handlers.DeleteChartOfAccount)
+					setupApi.Put("/tax", setup_handlers.UpdateTaxSetup)
+					setupApi.Delete("/tax", setup_handlers.DeleteTaxSetup)
 					//	setupApi.Get("/chart_of_account_classification/:code", setup_handlers.GetChartOfAccountClassification)
 
 					// GetGeneralLedgerMappers
