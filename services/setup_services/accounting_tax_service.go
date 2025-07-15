@@ -40,6 +40,19 @@ func GetTaxSetup(conditions map[string]interface{}) (interface{}, int, error) {
 	return response, 0, nil
 }
 
+func GetTaxClassificationSetup(code string) (interface{}, int, error) {
+	conditions := map[string]interface{}{
+		"code": code,
+	}
+	var response []accounting_models.TaxClassification
+
+	if err := services.DbRaw(&response, "sp_tax_setup_classification", conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed to get tax classification setup")
+	}
+
+	return response, 0, nil
+}
+
 func CreateTaxSetup(c *fiber.Ctx, tx *gorm.DB) (BodyRequest, int, error) {
 
 	var body BodyRequest
