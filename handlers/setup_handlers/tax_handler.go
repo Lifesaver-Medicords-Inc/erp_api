@@ -17,6 +17,18 @@ func GetTaxSetup(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
+func GetTaxClassificationSetup(c *fiber.Ctx) error {
+
+	codeParams := c.Params("code")
+
+	data, status, err := setup_services.GetTaxClassificationSetup(codeParams)
+
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
+
 func CreateTaxSetup(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 

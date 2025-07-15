@@ -22,6 +22,7 @@ type FilterJournalRecords struct {
 	AddVat           float64
 	AddVatFc         float64
 	TaxName          string
+	TaxId            uint
 }
 
 func CreateEntries(tx *gorm.DB, child []accounting_models.JournalEntryDetails, parentId uint) error {
@@ -64,7 +65,7 @@ func CreateAutoEntry(tx *gorm.DB, body FilterJournalRecords, parentId uint) erro
 	journalDebit := GenerateAutoEntry("DEBIT", body.TotalAmountDue, body.TotalAmountDueFc, 1)
 	journalCredit := GenerateAutoEntry("CREDIT", body.AmountDue, body.AmountDueFc, body.JournalId)
 	if body.TaxName == "VAT" {
-		journalVatCredit := GenerateAutoEntry("CREDIT", body.AddVat, body.AddVatFc, body.JournalId)
+		journalVatCredit := GenerateAutoEntry("CREDIT", body.AddVat, body.AddVatFc, body.TaxId)
 		JournalRecords.Details = append(JournalRecords.Details, journalVatCredit)
 	}
 	JournalRecords.Details = append(JournalRecords.Details, journalDebit, journalCredit)

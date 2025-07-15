@@ -32,7 +32,6 @@ func GetSalesInvoices(conditions map[string]interface{}) (interface{}, int, erro
 	if err := services.DbGet(&response.SalesInvoiceDetails, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed to fetch sales invoice details table")
 	}
-
 	return response, 0, nil
 }
 
@@ -89,6 +88,7 @@ func CreateSalesInvoice(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 		AddVat:           body.AddVat,
 		AddVatFc:         body.AddVatFc,
 		TaxName:          body.TaxCode,
+		TaxId:            body.TaxId,
 	}
 
 	if err := journal_entry_services.CreateAutoEntry(tx, selectedJournalData, body.ID); err != nil {

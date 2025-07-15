@@ -22,7 +22,7 @@ import (
 func init() {
 	initializers.LoadEnv()
 	initializers.ConnectDb()
-	initializers.MigrateDb()
+	//	initializers.MigrateDb()
 	initializers.InitRedis()
 	initializers.InitWm()
 	initializers.InitWm2()
@@ -137,7 +137,6 @@ func main() {
 					itemApi.Post("", setup_handlers.CreateItem)
 					itemApi.Put("", setup_handlers.UpdateItem)
 					itemApi.Delete("", setup_handlers.DeleteItem)
-
 				}
 
 				//warehouse
@@ -294,10 +293,14 @@ func main() {
 					setupApi.Get("/chart_of_account_classification/:code", setup_handlers.GetChartOfAccountClassification)
 
 					// Tax Setup
+					setupApi.Get("/tax_setup/:code", setup_handlers.GetTaxClassificationSetup)
+
 					setupApi.Get("/tax", setup_handlers.GetTaxSetup)
+					//	setupApi.Get("/tax_setup:/code", setup_handlers.GetTaxClassificationSetup)
 					setupApi.Post("/tax", setup_handlers.CreateTaxSetup)
 					setupApi.Put("/tax", setup_handlers.UpdateTaxSetup)
 					setupApi.Delete("/tax", setup_handlers.DeleteTaxSetup)
+
 					//	setupApi.Get("/chart_of_account_classification/:code", setup_handlers.GetChartOfAccountClassification)
 
 					// GetGeneralLedgerMappers
