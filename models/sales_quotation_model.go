@@ -27,6 +27,7 @@ type SalesQuotationContent struct {
 	Contact2         string  `json:"contact_2"`
 	DocumentNo       string  `json:"document_no"`
 	VersionNo        string  `json:"version_no"`
+	SubVersionNo     string  `json:"sub_version_no"`
 	CreatedBy        string  `json:"created_by"`
 	FinalRefNo       string  `json:"final_ref_no"`
 	IsFinalized      bool    `json:"is_finalized"`

@@ -121,7 +121,7 @@ func DeleteItemImageChild(tx *gorm.DB, itemImageID uint) error {
 	return nil
 }
 
-func UpdateItemImage(tx *gorm.DB, basedId uint, itemImage ItemImageUpdate, at models.At, conditions map[string]interface{}) error {
+func UpdateItemImage(tx *gorm.DB, basedId uint, itemImage ItemImage, at models.At, conditions map[string]interface{}) error {
 	// Create new images
 	if len(itemImage.NewImages) > 0 {
 		if err := CreateItemImageChild(tx, basedId, itemImage.NewImages, at); err != nil {
