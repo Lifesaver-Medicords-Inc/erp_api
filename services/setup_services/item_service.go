@@ -22,19 +22,19 @@ type Body struct {
 type SaveBody struct {
 	models.Item
 	TradeTypeId     []uint                       `json:"trade_type_id"`
-	ItemSpecs       ItemSpecsWrapper             `json:"itemspecs"`
+	ItemSpecs       ItemSpecs                    `json:"itemspecs"`
 	AdditionalSpecs models.AdditionalSpecsSchema `json:"additionalspecs"`
-	ItemImages      ItemImageUpdate              `json:"itemimages"`
+	ItemImages      ItemImage                    `json:"itemimages"`
 }
 
 type UpdateBody struct {
 	models.Item
 	TradeTypeId     []uint                       `json:"trade_type_id"`
-	ItemSpecs       ItemSpecsWrapper             `json:"itemspecs"`
+	ItemSpecs       ItemSpecs                    `json:"itemspecs"`
 	AdditionalSpecs models.AdditionalSpecsSchema `json:"additionalspecs"`
-	ItemImages      ItemImageUpdate              `json:"itemimages"`
+	ItemImages      ItemImage                    `json:"itemimages"`
 }
-type ItemImageUpdate struct {
+type ItemImage struct {
 	NewImages     []string        `json:"newimages"`
 	ReplaceImages []ReplaceImages `json:"replaceimages"`
 	DeleteImages  []DeleteImages  `json:"deleteimages"`
@@ -49,7 +49,7 @@ type DeleteImages struct {
 	ImageID uint `json:"imageid"`
 }
 
-type ItemSpecsWrapper struct {
+type ItemSpecs struct {
 	Template           string       `json:"template"`
 	Fields             []SpecsField `json:"fields"`
 	ManufacturerOrigin string       `json:"manufacturer_origin"`
@@ -76,16 +76,14 @@ func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 	if err := services.DbGet(&response.Items, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting items")
 	}
-	//child 1
-	if err := GetItemSpecs(&response.ItemSpecs, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, err
+	if err := services.DbGet(&response.ItemSpecs, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting item spec")
 	}
-	//child 2
-	if err := GetAdditionalSpecs(&response.AdditionalSpecs, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, err
+	if err := services.DbGet(&response.AdditionalSpecs, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting item additional spec")
 	}
-	if err := GetItemImages(&response.ItemImage, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, err
+	if err := services.DbGet(&response.ItemImage, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting item image")
 	}
 	if err := services.DbGet(&response.ItemPurchasing, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting item purchasing")

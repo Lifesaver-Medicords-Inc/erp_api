@@ -5,7 +5,7 @@ type SetupItemBomDetailsContent struct {
 	ItemID    uint `json:"item_id"`
 	//Size      uint `json:"size"`
 	BomQty    uint    `json:"bom_qty"`
-	UnitPrice uint    `json:"unit_price"`
+	UnitPrice uint    `json:"unit_price"` //should be float32
 	NetPrice  float32 `json:"net_price"`
 }
 

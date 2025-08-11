@@ -18,7 +18,7 @@ type CustomerBody struct {
 }
 
 type FinalizeBody struct {
-	SalesQuotation models.SalesQuotation
+	models.SalesQuotation
 }
 
 type Body struct {
