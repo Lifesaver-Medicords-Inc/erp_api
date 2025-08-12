@@ -93,9 +93,11 @@ func DeleteWarehouseArea(tx *gorm.DB, WarehouseArea models.WarehouseArea, at mod
 	return nil
 }
 
-/// TEST AREA ///
+/// WORKING / THE USED METHODS ///
+//pls dont code review :}  //note(sumabog -> nag bandaid -> pinabayaan)
+//per row crud
 
-func GetWarehouseAreasDetached(conditions map[string]interface{}) ([]models.WarehouseArea, int, error) {
+func GetWarehouseAreasRow(conditions map[string]interface{}) ([]models.WarehouseArea, int, error) {
 	var warehouseAreas []models.WarehouseArea
 
 	if err := services.DbGet(&warehouseAreas, conditions); err != nil {
@@ -105,7 +107,7 @@ func GetWarehouseAreasDetached(conditions map[string]interface{}) ([]models.Ware
 	return warehouseAreas, 0, nil
 }
 
-func GetWarehouseAreaDetached(id int) (models.WarehouseArea, int, error) {
+func GetWarehouseAreaRow(id int) (models.WarehouseArea, int, error) {
 	conditions := map[string]interface{}{
 		"id": id,
 	}
@@ -119,7 +121,7 @@ func GetWarehouseAreaDetached(id int) (models.WarehouseArea, int, error) {
 	return warehouseArea, 0, nil
 }
 
-func CreateWarehouseAreaDetached(tx *gorm.DB, warehouseArea *models.WarehouseArea) (int, error) {
+func CreateWarehouseAreaRow(tx *gorm.DB, warehouseArea *models.WarehouseArea) (int, error) {
 
 	if err := services.DbInsert(tx, warehouseArea); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
@@ -134,7 +136,7 @@ func CreateWarehouseAreaDetached(tx *gorm.DB, warehouseArea *models.WarehouseAre
 	return 0, nil
 }
 
-func UpdateWarehouseAreaDetached(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.WarehouseArea, int, error) {
+func UpdateWarehouseAreaRow(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.WarehouseArea, int, error) {
 	var body models.WarehouseArea
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
@@ -161,7 +163,7 @@ func UpdateWarehouseAreaDetached(c *fiber.Ctx, tx *gorm.DB, conditions map[strin
 	return body, 0, nil
 }
 
-func DeleteWarehouseAreaDetached(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.WarehouseArea, int, error) {
+func DeleteWarehouseAreaRow(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.WarehouseArea, int, error) {
 	var body models.WarehouseArea
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")

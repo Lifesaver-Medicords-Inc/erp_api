@@ -18,7 +18,7 @@ type WarehouseAddress struct {
 }
 
 func (WarehouseAddress) TableName() string {
-	return "tbl_warehouse_address"
+	return "tbl_inv_warehouse_address"
 }
 
 type WarehouseAddressAt struct {
@@ -30,5 +30,5 @@ type WarehouseAddressAt struct {
 }
 
 func (WarehouseAddressAt) TableName() string {
-	return "z_tbl_warehouse_address_at"
+	return "z_tbl_inv_warehouse_address_at"
 }

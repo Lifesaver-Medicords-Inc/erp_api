@@ -21,7 +21,7 @@ import (
 func init() {
 	initializers.LoadEnv()
 	initializers.ConnectDb()
-	// initializers.MigrateDb()
+	initializers.MigrateDb()
 	initializers.InitRedis()
 	initializers.InitWm()
 	initializers.InitWm2()
@@ -164,12 +164,12 @@ func main() {
 					// warehouseApi.Put("/address", setup_handlers.UpdateWarehouseAddress)
 					// warehouseApi.Delete("/address", setup_handlers.DeleteWarehouseAddress)
 
-					//Warehouse Areas (used for seperate saving, tentative)
-					warehouseApi.Get("/area", setup_handlers.GetWarehouseAreas)
-					warehouseApi.Get("/area/:id", setup_handlers.GetWarehouseArea)
-					warehouseApi.Post("/area", setup_handlers.CreateWarehouseArea)
-					warehouseApi.Put("/area", setup_handlers.UpdateWarehouseArea)
-					warehouseApi.Delete("/area", setup_handlers.DeleteWarehouseArea)
+					//Warehouse Areas (used for seperate saving, pagsamantagal)
+					warehouseApi.Get("/area", setup_handlers.GetWarehouseAreasRow)
+					warehouseApi.Get("/area/:id", setup_handlers.GetWarehouseAreaRow)
+					warehouseApi.Post("/area", setup_handlers.CreateWarehouseAreaRow)
+					warehouseApi.Put("/area", setup_handlers.UpdateWarehouseAreaRow)
+					warehouseApi.Delete("/area", setup_handlers.DeleteWarehouseAreaRow)
 				}
 
 				reportsApi := setupApi.Group("/report")
@@ -180,6 +180,12 @@ func main() {
 					reportsApi.Post("/receiving", setup_handlers.CreateReceivingReport)
 					reportsApi.Put("/receiving", setup_handlers.UpdateReceivingReport)
 					reportsApi.Delete("/receiving", setup_handlers.DeleteReceivingReport)
+
+					//receiving report detail
+					reportsApi.Delete("/receiving_details", setup_handlers.DeleteReceivingReportDetailsRow)
+
+					//receiving report inventory
+					reportsApi.Delete("/receiving_inventory", setup_handlers.DeleteReceivingReportInventoryRow)
 				}
 
 				// Unit Measurement Endpoints

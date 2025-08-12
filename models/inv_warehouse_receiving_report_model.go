@@ -19,7 +19,7 @@ type ReceivingReport struct {
 }
 
 func (ReceivingReport) TableName() string {
-	return "tbl_receiving_report"
+	return "tbl_inv_warehouse_receiving_report"
 }
 
 type ReceivingReportAt struct {
@@ -31,5 +31,5 @@ type ReceivingReportAt struct {
 }
 
 func (ReceivingReportAt) TableName() string {
-	return "z_tbl_receiving_report_at"
+	return "z_tbl_inv_warehouse_receiving_report_at"
 }

@@ -1,7 +1,8 @@
 package models
 
 type WarehouseUseTypeContent struct {
-	Name string `json:"name"`
+	Name    string `json:"name"`
+	BgColor string `json:"bg_color"`
 }
 
 type WarehouseUseType struct {
@@ -11,7 +12,7 @@ type WarehouseUseType struct {
 }
 
 func (WarehouseUseType) TableName() string {
-	return "tbl_setup_usetype"
+	return "tbl_inv_warehouse_usetype" // not under inv_warehouse_ ok?
 }
 
 type WarehouseUseTypeAt struct {
@@ -23,5 +24,5 @@ type WarehouseUseTypeAt struct {
 }
 
 func (WarehouseUseTypeAt) TableName() string {
-	return "z_tbl_setup_usetype_at"
+	return "z_tbl_inv_warehouse_usetype_at"
 }
