@@ -10,7 +10,7 @@ type ItemContent struct {
 	ItemCode            string  `json:"item_code"`
 	ShortDesc           string  `json:"short_desc"`
 	ItemTangibilityType string  `json:"item_tangibility_type"`
-	IsStopSelling       *int    `json:"is_stop_selling"`
+	IsStopSelling       *bool   `json:"is_stop_selling"`
 	Price               float64 `json:"price"`
 }
 type Item struct {
