@@ -1,4 +1,6 @@
-package models
+package accounting_models
+
+import "github.com/pierceperado/smpc/models"
 
 type Book struct {
 	ID   uint   `gorm:"primarykey" json:"id"`
@@ -15,7 +17,7 @@ type BookAt struct {
 	RefId uint   `json:"ref_id"`
 	Code  string `json:"code"`
 	Name  string `json:"name"`
-	At
+	models.At
 }
 
 func (BookAt) TableName() string {

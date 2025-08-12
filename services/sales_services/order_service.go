@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
 )
@@ -84,8 +85,8 @@ func GetSalesOrderDR(id int) (interface{}, int, error) {
 	}
 
 	type Response struct {
-		Order        []models.SalesOrderWithDeliveryReceipt `json:"orders"`
-		OrderDetails []models.SalesOrderWithDRDetails       `json:"order_details"`
+		Order        []accounting_models.SalesOrderWithDeliveryReceipt `json:"orders"`
+		OrderDetails []accounting_models.SalesOrderWithDRDetails       `json:"order_details"`
 	}
 
 	var response Response
@@ -205,31 +206,6 @@ func UpdateOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 	InvalidateSOCaches()
 
 	return bodyorder, 0, nil
-}
-
-func UpdateOrderDetailOnly(c *fiber.Ctx, tx *gorm.DB) (UpdateBodyOrderDetails, int, error) {
-	var body UpdateBodyOrderDetails
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
-	}
-
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
-
-	for _, detail := range body.OrderDetails {
-		conditions := map[string]interface{}{
-			"order_details_id": detail.Order_Details_ID,
-		}
-		if err := UpdateOrderDetails(tx, detail, at, conditions); err != nil {
-			return body, fiber.StatusInternalServerError, err
-		}
-	}
-
-	InvalidateSOCaches()
-
-	return body, fiber.StatusOK, nil
 }
 
 func DeleteOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (BodyOrder, int, error) {

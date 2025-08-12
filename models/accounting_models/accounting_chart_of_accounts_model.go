@@ -1,4 +1,6 @@
-package models
+package accounting_models
+
+import "github.com/pierceperado/smpc/models"
 
 type ChartOfAccountContent struct {
 	Code    string `json:"code"`
@@ -20,7 +22,7 @@ type ChartOfAccountsAt struct {
 	ID    uint `gorm:"primarykey" json:"id"`
 	RefId uint `json:"ref_id"`
 	ChartOfAccountContent
-	At
+	models.At
 }
 
 func (ChartOfAccountsAt) TableName() string {

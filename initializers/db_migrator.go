@@ -60,30 +60,33 @@ func MigrateDb() {
 	// // Sales
 
 	// // DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
-	// // DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})/sad
+	//DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
 	// DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
 
-	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
-	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
+	//DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
+	//DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
+
 	// DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
 
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 
-	// DB.AutoMigrate(
-	// 	&models.SalesProjectMultiplier{},
-	// 	&models.SalesProjectMultiplierAt{},
-	// 	&models.SalesProjectHistory{},
-	// 	&models.SalesProjectHistoryAt{},
-	// 	&models.SalesProjectItemSet{},
-	// 	&models.SalesProjectItemSetAt{},
-	// 	&models.SalesProjectContent{},
-	// 	&models.SalesProjectContentAt{},
-	// 	&models.SalesProjectAdvancedConditions{},
-	// 	&models.SalesProjectAdvancedConditionsAt{},
-	// 	&models.SalesProjectItems{},
-	// 	&models.SalesProjectItemsAt{},
-	// )
+
+	//DB.AutoMigrate(
+	// &models.SalesProjectMultiplier{},
+	// &models.SalesProjectMultiplierAt{},
+	// &models.SalesProjectHistory{},
+	// &models.SalesProjectHistoryAt{},
+	// &models.SalesProjectItemSet{},
+	// &models.SalesProjectItemSetAt{},
+	// &models.SalesProjectContent{},
+	// &models.SalesProjectContentAt{},
+	// &models.SalesProjectAdvancedConditions{},
+	// &models.SalesProjectAdvancedConditionsAt{},
+	// &models.SalesProjectItems{},
+	// &models.SalesProjectItemsAt{},
+	//)
+
 
 	// DB.AutoMigrate(
 	// 	&models.SalesQuotation{},
@@ -129,7 +132,7 @@ func MigrateDb() {
 	//DB.AutoMigrate(&models.PurchaseOrder{}, &models.PurchaseOrderAt{})
 	//DB.AutoMigrate(&models.PurchaseOrderDetails{}, &models.PurchaseOrderDetailsAt{})
 	// Sales
-	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
+	//DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	//DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
 	//DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
@@ -140,20 +143,22 @@ func MigrateDb() {
 	//BPI
 	// DB.AutoMigrate(&models.Bpi{}, &models.BpiAt{})
 	// DB.AutoMigrate(&models.BpiGeneral{}, &models.BpiGeneralAt{})
-
 	// DB.AutoMigrate(&models.BpiContacts{}, &models.BpiContactsAt{})
-
 	// DB.AutoMigrate(&models.BpiIndustries{}, &models.BpiIndustriesAt{})
 	// DB.AutoMigrate(&models.BpiBranchIndustries{}, &models.BpiBranchIndustriesAt{})
 	// DB.AutoMigrate(&models.BpiEntity{}, &models.BpiEntityAt{})
 	// DB.AutoMigrate(&models.BpiAddress{}, &models.BpiAddressAt{})
-
 	//DB.AutoMigrate(&models.BpiItems{}, &models.BpiItemsAt{})
-
 	//DB.AutoMigrate(&models.BpiFinance{}, &models.BpiFinanceAt{})
 	// DB.AutoMigrate(&models.BpiAccreditation{}, &models.BpiAccreditationAt{})
 
 	// ACCOUNTING
-	//DB.AutoMigrate(&models.ChartOfAccounts{}, &models.ChartOfAccountsAt{})
+	// DB.AutoMigrate(&models.ChartOfAccounts{}, &models.ChartOfAccountsAt{})
+	//	DB.AutoMigrate(&accounting_models.SalesInvoice{}, &accounting_models.SalesInvoiceAt{})
+	// DB.AutoMigrate(&accounting_models.Tax{}, &accounting_models.TaxAt{})
+	//	DB.AutoMigrate(&accounting_models.TaxDetails{}, &accounting_models.TaxDetailsAt{})
+	// DB.AutoMigrate(&accounting_models.SalesInvoiceDetail{}, &accounting_models.SalesInvoiceDetailAt{})
+	// DB.AutoMigrate(&accounting_models.JournalEntry{}, &accounting_models.JournalEntryAt{})
+	// DB.AutoMigrate(&accounting_models.JournalEntryDetails{}, &accounting_models.JournalEntryDetailsAt{})
 
 }

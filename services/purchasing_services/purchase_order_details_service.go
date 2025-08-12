@@ -2,7 +2,6 @@ package purchasing_services
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -17,23 +16,39 @@ func GetPurchaseOrderDetails(purchaserderdetails *[]models.PurchaseOrderDetails,
 }
 
 func CreatePurchaseOrderDetails(tx *gorm.DB, basedId uint, PurchaseOrderDetails models.PurchaseOrderDetails, at models.At) error {
-
 	PurchaseOrderDetails.BasedId = basedId
 
 	if err := services.DbInsert(tx, &PurchaseOrderDetails); err != nil {
-		fmt.Println(err)
-		fmt.Println("ERR", &PurchaseOrderDetails)
 		return errors.New("failed creating purchaseorderdetails")
 	}
 
-	quickquotationsat := models.PurchaseOrderDetailsAt{
+	purchaseorderat := models.PurchaseOrderDetailsAt{
 		RefId:                       PurchaseOrderDetails.ID,
 		PurchaseOrderDetailsContent: PurchaseOrderDetails.PurchaseOrderDetailsContent,
 		At:                          at,
 	}
 
-	if err := services.DbInsert(tx, &quickquotationsat); err != nil {
-		return errors.New("failed creating purchaserderdetailsat")
+	if err := services.DbInsert(tx, &purchaseorderat); err != nil {
+		return errors.New("failed creating purchase orderdetailsat")
+	}
+
+	return nil
+}
+
+func UpdatePurchaseOrderDetails(tx *gorm.DB, basedId uint, purchaserderdetails models.PurchaseOrderDetails, at models.At, conditions map[string]interface{}) error {
+
+	
+	if err := services.DbUpdate(tx, &purchaserderdetails, conditions); err != nil {
+		return errors.New("failed updating purchaseorderdetails")
+	}
+
+	purchaseorderdetailsat := models.PurchaseOrderDetailsAt{
+		RefId:                       purchaserderdetails.ID,
+		PurchaseOrderDetailsContent: purchaserderdetails.PurchaseOrderDetailsContent,
+		At:                          at,
+	}
+	if err := services.DbInsert(tx, &purchaseorderdetailsat); err != nil {
+		return errors.New("failed creating purchaseorderdetailsat")
 	}
 
 	return nil
