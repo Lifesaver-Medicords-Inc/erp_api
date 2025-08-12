@@ -11,6 +11,8 @@ import (
 	"gorm.io/gorm"
 )
 
+//trash old code, too laze to update
+
 func GetWarehouseManagers(conditions map[string]interface{}) ([]models.User, int, error) {
 	var users []models.User
 
@@ -75,7 +77,7 @@ func GetWarehouseName(id int) (GetSpecificWarehouseBody, int, error) {
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	areas, _, err := GetWarehouseAreasDetached(conditions)
+	areas, _, err := GetWarehouseAreasRow(conditions) //get list of children (grid)
 	if err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
@@ -97,13 +99,16 @@ func CreateWarehouseName(c *fiber.Ctx, tx *gorm.DB) (WarehouseBody, int, error) 
 	generatedWarehouseCode := utils.WarehouseCodeGenerator(body.WarehouseName.ID)
 	body.WarehouseName.Code = generatedWarehouseCode
 
-	generatedAreaCode := utils.AreaCodeGenerator(
-		body.WarehouseArea.Zone,
-		body.WarehouseArea.Area,
-		body.WarehouseArea.Rack,
-		body.WarehouseArea.Level,
-		body.WarehouseArea.Bins)
-	body.WarehouseArea.LocationCode = generatedAreaCode
+	// Only generate LocationCode if frontend didn't supply one (usually used by postman)
+	if body.WarehouseArea.LocationCode == "" {
+		body.WarehouseArea.LocationCode = utils.AreaCodeGenerator(
+			body.WarehouseArea.Zone,
+			body.WarehouseArea.Area,
+			body.WarehouseArea.Rack,
+			body.WarehouseArea.Level,
+			body.WarehouseArea.Bins,
+		)
+	}
 
 	if err := tx.Model(&body.WarehouseName).Update("code", body.WarehouseName.Code).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating warehouse name code")
@@ -144,7 +149,7 @@ func UpdateWarehouseName(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	//front end na ung code generation (kapag insert)
+	//front end na ung code generation (for backend testing purpose)
 	generatedAreaCode := utils.AreaCodeGenerator(
 		body.WarehouseArea.Zone,
 		body.WarehouseArea.Area,
