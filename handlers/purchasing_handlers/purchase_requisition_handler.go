@@ -98,29 +98,6 @@ func UpdatePR(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func UpdateRequisitionDetailOnly(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
-	}
-
-	data, status, err := purchasing_services.UpdateRequisitionDetailOnly(c, tx)
-	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
-	}
-
-	// websocket
-	//purchasing_services.BroadcastRedboxList()
-
-	return utils.RespondSuccess(c, data)
-}
-
 func DeletePR(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {

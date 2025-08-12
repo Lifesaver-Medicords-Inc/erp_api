@@ -16,11 +16,7 @@ type AdditionalSpecsContent struct {
 	VolumeUnitOfMeasureId    uint    `json:"volume_unit_of_measure_id"`
 	Weight                   float64 `json:"weight"`
 	WeightUnitOfMeasureId    uint    `json:"weight_unit_of_measure_id"`
-	// Length                   float64 `json:"length"`
-	// LengthUnitOfMeasureId    uint    `json:"length_unit_of_measure_id"`
-	// Height                   float64 `json:"height"`
-	// HeightUnitOfMeasureId    uint    `json:"height_unit_of_measure_id"`
-	LongDescription string `json:"long_description"`
+	LongDescription          string  `json:"long_description"`
 }
 
 type AdditionalSpecs struct {

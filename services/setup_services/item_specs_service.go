@@ -34,7 +34,7 @@ func GetItemSpec(itemspec *models.ItemSpecs, conditions map[string]interface{}) 
 	return nil
 }
 
-func CreateItemSpec(tx *gorm.DB, basedId uint, itemSpecs ItemSpecsWrapper, at models.At) error {
+func CreateItemSpec(tx *gorm.DB, basedId uint, itemSpecs ItemSpecs, at models.At) error {
 	for _, field := range itemSpecs.Fields {
 		content := models.ItemSpecsContent{
 			BasedId:            basedId,
@@ -63,7 +63,7 @@ func CreateItemSpec(tx *gorm.DB, basedId uint, itemSpecs ItemSpecsWrapper, at mo
 	return nil
 }
 
-func UpdateItemSpec(tx *gorm.DB, basedId uint, itemSpecs ItemSpecsWrapper, at models.At, conditions map[string]interface{}) error {
+func UpdateItemSpec(tx *gorm.DB, basedId uint, itemSpecs ItemSpecs, at models.At, conditions map[string]interface{}) error {
 	if err := services.DbDelete(tx, &models.ItemSpecs{}, conditions); err != nil {
 		return errors.New("failed deleting existing itemspecs")
 	}

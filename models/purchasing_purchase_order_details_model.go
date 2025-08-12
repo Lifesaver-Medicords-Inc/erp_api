@@ -16,6 +16,9 @@ type PurchaseOrderDetailsContent struct {
 	OrderDetailIds  string  `json:"order_detail_ids"`
 	AllocatedQtys   string  `json:"allocated_qtys"`
 	Qtys            string  `json:"qtys"`
+
+	// CREATE FOREIGN KEY WITH CONSTRAINTS
+	//PurchaseOrder PurchaseOrder `gorm:"foreignKey:BasedId;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"purchase_order"`
 }
 
 type PurchaseOrderDetails struct {

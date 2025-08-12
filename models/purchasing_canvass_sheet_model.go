@@ -6,7 +6,6 @@ type PurchasingCanvassSheetContent struct {
 	ContactNo         string  `json:"contact_no"`
 	OrderSize         int     `json:"order_size"`
 	SupplierStock     int     `json:"supplier_stock"`
-	ReservedStock     int     `json:"reserved_stock"`
 	PreviousListPrice float64 `json:"previous_list_price"`
 	CurrentListPrice  float64 `json:"current_list_price"`
 	NewListPrice      float64 `json:"new_list_price"`

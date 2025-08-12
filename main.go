@@ -7,20 +7,21 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
+	"github.com/pierceperado/smpc/handlers/journal_entry_handlers"
 	"github.com/pierceperado/smpc/handlers/position_handlers"
 	"github.com/pierceperado/smpc/handlers/public_handlers"
 	"github.com/pierceperado/smpc/handlers/purchasing_handlers"
 	"github.com/pierceperado/smpc/handlers/sales_handlers"
+	"github.com/pierceperado/smpc/handlers/sales_invoice_handlers"
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
-	"github.com/pierceperado/smpc/middlewares"
 	"github.com/pierceperado/smpc/services"
 )
 
 func init() {
 	initializers.LoadEnv()
-	initializers.ConnectDb()
+  initializers.ConnectDb()
 	initializers.MigrateDb()
 	initializers.InitRedis()
 	initializers.InitWm()
@@ -59,9 +60,10 @@ func main() {
 
 		// Protected Endpoints
 
-		api.Use(middlewares.RequireAuth)
+		// api.Use(middlewares.RequireAuth)
 		{
 			// Sample Endpoints
+
 			sampleApi := api.Group("/sample")
 			{
 				sampleApi.Get("/parent", sample_handlers.GetParents)
@@ -135,7 +137,6 @@ func main() {
 					itemApi.Post("", setup_handlers.CreateItem)
 					itemApi.Put("", setup_handlers.UpdateItem)
 					itemApi.Delete("", setup_handlers.DeleteItem)
-
 				}
 
 				//warehouse
@@ -269,7 +270,7 @@ func main() {
 
 				// =========================== ACCOUNTING ENDPOINTS SETUP =============================
 				{
-					// Chart Group Endpoints
+					// Chart Book Endpoints
 					setupApi.Get("/book", setup_handlers.GetBooks)
 					setupApi.Get("/book:/id", setup_handlers.GetChartGroup)
 					setupApi.Post("/book", setup_handlers.CreateChartGroup)
@@ -290,17 +291,23 @@ func main() {
 					setupApi.Put("/chart_class", setup_handlers.UpdateChartClass)
 					setupApi.Delete("/chart_class", setup_handlers.DeleteChartClass)
 
-					// Chart Of Account Endpoints
-					// setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
-					// setupApi.Get("/chart_of_account:/id", setup_handlers.GetChartOfAccount)
-					// setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
-					// setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
-					// setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
-
+					//Chart of Account Endpoints
 					setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
 					setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
 					setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
 					setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
+					setupApi.Get("/chart_of_account_classification/:code", setup_handlers.GetChartOfAccountClassification)
+
+					// Tax Setup
+					setupApi.Get("/tax_setup/:code", setup_handlers.GetTaxClassificationSetup)
+
+					setupApi.Get("/tax", setup_handlers.GetTaxSetup)
+					//	setupApi.Get("/tax_setup:/code", setup_handlers.GetTaxClassificationSetup)
+					setupApi.Post("/tax", setup_handlers.CreateTaxSetup)
+					setupApi.Put("/tax", setup_handlers.UpdateTaxSetup)
+					setupApi.Delete("/tax", setup_handlers.DeleteTaxSetup)
+
+					//	setupApi.Get("/chart_of_account_classification/:code", setup_handlers.GetChartOfAccountClassification)
 
 					// GetGeneralLedgerMappers
 					setupApi.Get("/general_ledger", setup_handlers.GetGeneralLedgerMappers)
@@ -343,7 +350,7 @@ func main() {
 				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
 				salesApi.Put("/quotation", sales_handlers.UpdateQuotation)
 
-				//salesApi.Post("/salescanvas", sales_handlers.CreateSalesCanvasSheet)
+				salesApi.Post("/salescanvas", sales_handlers.CreateSalesCanvasSheet)
 				//salesApi.Get("/salescanvas", sales_handlers.GetSalesCanvasView)
 
 				salesApi.Get("/application", setup_handlers.GetApplications)
@@ -358,7 +365,6 @@ func main() {
 				salesApi.Post("child/order", sales_handlers.CreateOrderChild)
 				salesApi.Post("/order", sales_handlers.CreateOrder)
 				salesApi.Put("/order", sales_handlers.UpdateOrder)
-				salesApi.Put("/order_details", sales_handlers.UpdateOrderDetailOnly)
 				salesApi.Delete("/order", sales_handlers.DeleteOrder)
 
 				// Opportunity Endpointss
@@ -405,15 +411,18 @@ func main() {
 				salesApi.Get("/order_dr", sales_handlers.GetSalesOrdersDr)
 			}
 
-			// accountingApi := api.Group("accounting")
-			// {
-			// 	accountingApi.Get("/sales_invoice")
-			// 	accountingApi.Get("/sales_invoice/:id")
-			// 	accountingApi.Post("/sales_invoice")
-			// 	accountingApi.Put("/sales_invoice")
-			// 	accountingApi.Delete("/sales_invoice")
+			accountingApi := api.Group("accounting")
+			{
+				accountingApi.Get("/sales_invoice_doc_no", sales_invoice_handlers.GetSalesInvoiceDocNo)
+				accountingApi.Get("/sales_invoice", sales_invoice_handlers.GetSalesInvoices)
+				accountingApi.Post("/sales_invoice", sales_invoice_handlers.CreateSalesInvoice)
+				// accountingApi.Put("/sales_invoice")
+				// accountingApi.Delete("/sales_invoice")
 
-			// }
+				// Journal Entry Endpoints
+				accountingApi.Post("/journal_entry", journal_entry_handlers.CreateJournalEntries)
+
+			}
 
 			// Purchasing Endpoints
 			purchasingApi := api.Group("/purchasing")
@@ -423,7 +432,6 @@ func main() {
 				purchasingApi.Post("child/purchase_requisition", purchasing_handlers.CreatePRChild)
 				purchasingApi.Post("/purchase_requisition", purchasing_handlers.CreatePR)
 				purchasingApi.Put("/purchase_requisition", purchasing_handlers.UpdatePR)
-				purchasingApi.Put("/purchase_requisition_details", purchasing_handlers.UpdateRequisitionDetailOnly)
 				purchasingApi.Delete("/purchase_requisition", purchasing_handlers.DeletePR)
 				purchasingApi.Delete("child/purchase_requisition", purchasing_handlers.DeletePROrderByID)
 
@@ -454,7 +462,7 @@ func main() {
 			api.Post("/bpi", bpi_handlers.CreateBpi)
 			api.Put("/bpi", bpi_handlers.UpdateBpi)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
-			api.Get("/BpiSuppliers", sales_handlers.GetBpiSuppliers)
+			api.Get("/bpi_suppliers", sales_handlers.GetBpiSuppliers) // change naming convention to snake case
 
 			api.Get("/bpi", bpi_handlers.GetBpis)
 
@@ -479,7 +487,6 @@ func main() {
 							services.HandleProjectWs(c, sales_handlers.WsProjects)
 						}))
 					}
-
 				}
 				// Purchasing Endpoints
 				purchasingApi := ws.Group("/purchasing")

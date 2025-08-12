@@ -203,7 +203,6 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
-
 	return body, 0, nil
 }
 func UpdateBpi(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Body, int, error) {
@@ -245,6 +244,12 @@ func UpdateBpi(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bo
 	// Delete the bpi industries data  and Create data  in table
 	if len(body.IndustriesId) != 0 {
 		if err := services.DbDelete(tx, &models.BpiIndustries{}, IndustriesCondition); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+
+	for _, v := range body.IndustriesId {
+		if err := CreateBpiIndustries(tx, body.ID, uint(v), at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}

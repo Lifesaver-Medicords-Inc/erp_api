@@ -1,6 +1,8 @@
 package purchasing_handlers
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/services/purchasing_services"
@@ -18,6 +20,8 @@ func GetPurchaseOrder(c *fiber.Ctx) error {
 
 func CreatePurchaseOrder(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
+
+	fmt.Println("CREATING PO")
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}

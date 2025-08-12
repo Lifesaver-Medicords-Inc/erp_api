@@ -125,28 +125,6 @@ func UpdateOrder(c *fiber.Ctx) error {
 
 	return utils.RespondSuccess(c, data)
 }
-func UpdateOrderDetailOnly(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
-	}
-
-	data, status, err := sales_services.UpdateOrderDetailOnly(c, tx)
-	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
-	}
-
-	// websocket
-	purchasing_handlers.BroadcastRedboxList()
-
-	return utils.RespondSuccess(c, data)
-}
 
 func DeleteOrder(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()

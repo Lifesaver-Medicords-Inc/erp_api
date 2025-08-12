@@ -2,6 +2,8 @@ package purchasing_services
 
 import (
 	"errors"
+	"fmt"
+
 	// "fmt"
 
 	"github.com/pierceperado/smpc/models"
@@ -77,19 +79,65 @@ func UpdatePROrder(tx *gorm.DB, prorders models.PROrders, at models.At, conditio
 		return errors.New("failed creating purchase requisition orders at")
 	}
 
+	InvalidatePRCaches()
 	return nil
 }
 
-func UpdateRequisitionDetails(tx *gorm.DB, orderdetails models.PROrders, at models.At, conditions map[string]interface{}) error {
-	// If no conditions passed, fallback to primary key condition
+func UpdateRequisitionDetails(tx *gorm.DB, orderdetails models.PROrders, at models.At, conditions map[string]interface{}, orderType string, status string, mode string) error {
 	if len(conditions) == 0 {
 		conditions = map[string]interface{}{
 			"pr_order_id": orderdetails.PR_Order_ID,
 		}
 	}
+	fmt.Println("PR UPDATE DETAILS")
+	var existing models.PROrders
+
+	if err := tx.Model(&models.PROrders{}).Where(conditions).First(&existing).Error; err != nil {
+		return errors.New("failed getting existing requisition order")
+	}
+
+	if status == "CANCELLED" && mode == "update" {
+		fmt.Println("ORDER DATA: ", orderdetails)
+
+		// Defensive checks in case pointers are nil
+		if existing.AllocatedQty == nil {
+			existing.AllocatedQty = new(int)
+		}
+		if orderdetails.AllocatedQty == nil {
+			orderdetails.AllocatedQty = new(int)
+		}
+
+		result := *existing.AllocatedQty - *orderdetails.AllocatedQty
+		if result < 0 {
+			result = 0
+		}
+
+		fmt.Printf("EXISTING ALLOC: %d, CANCELLED: %d, RESULT: %d\n",
+			*existing.AllocatedQty,
+			*orderdetails.AllocatedQty,
+			result)
+
+		fmt.Println("PO CANCELLED, DEDUCT ALLOC QTY")
+
+		*orderdetails.AllocatedQty = result
+
+	} else if mode == "create" {
+		fmt.Println("CREATE MODE")
+
+		if orderdetails.AllocatedQty == nil {
+			orderdetails.AllocatedQty = new(int)
+		}
+		if existing.AllocatedQty != nil {
+			*orderdetails.AllocatedQty += *existing.AllocatedQty
+		}
+	}
 
 	if err := services.DbUpdate(tx, &orderdetails, conditions); err != nil {
-		return errors.New("failed updating requisition orders")
+		return errors.New("failed updating requisition order")
+	}
+
+	if err := tx.Exec("EXEC sp_SetOrderStatus ?, ?", orderdetails.PR_Order_ID, orderType).Error; err != nil {
+		return errors.New("failed executing stored procedure")
 	}
 
 	orderdetailsat := models.PROrdersAt{
@@ -120,4 +168,15 @@ func DeletePROrder(tx *gorm.DB, prorder models.PROrders, at models.At, condition
 	}
 
 	return nil
+}
+
+func InvalidatePRCaches() {
+	cacheKeys := []interface{}{
+		models.PRPurchasingListView{},
+		models.PurchasingListSupplierView{},
+		models.PurchasingRedboxPurchaseListView{},
+	}
+	for _, key := range cacheKeys {
+		services.InvalidateCache(services.GetKey(key, nil))
+	}
 }

@@ -1,4 +1,4 @@
-package models
+package accounting_models
 
 type SalesOrderWithDeliveryReceipt struct {
 	OrderId        uint    `json:"order_id"`
@@ -8,7 +8,7 @@ type SalesOrderWithDeliveryReceipt struct {
 	CustomerName   string  `json:"customer_name"`
 	CustomerCode   string  `json:"customer_code"`
 	TaxCode        string  `json:"tax_code"`
-	Tax            string  `json:"tax"`
+	TaxId          uint    `json:"tax_id"`
 	Address        string  `json:"address"`
 	DocSoNo        string  `json:"doc_so_no"`
 	DocDate        string  `json:"doc_date"`
