@@ -71,7 +71,6 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 
-
 	//DB.AutoMigrate(
 	// &models.SalesProjectMultiplier{},
 	// &models.SalesProjectMultiplierAt{},
@@ -86,7 +85,6 @@ func MigrateDb() {
 	// &models.SalesProjectItems{},
 	// &models.SalesProjectItemsAt{},
 	//)
-
 
 	// DB.AutoMigrate(
 	// 	&models.SalesQuotation{},
@@ -161,4 +159,6 @@ func MigrateDb() {
 	// DB.AutoMigrate(&accounting_models.JournalEntry{}, &accounting_models.JournalEntryAt{})
 	// DB.AutoMigrate(&accounting_models.JournalEntryDetails{}, &accounting_models.JournalEntryDetailsAt{})
 
+	//ADMIN
+	//DB.AutoMigrate(&adminmodels.Position{},&adminmodels.PositionAt{},&adminmodels.PositionAccess{},&adminmodels.PositionAccessAt{},&adminmodels.UserPermission{},&adminmodels.UserPermissionAt{})
 }

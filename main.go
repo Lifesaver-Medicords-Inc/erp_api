@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	adminhandlers "github.com/pierceperado/smpc/handlers/admin_handlers"
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
 	"github.com/pierceperado/smpc/handlers/journal_entry_handlers"
 	"github.com/pierceperado/smpc/handlers/position_handlers"
@@ -21,7 +22,7 @@ import (
 
 func init() {
 	initializers.LoadEnv()
-  initializers.ConnectDb()
+	initializers.ConnectDb()
 	initializers.MigrateDb()
 	initializers.InitRedis()
 	initializers.InitWm()
@@ -453,6 +454,23 @@ func main() {
 				purchasingApi.Get("/purchase_order", purchasing_handlers.GetPurchaseOrder)
 				purchasingApi.Post("/purchase_order", purchasing_handlers.CreatePurchaseOrder)
 				purchasingApi.Put("/purchase_order", purchasing_handlers.UpdatePurchaseOrder)
+			}
+
+			// Admin
+
+			adminGroupApi := api.Group("/admin")
+			{
+				adminGroupApi.Get("/positions", adminhandlers.GetPositions)
+				adminGroupApi.Get("/positions/:id", adminhandlers.GetPosition)
+				adminGroupApi.Post("/positions/:id", adminhandlers.CreatePosition)
+				adminGroupApi.Put("/positions/:id", adminhandlers.UpdatePosition)
+				adminGroupApi.Delete("/positions/:id", adminhandlers.DeletePosition)
+
+				adminGroupApi.Get("/user_permissions", adminhandlers.GetUserPermissions)
+				adminGroupApi.Get("/user_permissions/:id", adminhandlers.GetUserPermission)
+				adminGroupApi.Post("/user_permissions/:id", adminhandlers.CreateUserPermission)
+				adminGroupApi.Put("/user_permissions/:id", adminhandlers.UpdateUserPermission)
+				adminGroupApi.Delete("/user_permissions/:id", adminhandlers.DeleteUserPermission)
 			}
 
 			//Bpi Endpoints

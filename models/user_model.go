@@ -6,6 +6,7 @@ type UserContent struct {
 	Department string `json:"department"`
 	Position   string `json:"position"`
 	Password   string `json:"password"`
+	PositionId uint	  `json:"position_id"`
 }
 
 type User struct {
