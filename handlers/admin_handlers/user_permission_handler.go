@@ -30,12 +30,12 @@ func GetUserPermission(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	data, status, err := adminservices.GetUserPermission(conditions)
+	data, status, err := adminservices.GetUserPermissions(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
-	return utils.RespondSuccess(c, data)
+	return utils.RespondSuccess(c, data[0])
 }
 
 func CreateUserPermission(c *fiber.Ctx) error {

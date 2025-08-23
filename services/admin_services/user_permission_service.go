@@ -10,18 +10,16 @@ import (
 	"gorm.io/gorm"
 )
 
+
 func GetUserPermissions(conditions map[string]interface{}) ([]adminmodels.UserPermission, int, error) {
 
-	var based_service = services.NewInMemoryRepository(nil, nil, adminmodels.UserPermission{}, adminmodels.UserPermissionAt{})
+	var positions []adminmodels.UserPermission
 
-	return based_service.FetchAll()
-}
+	if err := services.DbGet(&positions, conditions); err != nil {
+		return positions, fiber.StatusInternalServerError, errors.New("failed getting positions")
+	}
 
-func GetUserPermission(conditions map[string]interface{}) ([]adminmodels.UserPermission, int, error) {
-
-	var based_service = services.NewInMemoryRepository(nil, nil, adminmodels.UserPermission{}, adminmodels.UserPermissionAt{})
-
-	return based_service.FetchWithFilter(conditions)
+	return positions, 0, nil
 }
 
 func CreateUserPermission(c *fiber.Ctx, tx *gorm.DB) (adminmodels.UserPermission, int, error) {
@@ -39,7 +37,12 @@ func CreateUserPermission(c *fiber.Ctx, tx *gorm.DB) (adminmodels.UserPermission
 		at = models.At{}
 	}
 
-	atdata := adminmodels.UserPermissionAt{RefId: body.ID, Code: body.UserId, At: at}
+	atdata := adminmodels.UserPermissionAt{RefId: body.ID, Code: body.UserId, At: at, UserPermission: adminmodels.UserPermission{
+		UserId:    body.UserId,
+		CanCreate: body.CanCreate,
+		CanUpdate: body.CanUpdate,
+		CanDelete: body.CanDelete,
+	}}
 
 	return service.Create(body, atdata)
 }
@@ -58,7 +61,12 @@ func UpdateUserPermission(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 		at = models.At{}
 	}
 
-	atdata := adminmodels.UserPermissionAt{RefId: body.ID, Code: body.UserId, At: at}
+	atdata := adminmodels.UserPermissionAt{RefId: body.ID, Code: body.UserId, At: at, UserPermission: adminmodels.UserPermission{
+		UserId:    body.UserId,
+		CanCreate: body.CanCreate,
+		CanUpdate: body.CanUpdate,
+		CanDelete: body.CanDelete,
+	}}
 
 	return service.Update(body, atdata, conditions)
 }
@@ -79,7 +87,12 @@ func DeleteUserPermission(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 		at = models.At{}
 	}
 
-	atdata := adminmodels.UserPermissionAt{RefId: body.ID, Code: body.UserId, At: at}
+	atdata := adminmodels.UserPermissionAt{RefId: body.ID, Code: body.UserId, At: at, UserPermission: adminmodels.UserPermission{
+		UserId:    body.UserId,
+		CanCreate: body.CanCreate,
+		CanUpdate: body.CanUpdate,
+		CanDelete: body.CanDelete,
+	}}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating classat")

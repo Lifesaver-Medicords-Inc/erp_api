@@ -10,25 +10,19 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetPositions(conditions map[string]interface{}) ([]adminmodels.Position, int, error) {
+func GetPositions(conditions map[string]interface{}, tx *gorm.DB) ([]adminmodels.Position, int, error) {
 
-	var based_service = services.NewInMemoryRepository(nil, nil, adminmodels.Position{}, adminmodels.PositionAt{})
+	var positions []adminmodels.Position
 
-	return based_service.FetchAll()
-}
+	query := tx.Model(&adminmodels.Position{}).Preload("Access").Where(conditions)
 
-func GetPosition(id int) (models.Position, int, error) {
-	conditions := map[string]interface{}{
-		"id": id,
-	}
-	var position models.Position
-
-	if err := services.DbGet(&position, conditions); err != nil {
-		return position, fiber.StatusInternalServerError, errors.New("failed getting position")
+	if err := query.Find(&positions).Error; err != nil {
+		return positions, fiber.StatusInternalServerError, errors.New("failed getting positions")
 	}
 
-	return position, 0, nil
+	return positions, 0, nil
 }
+
 func CreatePosition(c *fiber.Ctx, tx *gorm.DB) (adminmodels.Position, int, error) {
 
 	var service = services.NewInMemoryRepository(c, tx, adminmodels.Position{}, adminmodels.PositionAt{})
@@ -44,7 +38,10 @@ func CreatePosition(c *fiber.Ctx, tx *gorm.DB) (adminmodels.Position, int, error
 		at = models.At{}
 	}
 
-	atdata := adminmodels.PositionAt{RefId: body.ID, Code: body.Name, At: at}
+	atdata := adminmodels.PositionAt{RefId: body.ID, Code: body.Name, At: at, Position: adminmodels.Position{
+		Name:   body.Name,
+		Access: body.Access,
+	}}
 
 	return service.Create(body, atdata)
 }
@@ -63,7 +60,10 @@ func UpdatePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 		at = models.At{}
 	}
 
-	atdata := adminmodels.PositionAt{RefId: body.ID, Code: body.Name, At: at}
+	atdata := adminmodels.PositionAt{RefId: body.ID, Code: body.Name, At: at, Position: adminmodels.Position{
+		Name:   body.Name,
+		Access: body.Access,
+	}}
 
 	return service.Update(body, atdata, conditions)
 }
@@ -84,7 +84,10 @@ func DeletePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 		at = models.At{}
 	}
 
-	atdata := adminmodels.PositionAt{RefId: body.ID, Code: body.Name, At: at}
+	atdata := adminmodels.PositionAt{RefId: body.ID, Code: body.Name, At: at, Position: adminmodels.Position{
+		Name:   body.Name,
+		Access: body.Access,
+	}}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating classat")

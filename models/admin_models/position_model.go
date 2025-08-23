@@ -5,7 +5,7 @@ import "github.com/pierceperado/smpc/models"
 type Position struct {
 	ID     uint              `gorm:"primarykey" json:"id"`
 	Name   string            `gorm:"unique" json:"name"`
-	Access []*PositionAccess `gorm:"foreignKey:PositionId, references: ID" json:"access"`
+	Access []*PositionAccess `gorm:"foreignKey:PositionId" json:"access"`
 }
 
 type PositionAt struct {
