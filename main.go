@@ -458,19 +458,30 @@ func main() {
 
 			// Admin
 
-			adminGroupApi := api.Group("/admin")
+			adminGroupApi := api.Group("/")
 			{
+
+				adminGroupApi.Get("/users/with-position/:id", adminhandlers.GetPositionUsers)
+				adminGroupApi.Put("/users/position/:id", adminhandlers.UpdateUserPosition)
+
 				adminGroupApi.Get("/positions", adminhandlers.GetPositions)
 				adminGroupApi.Get("/positions/:id", adminhandlers.GetPosition)
-				adminGroupApi.Post("/positions/:id", adminhandlers.CreatePosition)
+				adminGroupApi.Post("/positions", adminhandlers.CreatePosition)
 				adminGroupApi.Put("/positions/:id", adminhandlers.UpdatePosition)
 				adminGroupApi.Delete("/positions/:id", adminhandlers.DeletePosition)
 
-				adminGroupApi.Get("/user_permissions", adminhandlers.GetUserPermissions)
-				adminGroupApi.Get("/user_permissions/:id", adminhandlers.GetUserPermission)
-				adminGroupApi.Post("/user_permissions/:id", adminhandlers.CreateUserPermission)
-				adminGroupApi.Put("/user_permissions/:id", adminhandlers.UpdateUserPermission)
-				adminGroupApi.Delete("/user_permissions/:id", adminhandlers.DeleteUserPermission)
+				adminGroupApi.Get("/position-access", adminhandlers.GetAllPositionAccess)
+				adminGroupApi.Get("/position-access/:id", adminhandlers.GetPositionAccess)
+				adminGroupApi.Post("/position-access", adminhandlers.CreatePositionAccess)
+				adminGroupApi.Put("/position-access/:id", adminhandlers.UpdatePositionAccess)
+				adminGroupApi.Delete("/position-access/:id", adminhandlers.DeletePositionAccess)
+				adminGroupApi.Post("/position-access/update-all-access/:id", adminhandlers.UpdatePositionAllAccess)
+
+				adminGroupApi.Get("/user-permissions", adminhandlers.GetUserPermissions)
+				adminGroupApi.Get("/user-permissions/:id", adminhandlers.GetUserPermission)
+				adminGroupApi.Post("/user-permissions", adminhandlers.CreateUserPermission)
+				adminGroupApi.Put("/user-permissions/:id", adminhandlers.UpdateUserPermission)
+				adminGroupApi.Delete("/user-permissions/:id", adminhandlers.DeleteUserPermission)
 			}
 
 			//Bpi Endpoints

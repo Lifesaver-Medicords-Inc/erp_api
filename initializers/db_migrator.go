@@ -1,9 +1,11 @@
 package initializers
 
+//import adminmodels "github.com/pierceperado/smpc/models/admin_models"
+
 func MigrateDb() {
 	// Auth
 
-	// DB.AutoMigrate(&models.User{}, &models.UserAt{})
+	//DB.AutoMigrate(&models.User{}, &models.UserAt{})
 	//	DB.AutoMigrate(&models.User{}, &models.UserAt{})
 
 	// Setup
@@ -160,5 +162,5 @@ func MigrateDb() {
 	// DB.AutoMigrate(&accounting_models.JournalEntryDetails{}, &accounting_models.JournalEntryDetailsAt{})
 
 	//ADMIN
-	//DB.AutoMigrate(&adminmodels.Position{},&adminmodels.PositionAt{},&adminmodels.PositionAccess{},&adminmodels.PositionAccessAt{},&adminmodels.UserPermission{},&adminmodels.UserPermissionAt{})
+	//DB.AutoMigrate(&adminmodels.Position{}, &adminmodels.PositionAt{}, &adminmodels.PositionAccess{}, &adminmodels.PositionAccessAt{}, &adminmodels.UserPermission{}, &adminmodels.UserPermissionAt{})
 }

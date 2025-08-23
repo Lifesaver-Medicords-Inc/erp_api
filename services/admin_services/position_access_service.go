@@ -10,18 +10,15 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetAllPositionAccess(conditions map[string]interface{}) ([]adminmodels.PositionAccess, int, error) {
-
-	var based_service = services.NewInMemoryRepository(nil, nil, adminmodels.PositionAccess{}, adminmodels.PositionAccessAt{})
-
-	return based_service.FetchAll()
-}
-
 func GetPositionAccess(conditions map[string]interface{}) ([]adminmodels.PositionAccess, int, error) {
 
-	var based_service = services.NewInMemoryRepository(nil, nil, adminmodels.PositionAccess{}, adminmodels.PositionAccessAt{})
+	var access []adminmodels.PositionAccess
 
-	return based_service.FetchWithFilter(conditions)
+	if err := services.DbGet(&access, conditions); err != nil {
+		return access, fiber.StatusInternalServerError, errors.New("failed getting position access")
+	}
+
+	return access, 0, nil
 }
 
 func CreatePositionAccess(c *fiber.Ctx, tx *gorm.DB) (adminmodels.PositionAccess, int, error) {
@@ -39,7 +36,10 @@ func CreatePositionAccess(c *fiber.Ctx, tx *gorm.DB) (adminmodels.PositionAccess
 		at = models.At{}
 	}
 
-	atdata := adminmodels.PositionAccessAt{RefId: body.ID, Code: body.Code, At: at}
+	atdata := adminmodels.PositionAccessAt{RefId: body.ID, Code: body.Code, At: at, PositionAccess: adminmodels.PositionAccess{
+		PositionId: body.PositionId,
+		Code:       body.Code,
+	}}
 
 	return service.Create(body, atdata)
 }
@@ -58,7 +58,10 @@ func UpdatePositionAccess(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 		at = models.At{}
 	}
 
-	atdata := adminmodels.PositionAccessAt{RefId: body.ID, Code: body.Code, At: at}
+	atdata := adminmodels.PositionAccessAt{RefId: body.ID, Code: body.Code, At: at, PositionAccess: adminmodels.PositionAccess{
+		PositionId: body.PositionId,
+		Code:       body.Code,
+	}}
 
 	return service.Update(body, atdata, conditions)
 }
@@ -79,7 +82,10 @@ func DeletePositionAccess(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 		at = models.At{}
 	}
 
-	atdata := adminmodels.PositionAccessAt{RefId: body.ID, Code: body.Code, At: at}
+	atdata := adminmodels.PositionAccessAt{RefId: body.ID, Code: body.Code, At: at, PositionAccess: adminmodels.PositionAccess{
+		PositionId: body.PositionId,
+		Code:       body.Code,
+	}}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating classat")

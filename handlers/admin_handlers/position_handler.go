@@ -11,7 +11,8 @@ import (
 )
 
 func GetPositions(c *fiber.Ctx) error {
-	data, status, err := adminservices.GetPositions(nil)
+	tx := initializers.DB.Begin()
+	data, status, err := adminservices.GetPositions(nil, tx)
 	fmt.Println("POSITIONS>>>", data)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -23,16 +24,20 @@ func GetPositions(c *fiber.Ctx) error {
 func GetPosition(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
+
 	if err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
 	}
-
-	data, status, err := adminservices.GetPosition(idNum)
+	conditions := map[string]interface{}{
+		"id": idNum,
+	}
+	tx := initializers.DB.Begin()
+	data, status, err := adminservices.GetPositions(conditions, tx)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
-	return utils.RespondSuccess(c, data)
+	return utils.RespondSuccess(c, data[0])
 }
 
 func CreatePosition(c *fiber.Ctx) error {
