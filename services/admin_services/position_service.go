@@ -2,6 +2,7 @@ package adminservices
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -14,23 +15,72 @@ func GetPositions(conditions map[string]interface{}, tx *gorm.DB) ([]adminmodels
 
 	var positions []adminmodels.Position
 
-	query := tx.Model(&adminmodels.Position{}).Preload("Access").Where(conditions)
-
-	if err := query.Find(&positions).Error; err != nil {
+	if err := services.DbGetNoCache(&positions, conditions); err != nil {
 		return positions, fiber.StatusInternalServerError, errors.New("failed getting positions")
+	}
+	for i := range positions {
+		accessCondition := map[string]interface{}{
+			"position_id": positions[i].ID,
+		}
+
+		access, _, err := GetPositionAccess(accessCondition)
+		if err != nil {
+			continue
+		}
+
+		positions[i].Access = toPtrSlice(access)
 	}
 
 	return positions, 0, nil
 }
 
+func toPtrSlice(items []adminmodels.PositionAccess) []*adminmodels.PositionAccess {
+	ptrs := make([]*adminmodels.PositionAccess, len(items))
+	for i := range items {
+		ptrs[i] = &items[i]
+	}
+	return ptrs
+}
+
+func GetPosition(conditions map[string]interface{}, tx *gorm.DB) (adminmodels.Position, int, error) {
+
+	var position adminmodels.Position
+
+	if err := services.DbGetNoCache(&position, conditions); err != nil {
+		return position, fiber.StatusInternalServerError, errors.New("failed getting position")
+	}
+
+	accessCondition := map[string]interface{}{
+		"position_id": position.ID,
+	}
+
+	access, _, err := GetPositionAccess(accessCondition)
+
+	if err == nil {
+		accessPtrs := make([]*adminmodels.PositionAccess, len(access))
+		for i := range access {
+			accessPtrs[i] = &access[i]
+		}
+		position.Access = accessPtrs
+	}
+
+	return position, 0, nil
+}
+
 func CreatePosition(c *fiber.Ctx, tx *gorm.DB) (adminmodels.Position, int, error) {
-
-	var service = services.NewInMemoryRepository(c, tx, adminmodels.Position{}, adminmodels.PositionAt{})
-
 	var body adminmodels.Position
 	if err := c.BodyParser(&body); err != nil {
-
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	if err := services.DbInsert(tx, &body); err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
+			err = errors.New("duplicate record error")
+		} else {
+			err = errors.New("failed creating position")
+		}
+
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	at, ok := c.Locals("at").(models.At)
@@ -38,21 +88,23 @@ func CreatePosition(c *fiber.Ctx, tx *gorm.DB) (adminmodels.Position, int, error
 		at = models.At{}
 	}
 
-	atdata := adminmodels.PositionAt{RefId: body.ID, Code: body.Name, At: at, Position: adminmodels.Position{
-		Name:   body.Name,
-		Access: body.Access,
-	}}
+	atdata := adminmodels.PositionAt{RefId: body.ID, Position: adminmodels.Position{Name: body.Name}, At: at}
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed creating positionat")
+	}
 
-	return service.Create(body, atdata)
+	return body, 0, nil
 }
 
 func UpdatePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (adminmodels.Position, int, error) {
-
-	var service = services.NewInMemoryRepository(c, tx, adminmodels.Position{}, adminmodels.PositionAt{})
-
 	var body adminmodels.Position
+
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	if err := services.DbUpdate(tx, &body, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed updating position")
 	}
 
 	at, ok := c.Locals("at").(models.At)
@@ -60,12 +112,12 @@ func UpdatePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 		at = models.At{}
 	}
 
-	atdata := adminmodels.PositionAt{RefId: body.ID, Code: body.Name, At: at, Position: adminmodels.Position{
-		Name:   body.Name,
-		Access: body.Access,
-	}}
+	atdata := adminmodels.PositionAt{RefId: body.ID, Position: adminmodels.Position{Name: body.Name}, At: at}
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed creating positionat")
+	}
 
-	return service.Update(body, atdata, conditions)
+	return body, 0, nil
 }
 
 func DeletePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (adminmodels.Position, int, error) {
@@ -75,8 +127,8 @@ func DeletePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	if err := services.DbDelete(tx, &body, nil); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed deleting class")
+	if err := services.DbDelete(tx, &body, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed deleting position")
 	}
 
 	at, ok := c.Locals("at").(models.At)
@@ -84,13 +136,9 @@ func DeletePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 		at = models.At{}
 	}
 
-	atdata := adminmodels.PositionAt{RefId: body.ID, Code: body.Name, At: at, Position: adminmodels.Position{
-		Name:   body.Name,
-		Access: body.Access,
-	}}
-
+	atdata := adminmodels.PositionAt{RefId: body.ID, Position: adminmodels.Position{Name: body.Name}, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed creating classat")
+		return body, fiber.StatusInternalServerError, errors.New("failed creating positionat")
 	}
 
 	return body, 0, nil

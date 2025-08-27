@@ -32,12 +32,12 @@ func GetPosition(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 	tx := initializers.DB.Begin()
-	data, status, err := adminservices.GetPositions(conditions, tx)
+	data, status, err := adminservices.GetPosition(conditions, tx)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
-	return utils.RespondSuccess(c, data[0])
+	return utils.RespondSuccess(c, data)
 }
 
 func CreatePosition(c *fiber.Ctx) error {
