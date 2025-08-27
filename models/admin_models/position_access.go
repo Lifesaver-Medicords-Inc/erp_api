@@ -3,13 +3,13 @@ package adminmodels
 import "github.com/pierceperado/smpc/models"
 
 type PositionAccess struct {
-	ID         uint   `gorm:"primarykey" json:"id"`
+	ID         uint   `gorm:"primarykey; autoIncrement" json:"id"`
 	PositionId uint   `json:"position_id"`
 	Code       string `gorm:"not null" json:"code"`
 }
 
 type PositionAccessAt struct {
-	ID    uint   `gorm:"primarykey" json:"id"`
+	ID    uint   `gorm:"primarykey; autoIncrement" json:"id"`
 	RefId uint   `json:"ref_id"`
 	Code  string `json:"code"`
 	models.At

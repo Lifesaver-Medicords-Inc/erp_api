@@ -519,7 +519,9 @@ func SetupApp() *fiber.App {
 
 			adminGroupApi := api.Group("/")
 			{
-
+				adminGroupApi.Post("/user", adminhandlers.CreateUser)
+				adminGroupApi.Get("/users/:id", adminhandlers.GetUser)
+				adminGroupApi.Get("/users", adminhandlers.GetAllUsers)
 				adminGroupApi.Get("/users/with-position/:id", adminhandlers.GetPositionUsers)
 				adminGroupApi.Put("/users/position/:id", adminhandlers.UpdateUserPosition)
 
@@ -536,7 +538,6 @@ func SetupApp() *fiber.App {
 				adminGroupApi.Delete("/position-access/:id", adminhandlers.DeletePositionAccess)
 				adminGroupApi.Post("/position-access/update-all-access/:id", adminhandlers.UpdatePositionAllAccess)
 
-				adminGroupApi.Get("/user-permissions", adminhandlers.GetUserPermissions)
 				adminGroupApi.Get("/user-permissions/:id", adminhandlers.GetUserPermission)
 				adminGroupApi.Post("/user-permissions", adminhandlers.CreateUserPermission)
 				adminGroupApi.Put("/user-permissions/:id", adminhandlers.UpdateUserPermission)

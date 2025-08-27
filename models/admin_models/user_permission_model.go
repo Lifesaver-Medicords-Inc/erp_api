@@ -3,7 +3,7 @@ package adminmodels
 import "github.com/pierceperado/smpc/models"
 
 type UserPermission struct {
-	ID        uint `gorm:"primarykey" json:"id"`
+	ID        uint `gorm:"primarykey; autoIncrement" json:"id"`
 	UserId    uint `json:"user_id"`
 	CanCreate bool `json:"can_create"`
 	CanUpdate bool `json:"can_update"`
@@ -15,9 +15,8 @@ func (UserPermission) TableName() string {
 }
 
 type UserPermissionAt struct {
-	ID    uint `gorm:"primarykey" json:"id"`
+	ID    uint `gorm:"primarykey; autoIncrement" json:"id"`
 	RefId uint `json:"ref_id"`
-	Code  uint `json:"code"`
 	models.At
 	UserPermission
 }

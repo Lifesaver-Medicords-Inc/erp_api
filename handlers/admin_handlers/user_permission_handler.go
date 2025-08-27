@@ -1,7 +1,6 @@
 package adminhandlers
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -10,16 +9,6 @@ import (
 	"github.com/pierceperado/smpc/utils"
 )
 
-func GetUserPermissions(c *fiber.Ctx) error {
-	data, status, err := adminservices.GetUserPermissions(nil)
-	fmt.Println("POSITIONS>>>", data)
-	if err != nil {
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	return utils.RespondSuccess(c, data)
-}
-
 func GetUserPermission(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -27,15 +16,15 @@ func GetUserPermission(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
 	}
 	conditions := map[string]interface{}{
-		"id": idNum,
+		"user_id": idNum,
 	}
 
-	data, status, err := adminservices.GetUserPermissions(conditions)
+	data, status, err := adminservices.GetUserPermission(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
-	return utils.RespondSuccess(c, data[0])
+	return utils.RespondSuccess(c, data)
 }
 
 func CreateUserPermission(c *fiber.Ctx) error {
@@ -59,12 +48,21 @@ func CreateUserPermission(c *fiber.Ctx) error {
 }
 
 func UpdateUserPermission(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	idNum, err := strconv.Atoi(idParam)
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
+	}
+	conditions := map[string]interface{}{
+		"id": idNum,
+	}
+
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 
-	data, status, err := adminservices.UpdateUserPermission(c, tx, nil)
+	data, status, err := adminservices.UpdateUserPermission(c, tx, conditions)
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
