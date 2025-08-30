@@ -174,5 +174,5 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.JobOrder{}, &models.JobOrderAt{})
 
 	//ADMIN
-	//DB.AutoMigrate(&adminmodels.Position{}, &adminmodels.PositionAt{}, &adminmodels.PositionAccess{}, &adminmodels.PositionAccessAt{}, &adminmodels.UserPermission{}, &adminmodels.UserPermissionAt{})
+	//DB.AutoMigrate(&adminmodels.PositionAccess{}, &adminmodels.PositionAccessAt{}, &adminmodels.UserPermission{}, &adminmodels.UserPermissionAt{})
 }

@@ -11,30 +11,17 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetPositions(conditions map[string]interface{}, tx *gorm.DB) ([]adminmodels.Position, int, error) {
+func GetPositions(conditions map[string]interface{}, tx *gorm.DB) ([]models.Position, int, error) {
 
-	var positions []adminmodels.Position
+	var positions []models.Position
 
 	if err := services.DbGetNoCache(&positions, conditions); err != nil {
 		return positions, fiber.StatusInternalServerError, errors.New("failed getting positions")
 	}
-	for i := range positions {
-		accessCondition := map[string]interface{}{
-			"position_id": positions[i].ID,
-		}
-
-		access, _, err := GetPositionAccess(accessCondition)
-		if err != nil {
-			continue
-		}
-
-		positions[i].Access = toPtrSlice(access)
-	}
-
 	return positions, 0, nil
 }
 
-func toPtrSlice(items []adminmodels.PositionAccess) []*adminmodels.PositionAccess {
+func ToPtrSlice(items []adminmodels.PositionAccess) []*adminmodels.PositionAccess {
 	ptrs := make([]*adminmodels.PositionAccess, len(items))
 	for i := range items {
 		ptrs[i] = &items[i]
@@ -42,33 +29,19 @@ func toPtrSlice(items []adminmodels.PositionAccess) []*adminmodels.PositionAcces
 	return ptrs
 }
 
-func GetPosition(conditions map[string]interface{}, tx *gorm.DB) (adminmodels.Position, int, error) {
+func GetPosition(conditions map[string]interface{}, tx *gorm.DB) (models.Position, int, error) {
 
-	var position adminmodels.Position
+	var position models.Position
 
 	if err := services.DbGetNoCache(&position, conditions); err != nil {
 		return position, fiber.StatusInternalServerError, errors.New("failed getting position")
 	}
 
-	accessCondition := map[string]interface{}{
-		"position_id": position.ID,
-	}
-
-	access, _, err := GetPositionAccess(accessCondition)
-
-	if err == nil {
-		accessPtrs := make([]*adminmodels.PositionAccess, len(access))
-		for i := range access {
-			accessPtrs[i] = &access[i]
-		}
-		position.Access = accessPtrs
-	}
-
 	return position, 0, nil
 }
 
-func CreatePosition(c *fiber.Ctx, tx *gorm.DB) (adminmodels.Position, int, error) {
-	var body adminmodels.Position
+func CreatePosition(c *fiber.Ctx, tx *gorm.DB) (models.Position, int, error) {
+	var body models.Position
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
@@ -88,7 +61,7 @@ func CreatePosition(c *fiber.Ctx, tx *gorm.DB) (adminmodels.Position, int, error
 		at = models.At{}
 	}
 
-	atdata := adminmodels.PositionAt{RefId: body.ID, Position: adminmodels.Position{Name: body.Name}, At: at}
+	atdata := models.PositionAt{RefId: body.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating positionat")
 	}
@@ -96,8 +69,8 @@ func CreatePosition(c *fiber.Ctx, tx *gorm.DB) (adminmodels.Position, int, error
 	return body, 0, nil
 }
 
-func UpdatePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (adminmodels.Position, int, error) {
-	var body adminmodels.Position
+func UpdatePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.Position, int, error) {
+	var body models.Position
 
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
@@ -112,7 +85,7 @@ func UpdatePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 		at = models.At{}
 	}
 
-	atdata := adminmodels.PositionAt{RefId: body.ID, Position: adminmodels.Position{Name: body.Name}, At: at}
+	atdata := models.PositionAt{RefId: body.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating positionat")
 	}
@@ -120,9 +93,9 @@ func UpdatePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 	return body, 0, nil
 }
 
-func DeletePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (adminmodels.Position, int, error) {
+func DeletePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.Position, int, error) {
 
-	var body adminmodels.Position
+	var body models.Position
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
@@ -136,7 +109,7 @@ func DeletePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 		at = models.At{}
 	}
 
-	atdata := adminmodels.PositionAt{RefId: body.ID, Position: adminmodels.Position{Name: body.Name}, At: at}
+	atdata := models.PositionAt{RefId: body.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating positionat")
 	}
