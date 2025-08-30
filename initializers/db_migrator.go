@@ -162,5 +162,5 @@ func MigrateDb() {
 	// DB.AutoMigrate(&accounting_models.JournalEntryDetails{}, &accounting_models.JournalEntryDetailsAt{})
 
 	//ADMIN
-	//DB.AutoMigrate(&adminmodels.Position{}, &adminmodels.PositionAt{}, &adminmodels.PositionAccess{}, &adminmodels.PositionAccessAt{}, &adminmodels.UserPermission{}, &adminmodels.UserPermissionAt{})
+	//DB.AutoMigrate(&adminmodels.PositionAccess{}, &adminmodels.PositionAccessAt{}, &adminmodels.UserPermission{}, &adminmodels.UserPermissionAt{})
 }
