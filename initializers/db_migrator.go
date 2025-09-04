@@ -60,7 +60,7 @@ func MigrateDb() {
 	// // Sales
 
 	// // DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
-	//DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
+	// DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
 	// DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
 
 	//DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
@@ -70,7 +70,6 @@ func MigrateDb() {
 
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
-
 
 	//DB.AutoMigrate(
 	// &models.SalesProjectMultiplier{},
@@ -86,7 +85,6 @@ func MigrateDb() {
 	// &models.SalesProjectItems{},
 	// &models.SalesProjectItemsAt{},
 	//)
-
 
 	// DB.AutoMigrate(
 	// 	&models.SalesQuotation{},
@@ -160,5 +158,8 @@ func MigrateDb() {
 	// DB.AutoMigrate(&accounting_models.SalesInvoiceDetail{}, &accounting_models.SalesInvoiceDetailAt{})
 	// DB.AutoMigrate(&accounting_models.JournalEntry{}, &accounting_models.JournalEntryAt{})
 	// DB.AutoMigrate(&accounting_models.JournalEntryDetails{}, &accounting_models.JournalEntryDetailsAt{})
+
+	// JOB ORDER
+	// DB.AutoMigrate(&models.JobOrder{}, &models.JobOrderAt{})
 
 }

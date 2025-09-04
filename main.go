@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
+	"github.com/pierceperado/smpc/handlers/job_orders_handlers"
 	"github.com/pierceperado/smpc/handlers/journal_entry_handlers"
 	"github.com/pierceperado/smpc/handlers/position_handlers"
 	"github.com/pierceperado/smpc/handlers/public_handlers"
@@ -21,7 +22,7 @@ import (
 
 func init() {
 	initializers.LoadEnv()
-  initializers.ConnectDb()
+	initializers.ConnectDb()
 	initializers.MigrateDb()
 	initializers.InitRedis()
 	initializers.InitWm()
@@ -80,6 +81,17 @@ func main() {
 			// Setup Endpoints
 			setupApi := api.Group("/setup")
 			{
+
+				prodApi := setupApi.Group("/job")
+				{
+					prodApi.Get("/order/:user_id", job_orders_handlers.GetJobOrder)
+					prodApi.Get("/sales/:sales_order", job_orders_handlers.GetSalesJobOrder)
+					prodApi.Get("/components/:bom_id", job_orders_handlers.GetComponents)
+					prodApi.Get("/sales_details/:order_id", job_orders_handlers.GetSalesDetailsJobOrder)
+					prodApi.Post("/order", job_orders_handlers.CreateJobOrder)
+					prodApi.Put("/order", job_orders_handlers.UpdateJobOrder)
+				}
+
 				itemApi := setupApi.Group("/item")
 				{
 					// Brand Endpoints
