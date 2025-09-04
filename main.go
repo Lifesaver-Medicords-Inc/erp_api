@@ -519,8 +519,10 @@ func SetupApp() *fiber.App {
 
 			adminGroupApi := api.Group("/")
 			{
-				adminGroupApi.Post("/user", adminhandlers.CreateUser)
+				adminGroupApi.Post("/users", adminhandlers.CreateUser)
 				adminGroupApi.Get("/users/:id", adminhandlers.GetUser)
+				adminGroupApi.Put("/users/:id", adminhandlers.UpdateUser)
+				adminGroupApi.Delete("/users/:id", adminhandlers.DeleteUser)
 				adminGroupApi.Get("/users", adminhandlers.GetAllUsers)
 				adminGroupApi.Get("/users/with-position/:id", adminhandlers.GetPositionUsers)
 				adminGroupApi.Put("/users/position/:id", adminhandlers.UpdateUserPosition)
@@ -538,10 +540,12 @@ func SetupApp() *fiber.App {
 				adminGroupApi.Delete("/position-access/:id", adminhandlers.DeletePositionAccess)
 				adminGroupApi.Post("/position-access/update-all-access/:id", adminhandlers.UpdatePositionAllAccess)
 
+				adminGroupApi.Get("/permissions", adminhandlers.GetPermissions)
+				adminGroupApi.Get("/permissions/:id", adminhandlers.GetPermission)
 				adminGroupApi.Get("/user-permissions/:id", adminhandlers.GetUserPermission)
-				adminGroupApi.Post("/user-permissions", adminhandlers.CreateUserPermission)
-				adminGroupApi.Put("/user-permissions/:id", adminhandlers.UpdateUserPermission)
-				adminGroupApi.Delete("/user-permissions/:id", adminhandlers.DeleteUserPermission)
+				adminGroupApi.Post("/permissions", adminhandlers.CreatePermission)
+				adminGroupApi.Put("/permissions/:id", adminhandlers.UpdatePermission)
+				adminGroupApi.Delete("/permissions/:id", adminhandlers.DeletePermission)
 			}
 
 			//Bpi Endpoints

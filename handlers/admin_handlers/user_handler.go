@@ -1,17 +1,19 @@
 package adminhandlers
 
 import (
-	"encoding/json"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/models"
 	adminservices "github.com/pierceperado/smpc/services/admin_services"
+	"github.com/pierceperado/smpc/services/public_services"
 	"github.com/pierceperado/smpc/utils"
 )
 
 func GetAllUsers(c *fiber.Ctx) error {
-	data, status, err := adminservices.GetUsers(nil)
+	tx := initializers.DB.Begin()
+	data, status, err := adminservices.GetUsers(nil, tx)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -32,7 +34,9 @@ func GetUser(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	data, status, err := adminservices.GetUsers(conditions)
+	tx := initializers.DB.Begin()
+
+	data, status, err := adminservices.GetUsers(conditions, tx)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -53,7 +57,8 @@ func GetPositionUsers(c *fiber.Ctx) error {
 		"position_id": idNum,
 	}
 
-	data, status, err := adminservices.GetUsers(conditions)
+	tx := initializers.DB.Begin()
+	data, status, err := adminservices.GetUsers(conditions, tx)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -63,12 +68,42 @@ func GetPositionUsers(c *fiber.Ctx) error {
 }
 
 func CreateUser(c *fiber.Ctx) error {
+
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 
-	data, status, err := adminservices.CreateUser(c, tx)
+	data, status, err := public_services.CreateAccount(c, tx)
+	if err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+func UpdateUser(c *fiber.Ctx) error {
+	// Parse JSON body
+	var body models.User
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	// Begin transaction
+	tx := initializers.DB.Begin()
+
+	conditions := map[string]interface{}{
+		"id": body.ID,
+	}
+
+	data, status, err := adminservices.UpdateUser(c, tx, conditions)
+
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
@@ -101,23 +136,6 @@ func UpdateUserPosition(c *fiber.Ctx) error {
 		"id": req.Id,
 	}
 
-	user, _, err := adminservices.GetUser(conditions)
-
-	if err != nil {
-		return utils.RespondError(c, fiber.StatusNotFound, "User not found")
-	}
-
-	user.PositionId = uint(req.PositionId)
-
-	// Marshal the updated user into JSON
-	jsonBody, err := json.Marshal(user)
-	if err != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to marshal user")
-	}
-
-	// Replace the request body with the marshaled JSON
-	c.Request().SetBody(jsonBody)
-
 	data, status, err := adminservices.UpdateUser(c, tx, conditions)
 
 	if err != nil {
@@ -131,4 +149,29 @@ func UpdateUserPosition(c *fiber.Ctx) error {
 	}
 
 	return utils.RespondSuccess(c, data)
+}
+
+func DeleteUser(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	idNum, err := strconv.Atoi(idParam)
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	// Begin transaction
+	tx := initializers.DB.Begin()
+
+	status, err := adminservices.DeleteUser(c, tx, idNum)
+
+	if err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+	}
+
+	return utils.RespondSuccess(c, nil)
 }

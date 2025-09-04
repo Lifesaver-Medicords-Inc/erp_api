@@ -6,25 +6,24 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
-	adminmodels "github.com/pierceperado/smpc/models/admin_models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
 )
 
-func GetPositionAccess(conditions map[string]interface{}) ([]adminmodels.PositionAccess, int, error) {
+func GetPositionAccess(conditions map[string]interface{}, tx *gorm.DB) ([]models.PositionAccess, int, error) {
 
-	var access []adminmodels.PositionAccess
+	var access []models.PositionAccess
 
-	if err := services.DbGetNoCache(&access, conditions); err != nil {
+	if err := tx.Where(conditions).Preload("Position").Find(&access).Error; err != nil {
 		return access, fiber.StatusInternalServerError, errors.New("failed getting position access")
 	}
 
 	return access, 0, nil
 }
 
-func CreatePositionAccess(c *fiber.Ctx, tx *gorm.DB) (adminmodels.PositionAccess, int, error) {
+func CreatePositionAccess(c *fiber.Ctx, tx *gorm.DB) (models.PositionAccess, int, error) {
 
-	var body adminmodels.PositionAccess
+	var body models.PositionAccess
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
@@ -44,7 +43,7 @@ func CreatePositionAccess(c *fiber.Ctx, tx *gorm.DB) (adminmodels.PositionAccess
 		at = models.At{}
 	}
 
-	atdata := adminmodels.PositionAccessAt{RefId: body.ID, Code: body.Code, PositionAccess: adminmodels.PositionAccess{
+	atdata := models.PositionAccessAt{RefId: body.ID, Code: body.Code, PositionAccessContent: models.PositionAccessContent{
 		PositionId: body.PositionId,
 		Code:       body.Code,
 	}, At: at}
@@ -55,8 +54,8 @@ func CreatePositionAccess(c *fiber.Ctx, tx *gorm.DB) (adminmodels.PositionAccess
 	return body, 0, nil
 }
 
-func UpdatePositionAccess(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (adminmodels.PositionAccess, int, error) {
-	var body adminmodels.PositionAccess
+func UpdatePositionAccess(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.PositionAccess, int, error) {
+	var body models.PositionAccess
 
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
@@ -71,7 +70,7 @@ func UpdatePositionAccess(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 		at = models.At{}
 	}
 
-	atdata := adminmodels.PositionAccessAt{RefId: body.ID, Code: body.Code, PositionAccess: adminmodels.PositionAccess{
+	atdata := models.PositionAccessAt{RefId: body.ID, Code: body.Code, PositionAccessContent: models.PositionAccessContent{
 		PositionId: body.PositionId,
 		Code:       body.Code,
 	}, At: at}
@@ -83,9 +82,9 @@ func UpdatePositionAccess(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 	return body, 0, nil
 }
 
-func DeletePositionAccess(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (adminmodels.PositionAccess, int, error) {
+func DeletePositionAccess(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.PositionAccess, int, error) {
 
-	var body adminmodels.PositionAccess
+	var body models.PositionAccess
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
@@ -99,7 +98,7 @@ func DeletePositionAccess(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 		at = models.At{}
 	}
 
-	atdata := adminmodels.PositionAccessAt{RefId: body.ID, Code: body.Code, PositionAccess: adminmodels.PositionAccess{
+	atdata := models.PositionAccessAt{RefId: body.ID, Code: body.Code, PositionAccessContent: models.PositionAccessContent{
 		PositionId: body.PositionId,
 		Code:       body.Code,
 	}, At: at}

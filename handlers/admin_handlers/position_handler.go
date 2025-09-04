@@ -6,14 +6,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
-	adminmodels "github.com/pierceperado/smpc/models/admin_models"
 	adminservices "github.com/pierceperado/smpc/services/admin_services"
 	"github.com/pierceperado/smpc/utils"
 )
 
 type PositionWithAccess struct {
 	models.Position
-	Access []*adminmodels.PositionAccess `json:"access"`
+	Access []*models.PositionAccess `json:"access"`
 }
 
 func GetPositions(c *fiber.Ctx) error {
@@ -22,27 +21,7 @@ func GetPositions(c *fiber.Ctx) error {
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
-
-	var response []PositionWithAccess
-
-	for _, pos := range positions {
-		accessCondition := map[string]interface{}{
-			"position_id": pos.ID,
-		}
-
-		access, _, err := adminservices.GetPositionAccess(accessCondition)
-		if err != nil {
-			access = []adminmodels.PositionAccess{}
-		}
-
-		// Append PositionWithAccess to response
-		response = append(response, PositionWithAccess{
-			Position: pos,
-			Access:   adminservices.ToPtrSlice(access),
-		})
-	}
-
-	return utils.RespondSuccess(c, response)
+	return utils.RespondSuccess(c, positions)
 }
 
 func GetPosition(c *fiber.Ctx) error {
@@ -62,22 +41,7 @@ func GetPosition(c *fiber.Ctx) error {
 		return utils.RespondError(c, status, err.Error())
 	}
 
-	// Get access for this position
-	accessCondition := map[string]interface{}{
-		"position_id": position.ID,
-	}
-	access, _, err := adminservices.GetPositionAccess(accessCondition)
-	if err != nil {
-		access = []adminmodels.PositionAccess{}
-	}
-
-	// Wrap into response struct with access field
-	response := PositionWithAccess{
-		Position: position,
-		Access:   adminservices.ToPtrSlice(access),
-	}
-
-	return utils.RespondSuccess(c, response)
+	return utils.RespondSuccess(c, position)
 }
 
 func CreatePosition(c *fiber.Ctx) error {

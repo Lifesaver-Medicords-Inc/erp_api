@@ -8,6 +8,8 @@ type Position struct {
 	ID   uint   `gorm:"primarykey" json:"id"`
 	Code string `gorm:"unique;size:100" json:"code"`
 	PositionContent
+	Users  []User           `gorm:"foreignKey:PositionId" json:"users"`
+	Access []PositionAccess `gorm:"foreignKey:PositionId" json:"access"`
 }
 
 func (Position) TableName() string {
@@ -20,6 +22,7 @@ type PositionAt struct {
 	Code  string `json:"code"`
 	PositionContent
 	At
+	Position Position `gorm:"foreignKey:RefId;references:ID;onDelete:CASCADE;onUpdate:CASCADE"`
 }
 
 func (PositionAt) TableName() string {

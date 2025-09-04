@@ -17,6 +17,7 @@ func CreateAccount(c *fiber.Ctx, tx *gorm.DB) (models.User, int, error) {
 	var user models.User
 
 	var body models.UserAt
+	
 	if err := c.BodyParser(&body); err != nil {
 		return user, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
@@ -27,7 +28,7 @@ func CreateAccount(c *fiber.Ctx, tx *gorm.DB) (models.User, int, error) {
 		return user, fiber.StatusInternalServerError, errors.New("failed creating user")
 	}
 
-	employeeId := utils.GenerateEmployeeId(body.Department, body.Position, user.ID)
+	employeeId := utils.GenerateEmployeeId(body.Department, user.Position.Name, user.ID)
 	user.EmployeeId = employeeId
 
 	password, err := utils.GenerateUserPassword(employeeId)

@@ -1,8 +1,6 @@
-package adminmodels
+package models
 
-import "github.com/pierceperado/smpc/models"
-
-type UserPermission struct {
+type UserPermissionContent struct {
 	ID        uint `gorm:"primarykey; autoIncrement" json:"id"`
 	UserId    uint `json:"user_id"`
 	CanCreate bool `json:"can_create"`
@@ -10,17 +8,23 @@ type UserPermission struct {
 	CanDelete bool `json:"can_delete"`
 }
 
+type UserPermission struct {
+	UserPermissionContent
+	User *User `gorm:"foreignKey:UserId;references:ID;onDelete:CASCADE;onUpdate:CASCADE" json:"user"`
+}
+
 func (UserPermission) TableName() string {
-	return "tbl_admin_user_permission"
+	return "tbl_user_permission"
 }
 
 type UserPermissionAt struct {
 	ID    uint `gorm:"primarykey; autoIncrement" json:"id"`
 	RefId uint `json:"ref_id"`
-	models.At
-	UserPermission
+	At
+	UserPermissionContent
+	UserPermission `gorm:"foreignKey:RefId;references:ID;onDelete:CASCADE;onUpdate:CASCADE"`
 }
 
 func (UserPermissionAt) TableName() string {
-	return "tbl_admin_user_permission_at"
+	return "tbl_user_permission_at"
 }
