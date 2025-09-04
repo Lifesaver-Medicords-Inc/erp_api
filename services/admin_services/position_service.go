@@ -2,11 +2,11 @@ package adminservices
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
-	adminmodels "github.com/pierceperado/smpc/models/admin_models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
 )
@@ -15,14 +15,15 @@ func GetPositions(conditions map[string]interface{}, tx *gorm.DB) ([]models.Posi
 
 	var positions []models.Position
 
-	if err := services.DbGetNoCache(&positions, conditions); err != nil {
+	if err := tx.Where(conditions).Preload("Access").Find(&positions).Error; err != nil {
+		fmt.Println("ERROR:", err)
 		return positions, fiber.StatusInternalServerError, errors.New("failed getting positions")
 	}
 	return positions, 0, nil
 }
 
-func ToPtrSlice(items []adminmodels.PositionAccess) []*adminmodels.PositionAccess {
-	ptrs := make([]*adminmodels.PositionAccess, len(items))
+func ToPtrSlice(items []models.PositionAccess) []*models.PositionAccess {
+	ptrs := make([]*models.PositionAccess, len(items))
 	for i := range items {
 		ptrs[i] = &items[i]
 	}
@@ -33,7 +34,7 @@ func GetPosition(conditions map[string]interface{}, tx *gorm.DB) (models.Positio
 
 	var position models.Position
 
-	if err := services.DbGetNoCache(&position, conditions); err != nil {
+	if err := tx.Where(conditions).Preload("Access").First(&position).Error; err != nil {
 		return position, fiber.StatusInternalServerError, errors.New("failed getting position")
 	}
 

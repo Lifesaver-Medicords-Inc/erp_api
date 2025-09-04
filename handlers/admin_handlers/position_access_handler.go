@@ -5,14 +5,15 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
-	adminmodels "github.com/pierceperado/smpc/models/admin_models"
+	"github.com/pierceperado/smpc/models"
 	adminservices "github.com/pierceperado/smpc/services/admin_services"
 	"github.com/pierceperado/smpc/utils"
 )
 
 func GetAllPositionAccess(c *fiber.Ctx) error {
 
-	data, status, err := adminservices.GetPositionAccess(nil)
+	tx := initializers.DB.Begin()
+	data, status, err := adminservices.GetPositionAccess(nil, tx)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -29,8 +30,8 @@ func GetPositionAccess(c *fiber.Ctx) error {
 	conditions := map[string]interface{}{
 		"id": idNum,
 	}
-
-	data, status, err := adminservices.GetPositionAccess(conditions)
+	tx := initializers.DB.Begin()
+	data, status, err := adminservices.GetPositionAccess(conditions, tx)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -105,7 +106,7 @@ func UpdatePositionAllAccess(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	var accessList []adminmodels.PositionAccess
+	var accessList []models.PositionAccess
 
 	if err := c.BodyParser(&accessList); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
@@ -120,7 +121,7 @@ func UpdatePositionAllAccess(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 
 	// Remove all previous access for this position
-	if err := tx.Where("position_id = ?", idNum).Delete(&adminmodels.PositionAccess{}).Error; err != nil {
+	if err := tx.Where("position_id = ?", idNum).Delete(&models.PositionAccess{}).Error; err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to delete existing access")
 	}

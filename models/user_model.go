@@ -3,16 +3,17 @@ package models
 type UserContent struct {
 	FirstName  string `json:"first_name"`
 	LastName   string `json:"last_name"`
-	Department string `json:"department"`
-	Position   string `json:"position"`
 	Password   string `json:"password"`
-	PositionId uint	  `json:"position_id"`
+	PositionId uint   `json:"position_id"`
+	Department string `json:"department"`
 }
 
 type User struct {
 	ID         uint   `gorm:"primarykey" json:"id"`
 	EmployeeId string `gorm:"unique" json:"employee_id"`
 	UserContent
+	Position    Position        `gorm:"foreignKey:PositionId;references:ID;onDelete:CASCADE;onUpdate:CASCADE" json:"position"`
+	Permissions *UserPermission `gorm:"foreignKey:UserId;references:ID;onDelete:CASCADE;onUpdate:CASCADE" json:"permissions"`
 }
 
 func (User) TableName() string {
