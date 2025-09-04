@@ -16,6 +16,7 @@ type OrderDetailsContent struct {
 	TotalPrice         float64 `json:"total_price"`
 	AllocatedQty       *int    `json:"allocated_qty"`
 	OrderType          string  `json:"order_type"`
+	BomId              uint    `json:"bom_id"`
 }
 
 type OrderDetails struct {

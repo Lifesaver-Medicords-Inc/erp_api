@@ -240,3 +240,31 @@ func InvalidateCache(key string) error {
 
 	return nil
 }
+
+func InvalidateCacheByPattern(pattern string) error {
+	ctx := context.Background()
+	iter := initializers.RC.Scan(ctx, 0, pattern, 0).Iterator()
+
+	for iter.Next(ctx) {
+		if err := initializers.RC.Del(ctx, iter.Val()).Err(); err != nil {
+			return fmt.Errorf("failed invalidating cache: %w", err)
+		}
+	}
+
+	if err := iter.Err(); err != nil {
+		return fmt.Errorf("error scanning redis keys: %w", err)
+	}
+
+	fmt.Println("Invalidating cache with pattern:", pattern)
+
+	return nil
+}
+
+func InvalidateCacheByModel(model interface{}) error {
+	t := reflect.TypeOf(model)
+	typeName := t.Name()
+
+	pattern := fmt.Sprintf("model:%s*", typeName)
+
+	return InvalidateCacheByPattern(pattern)
+}
