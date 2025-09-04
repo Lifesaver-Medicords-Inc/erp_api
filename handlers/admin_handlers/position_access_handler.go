@@ -1,11 +1,14 @@
 package adminhandlers
 
 import (
+	"errors"
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/services"
 	adminservices "github.com/pierceperado/smpc/services/admin_services"
 	"github.com/pierceperado/smpc/utils"
 )
@@ -120,16 +123,59 @@ func UpdatePositionAllAccess(c *fiber.Ctx) error {
 
 	tx := initializers.DB.Begin()
 
-	// Remove all previous access for this position
-	if err := tx.Where("position_id = ?", idNum).Delete(&models.PositionAccess{}).Error; err != nil {
+	var accessIDs []int
+	if err := tx.Model(&models.PositionAccess{}).
+		Where("position_id = ?", idNum).
+		Pluck("id", &accessIDs).Error; err != nil {
 		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to delete existing access")
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to fetch existing access IDs")
 	}
 
-	// Save new access list
-	if err := tx.Create(&accessList).Error; err != nil {
+	// Delete all PositionAccessAt where ref_id in accessIDs
+	if len(accessIDs) > 0 {
+		if err := tx.Where("ref_id IN ?", accessIDs).Delete(&models.PositionAccessAt{}).Error; err != nil {
+			tx.Rollback()
+			return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to delete existing PositionAccessAt")
+		}
+	}
+
+	// Delete PositionAccess records for the position
+	if err := tx.Where("position_id = ?", idNum).Delete(&models.PositionAccess{}).Error; err != nil {
 		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to insert new access")
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to delete existing PositionAccess")
+	}
+
+	for _, a := range accessList {
+
+		if err := services.DbInsert(tx, &a); err != nil {
+			if strings.Contains(err.Error(), "duplicate key") {
+				tx.Rollback()
+				return errors.New("duplicate record error")
+			} else {
+				tx.Rollback()
+				return errors.New("failed creating position access")
+			}
+		}
+
+		at, ok := c.Locals("at").(models.At)
+		if !ok {
+			at = models.At{}
+		}
+
+		atdata := models.PositionAccessAt{
+			RefId: a.ID,
+			Code:  a.Code,
+			PositionAccessContent: models.PositionAccessContent{
+				PositionId: a.PositionId,
+				Code:       a.Code,
+			},
+			At: at,
+		}
+
+		if err := services.DbInsert(tx, &atdata); err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
 
 	tx.Commit()
