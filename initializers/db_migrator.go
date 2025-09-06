@@ -161,4 +161,5 @@ func MigrateDb() {
 
 	//ADMIN
 	//DB.AutoMigrate(&models.User{}, &models.UserAt{}, &models.Position{}, &models.PositionAt{}, &models.PositionAccess{}, &models.PositionAccessAt{}, &models.UserPermission{}, &models.UserPermissionAt{})
+	//DB.AutoMigrate(&models.Vehicle{}, &models.VehicleAt{})
 }

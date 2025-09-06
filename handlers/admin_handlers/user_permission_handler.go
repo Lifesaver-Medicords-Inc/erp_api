@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/models"
 	adminservices "github.com/pierceperado/smpc/services/admin_services"
 	"github.com/pierceperado/smpc/utils"
 )
@@ -61,14 +62,19 @@ func CreatePermission(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 
-	data, status, err := adminservices.CreatePermission(c, tx)
-	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
+	var body models.UserPermission
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid input")
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, _, err := adminservices.CreatePermission(body, at)
+
+	if err != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
@@ -81,25 +87,25 @@ func UpdatePermission(c *fiber.Ctx) error {
 	if err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
 	}
+
+	var body models.UserPermission
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid input")
+	}
+
 	conditions := map[string]interface{}{
 		"id": idNum,
 	}
 
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
 	}
 
-	data, status, err := adminservices.UpdatePermission(c, tx, conditions)
+	data, status, err := adminservices.UpdatePermission(body, conditions, at)
 
 	if err != nil {
-		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
 	return utils.RespondSuccess(c, data)
@@ -110,7 +116,7 @@ func DeletePermission(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
-		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid ID parameter")
 	}
 
 	tx := initializers.DB.Begin()
@@ -118,16 +124,18 @@ func DeletePermission(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 
-	status, err := adminservices.DeletePermission(c, tx, idNum)
+	conditions := map[string]interface{}{
+		"id": idNum,
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, status, err := adminservices.DeletePermission(conditions, at)
 	if err != nil {
-		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
 	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
-	}
-
-	return utils.RespondSuccess(c, nil)
+	return utils.RespondSuccess(c, data)
 }

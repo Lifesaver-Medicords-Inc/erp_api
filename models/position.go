@@ -22,7 +22,6 @@ type PositionAt struct {
 	Code  string `json:"code"`
 	PositionContent
 	At
-	Position Position `gorm:"foreignKey:RefId;references:ID;onDelete:CASCADE;onUpdate:CASCADE"`
 }
 
 func (PositionAt) TableName() string {
