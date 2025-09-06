@@ -15,8 +15,7 @@ import (
 
 func GetAllPositionAccess(c *fiber.Ctx) error {
 
-	tx := initializers.DB.Begin()
-	data, status, err := adminservices.GetPositionAccess(nil, tx)
+	data, status, err := adminservices.GetPositionAllAccess(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -33,70 +32,86 @@ func GetPositionAccess(c *fiber.Ctx) error {
 	conditions := map[string]interface{}{
 		"id": idNum,
 	}
-	tx := initializers.DB.Begin()
-	data, status, err := adminservices.GetPositionAccess(conditions, tx)
+
+	data, status, err := adminservices.GetPositionAccess(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
-	return utils.RespondSuccess(c, data[0])
+	return utils.RespondSuccess(c, data)
 }
 
 func CreatePositionAccess(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+
+	var body models.PositionAccess
+
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	data, status, err := adminservices.CreatePositionAccess(c, tx)
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, status, err := adminservices.CreatePositionAccess(body, at)
 	if err != nil {
-		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
 	return utils.RespondSuccess(c, data)
 }
 
 func UpdatePositionAccess(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+
+	idParam := c.Params("id")
+	idNum, err := strconv.Atoi(idParam)
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid ID parameter")
 	}
 
-	data, status, err := adminservices.UpdatePositionAccess(c, tx, nil)
+	var body models.PositionAccess
+
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	conditions := map[string]interface{}{
+		"id": idNum,
+	}
+
+	data, status, err := adminservices.UpdatePositionAccess(body, conditions, at)
 	if err != nil {
-		tx.Rollback()
+
 		return utils.RespondError(c, status, err.Error())
 	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
-	}
-
 	return utils.RespondSuccess(c, data)
 }
 
 func DeletePositionAccess(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
-	}
-
-	data, status, err := adminservices.DeletePositionAccess(c, tx, nil)
+	idParam := c.Params("id")
+	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid ID parameter")
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+	conditions := map[string]interface{}{
+		"id": idNum,
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, status, err := adminservices.DeletePositionAccess(conditions, at)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
 	}
 
 	return utils.RespondSuccess(c, data)
@@ -122,22 +137,6 @@ func UpdatePositionAllAccess(c *fiber.Ctx) error {
 	}
 
 	tx := initializers.DB.Begin()
-
-	var accessIDs []int
-	if err := tx.Model(&models.PositionAccess{}).
-		Where("position_id = ?", idNum).
-		Pluck("id", &accessIDs).Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to fetch existing access IDs")
-	}
-
-	// Delete all PositionAccessAt where ref_id in accessIDs
-	if len(accessIDs) > 0 {
-		if err := tx.Where("ref_id IN ?", accessIDs).Delete(&models.PositionAccessAt{}).Error; err != nil {
-			tx.Rollback()
-			return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to delete existing PositionAccessAt")
-		}
-	}
 
 	// Delete PositionAccess records for the position
 	if err := tx.Where("position_id = ?", idNum).Delete(&models.PositionAccess{}).Error; err != nil {

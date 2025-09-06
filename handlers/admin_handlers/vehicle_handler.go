@@ -1,6 +1,7 @@
 package adminhandlers
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -9,41 +10,26 @@ import (
 	"github.com/pierceperado/smpc/utils"
 )
 
-type PositionWithAccess struct {
-	models.Position
-	Access []*models.PositionAccess `json:"access"`
-}
-
-func GetPositions(c *fiber.Ctx) error {
-
-	id := c.Query("id")
-	name := c.Query("name")
-	code := c.Query("code")
-
-	conditions := make(map[string]interface{})
-
-	idNum, _ := strconv.Atoi(id)
-
-	if idNum != 0 {
-		conditions["id"] = id
+func CreateVehicle(c *fiber.Ctx) error {
+	var body models.Vehicle
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	if name != "" {
-		conditions["name"] = name
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
 	}
 
-	if code != "" {
-		conditions["code"] = code
-	}
-
-	positions, status, err := adminservices.GetPositions(conditions)
+	data, status, err := adminservices.CreateVehicle(body, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
-	return utils.RespondSuccess(c, positions)
+
+	return utils.RespondSuccess(c, data)
 }
 
-func GetPosition(c *fiber.Ctx) error {
+func GetVehicle(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -54,7 +40,7 @@ func GetPosition(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	position, status, err := adminservices.GetPosition(conditions)
+	position, status, err := adminservices.GetVehicle(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -62,27 +48,51 @@ func GetPosition(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, position)
 }
 
-func CreatePosition(c *fiber.Ctx) error {
+func GetVehicles(c *fiber.Ctx) error {
+	id := c.Query("id")
+	warehouseId := c.Query("warehouseId")
+	vehicleType := c.Query("type")
+	model := c.Query("model")
+	statusQuery := c.Query("status")
 
-	var body models.Position
-	if err := c.BodyParser(&body); err != nil {
-		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
+	conditions := make(map[string]interface{})
+
+	idNum, _ := strconv.Atoi(id)
+
+	warehouseIdNum, _ := strconv.Atoi(warehouseId)
+
+	if idNum != 0 {
+		conditions["id"] = id
 	}
 
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
+	if warehouseIdNum != 0 {
+		conditions["ware_house_id"] = warehouseId
 	}
 
-	data, status, err := adminservices.CreatePosition(body, at)
+	if vehicleType != "" {
+		conditions["type"] = vehicleType
+	}
+
+	if model != "" {
+		conditions["model"] = model
+	}
+
+	if statusQuery != "" {
+		conditions["status"] = statusQuery
+	}
+
+	fmt.Println(warehouseId)
+
+	vehicles, status, err := adminservices.GetVehicles(conditions)
+
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
-	return utils.RespondSuccess(c, data)
+	return utils.RespondSuccess(c, vehicles)
 }
 
-func UpdatePosition(c *fiber.Ctx) error {
+func UpdateVehicle(c *fiber.Ctx) error {
 
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -90,7 +100,7 @@ func UpdatePosition(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid ID parameter")
 	}
 
-	var body models.Position
+	var body models.Vehicle
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
@@ -104,7 +114,7 @@ func UpdatePosition(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	data, status, err := adminservices.UpdatePosition(body, conditions, at)
+	data, status, err := adminservices.UpdateVehicle(body, conditions, at)
 	if err != nil {
 
 		return utils.RespondError(c, status, err.Error())
@@ -113,7 +123,7 @@ func UpdatePosition(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func DeletePosition(c *fiber.Ctx) error {
+func DeleteVehicle(c *fiber.Ctx) error {
 
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -130,7 +140,7 @@ func DeletePosition(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := adminservices.DeletePosition(conditions, at)
+	data, status, err := adminservices.DeleteVehicle(conditions, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

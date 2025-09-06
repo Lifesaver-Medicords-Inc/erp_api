@@ -17,7 +17,6 @@ type PositionAccessAt struct {
 	Code  string `json:"code"`
 	At
 	PositionAccessContent
-	PositionAccess PositionAccess `gorm:"foreignKey:RefId;references:ID;onDelete:CASCADE;onUpdate:CASCADE"`
 }
 
 func (PositionAccess) TableName() string {
@@ -25,5 +24,5 @@ func (PositionAccess) TableName() string {
 }
 
 func (PositionAccessAt) TableName() string {
-	return "tbl_position_access_at"
+	return "z_tbl_position_access_at"
 }

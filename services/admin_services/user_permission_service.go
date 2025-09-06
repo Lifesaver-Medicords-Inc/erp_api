@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
-	"gorm.io/gorm"
 )
 
 func GetPermission(conditions map[string]interface{}) (models.UserPermission, int, error) {
@@ -15,7 +15,7 @@ func GetPermission(conditions map[string]interface{}) (models.UserPermission, in
 	var permissions models.UserPermission
 
 	if err := services.DbGetNoCache(&permissions, conditions); err != nil {
-		return permissions, fiber.StatusInternalServerError, errors.New("failed getting user permission")
+		return permissions, fiber.StatusNotFound, errors.New("failed getting user permission")
 	}
 
 	return permissions, 0, nil
@@ -26,103 +26,125 @@ func GetPermissions(conditions map[string]interface{}) ([]models.UserPermission,
 	var permissions []models.UserPermission
 
 	if err := services.DbGetNoCache(&permissions, conditions); err != nil {
-		return permissions, fiber.StatusInternalServerError, errors.New("failed getting user permission")
+		return permissions, fiber.StatusNotFound, errors.New("failed getting user permission")
 	}
 
 	return permissions, 0, nil
 }
 
-func CreatePermission(c *fiber.Ctx, tx *gorm.DB) (models.UserPermission, int, error) {
+func CreatePermission(permission models.UserPermission, at models.At) (models.UserPermission, int, error) {
+	tx := initializers.DB.Begin()
 
-	var body models.UserPermission
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	if tx.Error != nil {
+		return models.UserPermission{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	if err := services.DbInsert(tx, &body); err != nil {
+	if err := services.DbInsert(tx, &permission); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			err = errors.New("duplicate record error")
 		} else {
 			err = errors.New("failed creating user permission")
 		}
-
-		return body, fiber.StatusInternalServerError, err
-	}
-
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
+		tx.Rollback()
+		return permission, fiber.StatusInternalServerError, err
 	}
 
 	atdata := models.UserPermissionAt{
-		RefId: body.UserId,
+		RefId: permission.UserId,
 		UserPermissionContent: models.UserPermissionContent{
-			UserId:    body.UserId,
-			CanCreate: body.CanCreate,
-			CanUpdate: body.CanUpdate,
-			CanDelete: body.CanDelete,
+			UserId:    permission.UserId,
+			CanCreate: permission.CanCreate,
+			CanUpdate: permission.CanUpdate,
+			CanDelete: permission.CanDelete,
 		},
 		At: at,
 	}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed creating user permissionnat")
+		tx.Rollback()
+		return permission, fiber.StatusInternalServerError, errors.New("failed creating user permissionnat")
 	}
 
-	return body, 0, nil
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return permission, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
+	}
+
+	return permission, 0, nil
 }
 
-func UpdatePermission(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.UserPermission, int, error) {
+func UpdatePermission(permission models.UserPermission, conditions map[string]interface{}, at models.At) (models.UserPermission, int, error) {
 
-	var body models.UserPermission
+	tx := initializers.DB.Begin()
 
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	if tx.Error != nil {
+		return models.UserPermission{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := tx.Model(&models.UserPermission{}).
-		Where("user_id = ?", body.UserId).
+		Where("user_id = ?", permission.UserId).
 		Updates(map[string]interface{}{
-			"can_create": body.CanCreate,
-			"can_update": body.CanUpdate,
-			"can_delete": body.CanDelete,
+			"can_create": permission.CanCreate,
+			"can_update": permission.CanUpdate,
+			"can_delete": permission.CanDelete,
 		}).Error; err != nil {
 
-		return body, fiber.StatusInternalServerError, errors.New("failed updating user permission")
-	}
-
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
+		return permission, fiber.StatusInternalServerError, errors.New("failed updating user permission")
 	}
 
 	atdata := models.UserPermissionAt{
-		RefId: body.UserId,
+		RefId: permission.UserId,
 		UserPermissionContent: models.UserPermissionContent{
-			UserId:    body.UserId,
-			CanCreate: body.CanCreate,
-			CanUpdate: body.CanUpdate,
-			CanDelete: body.CanDelete,
+			UserId:    permission.UserId,
+			CanCreate: permission.CanCreate,
+			CanUpdate: permission.CanUpdate,
+			CanDelete: permission.CanDelete,
 		},
 		At: at,
 	}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed creating user permissionat")
+		tx.Rollback()
+		return permission, fiber.StatusInternalServerError, errors.New("failed creating user permissionat")
 	}
 
-	return body, 0, nil
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return permission, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
+	}
+
+	return permission, 0, nil
 }
 
-func DeletePermission(c *fiber.Ctx, tx *gorm.DB, id int) (int, error) {
+func DeletePermission(conditions map[string]interface{}, at models.At) (models.UserPermission, int, error) {
 
-	if err := services.DbDelete(tx, &models.UserPermissionAt{}, map[string]interface{}{"ref_id": id}); err != nil {
-		return fiber.StatusInternalServerError, errors.New("failed deleting user permission")
+	tx := initializers.DB.Begin()
+
+	if tx.Error != nil {
+		return models.UserPermission{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	if err := services.DbDelete(tx, &models.UserPermission{}, map[string]interface{}{"id": id}); err != nil {
-		return fiber.StatusInternalServerError, errors.New("failed deleting user permission")
+	permission, status, err := GetPermission(conditions)
+
+	if err != nil {
+		return permission, status, errors.New("user not found")
 	}
 
-	return 0, nil
+	if err := services.DbDelete(tx, &permission, conditions); err != nil {
+		tx.Rollback()
+		return permission, fiber.StatusInternalServerError, errors.New("failed deleting permission")
+	}
+	atdata := models.UserPermissionAt{RefId: permission.ID, UserPermissionContent: permission.UserPermissionContent, At: at}
+
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		tx.Rollback()
+		return permission, fiber.StatusInternalServerError, errors.New("failed creating user_permisionat")
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return permission, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
+	}
+
+	return permission, 0, nil
 }

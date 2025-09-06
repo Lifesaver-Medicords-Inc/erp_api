@@ -26,7 +26,6 @@ type UserAt struct {
 	EmployeeId string `json:"employee_id"`
 	UserContent
 	At
-	User User `gorm:"foreignKey:RefId;references:ID;onDelete:CASCADE;onUpdate:CASCADE"`
 }
 
 func (UserAt) TableName() string {

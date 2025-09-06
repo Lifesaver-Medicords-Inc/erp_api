@@ -22,9 +22,8 @@ type UserPermissionAt struct {
 	RefId uint `json:"ref_id"`
 	At
 	UserPermissionContent
-	UserPermission `gorm:"foreignKey:RefId;references:ID;onDelete:CASCADE;onUpdate:CASCADE"`
 }
 
 func (UserPermissionAt) TableName() string {
-	return "tbl_user_permission_at"
+	return "z_tbl_user_permission_at"
 }

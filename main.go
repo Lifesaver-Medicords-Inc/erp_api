@@ -546,6 +546,17 @@ func SetupApp() *fiber.App {
 				adminGroupApi.Post("/permissions", adminhandlers.CreatePermission)
 				adminGroupApi.Put("/permissions/:id", adminhandlers.UpdatePermission)
 				adminGroupApi.Delete("/permissions/:id", adminhandlers.DeletePermission)
+
+				adminGroupApi.Post("/vehicles", adminhandlers.CreateVehicle)
+				adminGroupApi.Get("/vehicles/:id", adminhandlers.GetVehicle)
+				adminGroupApi.Get("/vehicles", adminhandlers.GetVehicles)
+				adminGroupApi.Put("/vehicles/:id", adminhandlers.UpdateVehicle)
+				adminGroupApi.Delete("/vehicles/:id", adminhandlers.DeleteVehicle)
+
+				adminGroupApi.Post("/warehouses", adminhandlers.CreateWarehouse)
+				adminGroupApi.Get("/warehouses", adminhandlers.GetWarehouses)
+				adminGroupApi.Get("/warehouses/:id", adminhandlers.GetWarehouse)
+
 			}
 
 			//Bpi Endpoints

@@ -12,8 +12,32 @@ import (
 )
 
 func GetAllUsers(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-	data, status, err := adminservices.GetUsers(nil, tx)
+	id := c.Query("id")
+	firstName := c.Query("first-name")
+	lastName := c.Query("last-name")
+	department := c.Query("department")
+
+	conditions := make(map[string]interface{})
+
+	idNum, _ := strconv.Atoi(id)
+
+	if idNum != 0 {
+		conditions["id"] = id
+	}
+
+	if firstName != "" {
+		conditions["first-name"] = firstName
+	}
+
+	if lastName != "" {
+		conditions["last-name"] = lastName
+	}
+
+	if department != "" {
+		conditions["department"] = department
+	}
+
+	data, status, err := adminservices.GetUsers(conditions)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -34,9 +58,7 @@ func GetUser(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	tx := initializers.DB.Begin()
-
-	data, status, err := adminservices.GetUsers(conditions, tx)
+	data, status, err := adminservices.GetUsers(conditions)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -57,8 +79,7 @@ func GetPositionUsers(c *fiber.Ctx) error {
 		"position_id": idNum,
 	}
 
-	tx := initializers.DB.Begin()
-	data, status, err := adminservices.GetUsers(conditions, tx)
+	data, status, err := adminservices.GetUsers(conditions)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -95,59 +116,45 @@ func UpdateUser(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	// Begin transaction
-	tx := initializers.DB.Begin()
+	conditions := map[string]interface{}{
+		"id": body.ID,
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, status, err := adminservices.UpdateUser(body, conditions, at)
+
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
+
+func UpdateUserPosition(c *fiber.Ctx) error {
+	// Parse JSON body
+	var body models.User
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
+	}
 
 	conditions := map[string]interface{}{
 		"id": body.ID,
 	}
 
-	data, status, err := adminservices.UpdateUser(c, tx, conditions)
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, status, err := adminservices.UpdateUser(body, conditions, at)
 
 	if err != nil {
-		tx.Rollback()
+
 		return utils.RespondError(c, status, err.Error())
 	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
-	}
-
-	return utils.RespondSuccess(c, data)
-}
-
-type UpdatePositionRequest struct {
-	Id         int `json:"id"`
-	PositionId int `json:"position_id"`
-}
-
-func UpdateUserPosition(c *fiber.Ctx) error {
-	// Parse JSON body
-	var req UpdatePositionRequest
-	if err := c.BodyParser(&req); err != nil {
-		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
-	}
-
-	// Begin transaction
-	tx := initializers.DB.Begin()
-
-	conditions := map[string]interface{}{
-		"id": req.Id,
-	}
-
-	data, status, err := adminservices.UpdateUser(c, tx, conditions)
-
-	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
-	}
-
 	return utils.RespondSuccess(c, data)
 }
 
@@ -155,23 +162,32 @@ func DeleteUser(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
-		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid ID parameter")
 	}
 
-	// Begin transaction
-	tx := initializers.DB.Begin()
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
 
-	status, err := adminservices.DeleteUser(c, tx, idNum)
+	conditions := map[string]interface{}{"id": idNum}
+
+	user, status, err := adminservices.GetUser(conditions)
 
 	if err != nil {
-		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+	permissionConditions := map[string]interface{}{
+		"user_id": user.ID,
 	}
 
-	return utils.RespondSuccess(c, nil)
+	adminservices.DeletePermission(permissionConditions, at)
+
+	data, status, err := adminservices.DeleteUser(conditions, at)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
 }
