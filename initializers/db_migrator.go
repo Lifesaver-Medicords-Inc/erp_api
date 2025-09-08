@@ -172,6 +172,7 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.JobOrder{}, &models.JobOrderAt{})
 
 	//ADMIN
-	//DB.AutoMigrate(&models.User{}, &models.UserAt{}, &models.Position{}, &models.PositionAt{}, &models.PositionAccess{}, &models.PositionAccessAt{}, &models.UserPermission{}, &models.UserPermissionAt{})
-	//DB.AutoMigrate(&models.Vehicle{}, &models.VehicleAt{})
+	//DB.AutoMigrate(&models.User{}, &models.UserAt{}, &models.PositionModel{}, &models.PositionAt{}, &models.PositionAccessModel{}, &models.PositionAccessAt{}, &models.UserPermissionModel{}, &models.UserPermissionAt{})
+	//DB.AutoMigrate(&models.VehicleModel{}, &models.VehicleAt{})
+	//DB.AutoMigrate(&models.VehicleFileModel{}, &models.VehicleFileAt{})
 }
