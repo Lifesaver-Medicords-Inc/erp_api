@@ -10,8 +10,18 @@ import (
 	"github.com/pierceperado/smpc/utils"
 )
 
-func CreateVehicle(c *fiber.Ctx) error {
-	var body models.Vehicle
+type VehicleHandler struct {
+	VehicleService *adminservices.VehicleService
+}
+
+func NewVehicleHandler(service *adminservices.VehicleService) *VehicleHandler {
+	return &VehicleHandler{
+		VehicleService: service,
+	}
+}
+
+func (v *VehicleHandler) CreateVehicle(c *fiber.Ctx) error {
+	var body models.VehicleModel
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
@@ -21,7 +31,7 @@ func CreateVehicle(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := adminservices.CreateVehicle(body, at)
+	data, status, err := v.VehicleService.CreateVehicle(body, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -29,7 +39,7 @@ func CreateVehicle(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func GetVehicle(c *fiber.Ctx) error {
+func (v *VehicleHandler) GetVehicle(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -40,7 +50,7 @@ func GetVehicle(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	position, status, err := adminservices.GetVehicle(conditions)
+	position, status, err := v.VehicleService.GetVehicle(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -48,7 +58,7 @@ func GetVehicle(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, position)
 }
 
-func GetVehicles(c *fiber.Ctx) error {
+func (v *VehicleHandler) GetVehicles(c *fiber.Ctx) error {
 	id := c.Query("id")
 	warehouseId := c.Query("warehouseId")
 	vehicleType := c.Query("type")
@@ -83,7 +93,7 @@ func GetVehicles(c *fiber.Ctx) error {
 
 	fmt.Println(warehouseId)
 
-	vehicles, status, err := adminservices.GetVehicles(conditions)
+	vehicles, status, err := v.VehicleService.GetVehicles(conditions)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -92,7 +102,7 @@ func GetVehicles(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, vehicles)
 }
 
-func UpdateVehicle(c *fiber.Ctx) error {
+func (v *VehicleHandler) UpdateVehicle(c *fiber.Ctx) error {
 
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -100,7 +110,7 @@ func UpdateVehicle(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid ID parameter")
 	}
 
-	var body models.Vehicle
+	var body models.VehicleModel
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
@@ -114,7 +124,7 @@ func UpdateVehicle(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	data, status, err := adminservices.UpdateVehicle(body, conditions, at)
+	data, status, err := v.VehicleService.UpdateVehicle(body, conditions, at)
 	if err != nil {
 
 		return utils.RespondError(c, status, err.Error())
@@ -123,7 +133,7 @@ func UpdateVehicle(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func DeleteVehicle(c *fiber.Ctx) error {
+func (v *VehicleHandler) DeleteVehicle(c *fiber.Ctx) error {
 
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -140,7 +150,7 @@ func DeleteVehicle(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := adminservices.DeleteVehicle(conditions, at)
+	data, status, err := v.VehicleService.DeleteVehicle(conditions, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

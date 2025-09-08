@@ -10,14 +10,21 @@ import (
 	"github.com/pierceperado/smpc/services"
 )
 
-func GetPositionAllAccess(conditions map[string]interface{}) ([]models.PositionAccess, int, error) {
+type PositionAccessService struct {
+}
 
-	var access []models.PositionAccess
+func NewPositionAccessService() *PositionAccessService {
+	return &PositionAccessService{}
+}
+
+func (p *PositionAccessService) GetPositionAllAccess(conditions map[string]interface{}) ([]models.PositionAccessModel, int, error) {
+
+	var access []models.PositionAccessModel
 
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return []models.PositionAccess{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return []models.PositionAccessModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := tx.Where(conditions).Preload("Position").Find(&access).Error; err != nil {
@@ -27,13 +34,13 @@ func GetPositionAllAccess(conditions map[string]interface{}) ([]models.PositionA
 	return access, 0, nil
 }
 
-func GetPositionAccess(conditions map[string]interface{}) (models.PositionAccess, int, error) {
+func (p *PositionAccessService) GetPositionAccess(conditions map[string]interface{}) (models.PositionAccessModel, int, error) {
 
-	var access models.PositionAccess
+	var access models.PositionAccessModel
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.PositionAccess{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return models.PositionAccessModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := tx.Where(conditions).Preload("Position").Find(&access).Error; err != nil {
@@ -43,11 +50,11 @@ func GetPositionAccess(conditions map[string]interface{}) (models.PositionAccess
 	return access, 0, nil
 }
 
-func CreatePositionAccess(access models.PositionAccess, at models.At) (models.PositionAccess, int, error) {
+func (p *PositionAccessService) CreatePositionAccess(access models.PositionAccessModel, at models.At) (models.PositionAccessModel, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.PositionAccess{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return models.PositionAccessModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &access); err != nil {
@@ -77,12 +84,12 @@ func CreatePositionAccess(access models.PositionAccess, at models.At) (models.Po
 	return access, 0, nil
 }
 
-func UpdatePositionAccess(access models.PositionAccess, conditions map[string]interface{}, at models.At) (models.PositionAccess, int, error) {
+func (p *PositionAccessService) UpdatePositionAccess(access models.PositionAccessModel, conditions map[string]interface{}, at models.At) (models.PositionAccessModel, int, error) {
 
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.PositionAccess{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return models.PositionAccessModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbUpdate(tx, &access, conditions); err != nil {
@@ -107,15 +114,15 @@ func UpdatePositionAccess(access models.PositionAccess, conditions map[string]in
 	return access, 0, nil
 }
 
-func DeletePositionAccess(conditions map[string]interface{}, at models.At) (models.PositionAccess, int, error) {
+func (p *PositionAccessService) DeletePositionAccess(conditions map[string]interface{}, at models.At) (models.PositionAccessModel, int, error) {
 
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.PositionAccess{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return models.PositionAccessModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	access, status, err := GetPositionAccess(conditions)
+	access, status, err := p.GetPositionAccess(conditions)
 
 	if err != nil {
 		return access, status, errors.New("Position not found")

@@ -10,7 +10,17 @@ import (
 	"github.com/pierceperado/smpc/utils"
 )
 
-func GetPermission(c *fiber.Ctx) error {
+type PermissionHandler struct {
+	PermissionService *adminservices.PermissionService
+}
+
+func NewPermissionHandler(service *adminservices.PermissionService) *PermissionHandler {
+	return &PermissionHandler{
+		PermissionService: service,
+	}
+}
+
+func (p *PermissionHandler) GetPermission(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -20,7 +30,7 @@ func GetPermission(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	data, status, err := adminservices.GetPermission(conditions)
+	data, status, err := p.PermissionService.GetPermission(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -28,9 +38,9 @@ func GetPermission(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func GetPermissions(c *fiber.Ctx) error {
+func (p *PermissionHandler) GetPermissions(c *fiber.Ctx) error {
 
-	data, status, err := adminservices.GetPermissions(nil)
+	data, status, err := p.PermissionService.GetPermissions(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -38,7 +48,7 @@ func GetPermissions(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func GetUserPermission(c *fiber.Ctx) error {
+func (p *PermissionHandler) GetUserPermission(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -48,7 +58,7 @@ func GetUserPermission(c *fiber.Ctx) error {
 		"user_id": idNum,
 	}
 
-	data, status, err := adminservices.GetPermission(conditions)
+	data, status, err := p.PermissionService.GetPermission(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -56,13 +66,13 @@ func GetUserPermission(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func CreatePermission(c *fiber.Ctx) error {
+func (p *PermissionHandler) CreatePermission(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 
-	var body models.UserPermission
+	var body models.UserPermissionModel
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid input")
 	}
@@ -72,7 +82,7 @@ func CreatePermission(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, _, err := adminservices.CreatePermission(body, at)
+	data, _, err := p.PermissionService.CreatePermission(body, at)
 
 	if err != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
@@ -81,14 +91,14 @@ func CreatePermission(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func UpdatePermission(c *fiber.Ctx) error {
+func (p *PermissionHandler) UpdatePermission(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	var body models.UserPermission
+	var body models.UserPermissionModel
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid input")
 	}
@@ -102,7 +112,7 @@ func UpdatePermission(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := adminservices.UpdatePermission(body, conditions, at)
+	data, status, err := p.PermissionService.UpdatePermission(body, conditions, at)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -111,7 +121,7 @@ func UpdatePermission(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func DeletePermission(c *fiber.Ctx) error {
+func (p *PermissionHandler) DeletePermission(c *fiber.Ctx) error {
 
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -133,7 +143,7 @@ func DeletePermission(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := adminservices.DeletePermission(conditions, at)
+	data, status, err := p.PermissionService.DeletePermission(conditions, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

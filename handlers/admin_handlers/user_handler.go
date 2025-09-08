@@ -11,7 +11,19 @@ import (
 	"github.com/pierceperado/smpc/utils"
 )
 
-func GetAllUsers(c *fiber.Ctx) error {
+type UserHandler struct {
+	UserService       *adminservices.UserService
+	PermissionService *adminservices.PermissionService
+}
+
+func NewUserHandler(service *adminservices.UserService, permissionService *adminservices.PermissionService) *UserHandler {
+	return &UserHandler{
+		UserService:       service,
+		PermissionService: permissionService,
+	}
+}
+
+func (u *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 	id := c.Query("id")
 	firstName := c.Query("first-name")
 	lastName := c.Query("last-name")
@@ -37,7 +49,7 @@ func GetAllUsers(c *fiber.Ctx) error {
 		conditions["department"] = department
 	}
 
-	data, status, err := adminservices.GetUsers(conditions)
+	data, status, err := u.UserService.GetUsers(conditions)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -46,7 +58,7 @@ func GetAllUsers(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func GetUser(c *fiber.Ctx) error {
+func (u *UserHandler) GetUser(c *fiber.Ctx) error {
 
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -58,7 +70,7 @@ func GetUser(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	data, status, err := adminservices.GetUsers(conditions)
+	data, status, err := u.UserService.GetUsers(conditions)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -67,7 +79,7 @@ func GetUser(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func GetPositionUsers(c *fiber.Ctx) error {
+func (u *UserHandler) GetPositionUsers(c *fiber.Ctx) error {
 
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -79,7 +91,7 @@ func GetPositionUsers(c *fiber.Ctx) error {
 		"position_id": idNum,
 	}
 
-	data, status, err := adminservices.GetUsers(conditions)
+	data, status, err := u.UserService.GetUsers(conditions)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -88,7 +100,7 @@ func GetPositionUsers(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func CreateUser(c *fiber.Ctx) error {
+func (u *UserHandler) CreateUser(c *fiber.Ctx) error {
 
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
@@ -109,7 +121,7 @@ func CreateUser(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func UpdateUser(c *fiber.Ctx) error {
+func (u *UserHandler) UpdateUser(c *fiber.Ctx) error {
 	// Parse JSON body
 	var body models.User
 	if err := c.BodyParser(&body); err != nil {
@@ -125,7 +137,7 @@ func UpdateUser(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := adminservices.UpdateUser(body, conditions, at)
+	data, status, err := u.UserService.UpdateUser(body, conditions, at)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -133,7 +145,7 @@ func UpdateUser(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func UpdateUserPosition(c *fiber.Ctx) error {
+func (u *UserHandler) UpdateUserPosition(c *fiber.Ctx) error {
 	// Parse JSON body
 	var body models.User
 	if err := c.BodyParser(&body); err != nil {
@@ -149,7 +161,7 @@ func UpdateUserPosition(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := adminservices.UpdateUser(body, conditions, at)
+	data, status, err := u.UserService.UpdateUser(body, conditions, at)
 
 	if err != nil {
 
@@ -158,7 +170,7 @@ func UpdateUserPosition(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func DeleteUser(c *fiber.Ctx) error {
+func (u *UserHandler) DeleteUser(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -172,7 +184,7 @@ func DeleteUser(c *fiber.Ctx) error {
 
 	conditions := map[string]interface{}{"id": idNum}
 
-	user, status, err := adminservices.GetUser(conditions)
+	user, status, err := u.UserService.GetUser(conditions)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -182,9 +194,9 @@ func DeleteUser(c *fiber.Ctx) error {
 		"user_id": user.ID,
 	}
 
-	adminservices.DeletePermission(permissionConditions, at)
+	u.PermissionService.DeletePermission(permissionConditions, at)
 
-	data, status, err := adminservices.DeleteUser(conditions, at)
+	data, status, err := u.UserService.DeleteUser(conditions, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

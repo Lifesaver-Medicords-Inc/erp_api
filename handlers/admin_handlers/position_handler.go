@@ -10,11 +10,21 @@ import (
 )
 
 type PositionWithAccess struct {
-	models.Position
-	Access []*models.PositionAccess `json:"access"`
+	models.PositionModel
+	Access []*models.PositionAccessModel `json:"access"`
 }
 
-func GetPositions(c *fiber.Ctx) error {
+type PositionHandler struct {
+	PositionService *adminservices.PositionService
+}
+
+func NewPositionHandler(service *adminservices.PositionService) *PositionHandler {
+	return &PositionHandler{
+		PositionService: service,
+	}
+}
+
+func (p *PositionHandler) GetPositions(c *fiber.Ctx) error {
 
 	id := c.Query("id")
 	name := c.Query("name")
@@ -36,14 +46,14 @@ func GetPositions(c *fiber.Ctx) error {
 		conditions["code"] = code
 	}
 
-	positions, status, err := adminservices.GetPositions(conditions)
+	positions, status, err := p.PositionService.GetPositions(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 	return utils.RespondSuccess(c, positions)
 }
 
-func GetPosition(c *fiber.Ctx) error {
+func (p *PositionHandler) GetPosition(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -54,7 +64,7 @@ func GetPosition(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	position, status, err := adminservices.GetPosition(conditions)
+	position, status, err := p.PositionService.GetPosition(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -62,9 +72,9 @@ func GetPosition(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, position)
 }
 
-func CreatePosition(c *fiber.Ctx) error {
+func (p *PositionHandler) CreatePosition(c *fiber.Ctx) error {
 
-	var body models.Position
+	var body models.PositionModel
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
@@ -74,7 +84,7 @@ func CreatePosition(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := adminservices.CreatePosition(body, at)
+	data, status, err := p.PositionService.CreatePosition(body, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -82,7 +92,7 @@ func CreatePosition(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func UpdatePosition(c *fiber.Ctx) error {
+func (p *PositionHandler) UpdatePosition(c *fiber.Ctx) error {
 
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -90,7 +100,7 @@ func UpdatePosition(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid ID parameter")
 	}
 
-	var body models.Position
+	var body models.PositionModel
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
@@ -104,7 +114,7 @@ func UpdatePosition(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	data, status, err := adminservices.UpdatePosition(body, conditions, at)
+	data, status, err := p.PositionService.UpdatePosition(body, conditions, at)
 	if err != nil {
 
 		return utils.RespondError(c, status, err.Error())
@@ -113,7 +123,7 @@ func UpdatePosition(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func DeletePosition(c *fiber.Ctx) error {
+func (p *PositionHandler) DeletePosition(c *fiber.Ctx) error {
 
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -130,7 +140,7 @@ func DeletePosition(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := adminservices.DeletePosition(conditions, at)
+	data, status, err := p.PositionService.DeletePosition(conditions, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

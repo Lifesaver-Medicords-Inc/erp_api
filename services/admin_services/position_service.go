@@ -11,15 +11,22 @@ import (
 	"github.com/pierceperado/smpc/services"
 )
 
-func GetPositions(conditions map[string]interface{}) ([]models.Position, int, error) {
+type PositionService struct {
+}
+
+func NewPositionService() *PositionService {
+	return &PositionService{}
+}
+
+func (p *PositionService) GetPositions(conditions map[string]interface{}) ([]models.PositionModel, int, error) {
 
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return []models.Position{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return []models.PositionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	var positions []models.Position
+	var positions []models.PositionModel
 
 	if err := tx.Where(conditions).Preload("Access").Find(&positions).Error; err != nil {
 		fmt.Println("ERROR:", err)
@@ -28,13 +35,13 @@ func GetPositions(conditions map[string]interface{}) ([]models.Position, int, er
 	return positions, 0, nil
 }
 
-func GetPosition(conditions map[string]interface{}) (models.Position, int, error) {
+func (p *PositionService) GetPosition(conditions map[string]interface{}) (models.PositionModel, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.Position{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return models.PositionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
-	var position models.Position
+	var position models.PositionModel
 
 	if err := tx.Where(conditions).Preload("Access").First(&position).Error; err != nil {
 		return position, fiber.StatusNotFound, errors.New("failed getting position")
@@ -43,12 +50,12 @@ func GetPosition(conditions map[string]interface{}) (models.Position, int, error
 	return position, 0, nil
 }
 
-func CreatePosition(position models.Position, at models.At) (models.Position, int, error) {
+func (p *PositionService) CreatePosition(position models.PositionModel, at models.At) (models.PositionModel, int, error) {
 
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.Position{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return models.PositionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &position); err != nil {
@@ -77,11 +84,11 @@ func CreatePosition(position models.Position, at models.At) (models.Position, in
 	return position, 0, nil
 }
 
-func UpdatePosition(position models.Position, conditions map[string]interface{}, at models.At) (models.Position, int, error) {
+func (p *PositionService) UpdatePosition(position models.PositionModel, conditions map[string]interface{}, at models.At) (models.PositionModel, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.Position{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return models.PositionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbUpdate(tx, &position, conditions); err != nil {
@@ -103,15 +110,15 @@ func UpdatePosition(position models.Position, conditions map[string]interface{},
 	return position, 0, nil
 }
 
-func DeletePosition(conditions map[string]interface{}, at models.At) (models.Position, int, error) {
+func (p *PositionService) DeletePosition(conditions map[string]interface{}, at models.At) (models.PositionModel, int, error) {
 
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.Position{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return models.PositionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	position, status, err := GetPosition(conditions)
+	position, status, err := p.GetPosition(conditions)
 
 	if err != nil {
 		return position, status, errors.New("position not found")

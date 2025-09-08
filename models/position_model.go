@@ -4,15 +4,15 @@ type PositionContent struct {
 	Name string `json:"name"`
 }
 
-type Position struct {
+type PositionModel struct {
 	ID   uint   `gorm:"primarykey" json:"id"`
 	Code string `gorm:"unique;size:100" json:"code"`
 	PositionContent
-	Users  []User           `gorm:"foreignKey:PositionId" json:"users"`
-	Access []PositionAccess `gorm:"foreignKey:PositionId" json:"access"`
+	Users  []User                `gorm:"foreignKey:PositionId" json:"users"`
+	Access []PositionAccessModel `gorm:"foreignKey:PositionId" json:"access"`
 }
 
-func (Position) TableName() string {
+func (PositionModel) TableName() string {
 	return "tbl_position"
 }
 

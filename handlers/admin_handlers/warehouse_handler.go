@@ -9,7 +9,16 @@ import (
 	"github.com/pierceperado/smpc/utils"
 )
 
-func CreateWarehouse(c *fiber.Ctx) error {
+type WarehouseHandler struct {
+	WarehouseService *adminservices.WarehouseService
+}
+
+func NewWarehouseHandler(service *adminservices.WarehouseService) *WarehouseHandler {
+	return &WarehouseHandler{
+		WarehouseService: service,
+	}
+}
+func (w *WarehouseHandler) CreateWarehouse(c *fiber.Ctx) error {
 	var body models.WarehouseName
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
@@ -20,7 +29,7 @@ func CreateWarehouse(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := adminservices.CreateWarehouse(body, at)
+	data, status, err := w.WarehouseService.CreateWarehouse(body, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -28,7 +37,7 @@ func CreateWarehouse(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func GetWarehouse(c *fiber.Ctx) error {
+func (w *WarehouseHandler) GetWarehouse(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -39,7 +48,7 @@ func GetWarehouse(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	position, status, err := adminservices.GetWarehouse(conditions)
+	position, status, err := w.WarehouseService.GetWarehouse(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -47,7 +56,7 @@ func GetWarehouse(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, position)
 }
 
-func GetWarehouses(c *fiber.Ctx) error {
+func (w *WarehouseHandler) GetWarehouses(c *fiber.Ctx) error {
 	id := c.Query("id")
 	warehouseManager := c.Query("warehouse-manager")
 	isInActiveStr := c.Query("is-inactive")
@@ -75,7 +84,7 @@ func GetWarehouses(c *fiber.Ctx) error {
 		conditions["code"] = code
 	}
 
-	vehicles, status, err := adminservices.GetWarehouses(conditions)
+	vehicles, status, err := w.WarehouseService.GetWarehouses(conditions)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())

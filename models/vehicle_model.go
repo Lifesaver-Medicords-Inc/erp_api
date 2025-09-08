@@ -12,13 +12,14 @@ type VehicleContent struct {
 	Notes           string `json:"notes"`
 }
 
-type Vehicle struct {
-	ID          uint `gorm:"primaryKey" json:"id"`
-	WareHouseId int  `json:"warehouse_id"`
+type VehicleModel struct {
+	ID          uint               `gorm:"primaryKey" json:"id"`
+	WareHouseId int                `json:"warehouse_id"`
+	Files       []VehicleFileModel `gorm:"foreignKey:VehicleId"  json:"files"`
 	VehicleContent
 }
 
-func (Vehicle) TableName() string {
+func (VehicleModel) TableName() string {
 	return "tbl_vehicle"
 }
 

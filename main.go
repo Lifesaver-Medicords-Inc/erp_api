@@ -6,7 +6,6 @@ import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	adminhandlers "github.com/pierceperado/smpc/handlers/admin_handlers"
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
 	"github.com/pierceperado/smpc/handlers/journal_entry_handlers"
 	"github.com/pierceperado/smpc/handlers/position_handlers"
@@ -17,6 +16,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/routes"
 	"github.com/pierceperado/smpc/services"
 )
 
@@ -456,49 +456,8 @@ func main() {
 				purchasingApi.Put("/purchase_order", purchasing_handlers.UpdatePurchaseOrder)
 			}
 
-			// Admin
-
-			adminGroupApi := api.Group("/")
-			{
-				adminGroupApi.Post("/users", adminhandlers.CreateUser)
-				adminGroupApi.Get("/users/:id", adminhandlers.GetUser)
-				adminGroupApi.Put("/users/:id", adminhandlers.UpdateUser)
-				adminGroupApi.Delete("/users/:id", adminhandlers.DeleteUser)
-				adminGroupApi.Get("/users", adminhandlers.GetAllUsers)
-				adminGroupApi.Get("/users/with-position/:id", adminhandlers.GetPositionUsers)
-				adminGroupApi.Put("/users/position/:id", adminhandlers.UpdateUserPosition)
-
-				adminGroupApi.Get("/positions", adminhandlers.GetPositions)
-				adminGroupApi.Get("/positions/:id", adminhandlers.GetPosition)
-				adminGroupApi.Post("/positions", adminhandlers.CreatePosition)
-				adminGroupApi.Put("/positions/:id", adminhandlers.UpdatePosition)
-				adminGroupApi.Delete("/positions/:id", adminhandlers.DeletePosition)
-
-				adminGroupApi.Get("/position-access", adminhandlers.GetAllPositionAccess)
-				adminGroupApi.Get("/position-access/:id", adminhandlers.GetPositionAccess)
-				adminGroupApi.Post("/position-access", adminhandlers.CreatePositionAccess)
-				adminGroupApi.Put("/position-access/:id", adminhandlers.UpdatePositionAccess)
-				adminGroupApi.Delete("/position-access/:id", adminhandlers.DeletePositionAccess)
-				adminGroupApi.Post("/position-access/update-all-access/:id", adminhandlers.UpdatePositionAllAccess)
-
-				adminGroupApi.Get("/permissions", adminhandlers.GetPermissions)
-				adminGroupApi.Get("/permissions/:id", adminhandlers.GetPermission)
-				adminGroupApi.Get("/user-permissions/:id", adminhandlers.GetUserPermission)
-				adminGroupApi.Post("/permissions", adminhandlers.CreatePermission)
-				adminGroupApi.Put("/permissions/:id", adminhandlers.UpdatePermission)
-				adminGroupApi.Delete("/permissions/:id", adminhandlers.DeletePermission)
-
-				adminGroupApi.Post("/vehicles", adminhandlers.CreateVehicle)
-				adminGroupApi.Get("/vehicles/:id", adminhandlers.GetVehicle)
-				adminGroupApi.Get("/vehicles", adminhandlers.GetVehicles)
-				adminGroupApi.Put("/vehicles/:id", adminhandlers.UpdateVehicle)
-				adminGroupApi.Delete("/vehicles/:id", adminhandlers.DeleteVehicle)
-
-				adminGroupApi.Post("/warehouses", adminhandlers.CreateWarehouse)
-				adminGroupApi.Get("/warehouses", adminhandlers.GetWarehouses)
-				adminGroupApi.Get("/warehouses/:id", adminhandlers.GetWarehouse)
-
-			}
+			//ROUTES
+			routes.SetupRoutes(app)
 
 			//Bpi Endpoints
 
@@ -546,6 +505,12 @@ func main() {
 			}
 		}
 	}
+
+	// Initialize a new Hub instance
+	//h := hub.NewHub()
+
+	// Start the hub in its own goroutine
+	//go h.Run()
 
 	// Start Listen
 	app.Listen(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT"))

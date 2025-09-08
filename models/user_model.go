@@ -12,8 +12,8 @@ type User struct {
 	ID         uint   `gorm:"primarykey" json:"id"`
 	EmployeeId string `gorm:"unique" json:"employee_id"`
 	UserContent
-	Position    Position        `gorm:"foreignKey:PositionId;references:ID;onDelete:CASCADE;onUpdate:CASCADE" json:"position"`
-	Permissions *UserPermission `gorm:"foreignKey:UserId;references:ID;onDelete:CASCADE;onUpdate:CASCADE" json:"permissions"`
+	Position    PositionModel        `gorm:"foreignKey:PositionId;references:ID;onDelete:CASCADE;onUpdate:CASCADE" json:"position"`
+	Permissions *UserPermissionModel `gorm:"foreignKey:UserId;references:ID;onDelete:CASCADE;onUpdate:CASCADE" json:"permissions"`
 }
 
 func (User) TableName() string {

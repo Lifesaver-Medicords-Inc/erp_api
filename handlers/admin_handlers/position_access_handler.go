@@ -13,9 +13,19 @@ import (
 	"github.com/pierceperado/smpc/utils"
 )
 
-func GetAllPositionAccess(c *fiber.Ctx) error {
+type PositionAccessHandler struct {
+	PositionAccessService *adminservices.PositionAccessService
+}
 
-	data, status, err := adminservices.GetPositionAllAccess(nil)
+func NewPositionAccessHandler(service *adminservices.PositionAccessService) *PositionAccessHandler {
+	return &PositionAccessHandler{
+		PositionAccessService: service,
+	}
+}
+
+func (p *PositionAccessHandler) GetAllPositionAccess(c *fiber.Ctx) error {
+
+	data, status, err := p.PositionAccessService.GetPositionAllAccess(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -23,7 +33,7 @@ func GetAllPositionAccess(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func GetPositionAccess(c *fiber.Ctx) error {
+func (p *PositionAccessHandler) GetPositionAccess(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -33,7 +43,7 @@ func GetPositionAccess(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	data, status, err := adminservices.GetPositionAccess(conditions)
+	data, status, err := p.PositionAccessService.GetPositionAccess(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -41,9 +51,9 @@ func GetPositionAccess(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func CreatePositionAccess(c *fiber.Ctx) error {
+func (p *PositionAccessHandler) CreatePositionAccess(c *fiber.Ctx) error {
 
-	var body models.PositionAccess
+	var body models.PositionAccessModel
 
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
@@ -54,7 +64,7 @@ func CreatePositionAccess(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := adminservices.CreatePositionAccess(body, at)
+	data, status, err := p.PositionAccessService.CreatePositionAccess(body, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -62,7 +72,7 @@ func CreatePositionAccess(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func UpdatePositionAccess(c *fiber.Ctx) error {
+func (p *PositionAccessHandler) UpdatePositionAccess(c *fiber.Ctx) error {
 
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -70,7 +80,7 @@ func UpdatePositionAccess(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid ID parameter")
 	}
 
-	var body models.PositionAccess
+	var body models.PositionAccessModel
 
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
@@ -85,7 +95,7 @@ func UpdatePositionAccess(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	data, status, err := adminservices.UpdatePositionAccess(body, conditions, at)
+	data, status, err := p.PositionAccessService.UpdatePositionAccess(body, conditions, at)
 	if err != nil {
 
 		return utils.RespondError(c, status, err.Error())
@@ -93,7 +103,7 @@ func UpdatePositionAccess(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func DeletePositionAccess(c *fiber.Ctx) error {
+func (p *PositionAccessHandler) DeletePositionAccess(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -109,7 +119,7 @@ func DeletePositionAccess(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := adminservices.DeletePositionAccess(conditions, at)
+	data, status, err := p.PositionAccessService.DeletePositionAccess(conditions, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -117,14 +127,14 @@ func DeletePositionAccess(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func UpdatePositionAllAccess(c *fiber.Ctx) error {
+func (p *PositionAccessHandler) UpdatePositionAllAccess(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	var accessList []models.PositionAccess
+	var accessList []models.PositionAccessModel
 
 	if err := c.BodyParser(&accessList); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
@@ -139,7 +149,7 @@ func UpdatePositionAllAccess(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 
 	// Delete PositionAccess records for the position
-	if err := tx.Where("position_id = ?", idNum).Delete(&models.PositionAccess{}).Error; err != nil {
+	if err := tx.Where("position_id = ?", idNum).Delete(&models.PositionAccessModel{}).Error; err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to delete existing PositionAccess")
 	}
