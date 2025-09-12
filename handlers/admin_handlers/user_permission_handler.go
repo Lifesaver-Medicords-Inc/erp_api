@@ -20,7 +20,7 @@ func NewPermissionHandler(service *adminservices.PermissionService) *PermissionH
 	}
 }
 
-func (p *PermissionHandler) GetPermission(c *fiber.Ctx) error {
+func (p *PermissionHandler) GetPermissionHandler(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -30,7 +30,7 @@ func (p *PermissionHandler) GetPermission(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	data, status, err := p.PermissionService.GetPermission(conditions)
+	data, status, err := p.PermissionService.GetPermissionService(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -38,9 +38,9 @@ func (p *PermissionHandler) GetPermission(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func (p *PermissionHandler) GetPermissions(c *fiber.Ctx) error {
+func (p *PermissionHandler) GetPermissionsHandler(c *fiber.Ctx) error {
 
-	data, status, err := p.PermissionService.GetPermissions(nil)
+	data, status, err := p.PermissionService.GetPermissionsService(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -48,7 +48,7 @@ func (p *PermissionHandler) GetPermissions(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func (p *PermissionHandler) GetUserPermission(c *fiber.Ctx) error {
+func (p *PermissionHandler) GetUserPermissionHandler(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -58,7 +58,7 @@ func (p *PermissionHandler) GetUserPermission(c *fiber.Ctx) error {
 		"user_id": idNum,
 	}
 
-	data, status, err := p.PermissionService.GetPermission(conditions)
+	data, status, err := p.PermissionService.GetPermissionService(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -66,7 +66,7 @@ func (p *PermissionHandler) GetUserPermission(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func (p *PermissionHandler) CreatePermission(c *fiber.Ctx) error {
+func (p *PermissionHandler) CreatePermissionHandler(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
@@ -82,7 +82,7 @@ func (p *PermissionHandler) CreatePermission(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, _, err := p.PermissionService.CreatePermission(body, at)
+	data, _, err := p.PermissionService.CreatePermissionService(&body, at)
 
 	if err != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
@@ -91,7 +91,7 @@ func (p *PermissionHandler) CreatePermission(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func (p *PermissionHandler) UpdatePermission(c *fiber.Ctx) error {
+func (p *PermissionHandler) UpdatePermissionHandler(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -112,7 +112,7 @@ func (p *PermissionHandler) UpdatePermission(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := p.PermissionService.UpdatePermission(body, conditions, at)
+	data, status, err := p.PermissionService.UpdatePermissionService(&body, conditions, at)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -121,7 +121,7 @@ func (p *PermissionHandler) UpdatePermission(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func (p *PermissionHandler) DeletePermission(c *fiber.Ctx) error {
+func (p *PermissionHandler) DeletePermissionHandler(c *fiber.Ctx) error {
 
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -143,7 +143,7 @@ func (p *PermissionHandler) DeletePermission(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := p.PermissionService.DeletePermission(conditions, at)
+	data, status, err := p.PermissionService.DeletePermissionService(conditions, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

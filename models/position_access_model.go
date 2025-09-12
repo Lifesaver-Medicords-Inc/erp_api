@@ -1,14 +1,14 @@
 package models
 
 type PositionAccessContent struct {
-	ID         uint          `gorm:"primarykey; autoIncrement" json:"id"`
-	PositionId uint          `json:"position_id"`
-	Code       string        `gorm:"not null" json:"code"`
-	Position   PositionModel `gorm:"foreignKey:PositionId;references:ID" json:"position"`
+	ID         uint   `gorm:"primarykey; autoIncrement" json:"id"`
+	PositionId uint   `json:"position_id"`
+	Code       string `gorm:"not null" json:"code"`
 }
 
 type PositionAccessModel struct {
 	PositionAccessContent
+	Position PositionModel `gorm:"foreignKey:PositionId;references:ID" json:"-"`
 }
 
 type PositionAccessAt struct {

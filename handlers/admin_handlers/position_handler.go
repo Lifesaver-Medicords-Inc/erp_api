@@ -24,7 +24,7 @@ func NewPositionHandler(service *adminservices.PositionService) *PositionHandler
 	}
 }
 
-func (p *PositionHandler) GetPositions(c *fiber.Ctx) error {
+func (p *PositionHandler) GetPositionsHandler(c *fiber.Ctx) error {
 
 	id := c.Query("id")
 	name := c.Query("name")
@@ -46,14 +46,14 @@ func (p *PositionHandler) GetPositions(c *fiber.Ctx) error {
 		conditions["code"] = code
 	}
 
-	positions, status, err := p.PositionService.GetPositions(conditions)
+	positions, status, err := p.PositionService.GetPositionsService(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 	return utils.RespondSuccess(c, positions)
 }
 
-func (p *PositionHandler) GetPosition(c *fiber.Ctx) error {
+func (p *PositionHandler) GetPositionHandler(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -64,7 +64,7 @@ func (p *PositionHandler) GetPosition(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	position, status, err := p.PositionService.GetPosition(conditions)
+	position, status, err := p.PositionService.GetPositionService(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -72,7 +72,7 @@ func (p *PositionHandler) GetPosition(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, position)
 }
 
-func (p *PositionHandler) CreatePosition(c *fiber.Ctx) error {
+func (p *PositionHandler) CreatePositionHandler(c *fiber.Ctx) error {
 
 	var body models.PositionModel
 	if err := c.BodyParser(&body); err != nil {
@@ -84,7 +84,7 @@ func (p *PositionHandler) CreatePosition(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := p.PositionService.CreatePosition(body, at)
+	data, status, err := p.PositionService.CreatePositionService(&body, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -92,7 +92,7 @@ func (p *PositionHandler) CreatePosition(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func (p *PositionHandler) UpdatePosition(c *fiber.Ctx) error {
+func (p *PositionHandler) UpdatePositionHandler(c *fiber.Ctx) error {
 
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -114,7 +114,7 @@ func (p *PositionHandler) UpdatePosition(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	data, status, err := p.PositionService.UpdatePosition(body, conditions, at)
+	data, status, err := p.PositionService.UpdatePositionService(&body, conditions, at)
 	if err != nil {
 
 		return utils.RespondError(c, status, err.Error())
@@ -123,7 +123,7 @@ func (p *PositionHandler) UpdatePosition(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func (p *PositionHandler) DeletePosition(c *fiber.Ctx) error {
+func (p *PositionHandler) DeletePositionHandler(c *fiber.Ctx) error {
 
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -140,7 +140,7 @@ func (p *PositionHandler) DeletePosition(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := p.PositionService.DeletePosition(conditions, at)
+	data, status, err := p.PositionService.DeletePositionService(conditions, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

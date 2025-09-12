@@ -23,7 +23,7 @@ func NewUserHandler(service *adminservices.UserService, permissionService *admin
 	}
 }
 
-func (u *UserHandler) GetAllUsers(c *fiber.Ctx) error {
+func (u *UserHandler) GetAllUsersHandler(c *fiber.Ctx) error {
 	id := c.Query("id")
 	firstName := c.Query("first-name")
 	lastName := c.Query("last-name")
@@ -49,7 +49,7 @@ func (u *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 		conditions["department"] = department
 	}
 
-	data, status, err := u.UserService.GetUsers(conditions)
+	data, status, err := u.UserService.GetUsersService(conditions)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -58,7 +58,7 @@ func (u *UserHandler) GetAllUsers(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func (u *UserHandler) GetUser(c *fiber.Ctx) error {
+func (u *UserHandler) GetUserHandler(c *fiber.Ctx) error {
 
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -70,7 +70,7 @@ func (u *UserHandler) GetUser(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	data, status, err := u.UserService.GetUsers(conditions)
+	data, status, err := u.UserService.GetUsersService(conditions)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -79,7 +79,7 @@ func (u *UserHandler) GetUser(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func (u *UserHandler) GetPositionUsers(c *fiber.Ctx) error {
+func (u *UserHandler) GetPositionUsersHandler(c *fiber.Ctx) error {
 
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -91,7 +91,7 @@ func (u *UserHandler) GetPositionUsers(c *fiber.Ctx) error {
 		"position_id": idNum,
 	}
 
-	data, status, err := u.UserService.GetUsers(conditions)
+	data, status, err := u.UserService.GetUsersService(conditions)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -100,7 +100,7 @@ func (u *UserHandler) GetPositionUsers(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func (u *UserHandler) CreateUser(c *fiber.Ctx) error {
+func (u *UserHandler) CreateUserHandler(c *fiber.Ctx) error {
 
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
@@ -121,7 +121,7 @@ func (u *UserHandler) CreateUser(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func (u *UserHandler) UpdateUser(c *fiber.Ctx) error {
+func (u *UserHandler) UpdateUserHandler(c *fiber.Ctx) error {
 	// Parse JSON body
 	var body models.User
 	if err := c.BodyParser(&body); err != nil {
@@ -137,7 +137,7 @@ func (u *UserHandler) UpdateUser(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := u.UserService.UpdateUser(body, conditions, at)
+	data, status, err := u.UserService.UpdateUserService(&body, conditions, at)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -145,7 +145,7 @@ func (u *UserHandler) UpdateUser(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func (u *UserHandler) UpdateUserPosition(c *fiber.Ctx) error {
+func (u *UserHandler) UpdateUserPositionHandler(c *fiber.Ctx) error {
 	// Parse JSON body
 	var body models.User
 	if err := c.BodyParser(&body); err != nil {
@@ -161,7 +161,7 @@ func (u *UserHandler) UpdateUserPosition(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := u.UserService.UpdateUser(body, conditions, at)
+	data, status, err := u.UserService.UpdateUserService(&body, conditions, at)
 
 	if err != nil {
 
@@ -170,7 +170,7 @@ func (u *UserHandler) UpdateUserPosition(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func (u *UserHandler) DeleteUser(c *fiber.Ctx) error {
+func (u *UserHandler) DeleteUserHandler(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -184,7 +184,7 @@ func (u *UserHandler) DeleteUser(c *fiber.Ctx) error {
 
 	conditions := map[string]interface{}{"id": idNum}
 
-	user, status, err := u.UserService.GetUser(conditions)
+	user, status, err := u.UserService.GetUserService(conditions)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -194,9 +194,9 @@ func (u *UserHandler) DeleteUser(c *fiber.Ctx) error {
 		"user_id": user.ID,
 	}
 
-	u.PermissionService.DeletePermission(permissionConditions, at)
+	u.PermissionService.DeletePermissionService(permissionConditions, at)
 
-	data, status, err := u.UserService.DeleteUser(conditions, at)
+	data, status, err := u.UserService.DeleteUserService(conditions, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

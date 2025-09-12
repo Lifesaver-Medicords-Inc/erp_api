@@ -18,11 +18,11 @@ func NewWarehouseService() *WarehouseService {
 	return &WarehouseService{}
 }
 
-func (w *WarehouseService) CreateWarehouse(warehouse models.WarehouseName, at models.At) (models.WarehouseName, int, error) {
+func (w *WarehouseService) CreateWarehouseService(warehouse *models.WarehouseName, at models.At) (*models.WarehouseName, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.WarehouseName{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return &models.WarehouseName{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &warehouse); err != nil {
@@ -51,15 +51,15 @@ func (w *WarehouseService) CreateWarehouse(warehouse models.WarehouseName, at mo
 	return warehouse, 0, nil
 }
 
-func (w *WarehouseService) GetWarehouses(conditions map[string]interface{}) ([]models.WarehouseName, int, error) {
+func (w *WarehouseService) GetWarehousesService(conditions map[string]interface{}) (*[]models.WarehouseName, int, error) {
 
 	tx := initializers.DB.Begin()
 
-	if tx.Error != nil {
-		return []models.WarehouseName{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
-	}
+	var warehouse = &[]models.WarehouseName{}
 
-	var warehouse []models.WarehouseName
+	if tx.Error != nil {
+		return warehouse, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+	}
 
 	if err := tx.Where(conditions).Find(&warehouse).Error; err != nil {
 		fmt.Println("ERROR:", err)
@@ -68,13 +68,13 @@ func (w *WarehouseService) GetWarehouses(conditions map[string]interface{}) ([]m
 	return warehouse, 0, nil
 }
 
-func (w *WarehouseService) GetWarehouse(conditions map[string]interface{}) (models.WarehouseName, int, error) {
+func (w *WarehouseService) GetWarehouseService(conditions map[string]interface{}) (*models.WarehouseName, int, error) {
 	tx := initializers.DB.Begin()
 
+	var warehouse = &models.WarehouseName{}
 	if tx.Error != nil {
-		return models.WarehouseName{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return warehouse, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
-	var warehouse models.WarehouseName
 
 	if err := tx.Where(conditions).Preload("Access").First(&warehouse).Error; err != nil {
 		return warehouse, fiber.StatusNotFound, errors.New("failed getting warehouse")

@@ -11,11 +11,11 @@ func PositionAccessRoutes(app *fiber.App) {
 
 	positionAccessService := adminservices.NewPositionAccessService()
 	positionAccessHandler := adminhandlers.NewPositionAccessHandler(positionAccessService)
-	api.Get("/", positionAccessHandler.GetAllPositionAccess)
-	api.Get("/:id", positionAccessHandler.GetPositionAccess)
-	api.Post("", positionAccessHandler.CreatePositionAccess)
-	api.Put("/:id", positionAccessHandler.UpdatePositionAccess)
-	api.Delete("/:id", positionAccessHandler.DeletePositionAccess)
-	api.Post("/update-all-access/:id", positionAccessHandler.UpdatePositionAllAccess)
+	api.Get("/", positionAccessHandler.GetAllPositionAccessHandler)
+	api.Get("/:id", positionAccessHandler.GetPositionAccessHandler)
+	api.Post("", positionAccessHandler.CreatePositionAccessHandler)
+	api.Put("/:id", positionAccessHandler.UpdatePositionAccessHandler)
+	api.Delete("/:id", positionAccessHandler.DeletePositionAccessHandler)
+	api.Post("/update-all-access/:id", positionAccessHandler.UpdatePositionAllAccessHandler)
 
 }

@@ -11,10 +11,10 @@ func VehicleRoutes(app *fiber.App) {
 
 	vehicleService := adminservices.NewVehicleService()
 	vehicleHandler := adminhandlers.NewVehicleHandler(vehicleService)
-	api.Post("/", vehicleHandler.CreateVehicle)
-	api.Get("/:id", vehicleHandler.GetVehicle)
-	api.Get("/", vehicleHandler.GetVehicles)
-	api.Put("/:id", vehicleHandler.UpdateVehicle)
-	api.Delete("/:id", vehicleHandler.DeleteVehicle)
+	api.Post("/", vehicleHandler.CreateVehicleHandler)
+	api.Get("/:id", vehicleHandler.GetVehicleHandler)
+	api.Get("/", vehicleHandler.GetVehiclesHandler)
+	api.Put("/:id", vehicleHandler.UpdateVehicleHandler)
+	api.Delete("/:id", vehicleHandler.DeleteVehicleHandler)
 
 }

@@ -18,44 +18,44 @@ func NewPositionService() *PositionService {
 	return &PositionService{}
 }
 
-func (p *PositionService) GetPositions(conditions map[string]interface{}) ([]models.PositionModel, int, error) {
+func (p *PositionService) GetPositionsService(conditions map[string]interface{}) (*[]models.PositionModel, int, error) {
 
 	tx := initializers.DB.Begin()
 
+	var positions = &[]models.PositionModel{}
+
 	if tx.Error != nil {
-		return []models.PositionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return positions, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	var positions []models.PositionModel
-
-	if err := tx.Where(conditions).Preload("Access").Find(&positions).Error; err != nil {
+	if err := tx.Where(conditions).Preload("Access").Find(positions).Error; err != nil {
 		fmt.Println("ERROR:", err)
 		return positions, fiber.StatusNotFound, errors.New("failed getting positions")
 	}
 	return positions, 0, nil
 }
 
-func (p *PositionService) GetPosition(conditions map[string]interface{}) (models.PositionModel, int, error) {
+func (p *PositionService) GetPositionService(conditions map[string]interface{}) (*models.PositionModel, int, error) {
 	tx := initializers.DB.Begin()
 
+	var position = &models.PositionModel{}
 	if tx.Error != nil {
-		return models.PositionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return position, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
-	var position models.PositionModel
 
-	if err := tx.Where(conditions).Preload("Access").First(&position).Error; err != nil {
+	if err := tx.Where(conditions).Preload("Access").First(position).Error; err != nil {
 		return position, fiber.StatusNotFound, errors.New("failed getting position")
 	}
 
 	return position, 0, nil
 }
 
-func (p *PositionService) CreatePosition(position models.PositionModel, at models.At) (models.PositionModel, int, error) {
+func (p *PositionService) CreatePositionService(position *models.PositionModel, at models.At) (*models.PositionModel, int, error) {
 
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.PositionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return &models.PositionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &position); err != nil {
@@ -84,11 +84,11 @@ func (p *PositionService) CreatePosition(position models.PositionModel, at model
 	return position, 0, nil
 }
 
-func (p *PositionService) UpdatePosition(position models.PositionModel, conditions map[string]interface{}, at models.At) (models.PositionModel, int, error) {
+func (p *PositionService) UpdatePositionService(position *models.PositionModel, conditions map[string]interface{}, at models.At) (*models.PositionModel, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.PositionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return &models.PositionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbUpdate(tx, &position, conditions); err != nil {
@@ -110,15 +110,15 @@ func (p *PositionService) UpdatePosition(position models.PositionModel, conditio
 	return position, 0, nil
 }
 
-func (p *PositionService) DeletePosition(conditions map[string]interface{}, at models.At) (models.PositionModel, int, error) {
+func (p *PositionService) DeletePositionService(conditions map[string]interface{}, at models.At) (*models.PositionModel, int, error) {
 
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.PositionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return &models.PositionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	position, status, err := p.GetPosition(conditions)
+	position, status, err := p.GetPositionService(conditions)
 
 	if err != nil {
 		return position, status, errors.New("position not found")

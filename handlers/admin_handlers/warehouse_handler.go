@@ -18,7 +18,7 @@ func NewWarehouseHandler(service *adminservices.WarehouseService) *WarehouseHand
 		WarehouseService: service,
 	}
 }
-func (w *WarehouseHandler) CreateWarehouse(c *fiber.Ctx) error {
+func (w *WarehouseHandler) CreateWarehouseHandler(c *fiber.Ctx) error {
 	var body models.WarehouseName
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
@@ -29,7 +29,7 @@ func (w *WarehouseHandler) CreateWarehouse(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := w.WarehouseService.CreateWarehouse(body, at)
+	data, status, err := w.WarehouseService.CreateWarehouseService(&body, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -37,7 +37,7 @@ func (w *WarehouseHandler) CreateWarehouse(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func (w *WarehouseHandler) GetWarehouse(c *fiber.Ctx) error {
+func (w *WarehouseHandler) GetWarehouseHandler(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -48,7 +48,7 @@ func (w *WarehouseHandler) GetWarehouse(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	position, status, err := w.WarehouseService.GetWarehouse(conditions)
+	position, status, err := w.WarehouseService.GetWarehouseService(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -56,7 +56,7 @@ func (w *WarehouseHandler) GetWarehouse(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, position)
 }
 
-func (w *WarehouseHandler) GetWarehouses(c *fiber.Ctx) error {
+func (w *WarehouseHandler) GetWarehousesHandler(c *fiber.Ctx) error {
 	id := c.Query("id")
 	warehouseManager := c.Query("warehouse-manager")
 	isInActiveStr := c.Query("is-inactive")
@@ -84,7 +84,7 @@ func (w *WarehouseHandler) GetWarehouses(c *fiber.Ctx) error {
 		conditions["code"] = code
 	}
 
-	vehicles, status, err := w.WarehouseService.GetWarehouses(conditions)
+	vehicles, status, err := w.WarehouseService.GetWarehousesService(conditions)
 
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())

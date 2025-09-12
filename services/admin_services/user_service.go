@@ -16,36 +16,37 @@ func NewUserService() *UserService {
 	return &UserService{}
 }
 
-func (u *UserService) GetUsers(conditions map[string]interface{}) ([]models.User, int, error) {
+func (u *UserService) GetUsersService(conditions map[string]interface{}) (*[]models.User, int, error) {
 	tx := initializers.DB.Begin()
 
+	var users = &[]models.User{}
+
 	if tx.Error != nil {
-		return []models.User{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return users, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	var users []models.User
-
-	if err := tx.Where(conditions).Preload("Permissions").Preload("Position").Find(&users).Error; err != nil {
+	if err := tx.Where(conditions).Preload("Permissions").Preload("Position").Find(users).Error; err != nil {
 		return users, fiber.StatusNotFound, errors.New("failed getting users")
 	}
 
-	for i := range users {
-		users[i].Password = ""
+	for i := range *users {
+		(*users)[i].Password = ""
 
 	}
 
 	return users, 0, nil
 }
 
-func (u *UserService) GetUser(conditions map[string]interface{}) (models.User, int, error) {
-	var user models.User
+func (u *UserService) GetUserService(conditions map[string]interface{}) (*models.User, int, error) {
+	var user = &models.User{}
+
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.User{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return user, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	if err := tx.Where(conditions).Preload("Permissions").Preload("Position").First(&user).Error; err != nil {
+	if err := tx.Where(conditions).Preload("Permissions").Preload("Position").First(user).Error; err != nil {
 		return user, fiber.StatusNotFound, errors.New("failed getting users")
 	}
 
@@ -54,12 +55,12 @@ func (u *UserService) GetUser(conditions map[string]interface{}) (models.User, i
 	return user, 0, nil
 }
 
-func (u *UserService) UpdateUser(user models.User, conditions map[string]interface{}, at models.At) (models.User, int, error) {
+func (u *UserService) UpdateUserService(user *models.User, conditions map[string]interface{}, at models.At) (*models.User, int, error) {
 
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.User{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return &models.User{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbUpdate(tx, &user, conditions); err != nil {
@@ -87,18 +88,18 @@ func (u *UserService) UpdateUser(user models.User, conditions map[string]interfa
 	return user, 0, nil
 }
 
-func (u *UserService) DeleteUser(conditions map[string]interface{}, at models.At) (models.User, int, error) {
+func (u *UserService) DeleteUserService(conditions map[string]interface{}, at models.At) (*models.User, int, error) {
 
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.User{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return &models.User{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	user, _, err := u.GetUser(conditions)
+	user, _, err := u.GetUserService(conditions)
 
 	if err != nil {
-		return user, fiber.StatusInternalServerError, errors.New("User not found")
+		return user, fiber.StatusInternalServerError, errors.New("user not found")
 	}
 
 	if err := services.DbDelete(tx, &user, conditions); err != nil {

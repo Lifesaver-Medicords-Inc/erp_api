@@ -18,11 +18,11 @@ func NewVehicleService() *VehicleService {
 	return &VehicleService{}
 }
 
-func (v *VehicleService) CreateVehicle(vehicle models.VehicleModel, at models.At) (models.VehicleModel, int, error) {
+func (v *VehicleService) CreateVehicleService(vehicle *models.VehicleModel, at models.At) (*models.VehicleModel, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.VehicleModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return &models.VehicleModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &vehicle); err != nil {
@@ -51,45 +51,45 @@ func (v *VehicleService) CreateVehicle(vehicle models.VehicleModel, at models.At
 	return vehicle, 0, nil
 }
 
-func (v *VehicleService) GetVehicle(conditions map[string]interface{}) (models.VehicleModel, int, error) {
+func (v *VehicleService) GetVehicleService(conditions map[string]interface{}) (*models.VehicleModel, int, error) {
 	tx := initializers.DB.Begin()
 
+	var vehicle = &models.VehicleModel{}
+
 	if tx.Error != nil {
-		return models.VehicleModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return vehicle, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
-	var vehicle models.VehicleModel
 
 	if err := tx.Preload("Files", func(db *gorm.DB) *gorm.DB {
 		return db.Select("ID", "VehicleId", "FileName", "OriginalName", "FilePath", "Type", "Size")
-	}).Where(conditions).First(&vehicle).Error; err != nil {
+	}).Where(conditions).First(vehicle).Error; err != nil {
 		return vehicle, fiber.StatusNotFound, errors.New("failed getting vehicle")
 	}
 
 	return vehicle, 0, nil
 }
 
-func (v *VehicleService) GetVehicles(conditions map[string]interface{}) ([]models.VehicleModel, int, error) {
+func (v *VehicleService) GetVehiclesService(conditions map[string]interface{}) (*[]models.VehicleModel, int, error) {
 	tx := initializers.DB.Begin()
 
+	var vehicles = &[]models.VehicleModel{}
 	if tx.Error != nil {
-		return []models.VehicleModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return vehicles, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
-
-	var vehicles []models.VehicleModel
 
 	if err := tx.Preload("Files", func(db *gorm.DB) *gorm.DB {
 		return db.Select("ID", "VehicleId", "FileName", "OriginalName", "FilePath", "Type", "Size")
-	}).Where(conditions).Find(&vehicles).Error; err != nil {
+	}).Where(conditions).Find(vehicles).Error; err != nil {
 		return vehicles, fiber.StatusNotFound, errors.New("failed getting vehicles")
 	}
 	return vehicles, 0, nil
 }
 
-func (v *VehicleService) UpdateVehicle(vehicle models.VehicleModel, conditions map[string]interface{}, at models.At) (models.VehicleModel, int, error) {
+func (v *VehicleService) UpdateVehicleService(vehicle *models.VehicleModel, conditions map[string]interface{}, at models.At) (*models.VehicleModel, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.VehicleModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return &models.VehicleModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbUpdate(tx, &vehicle, conditions); err != nil {
@@ -111,14 +111,14 @@ func (v *VehicleService) UpdateVehicle(vehicle models.VehicleModel, conditions m
 	return vehicle, 0, nil
 }
 
-func (v *VehicleService) DeleteVehicle(conditions map[string]interface{}, at models.At) (models.VehicleModel, int, error) {
+func (v *VehicleService) DeleteVehicleService(conditions map[string]interface{}, at models.At) (*models.VehicleModel, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.VehicleModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return &models.VehicleModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	vehicle, status, err := v.GetVehicle(conditions)
+	vehicle, status, err := v.GetVehicleService(conditions)
 
 	if err != nil {
 		return vehicle, status, errors.New("vehicle not found")
