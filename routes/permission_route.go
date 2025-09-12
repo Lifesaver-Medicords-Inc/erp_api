@@ -11,11 +11,11 @@ func PermissionRoutes(app *fiber.App) {
 
 	permissionService := adminservices.NewPermissionService()
 	permissionHandler := adminhandlers.NewPermissionHandler(permissionService)
-	api.Get("/", permissionHandler.GetPermissions)
-	api.Get("/:id", permissionHandler.GetPermission)
-	api.Get("/:id", permissionHandler.GetUserPermission)
-	api.Post("/", permissionHandler.CreatePermission)
-	api.Put("/:id", permissionHandler.UpdatePermission)
-	api.Delete("/:id", permissionHandler.DeletePermission)
+	api.Get("/", permissionHandler.GetPermissionsHandler)
+	api.Get("/:id", permissionHandler.GetPermissionHandler)
+	api.Get("/:id", permissionHandler.GetUserPermissionHandler)
+	api.Post("/", permissionHandler.CreatePermissionHandler)
+	api.Put("/:id", permissionHandler.UpdatePermissionHandler)
+	api.Delete("/:id", permissionHandler.DeletePermissionHandler)
 
 }

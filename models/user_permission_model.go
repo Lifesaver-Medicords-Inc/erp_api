@@ -10,7 +10,7 @@ type UserPermissionContent struct {
 
 type UserPermissionModel struct {
 	UserPermissionContent
-	User *User `gorm:"foreignKey:UserId;references:ID;onDelete:CASCADE;onUpdate:CASCADE" json:"user"`
+	User *User `gorm:"foreignKey:UserId;references:ID;onDelete:CASCADE;onUpdate:CASCADE" json:"-"`
 }
 
 func (UserPermissionModel) TableName() string {

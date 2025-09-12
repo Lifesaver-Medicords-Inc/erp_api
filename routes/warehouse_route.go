@@ -11,8 +11,8 @@ func WarehouseRoutes(app *fiber.App) {
 
 	warehouseService := adminservices.NewWarehouseService()
 	warehouseHandler := adminhandlers.NewWarehouseHandler(warehouseService)
-	api.Post("/", warehouseHandler.CreateWarehouse)
-	api.Get("/", warehouseHandler.GetWarehouses)
-	api.Get("/:id", warehouseHandler.GetWarehouse)
+	api.Post("/", warehouseHandler.CreateWarehouseHandler)
+	api.Get("/", warehouseHandler.GetWarehousesHandler)
+	api.Get("/:id", warehouseHandler.GetWarehouseHandler)
 
 }

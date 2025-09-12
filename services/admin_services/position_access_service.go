@@ -17,44 +17,44 @@ func NewPositionAccessService() *PositionAccessService {
 	return &PositionAccessService{}
 }
 
-func (p *PositionAccessService) GetPositionAllAccess(conditions map[string]interface{}) ([]models.PositionAccessModel, int, error) {
+func (p *PositionAccessService) GetPositionAllAccessService(conditions map[string]interface{}) (*[]models.PositionAccessModel, int, error) {
 
-	var access []models.PositionAccessModel
+	var access = &[]models.PositionAccessModel{}
 
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return []models.PositionAccessModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return access, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	if err := tx.Where(conditions).Preload("Position").Find(&access).Error; err != nil {
+	if err := tx.Where(conditions).Preload("Position").Find(access).Error; err != nil {
 		return access, fiber.StatusNotFound, errors.New("failed getting position access")
 	}
 
 	return access, 0, nil
 }
 
-func (p *PositionAccessService) GetPositionAccess(conditions map[string]interface{}) (models.PositionAccessModel, int, error) {
+func (p *PositionAccessService) GetPositionAccessService(conditions map[string]interface{}) (*models.PositionAccessModel, int, error) {
 
-	var access models.PositionAccessModel
+	var access = &models.PositionAccessModel{}
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.PositionAccessModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return access, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	if err := tx.Where(conditions).Preload("Position").Find(&access).Error; err != nil {
+	if err := tx.Where(conditions).Preload("Position").Find(access).Error; err != nil {
 		return access, fiber.StatusNotFound, errors.New("failed getting position access")
 	}
 
 	return access, 0, nil
 }
 
-func (p *PositionAccessService) CreatePositionAccess(access models.PositionAccessModel, at models.At) (models.PositionAccessModel, int, error) {
+func (p *PositionAccessService) CreatePositionAccessService(access *models.PositionAccessModel, at models.At) (*models.PositionAccessModel, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.PositionAccessModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return access, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &access); err != nil {
@@ -84,12 +84,12 @@ func (p *PositionAccessService) CreatePositionAccess(access models.PositionAcces
 	return access, 0, nil
 }
 
-func (p *PositionAccessService) UpdatePositionAccess(access models.PositionAccessModel, conditions map[string]interface{}, at models.At) (models.PositionAccessModel, int, error) {
+func (p *PositionAccessService) UpdatePositionAccessService(access *models.PositionAccessModel, conditions map[string]interface{}, at models.At) (*models.PositionAccessModel, int, error) {
 
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.PositionAccessModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return access, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbUpdate(tx, &access, conditions); err != nil {
@@ -114,18 +114,18 @@ func (p *PositionAccessService) UpdatePositionAccess(access models.PositionAcces
 	return access, 0, nil
 }
 
-func (p *PositionAccessService) DeletePositionAccess(conditions map[string]interface{}, at models.At) (models.PositionAccessModel, int, error) {
+func (p *PositionAccessService) DeletePositionAccessService(conditions map[string]interface{}, at models.At) (*models.PositionAccessModel, int, error) {
 
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.PositionAccessModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return &models.PositionAccessModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	access, status, err := p.GetPositionAccess(conditions)
+	access, status, err := p.GetPositionAccessService(conditions)
 
 	if err != nil {
-		return access, status, errors.New("Position not found")
+		return access, status, errors.New("position not found")
 	}
 
 	if err := services.DbDelete(tx, &access, conditions); err != nil {

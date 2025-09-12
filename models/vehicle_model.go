@@ -3,11 +3,11 @@ package models
 type VehicleContent struct {
 	Type            string `json:"type"`
 	Model           string `json:"model"`
-	Description     string `json:"Description"`
+	Description     string `json:"description"`
 	PlateNo         string `json:"plate_no"`
 	AcquisitionYear string `json:"acquisition_year"`
 	Capacity        uint   `json:"capacity"`
-	Status          string `json:"Status"`
+	Status          string `json:"status"`
 	LastMaintenance string `json:"last_maintenance"`
 	Notes           string `json:"notes"`
 }

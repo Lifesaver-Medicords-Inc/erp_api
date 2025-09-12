@@ -22,5 +22,5 @@ func SetupRoutes(app *fiber.App) {
 	WarehouseRoutes(app)
 
 	//File routes
-	FileRoutes(app)
+	VehicleFileRoutes(app)
 }

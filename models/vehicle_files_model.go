@@ -11,7 +11,7 @@ type VehicleFileContent struct {
 type VehicleFileModel struct {
 	ID        uint         `gorm:"primaryKey" json:"id"`
 	VehicleId uint         `json:"vehicle_id"`
-	Vehicle   VehicleModel `gorm:"foreignKey:VehicleId;references:ID" json:"vehicle"`
+	Vehicle   VehicleModel `gorm:"foreignKey:VehicleId;references:ID" json:"-"`
 	VehicleFileContent
 }
 

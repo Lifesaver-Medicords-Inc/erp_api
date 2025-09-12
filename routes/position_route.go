@@ -11,10 +11,10 @@ func PositionRoutes(app *fiber.App) {
 
 	positionService := adminservices.NewPositionService()
 	positionHandler := adminhandlers.NewPositionHandler(positionService)
-	api.Get("/", positionHandler.GetPositions)
-	api.Get("/:id", positionHandler.GetPosition)
-	api.Post("/", positionHandler.CreatePosition)
-	api.Put("/:id", positionHandler.UpdatePosition)
-	api.Delete("/:id", positionHandler.DeletePosition)
+	api.Get("/", positionHandler.GetPositionsHandler)
+	api.Get("/:id", positionHandler.GetPositionHandler)
+	api.Post("/", positionHandler.CreatePositionHandler)
+	api.Put("/:id", positionHandler.UpdatePositionHandler)
+	api.Delete("/:id", positionHandler.DeletePositionHandler)
 
 }
