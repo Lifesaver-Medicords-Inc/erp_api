@@ -41,6 +41,24 @@ func GetSalesJobOrder(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
+func GetAllSalesOrder(c *fiber.Ctx) error {
+	fmt.Println("FMT GET JOB ORDER SALES")
+
+	idParam := c.Params("user_id")
+
+	userId, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "invalid user_id")
+	}
+
+	data, status, err := job_order_services.GetAllSalesJobOrder(userId)
+	fmt.Println("JOB ORDER (SALES)", data)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
+
 func GetSalesDetailsJobOrder(c *fiber.Ctx) error {
 	fmt.Println("FMT GET JOB ORDER SALES")
 
