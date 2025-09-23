@@ -52,6 +52,15 @@ func GetBomItemList(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
+func GetAllBomItemList(c *fiber.Ctx) error {
+	data, status, err := setup_services.GetAllBomItemList(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
 func GetBomParentDetail(c *fiber.Ctx) error {
 	data, status, err := setup_services.GetBomParentDetail(nil)
 	if err != nil {
