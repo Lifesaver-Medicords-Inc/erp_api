@@ -1,0 +1,73 @@
+package models
+
+type ReceivingReportContent2 struct {
+	SupplierName    string `json:"supplier_name"`
+	SupplierCode    string `json:"supplier_code"`
+	DateReceived    string `json:"date_received"`
+	Address         string `json:"address"`
+	SupplierID      uint   `json:"supplier_id"`
+	DOC             string `json:"doc"` //autogen
+	RefDOC          string `json:"ref_doc"`
+	PreparedBy      string `json:"prepared_by"`
+	PurchaseOrderID uint   `json:"purchase_order_id"` //this is where the PO's will base
+	WarehouseName   string `json:"warehouse_name"`
+}
+
+type ReceivingReport2 struct {
+	ID uint `gorm:"primarykey" json:"id"`
+	// Code string `gorm:"unique" json:"code"`
+	ReceivingReportContent2
+}
+
+func (ReceivingReport2) TableName() string {
+	return "tbl_inv_warehouse_receiving_report2"
+}
+
+type ReceivingReportAt2 struct {
+	ID    uint   `gorm:"primarykey" json:"id"`
+	RefId uint   `json:"ref_id"`
+	Code  string `json:"code"`
+	ReceivingReportContent2
+	At
+}
+
+func (ReceivingReportAt2) TableName() string {
+	return "z_tbl_inv_warehouse_receiving_report_at2"
+}
+
+type ReceivingReportDetailsContent2 struct {
+	ReceivingReportId  uint   `json:"receiving_report_id"` //parent id
+	ItemCode           string `json:"item_code"`
+	ItemDescription    string `json:"item_description"`
+	OrderedQty         string `json:"ordered_qty"`
+	OrderedUom         string `json:"ordered_uom"`
+	ReceivedQty        string `json:"received_qty"`
+	ReceivedUom        string `json:"received_uom"`
+	RejectedQty        string `json:"rejected_qty"`
+	RejectedUom        string `json:"rejected_uom"`
+	ReasonForRejection string `json:"reason_for_rejection"`
+	SerialNumber       string `json:"serial_number"`
+	BinLocation        string `json:"bin_location"`
+	RefId              uint   `json:"ref_id"` //PO id
+}
+
+type ReceivingReportDetails2 struct {
+	ID uint `gorm:"primarykey" json:"id"`
+	ReceivingReportDetailsContent2
+}
+
+func (ReceivingReportDetails2) TableName() string {
+	return "tbl_inv_warehouse_receiving_report_details2"
+}
+
+type ReceivingReportDetailsAt2 struct {
+	ID    uint   `gorm:"primarykey" json:"id"`
+	RefId uint   `json:"ref_id"`
+	Code  string `json:"code"`
+	ReceivingReportDetailsContent2
+	At
+}
+
+func (ReceivingReportDetailsAt2) TableName() string {
+	return "z_tbl_inv_warehouse_receiving_report_details_at2"
+}

@@ -2,6 +2,7 @@ package setup_services
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -59,7 +60,18 @@ func GetBomItemList(conditions map[string]interface{}) (interface{}, int, error)
 	var response []models.BomView
 
 	if err := services.DbGet(&response, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting bpi item list")
+		return response, fiber.StatusInternalServerError, errors.New("failed getting item list")
+	}
+
+	return response, 0, nil
+}
+
+func GetAllBomItemList(conditions map[string]interface{}) (interface{}, int, error) {
+
+	var response []models.AllBomView
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting all item list")
 	}
 
 	return response, 0, nil
@@ -133,6 +145,21 @@ func CreateSetupItemBom(c *fiber.Ctx, tx *gorm.DB) (BodyParse, int, error) {
 		}
 	}
 
+	// Invalidate cache after update
+	if err := services.InvalidateCacheByModel(models.BomViewItemList{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
+
+	// Invalidate cache after update
+	if err := services.InvalidateCacheByModel(models.BomViewList{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
+
+	// Invalidate cache after update
+	if err := services.InvalidateCacheByModel(models.BomView{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
+
 	return body, 0, nil
 }
 
@@ -168,16 +195,32 @@ func UpdateSetupItemBom(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfa
 
 	}
 
+	// Invalidate cache after update
+	if err := services.InvalidateCacheByModel(models.BomViewItemList{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
+
+	// Invalidate cache after update
+	if err := services.InvalidateCacheByModel(models.BomViewList{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
+
+	// Invalidate cache after update
+	if err := services.InvalidateCacheByModel(models.BomView{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
+
 	return body, 0, nil
 }
 
-func DeleteSetupItemBom(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.SetupItemBom, int, error) {
-	var body models.SetupItemBom
+func DeleteSetupItemBom(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (BodyParse, int, error) {
+	var body BodyParse
+
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	if err := services.DbDelete(tx, &body, conditions); err != nil {
+	if err := services.DbDelete(tx, &body.SetupItemBom, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed deleting setup item bom")
 	}
 
@@ -192,6 +235,21 @@ func DeleteSetupItemBom(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfa
 	}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating SetupItemBomAt")
+	}
+
+	// Invalidate cache after update
+	if err := services.InvalidateCacheByModel(models.BomViewItemList{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
+
+	// Invalidate cache after update
+	if err := services.InvalidateCacheByModel(models.BomViewList{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
+
+	// Invalidate cache after update
+	if err := services.InvalidateCacheByModel(models.BomView{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
 	}
 
 	return body, 0, nil
