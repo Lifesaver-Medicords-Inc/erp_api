@@ -38,6 +38,9 @@ func MigrateDb() {
 	//DB.AutoMigrate(&models.ReceivingReportDetails{}, &models.ReceivingReportDetailsAt{})
 	//DB.AutoMigrate(&models.ReceivingReportInventory{}, &models.ReceivingReportInventoryAt{})
 
+	//DB.AutoMigrate(&models.ReceivingReport2{}, &models.ReceivingReportAt2{})
+	//DB.AutoMigrate(&models.ReceivingReportDetails2{}, &models.ReceivingReportDetailsAt2{})
+
 	// DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
 	// DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
 	// DB.AutoMigrate(&models.Application{}, &models.ApplicationAt{})
