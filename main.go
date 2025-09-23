@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
+	"github.com/pierceperado/smpc/handlers/engineering_handlers"
 	"github.com/pierceperado/smpc/handlers/job_orders_handlers"
 	"github.com/pierceperado/smpc/handlers/journal_entry_handlers"
 	"github.com/pierceperado/smpc/handlers/position_handlers"
@@ -28,7 +29,8 @@ func init() {
 	initializers.InitWm()
 	initializers.InitWm2()
 	initializers.InitProjectWM()
-
+	initializers.InitWmJobOrder()
+	initializers.InitWmQuotation()
 	initializers.InitLogger()
 
 }
@@ -82,14 +84,21 @@ func main() {
 			setupApi := api.Group("/setup")
 			{
 
-				prodApi := setupApi.Group("/job")
+				jobApi := setupApi.Group("/job")
 				{
-					prodApi.Get("/order/:user_id", job_orders_handlers.GetJobOrder)
-					prodApi.Get("/sales/:sales_order", job_orders_handlers.GetSalesJobOrder)
-					prodApi.Get("/components/:bom_id", job_orders_handlers.GetComponents)
-					prodApi.Get("/sales_details/:order_id", job_orders_handlers.GetSalesDetailsJobOrder)
-					prodApi.Post("/order", job_orders_handlers.CreateJobOrder)
-					prodApi.Put("/order", job_orders_handlers.UpdateJobOrder)
+					jobApi.Get("/order/:user_id", job_orders_handlers.GetJobOrder)
+					jobApi.Get("/sales/:sales_order", job_orders_handlers.GetSalesJobOrder)
+					jobApi.Get("/all_sales/:user_id", job_orders_handlers.GetAllSalesOrder)
+					jobApi.Get("/components/:bom_id", job_orders_handlers.GetComponents)
+					jobApi.Get("/sales_details/:order_id", job_orders_handlers.GetSalesDetailsJobOrder)
+					jobApi.Post("/order", job_orders_handlers.CreateJobOrder)
+					jobApi.Put("/order", job_orders_handlers.UpdateJobOrder)
+				}
+
+				invApi := setupApi.Group("/inv")
+				{
+					invApi.Get("/tracker", setup_handlers.GetInvTracker)
+					invApi.Get("/name", setup_handlers.GetInvName)
 				}
 
 				itemApi := setupApi.Group("/item")
@@ -201,6 +210,18 @@ func main() {
 					reportsApi.Delete("/receiving_inventory", setup_handlers.DeleteReceivingReportInventoryRow)
 				}
 
+				reports2Api := setupApi.Group("/report2")
+				{
+					//receiving report
+					reports2Api.Get("/receiving2", setup_handlers.GetReceivingReports2)
+					reports2Api.Get("/receiving2/:id", setup_handlers.GetReceivingReport2)
+					reports2Api.Post("/receiving2", setup_handlers.CreateReceivingReport2)
+					reports2Api.Put("/receiving2", setup_handlers.UpdateReceivingReport2)
+					reports2Api.Delete("/receiving2", setup_handlers.DeleteReceivingReport2)
+					//receiving report detail
+					reports2Api.Delete("/receiving_details2", setup_handlers.DeleteReceivingReportDetailsRow2)
+				}
+
 				// Unit Measurement Endpoints
 				setupApi.Get("/unit_measurement", setup_handlers.GetUnitMeasurements)
 				setupApi.Get("/unit_measurement:/id", setup_handlers.GetUnitMeasurement)
@@ -259,6 +280,7 @@ func main() {
 				setupApi.Put("/bom", setup_handlers.UpdateSetupItemBom)
 				setupApi.Delete("/bom", setup_handlers.DeleteSetupItemBom)
 				setupApi.Get("/bom/item_list", setup_handlers.GetBomItemList)
+				setupApi.Get("/all_bom/item_list", setup_handlers.GetAllBomItemList)
 				setupApi.Get("/bom/parent_detail", setup_handlers.GetBomParentDetail)
 				setupApi.Get("/bom/child_detail", setup_handlers.GetBomChildDetail)
 
@@ -436,6 +458,20 @@ func main() {
 
 			}
 
+			// Engineering Endpoints
+			engineeringApi := api.Group("/engineering")
+			{
+				// Engineering Redbox List
+				redBoxApi := engineeringApi.Group("/redboxlist")
+				{
+					//Quotation
+					redBoxApi.Get("/quotation", engineering_handlers.GetEngineeringRedboxQuotationList)
+
+					//Job Order
+					redBoxApi.Get("/job_order/:userId", engineering_handlers.GetEngineeringRedboxJobOrder)
+				}
+			}
+
 			// Purchasing Endpoints
 			purchasingApi := api.Group("/purchasing")
 			{
@@ -508,6 +544,25 @@ func main() {
 						redboxlistApi.Get("", websocket.New(func(c *websocket.Conn) {
 							services.HandleWs(c, purchasing_handlers.WsgetRedboxList)
 						}))
+					}
+				}
+
+				// Engineering Endpoints
+				engineeringApi := ws.Group("/engineering")
+				{
+					redboxlistApi := engineeringApi.Group("/redboxlist")
+					{
+						redboxlistApi.Get("/quotation", websocket.New(func(c *websocket.Conn) {
+							services.HandleWsQuotation(c, engineering_handlers.WsgetRedboxQuotationList)
+						}))
+
+						redboxlistApi.Get("/job_order/:userId", websocket.New(func(c *websocket.Conn) {
+							userId := c.Params("userId")
+							services.HandleWsJobOrder(c, func(conn *websocket.Conn) {
+								engineering_handlers.WsgetRedboxJobOrder(conn, userId)
+							})
+						}))
+
 					}
 				}
 			}
