@@ -21,6 +21,15 @@ type PurchaseOrderDetailsContent struct {
 	//PurchaseOrder PurchaseOrder `gorm:"foreignKey:BasedId;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"purchase_order"`
 }
 
+type PurchaseOrderDetailsView struct {
+	ID              uint   `json:"id"`
+	ItemCode        string `json:"item_code"`
+	ItemDescription string `json:"item_description"`
+	OrderedQty      string `json:"ordered_qty"`
+	OrderedUom      string `json:"ordered_uom"`
+	IsComplete      *bool  `json:"is_complete"`
+}
+
 type PurchaseOrderDetails struct {
 	ID uint `gorm:"primarykey" json:"id"`
 	PurchaseOrderDetailsContent

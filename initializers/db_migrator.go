@@ -40,6 +40,7 @@ func MigrateDb() {
 
 	//DB.AutoMigrate(&models.ReceivingReport2{}, &models.ReceivingReportAt2{})
 	//DB.AutoMigrate(&models.ReceivingReportDetails2{}, &models.ReceivingReportDetailsAt2{})
+	//DB.AutoMigrate(&models.ReceivingHistory{}, &models.ReceivingHistoryAt{})
 
 	// DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
 	// DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
