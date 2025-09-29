@@ -599,5 +599,5 @@ func SetupApp() *fiber.App {
 
 	return app
 	// Start Listen
-	app.Listen(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT"))
+	//app.Listen(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT"))
 }
