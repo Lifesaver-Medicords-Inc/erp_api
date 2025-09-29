@@ -17,7 +17,7 @@ func CreateAccount(c *fiber.Ctx, tx *gorm.DB) (models.User, int, error) {
 	var user models.User
 
 	var body models.UserAt
-	
+
 	if err := c.BodyParser(&body); err != nil {
 		return user, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
@@ -81,7 +81,7 @@ func LoginAccount(c *fiber.Ctx) (models.User, int, error) {
 	if err := utils.CreateAuthToken(c, body.At, user.ID); err != nil {
 		return user, fiber.StatusUnauthorized, err
 	}
-	fmt.Println("LOGIN ACCOUNT6666")
+	fmt.Println("LOGIN:", user)
 
 	return user, 0, nil
 }
