@@ -10,7 +10,34 @@ import (
 )
 
 // Create Quick Quotation
-func CreateSalesQuotationQuick(tx *gorm.DB, parentId uint, QuickQuote models.SalesQuotationQuick, at models.At) error {
+func CreateSalesQuotationQuick(tx *gorm.DB, parentId uint, QuickQuote models.SalesQuotationQuick, images []models.SalesQuotationSelectedImage, at models.At) error {
+	QuickQuote.BasedId = parentId
+
+	if err := services.DbInsert(tx, &QuickQuote); err != nil {
+		return errors.New("failed creating quick quote")
+	}
+
+	quickquotationsat := models.SalesQuotationQuickAt{
+		RefId:                      QuickQuote.ID,
+		SalesQuotationQuickContent: QuickQuote.SalesQuotationQuickContent,
+		At:                         at,
+	}
+
+	if err := services.DbInsert(tx, &quickquotationsat); err != nil {
+		return errors.New("failed creating quick quotations")
+	}
+
+	if len(images) > 0 {
+		if err := CreateSalesQuotationSelectedImages(tx, QuickQuote.ID, images, at); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Create Quick Quotation
+func CreateSalesQuotationQuickWithSelectedImage(tx *gorm.DB, parentId uint, QuickQuote models.SalesQuotationQuick, at models.At) error {
 
 	QuickQuote.BasedId = parentId
 
@@ -29,6 +56,15 @@ func CreateSalesQuotationQuick(tx *gorm.DB, parentId uint, QuickQuote models.Sal
 	if err := services.DbInsert(tx, &quickquotationsat); err != nil {
 		return errors.New("failed creating quick quotations")
 	}
+
+	// for _, v := range body.PurchaseOrderDetails {
+	// 	conditions := map[string]interface{}{
+	// 		"based_id": body.ID,
+	// 	}
+	// 	if err := UpdatePurchaseOrderDetails(tx, body.ID, v, at, conditions); err != nil {
+	// 		return body, fiber.StatusInternalServerError, err
+	// 	}
+	// }
 
 	return nil
 }

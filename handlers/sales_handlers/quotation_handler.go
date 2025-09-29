@@ -17,6 +17,20 @@ func GetSalesQuotations(c *fiber.Ctx) error {
 	}
 	return utils.RespondSuccess(c, data)
 }
+func GetLatestQuotations(c *fiber.Ctx) error {
+	data, status, err := sales_services.GetSalesQuotations(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
+func GetBpiCustomers(c *fiber.Ctx) error {
+	data, status, err := sales_services.GetBpiCustomers(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
 func GetBpis(c *fiber.Ctx) error {
 	data, status, err := sales_services.GetBpis(nil)
 	if err != nil {

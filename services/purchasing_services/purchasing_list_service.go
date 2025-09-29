@@ -41,3 +41,22 @@ func GetPurchasingGuidingPrice(conditions map[string]interface{}) (interface{}, 
 	}
 	return response, 0, nil
 }
+
+func GetPurchasingActivePO(conditions map[string]interface{}) (interface{}, int, error) {
+	var response []models.PurchasingActivePO
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting purchasing active PO")
+	}
+
+	return response, 0, nil
+}
+func GetPurchasingClosedPO(conditions map[string]interface{}) (interface{}, int, error) {
+	var response []models.PurchasingClosedPO
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting purchasing active PO")
+	}
+
+	return response, 0, nil
+}
