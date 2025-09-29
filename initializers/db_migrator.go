@@ -23,8 +23,10 @@ func MigrateDb() {
 	//DB.AutoMigrate(&models.ItemBoqDetails{}, &models.ItemBoqDetailsAt{})
 	//DB.AutoMigrate(&models.WiringUserInput{}, &models.WiringUserInputAt{})
 	// DB.AutoMigrate(&models.BoqNotes{}, &models.BoqNotesAt{})
+	//DB.AutoMigrate(&models.Item{}, & models.ItemAt{})
 	// DB.AutoMigrate(&models.ItemSpecs{}, &models.ItemSpecsAt{})
 	// DB.AutoMigrate(&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{})
+	//DB.AutoMigrate(&models.ItemImage{}, &models.ItemImageAt{})
 	// DB.AutoMigrate(&models.TradeType{}, models.TradeTypeAt{})
 	// DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
 
@@ -114,8 +116,8 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
 	// DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
 	//DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
-	// // DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
-	// // DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
+	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
+	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 	// DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
 
 	//DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
@@ -123,8 +125,7 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.Status{}, &models.StatusAt{})
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
-	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
-	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
+	//DB.AutoMigrate(&models.SalesQuotationSelectedImage{}, &models.SalesQuotationSelectedImageAt{})
 
 	// Purchasing
 	//DB.AutoMigrate(&models.PurchaseRequisition{}, &models.PurchaseRequisitionAt{})

@@ -27,17 +27,18 @@ func GetItemImages(itemImage *[]models.ItemImage, conditions map[string]interfac
 	return nil
 }
 
-func CreateItemImageChild(tx *gorm.DB, basedId uint, newImages []string, at models.At) error {
-	for _, base64Image := range newImages {
-		filePath, err := services.UploadFile(base64Image)
+func CreateItemImageChild(tx *gorm.DB, basedId uint, newImages []models.ItemImage, at models.At) error {
+	for _, images := range newImages {
+		filePath, err := services.UploadFile(images.Image)
 		if err != nil {
 			fmt.Println("CREATE ERR:", err)
 			return errors.New("failed to upload image locally")
 		}
 
 		content := models.ItemImageContent{
-			BasedId: basedId,
-			Image:   filePath,
+			BasedId:  basedId,
+			Image:    filePath,
+			Filename: images.Filename,
 		}
 
 		itemImage := models.ItemImage{ItemImageContent: content}
@@ -131,7 +132,7 @@ func UpdateItemImage(tx *gorm.DB, basedId uint, itemImage ItemImage, at models.A
 
 	// Replace images
 	for _, replaceReq := range itemImage.ReplaceImages {
-		if err := UpdateItemImageChild(tx, replaceReq.ImageID, replaceReq.Image, at); err != nil {
+		if err := UpdateItemImageChild(tx, replaceReq.ID, replaceReq.Image, at); err != nil {
 			fmt.Println("REPLACE REQ", err)
 			return err
 		}

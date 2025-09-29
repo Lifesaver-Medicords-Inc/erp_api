@@ -34,8 +34,14 @@ func init() {
 	initializers.InitLogger()
 
 }
-
 func main() {
+	app := SetupApp()
+
+	// Start Listen
+	app.Listen(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT"))
+}
+
+func SetupApp() *fiber.App {
 
 	// Fiber App
 	app := fiber.New(fiber.Config{
@@ -377,6 +383,8 @@ func main() {
 			salesApi := api.Group("/sales")
 			{
 				salesApi.Get("/quotation", sales_handlers.GetSalesQuotations)
+				salesApi.Get("/quotation/latest", sales_handlers.GetLatestQuotations)
+				salesApi.Get("/quotation/customers", sales_handlers.GetBpiCustomers)
 				//salesApi.Get("/quotation/:id", sales_handlers.GetSalesQuotation)
 				//salesApi.Get("/quotation/:id", sales_handlers.GetBpi)
 				//salesApi.Post("child/quotation", sales_handlers.CreateSalesQuotationChild)
@@ -491,6 +499,8 @@ func main() {
 				purchasingApi.Get("/pr_purchase_list", purchasing_handlers.GetPRPurchasingList)
 				purchasingApi.Get("/purchase_list_supplier", purchasing_handlers.GetSOPurchasingListSupplier)
 				purchasingApi.Get("/purchase_guiding_price", purchasing_handlers.GetPurchasingGuidingPrice)
+				purchasingApi.Get("/purchase_active_po", purchasing_handlers.GetPurchasingActivePO)
+				purchasingApi.Get("/purchase_closed_po", purchasing_handlers.GetPurchasingClosedPO)
 
 				//Purchasing SO Canvass Sheet
 				purchasingApi.Get("/purchase_canvass_sheet_so", purchasing_handlers.GetPurchasingCanvassSheetSO)
@@ -569,6 +579,5 @@ func main() {
 		}
 	}
 
-	// Start Listen
-	app.Listen(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT"))
+	return app
 }
