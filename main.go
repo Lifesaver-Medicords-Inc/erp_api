@@ -635,6 +635,12 @@ func SetupApp() *fiber.App {
 	// Start the hub in its own goroutine
 	//go h.Run()
 
+	// Initialize a new Hub instance
+	//h := hub.NewHub()
+
+	// Start the hub in its own goroutine
+	//go h.Run()
+
 	return app
 	// Start Listen
 	app.Listen(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT"))
