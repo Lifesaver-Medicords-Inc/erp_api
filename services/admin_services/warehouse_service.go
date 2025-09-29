@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -22,7 +21,7 @@ func (w *WarehouseService) CreateWarehouseService(warehouse *models.WarehouseNam
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return &models.WarehouseName{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return &models.WarehouseName{}, 500, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &warehouse); err != nil {
@@ -34,21 +33,21 @@ func (w *WarehouseService) CreateWarehouseService(warehouse *models.WarehouseNam
 			err = errors.New("failed creating warehouse")
 		}
 		tx.Rollback()
-		return warehouse, fiber.StatusInternalServerError, err
+		return warehouse, 500, err
 	}
 
 	atdata := models.WarehouseNameAt{RefId: warehouse.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return warehouse, fiber.StatusInternalServerError, errors.New("failed creating warehouseat")
+		return warehouse, 500, errors.New("failed creating warehouseat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return warehouse, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
+		return warehouse, 500, errors.New("failed to commit transaction")
 	}
 
-	return warehouse, 0, nil
+	return warehouse, 200, nil
 }
 
 func (w *WarehouseService) GetWarehousesService(conditions map[string]interface{}) (*[]models.WarehouseName, int, error) {
@@ -58,14 +57,14 @@ func (w *WarehouseService) GetWarehousesService(conditions map[string]interface{
 	var warehouse = &[]models.WarehouseName{}
 
 	if tx.Error != nil {
-		return warehouse, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return warehouse, 500, errors.New("failed to start DB transaction")
 	}
 
 	if err := tx.Where(conditions).Find(&warehouse).Error; err != nil {
 		fmt.Println("ERROR:", err)
-		return warehouse, fiber.StatusNotFound, errors.New("failed getting warehouse")
+		return warehouse, 404, errors.New("failed getting warehouse")
 	}
-	return warehouse, 0, nil
+	return warehouse, 200, nil
 }
 
 func (w *WarehouseService) GetWarehouseService(conditions map[string]interface{}) (*models.WarehouseName, int, error) {
@@ -73,12 +72,12 @@ func (w *WarehouseService) GetWarehouseService(conditions map[string]interface{}
 
 	var warehouse = &models.WarehouseName{}
 	if tx.Error != nil {
-		return warehouse, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return warehouse, 500, errors.New("failed to start DB transaction")
 	}
 
 	if err := tx.Where(conditions).Preload("Access").First(&warehouse).Error; err != nil {
-		return warehouse, fiber.StatusNotFound, errors.New("failed getting warehouse")
+		return warehouse, 404, errors.New("failed getting warehouse")
 	}
 
-	return warehouse, 0, nil
+	return warehouse, 200, nil
 }

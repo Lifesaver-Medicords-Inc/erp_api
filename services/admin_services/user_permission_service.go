@@ -4,7 +4,6 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -22,10 +21,10 @@ func (p *PermissionService) GetPermissionService(conditions map[string]interface
 	var permissions = &models.UserPermissionModel{}
 
 	if err := services.DbGetNoCache(&permissions, conditions); err != nil {
-		return permissions, fiber.StatusNotFound, errors.New("failed getting user permission")
+		return permissions, 404, errors.New("failed getting user permission")
 	}
 
-	return permissions, 0, nil
+	return permissions, 200, nil
 }
 
 func (p *PermissionService) GetPermissionsService(conditions map[string]interface{}) (*[]models.UserPermissionModel, int, error) {
@@ -33,17 +32,17 @@ func (p *PermissionService) GetPermissionsService(conditions map[string]interfac
 	var permissions = &[]models.UserPermissionModel{}
 
 	if err := services.DbGetNoCache(&permissions, conditions); err != nil {
-		return permissions, fiber.StatusNotFound, errors.New("failed getting user permission")
+		return permissions, 404, errors.New("failed getting user permission")
 	}
 
-	return permissions, 0, nil
+	return permissions, 200, nil
 }
 
 func (p *PermissionService) CreatePermissionService(permission *models.UserPermissionModel, at models.At) (*models.UserPermissionModel, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return &models.UserPermissionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return &models.UserPermissionModel{}, 500, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &permission); err != nil {
@@ -53,7 +52,7 @@ func (p *PermissionService) CreatePermissionService(permission *models.UserPermi
 			err = errors.New("failed creating user permission")
 		}
 		tx.Rollback()
-		return permission, fiber.StatusInternalServerError, err
+		return permission, 500, err
 	}
 
 	atdata := models.UserPermissionAt{
@@ -69,15 +68,15 @@ func (p *PermissionService) CreatePermissionService(permission *models.UserPermi
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return permission, fiber.StatusInternalServerError, errors.New("failed creating user permissionnat")
+		return permission, 500, errors.New("failed creating user permissionnat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return permission, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
+		return permission, 500, errors.New("failed to commit transaction")
 	}
 
-	return permission, 0, nil
+	return permission, 200, nil
 }
 
 func (p *PermissionService) UpdatePermissionService(permission *models.UserPermissionModel, conditions map[string]interface{}, at models.At) (*models.UserPermissionModel, int, error) {
@@ -85,7 +84,7 @@ func (p *PermissionService) UpdatePermissionService(permission *models.UserPermi
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return &models.UserPermissionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return &models.UserPermissionModel{}, 500, errors.New("failed to start DB transaction")
 	}
 
 	if err := tx.Model(&models.UserPermissionModel{}).
@@ -96,7 +95,7 @@ func (p *PermissionService) UpdatePermissionService(permission *models.UserPermi
 			"can_delete": permission.CanDelete,
 		}).Error; err != nil {
 
-		return permission, fiber.StatusInternalServerError, errors.New("failed updating user permission")
+		return permission, 500, errors.New("failed updating user permission")
 	}
 
 	atdata := models.UserPermissionAt{
@@ -112,15 +111,15 @@ func (p *PermissionService) UpdatePermissionService(permission *models.UserPermi
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return permission, fiber.StatusInternalServerError, errors.New("failed creating user permissionat")
+		return permission, 500, errors.New("failed creating user permissionat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return permission, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
+		return permission, 500, errors.New("failed to commit transaction")
 	}
 
-	return permission, 0, nil
+	return permission, 200, nil
 }
 
 func (p *PermissionService) DeletePermissionService(conditions map[string]interface{}, at models.At) (*models.UserPermissionModel, int, error) {
@@ -128,7 +127,7 @@ func (p *PermissionService) DeletePermissionService(conditions map[string]interf
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return &models.UserPermissionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return &models.UserPermissionModel{}, 500, errors.New("failed to start DB transaction")
 	}
 
 	permission, status, err := p.GetPermissionService(conditions)
@@ -139,19 +138,19 @@ func (p *PermissionService) DeletePermissionService(conditions map[string]interf
 
 	if err := services.DbDelete(tx, &permission, conditions); err != nil {
 		tx.Rollback()
-		return permission, fiber.StatusInternalServerError, errors.New("failed deleting permission")
+		return permission, 500, errors.New("failed deleting permission")
 	}
 	atdata := models.UserPermissionAt{RefId: permission.ID, UserPermissionContent: permission.UserPermissionContent, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return permission, fiber.StatusInternalServerError, errors.New("failed creating user_permisionat")
+		return permission, 500, errors.New("failed creating user_permisionat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return permission, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
+		return permission, 500, errors.New("failed to commit transaction")
 	}
 
-	return permission, 0, nil
+	return permission, 200, nil
 }

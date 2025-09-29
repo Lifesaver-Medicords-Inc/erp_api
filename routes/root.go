@@ -23,4 +23,10 @@ func SetupRoutes(app *fiber.App) {
 
 	//File routes
 	VehicleFileRoutes(app)
+
+	//Company Routes
+	CompanyRoutes(app)
+
+	//Currency Routes
+	CurrencyRoutes(app)
 }
