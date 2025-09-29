@@ -7,6 +7,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
+	"github.com/pierceperado/smpc/handlers/engineering_handlers"
+	"github.com/pierceperado/smpc/handlers/job_orders_handlers"
 	"github.com/pierceperado/smpc/handlers/journal_entry_handlers"
 	"github.com/pierceperado/smpc/handlers/position_handlers"
 	"github.com/pierceperado/smpc/handlers/public_handlers"
@@ -28,12 +30,19 @@ func init() {
 	initializers.InitWm()
 	initializers.InitWm2()
 	initializers.InitProjectWM()
-
+	initializers.InitWmJobOrder()
+	initializers.InitWmQuotation()
 	initializers.InitLogger()
 
 }
-
 func main() {
+	app := SetupApp()
+
+	// Start Listen
+	app.Listen(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT"))
+}
+
+func SetupApp() *fiber.App {
 
 	// Fiber App
 	app := fiber.New(fiber.Config{
@@ -81,6 +90,24 @@ func main() {
 			// Setup Endpoints
 			setupApi := api.Group("/setup")
 			{
+
+				jobApi := setupApi.Group("/job")
+				{
+					jobApi.Get("/order/:user_id", job_orders_handlers.GetJobOrder)
+					jobApi.Get("/sales/:sales_order", job_orders_handlers.GetSalesJobOrder)
+					jobApi.Get("/all_sales/:user_id", job_orders_handlers.GetAllSalesOrder)
+					jobApi.Get("/components/:bom_id", job_orders_handlers.GetComponents)
+					jobApi.Get("/sales_details/:order_id", job_orders_handlers.GetSalesDetailsJobOrder)
+					jobApi.Post("/order", job_orders_handlers.CreateJobOrder)
+					jobApi.Put("/order", job_orders_handlers.UpdateJobOrder)
+				}
+
+				invApi := setupApi.Group("/inv")
+				{
+					invApi.Get("/tracker", setup_handlers.GetInvTracker)
+					invApi.Get("/name", setup_handlers.GetInvName)
+				}
+
 				itemApi := setupApi.Group("/item")
 				{
 					// Brand Endpoints
@@ -190,6 +217,18 @@ func main() {
 					reportsApi.Delete("/receiving_inventory", setup_handlers.DeleteReceivingReportInventoryRow)
 				}
 
+				reports2Api := setupApi.Group("/report2")
+				{
+					//receiving report
+					reports2Api.Get("/receiving2", setup_handlers.GetReceivingReports2)
+					reports2Api.Get("/receiving2/:id", setup_handlers.GetReceivingReport2)
+					reports2Api.Post("/receiving2", setup_handlers.CreateReceivingReport2)
+					reports2Api.Put("/receiving2", setup_handlers.UpdateReceivingReport2)
+					reports2Api.Delete("/receiving2", setup_handlers.DeleteReceivingReport2)
+					//receiving report detail
+					reports2Api.Delete("/receiving_details2", setup_handlers.DeleteReceivingReportDetailsRow2)
+				}
+
 				// Unit Measurement Endpoints
 				setupApi.Get("/unit_measurement", setup_handlers.GetUnitMeasurements)
 				setupApi.Get("/unit_measurement:/id", setup_handlers.GetUnitMeasurement)
@@ -248,6 +287,7 @@ func main() {
 				setupApi.Put("/bom", setup_handlers.UpdateSetupItemBom)
 				setupApi.Delete("/bom", setup_handlers.DeleteSetupItemBom)
 				setupApi.Get("/bom/item_list", setup_handlers.GetBomItemList)
+				setupApi.Get("/all_bom/item_list", setup_handlers.GetAllBomItemList)
 				setupApi.Get("/bom/parent_detail", setup_handlers.GetBomParentDetail)
 				setupApi.Get("/bom/child_detail", setup_handlers.GetBomChildDetail)
 
@@ -344,6 +384,8 @@ func main() {
 			salesApi := api.Group("/sales")
 			{
 				salesApi.Get("/quotation", sales_handlers.GetSalesQuotations)
+				salesApi.Get("/quotation/latest", sales_handlers.GetLatestQuotations)
+				salesApi.Get("/quotation/customers", sales_handlers.GetBpiCustomers)
 				//salesApi.Get("/quotation/:id", sales_handlers.GetSalesQuotation)
 				//salesApi.Get("/quotation/:id", sales_handlers.GetBpi)
 				//salesApi.Post("child/quotation", sales_handlers.CreateSalesQuotationChild)
@@ -425,6 +467,20 @@ func main() {
 
 			}
 
+			// Engineering Endpoints
+			engineeringApi := api.Group("/engineering")
+			{
+				// Engineering Redbox List
+				redBoxApi := engineeringApi.Group("/redboxlist")
+				{
+					//Quotation
+					redBoxApi.Get("/quotation", engineering_handlers.GetEngineeringRedboxQuotationList)
+
+					//Job Order
+					redBoxApi.Get("/job_order/:userId", engineering_handlers.GetEngineeringRedboxJobOrder)
+				}
+			}
+
 			// Purchasing Endpoints
 			purchasingApi := api.Group("/purchasing")
 			{
@@ -444,6 +500,8 @@ func main() {
 				purchasingApi.Get("/pr_purchase_list", purchasing_handlers.GetPRPurchasingList)
 				purchasingApi.Get("/purchase_list_supplier", purchasing_handlers.GetSOPurchasingListSupplier)
 				purchasingApi.Get("/purchase_guiding_price", purchasing_handlers.GetPurchasingGuidingPrice)
+				purchasingApi.Get("/purchase_active_po", purchasing_handlers.GetPurchasingActivePO)
+				purchasingApi.Get("/purchase_closed_po", purchasing_handlers.GetPurchasingClosedPO)
 
 				//Purchasing SO Canvass Sheet
 				purchasingApi.Get("/purchase_canvass_sheet_so", purchasing_handlers.GetPurchasingCanvassSheetSO)
@@ -502,6 +560,25 @@ func main() {
 						}))
 					}
 				}
+
+				// Engineering Endpoints
+				engineeringApi := ws.Group("/engineering")
+				{
+					redboxlistApi := engineeringApi.Group("/redboxlist")
+					{
+						redboxlistApi.Get("/quotation", websocket.New(func(c *websocket.Conn) {
+							services.HandleWsQuotation(c, engineering_handlers.WsgetRedboxQuotationList)
+						}))
+
+						redboxlistApi.Get("/job_order/:userId", websocket.New(func(c *websocket.Conn) {
+							userId := c.Params("userId")
+							services.HandleWsJobOrder(c, func(conn *websocket.Conn) {
+								engineering_handlers.WsgetRedboxJobOrder(conn, userId)
+							})
+						}))
+
+					}
+				}
 			}
 		}
 	}
@@ -513,5 +590,6 @@ func main() {
 	//go h.Run()
 
 	// Start Listen
-	app.Listen(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT"))
+	//app.Listen(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT"))
+	return app
 }

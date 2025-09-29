@@ -35,9 +35,9 @@ type UpdateBody struct {
 	ItemImages      ItemImage                    `json:"itemimages"`
 }
 type ItemImage struct {
-	NewImages     []string        `json:"newimages"`
-	ReplaceImages []ReplaceImages `json:"replaceimages"`
-	DeleteImages  []DeleteImages  `json:"deleteimages"`
+	NewImages     []models.ItemImage `json:"newimages"`
+	ReplaceImages []models.ItemImage `json:"replaceimages"`
+	DeleteImages  []DeleteImages     `json:"deleteimages"`
 }
 
 type ReplaceImages struct {

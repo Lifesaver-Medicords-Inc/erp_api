@@ -9,6 +9,21 @@ var WM *models.WsManager
 var WM2 *models.WsManager2
 var WM3 *models.WsProjectManager
 
+var WMQuotation *models.WsManager
+var WMJobOrder *models.WsManager
+
+func InitWmQuotation() {
+	WMQuotation = &models.WsManager{
+		Clients: make(map[*websocket.Conn]bool),
+	}
+}
+
+func InitWmJobOrder() {
+	WMJobOrder = &models.WsManager{
+		Clients: make(map[*websocket.Conn]bool),
+	}
+}
+
 func InitWm() {
 	WM = &models.WsManager{
 		Clients: make(map[*websocket.Conn]bool),

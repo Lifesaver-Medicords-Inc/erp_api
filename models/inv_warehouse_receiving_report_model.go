@@ -10,6 +10,7 @@ type ReceivingReportContent struct {
 	RefDOC          string `json:"ref_doc"`
 	PreparedBy      string `json:"prepared_by"`
 	PurchaseOrderID uint   `json:"purchase_order_id"` //this is where the PO's will base
+	WarehouseName   string `json:"warehouse_name"`
 }
 
 type ReceivingReport struct {

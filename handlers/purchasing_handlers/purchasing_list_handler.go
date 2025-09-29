@@ -18,6 +18,22 @@ func GetSOPurchasingList(c *fiber.Ctx) error {
 
 	return utils.RespondSuccess(c, data)
 }
+func GetPurchasingActivePO(c *fiber.Ctx) error {
+	data, status, err := purchasing_services.GetPurchasingActivePO(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+func GetPurchasingClosedPO(c *fiber.Ctx) error {
+	data, status, err := purchasing_services.GetPurchasingClosedPO(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
 func GetPRPurchasingList(c *fiber.Ctx) error {
 	data, status, err := purchasing_services.GetPRPurchasingList(nil)
 	if err != nil {

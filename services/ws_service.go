@@ -8,6 +8,80 @@ import (
 	"github.com/pierceperado/smpc/initializers"
 )
 
+func HandleWsQuotation(c *websocket.Conn, h func(*websocket.Conn)) {
+	initializers.WMQuotation.AddClient(c)
+	fmt.Println("Quotation Client Connected:", c.IP())
+
+	defer func() {
+		initializers.WMQuotation.RemoveClient(c)
+		fmt.Println("Quotation Client Disconnected:", c.IP())
+	}()
+
+	h(c)
+
+	for {
+		var message interface{}
+		if err := c.ReadJSON(&message); err != nil {
+			fmt.Println("error reading quotation message")
+			break
+		}
+
+		if err := c.WriteJSON(message); err != nil {
+			fmt.Println("error writing quotation message")
+			break
+		}
+	}
+}
+
+func BroadcastQuotation(data interface{}) error {
+	initializers.WMQuotation.RLock()
+	defer initializers.WMQuotation.RUnlock()
+
+	for client := range initializers.WMQuotation.Clients {
+		if err := client.WriteJSON(data); err != nil {
+			return fmt.Errorf("error sending quotation message: %w", err)
+		}
+	}
+	return nil
+}
+
+func BroadcastJobOrder(data interface{}) error {
+	initializers.WMJobOrder.RLock()
+	defer initializers.WMJobOrder.RUnlock()
+
+	for client := range initializers.WMJobOrder.Clients {
+		if err := client.WriteJSON(data); err != nil {
+			return fmt.Errorf("error sending job order message: %w", err)
+		}
+	}
+	return nil
+}
+
+func HandleWsJobOrder(c *websocket.Conn, h func(*websocket.Conn)) {
+	initializers.WMJobOrder.AddClient(c)
+	fmt.Println("Job Order Client Connected:", c.IP())
+
+	defer func() {
+		initializers.WMJobOrder.RemoveClient(c)
+		fmt.Println("Job Order Client Disconnected:", c.IP())
+	}()
+
+	h(c)
+
+	for {
+		var message interface{}
+		if err := c.ReadJSON(&message); err != nil {
+			fmt.Println("error reading job order message")
+			break
+		}
+
+		if err := c.WriteJSON(message); err != nil {
+			fmt.Println("error writing job order message")
+			break
+		}
+	}
+}
+
 func HandleWs(c *websocket.Conn, h func(*websocket.Conn)) {
 	initializers.WM.AddClient(c)
 	fmt.Println("Client Connected:", c.IP())
