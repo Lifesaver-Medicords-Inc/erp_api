@@ -10,9 +10,16 @@ import (
 	"github.com/pierceperado/smpc/services"
 )
 
-func GetPermission(conditions map[string]interface{}) (models.UserPermission, int, error) {
+type PermissionService struct {
+}
 
-	var permissions models.UserPermission
+func NewPermissionService() *PermissionService {
+	return &PermissionService{}
+}
+
+func (p *PermissionService) GetPermission(conditions map[string]interface{}) (models.UserPermissionModel, int, error) {
+
+	var permissions models.UserPermissionModel
 
 	if err := services.DbGetNoCache(&permissions, conditions); err != nil {
 		return permissions, fiber.StatusNotFound, errors.New("failed getting user permission")
@@ -21,9 +28,9 @@ func GetPermission(conditions map[string]interface{}) (models.UserPermission, in
 	return permissions, 0, nil
 }
 
-func GetPermissions(conditions map[string]interface{}) ([]models.UserPermission, int, error) {
+func (p *PermissionService) GetPermissions(conditions map[string]interface{}) ([]models.UserPermissionModel, int, error) {
 
-	var permissions []models.UserPermission
+	var permissions []models.UserPermissionModel
 
 	if err := services.DbGetNoCache(&permissions, conditions); err != nil {
 		return permissions, fiber.StatusNotFound, errors.New("failed getting user permission")
@@ -32,11 +39,11 @@ func GetPermissions(conditions map[string]interface{}) ([]models.UserPermission,
 	return permissions, 0, nil
 }
 
-func CreatePermission(permission models.UserPermission, at models.At) (models.UserPermission, int, error) {
+func (p *PermissionService) CreatePermission(permission models.UserPermissionModel, at models.At) (models.UserPermissionModel, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.UserPermission{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return models.UserPermissionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &permission); err != nil {
@@ -73,15 +80,15 @@ func CreatePermission(permission models.UserPermission, at models.At) (models.Us
 	return permission, 0, nil
 }
 
-func UpdatePermission(permission models.UserPermission, conditions map[string]interface{}, at models.At) (models.UserPermission, int, error) {
+func (p *PermissionService) UpdatePermission(permission models.UserPermissionModel, conditions map[string]interface{}, at models.At) (models.UserPermissionModel, int, error) {
 
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.UserPermission{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return models.UserPermissionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	if err := tx.Model(&models.UserPermission{}).
+	if err := tx.Model(&models.UserPermissionModel{}).
 		Where("user_id = ?", permission.UserId).
 		Updates(map[string]interface{}{
 			"can_create": permission.CanCreate,
@@ -116,15 +123,15 @@ func UpdatePermission(permission models.UserPermission, conditions map[string]in
 	return permission, 0, nil
 }
 
-func DeletePermission(conditions map[string]interface{}, at models.At) (models.UserPermission, int, error) {
+func (p *PermissionService) DeletePermission(conditions map[string]interface{}, at models.At) (models.UserPermissionModel, int, error) {
 
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return models.UserPermission{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return models.UserPermissionModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	permission, status, err := GetPermission(conditions)
+	permission, status, err := p.GetPermission(conditions)
 
 	if err != nil {
 		return permission, status, errors.New("user not found")

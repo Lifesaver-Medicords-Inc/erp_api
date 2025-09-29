@@ -8,12 +8,12 @@ type UserPermissionContent struct {
 	CanDelete bool `json:"can_delete"`
 }
 
-type UserPermission struct {
+type UserPermissionModel struct {
 	UserPermissionContent
 	User *User `gorm:"foreignKey:UserId;references:ID;onDelete:CASCADE;onUpdate:CASCADE" json:"user"`
 }
 
-func (UserPermission) TableName() string {
+func (UserPermissionModel) TableName() string {
 	return "tbl_user_permission"
 }
 

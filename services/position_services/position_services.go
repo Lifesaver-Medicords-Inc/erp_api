@@ -10,9 +10,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetPositions(conditions map[string]interface{}) ([]models.Position, int, error) {
+func GetPositions(conditions map[string]interface{}) ([]models.PositionModel, int, error) {
 
-	var positions []models.Position
+	var positions []models.PositionModel
 
 	if err := services.DbGet(&positions, conditions); err != nil {
 		return positions, fiber.StatusInternalServerError, errors.New("failed getting positions")
@@ -21,11 +21,11 @@ func GetPositions(conditions map[string]interface{}) ([]models.Position, int, er
 	return positions, 0, nil
 }
 
-func GetPosition(id int) (models.Position, int, error) {
+func GetPosition(id int) (models.PositionModel, int, error) {
 	conditions := map[string]interface{}{
 		"id": id,
 	}
-	var position models.Position
+	var position models.PositionModel
 
 	if err := services.DbGet(&position, conditions); err != nil {
 		return position, fiber.StatusInternalServerError, errors.New("failed getting position")
@@ -34,8 +34,8 @@ func GetPosition(id int) (models.Position, int, error) {
 	return position, 0, nil
 }
 
-func CreatePosition(c *fiber.Ctx, tx *gorm.DB) (models.Position, int, error) {
-	var body models.Position
+func CreatePosition(c *fiber.Ctx, tx *gorm.DB) (models.PositionModel, int, error) {
+	var body models.PositionModel
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
@@ -63,8 +63,8 @@ func CreatePosition(c *fiber.Ctx, tx *gorm.DB) (models.Position, int, error) {
 	return body, 0, nil
 }
 
-func UpdatePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.Position, int, error) {
-	var body models.Position
+func UpdatePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.PositionModel, int, error) {
+	var body models.PositionModel
 
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
@@ -87,8 +87,8 @@ func UpdatePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 	return body, 0, nil
 }
 
-func DeletePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.Position, int, error) {
-	var body models.Position
+func DeletePosition(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.PositionModel, int, error) {
+	var body models.PositionModel
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}

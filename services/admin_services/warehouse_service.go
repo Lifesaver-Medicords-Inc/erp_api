@@ -11,7 +11,14 @@ import (
 	"github.com/pierceperado/smpc/services"
 )
 
-func CreateWarehouse(warehouse models.WarehouseName, at models.At) (models.WarehouseName, int, error) {
+type WarehouseService struct {
+}
+
+func NewWarehouseService() *WarehouseService {
+	return &WarehouseService{}
+}
+
+func (w *WarehouseService) CreateWarehouse(warehouse models.WarehouseName, at models.At) (models.WarehouseName, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
@@ -44,7 +51,7 @@ func CreateWarehouse(warehouse models.WarehouseName, at models.At) (models.Wareh
 	return warehouse, 0, nil
 }
 
-func GetWarehouses(conditions map[string]interface{}) ([]models.WarehouseName, int, error) {
+func (w *WarehouseService) GetWarehouses(conditions map[string]interface{}) ([]models.WarehouseName, int, error) {
 
 	tx := initializers.DB.Begin()
 
@@ -61,7 +68,7 @@ func GetWarehouses(conditions map[string]interface{}) ([]models.WarehouseName, i
 	return warehouse, 0, nil
 }
 
-func GetWarehouse(conditions map[string]interface{}) (models.WarehouseName, int, error) {
+func (w *WarehouseService) GetWarehouse(conditions map[string]interface{}) (models.WarehouseName, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {

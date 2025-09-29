@@ -19,6 +19,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/routes"
 	"github.com/pierceperado/smpc/services"
 )
 
@@ -35,6 +36,7 @@ func init() {
 	initializers.InitLogger()
 
 }
+
 func main() {
 	app := SetupApp()
 
@@ -515,6 +517,8 @@ func SetupApp() *fiber.App {
 				purchasingApi.Put("/purchase_order", purchasing_handlers.UpdatePurchaseOrder)
 			}
 
+			//ROUTES
+			routes.SetupRoutes(app)
 			// Admin
 
 			adminGroupApi := api.Group("/")
@@ -625,5 +629,13 @@ func SetupApp() *fiber.App {
 		}
 	}
 
+	// Initialize a new Hub instance
+	//h := hub.NewHub()
+
+	// Start the hub in its own goroutine
+	//go h.Run()
+
 	return app
+	// Start Listen
+	app.Listen(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT"))
 }

@@ -9,7 +9,14 @@ import (
 	"github.com/pierceperado/smpc/services"
 )
 
-func GetUsers(conditions map[string]interface{}) ([]models.User, int, error) {
+type UserService struct {
+}
+
+func NewUserService() *UserService {
+	return &UserService{}
+}
+
+func (u *UserService) GetUsers(conditions map[string]interface{}) ([]models.User, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
@@ -30,7 +37,7 @@ func GetUsers(conditions map[string]interface{}) ([]models.User, int, error) {
 	return users, 0, nil
 }
 
-func GetUser(conditions map[string]interface{}) (models.User, int, error) {
+func (u *UserService) GetUser(conditions map[string]interface{}) (models.User, int, error) {
 	var user models.User
 	tx := initializers.DB.Begin()
 
@@ -47,7 +54,7 @@ func GetUser(conditions map[string]interface{}) (models.User, int, error) {
 	return user, 0, nil
 }
 
-func UpdateUser(user models.User, conditions map[string]interface{}, at models.At) (models.User, int, error) {
+func (u *UserService) UpdateUser(user models.User, conditions map[string]interface{}, at models.At) (models.User, int, error) {
 
 	tx := initializers.DB.Begin()
 
@@ -80,7 +87,7 @@ func UpdateUser(user models.User, conditions map[string]interface{}, at models.A
 	return user, 0, nil
 }
 
-func DeleteUser(conditions map[string]interface{}, at models.At) (models.User, int, error) {
+func (u *UserService) DeleteUser(conditions map[string]interface{}, at models.At) (models.User, int, error) {
 
 	tx := initializers.DB.Begin()
 
@@ -88,7 +95,7 @@ func DeleteUser(conditions map[string]interface{}, at models.At) (models.User, i
 		return models.User{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	user, _, err := GetUser(conditions)
+	user, _, err := u.GetUser(conditions)
 
 	if err != nil {
 		return user, fiber.StatusInternalServerError, errors.New("User not found")
