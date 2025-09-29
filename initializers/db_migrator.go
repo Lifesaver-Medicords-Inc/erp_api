@@ -46,6 +46,7 @@ func MigrateDb() {
 
 	//DB.AutoMigrate(&models.ReceivingReport2{}, &models.ReceivingReportAt2{})
 	//DB.AutoMigrate(&models.ReceivingReportDetails2{}, &models.ReceivingReportDetailsAt2{})
+	//DB.AutoMigrate(&models.ReceivingHistory{}, &models.ReceivingHistoryAt{})
 
 	// DB.AutoMigrate(&models.Social{}, &models.SocialAt{})
 	// DB.AutoMigrate(&models.Entity{}, &models.EntityAt{})
@@ -130,6 +131,8 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 	//DB.AutoMigrate(&models.SalesQuotationSelectedImage{}, &models.SalesQuotationSelectedImageAt{})
+	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
+	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 
 	// Purchasing
 	//DB.AutoMigrate(&models.PurchaseRequisition{}, &models.PurchaseRequisitionAt{})
@@ -166,6 +169,9 @@ func MigrateDb() {
 	// DB.AutoMigrate(&accounting_models.SalesInvoiceDetail{}, &accounting_models.SalesInvoiceDetailAt{})
 	// DB.AutoMigrate(&accounting_models.JournalEntry{}, &accounting_models.JournalEntryAt{})
 	// DB.AutoMigrate(&accounting_models.JournalEntryDetails{}, &accounting_models.JournalEntryDetailsAt{})
+
+	// JOB ORDER
+	// DB.AutoMigrate(&models.JobOrder{}, &models.JobOrderAt{})
 
 	//ADMIN
 	//DB.AutoMigrate(&models.User{}, &models.UserAt{}, &models.PositionModel{}, &models.PositionAt{}, &models.PositionAccessModel{}, &models.PositionAccessAt{}, &models.UserPermissionModel{}, &models.UserPermissionAt{})

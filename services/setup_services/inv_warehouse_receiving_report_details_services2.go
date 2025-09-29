@@ -19,8 +19,7 @@ func GetReceivingReportDetails2(conditions map[string]interface{}) ([]models.Rec
 	return receivingReportDetails, 0, nil
 }
 
-func CreateReceivingReportDetails2(tx *gorm.DB, parentId uint, child models.ReceivingReportDetails2, at models.At) error {
-	//pwedeng directa na since di nmn nag tthrow ng ID
+func CreateReceivingReportDetails2(tx *gorm.DB, parentId uint, parentDate string, parentPoId uint, child models.ReceivingReportDetails2, at models.At) error {
 	content := models.ReceivingReportDetailsContent2{
 		ReceivingReportId:  parentId,
 		ItemCode:           child.ItemCode,
@@ -31,19 +30,21 @@ func CreateReceivingReportDetails2(tx *gorm.DB, parentId uint, child models.Rece
 		ReceivedUom:        child.ReceivedUom,
 		RejectedQty:        child.RejectedQty,
 		RejectedUom:        child.RejectedUom,
+		SerialNumber:       child.SerialNumber,
+		BinLocation:        child.BinLocation,
 		ReasonForRejection: child.ReasonForRejection,
 		RefId:              child.RefId,
 	}
 
-	ReceivingReportDetails := models.ReceivingReportDetails2{
+	receivingReportDetails := models.ReceivingReportDetails2{
 		ReceivingReportDetailsContent2: content,
 	}
-	if err := services.DbInsert(tx, &ReceivingReportDetails); err != nil {
+	if err := services.DbInsert(tx, &receivingReportDetails); err != nil {
 		return errors.New("failed creating warehouse area")
 	}
 
 	ReceivingReportDetailsAt := models.ReceivingReportDetailsAt2{
-		RefId:                          ReceivingReportDetails.ID,
+		RefId:                          receivingReportDetails.ID,
 		ReceivingReportDetailsContent2: content,
 		At:                             at,
 	}
@@ -51,10 +52,14 @@ func CreateReceivingReportDetails2(tx *gorm.DB, parentId uint, child models.Rece
 		return errors.New("failed creating warehouse area at")
 	}
 
+	if err := CreateReceivingReportHistory(tx, parentId, parentDate, parentPoId, receivingReportDetails, at); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func UpdateReceivingReportDetails2(tx *gorm.DB, ReceivingReportDetails models.ReceivingReportDetails2, at models.At, conditions map[string]interface{}) error {
+func UpdateReceivingReportDetails2(tx *gorm.DB, ReceivingReportDetails models.ReceivingReportDetails2, at models.At, conditions map[string]interface{}, parentId uint, parentDate string, parentPoId uint) error {
 
 	if err := services.DbUpdate(tx, &ReceivingReportDetails, conditions); err != nil {
 		return errors.New("failed updating receiving report details")
@@ -70,10 +75,16 @@ func UpdateReceivingReportDetails2(tx *gorm.DB, ReceivingReportDetails models.Re
 		return errors.New("failed creating receiving report details at")
 	}
 
+	// Add history record after update
+	if err := UpdateReceivingReportHistory(tx, parentId, parentDate, parentPoId, ReceivingReportDetails, at); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func DeleteReceivingReportDetails2(tx *gorm.DB, ReceivingReportDetails models.ReceivingReportDetails2, at models.At, conditions map[string]interface{}) error {
+
 	if err := services.DbDelete(tx, &ReceivingReportDetails, conditions); err != nil {
 		return errors.New("failed deleting receiving report details")
 	}
