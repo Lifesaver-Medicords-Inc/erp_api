@@ -1,5 +1,9 @@
 package initializers
 
+// import (
+// 	"github.com/pierceperado/smpc/models"
+// )
+
 func MigrateDb() {
 	// Auth
 
@@ -163,4 +167,5 @@ func MigrateDb() {
 	//DB.AutoMigrate(&models.User{}, &models.UserAt{}, &models.PositionModel{}, &models.PositionAt{}, &models.PositionAccessModel{}, &models.PositionAccessAt{}, &models.UserPermissionModel{}, &models.UserPermissionAt{})
 	//DB.AutoMigrate(&models.VehicleModel{}, &models.VehicleAt{})
 	//DB.AutoMigrate(&models.VehicleFileModel{}, &models.VehicleFileAt{})
+	//DB.AutoMigrate(&models.CompanyModel{}, &models.CompanyAt{}, &models.CompanyAddressModel{}, &models.CompanyAddressAt{}, &models.CompanyContactModel{}, &models.CompanyContactAt{})
 }

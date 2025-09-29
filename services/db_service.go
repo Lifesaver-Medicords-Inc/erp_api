@@ -227,7 +227,7 @@ func DbDelete(tx *gorm.DB, model interface{}, conditions map[string]interface{})
 	if err := InvalidateCache(key); err != nil {
 		return err
 	}
-	fmt.Println("DELETE Keey", key)
+	fmt.Println("DELETE Key", key)
 
 	return nil
 }
