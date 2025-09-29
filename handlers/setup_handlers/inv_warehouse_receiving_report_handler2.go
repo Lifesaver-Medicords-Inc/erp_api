@@ -1,6 +1,7 @@
 package setup_handlers
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,6 +16,24 @@ func GetReceivingReports2(c *fiber.Ctx) error {
 		return utils.RespondError(c, status, err.Error())
 	}
 
+	return utils.RespondSuccess(c, data)
+}
+
+func GetPurchaseOrderDetails(c *fiber.Ctx) error {
+	fmt.Println("FMT GET RECEIVING REPORT DETAILS")
+
+	idParam := c.Params("po_id")
+
+	poId, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "invalid po_id")
+	}
+
+	data, status, err := setup_services.GetPurchaseOrderDetails(poId)
+	fmt.Println("RECEIVING REPORT DETAILS", data)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
 	return utils.RespondSuccess(c, data)
 }
 

@@ -226,6 +226,7 @@ func SetupApp() *fiber.App {
 					reports2Api.Delete("/receiving2", setup_handlers.DeleteReceivingReport2)
 					//receiving report detail
 					reports2Api.Delete("/receiving_details2", setup_handlers.DeleteReceivingReportDetailsRow2)
+					reports2Api.Get("/purchase_order/:po_id", setup_handlers.GetPurchaseOrderDetails)
 				}
 
 				// Unit Measurement Endpoints

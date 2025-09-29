@@ -71,3 +71,36 @@ type ReceivingReportDetailsAt2 struct {
 func (ReceivingReportDetailsAt2) TableName() string {
 	return "z_tbl_inv_warehouse_receiving_report_details_at2"
 }
+
+type ReceivingHistoryContent struct {
+	PurchaseOrderID          uint   `json:"purchase_order_id"`
+	ItemCode                 string `json:"item_code"`
+	ReceivingReportID        uint   `json:"receiving_report_id"`
+	ReceivingReportDetailsID uint   `json:"receiving_report_details_id"`
+	OrderedQty               string `json:"ordered_qty"`
+	ReceivedQty              string `json:"received_qty"`
+	DateReceived             string `json:"date_received"`
+	IsComplete               *bool  `json:"is_complete"`
+}
+
+type ReceivingHistory struct {
+	ID uint `gorm:"primarykey" json:"id"`
+	// Code string `gorm:"unique" json:"code"`
+	ReceivingHistoryContent
+}
+
+func (ReceivingHistory) TableName() string {
+	return "tbl_inv_warehouse_receiving_history"
+}
+
+type ReceivingHistoryAt struct {
+	ID    uint   `gorm:"primarykey" json:"id"`
+	RefId uint   `json:"ref_id"`
+	Code  string `json:"code"`
+	ReceivingHistoryContent
+	At
+}
+
+func (ReceivingHistoryAt) TableName() string {
+	return "z_tbl_inv_warehouse_receiving_history_at"
+}
