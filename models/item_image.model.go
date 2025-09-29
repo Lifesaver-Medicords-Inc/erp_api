@@ -1,8 +1,9 @@
 package models
 
 type ItemImageContent struct {
-	BasedId uint   `json:"based_id"`
-	Image   string `json:"image"`
+	BasedId  uint   `json:"based_id"`
+	Image    string `json:"image"`
+	Filename string `json:"filename"`
 }
 
 type ItemImage struct {
