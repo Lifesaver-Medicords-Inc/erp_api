@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDateReceived string, parentPoId uint, detail models.ReceivingReportDetails2, at models.At) error {
+func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDateReceived string, parentPoId uint, detail models.ReceivingReportDetails2, parentPodId uint, at models.At) error {
 	// Convert OrderedQty and ReceivedQty (strings) to int
 	orderedQty, err := strconv.Atoi(detail.OrderedQty)
 	if err != nil {
@@ -34,6 +34,7 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 	history := models.ReceivingHistory{
 		ReceivingHistoryContent: models.ReceivingHistoryContent{
 			PurchaseOrderID:          parentPoId,        // assuming RefId = PO id
+			PurchaseOrderDetailsID:   parentPodId,       // assuming RefId = PO id
 			ReceivingReportID:        receivingReportId, // assuming RefId = PO id
 			ItemCode:                 detail.ItemCode,
 			ReceivingReportDetailsID: detail.ID,
@@ -62,6 +63,8 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 	if err := services.InvalidateCacheByModel(models.PurchaseOrderDetailsView{}); err != nil {
 		fmt.Println("Failed to invalidate cache:", err)
 	}
+
+	InvalidateItemCaches()
 
 	return nil
 }
@@ -142,6 +145,8 @@ func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		fmt.Println("Failed to invalidate cache:", err)
 	}
 
+	InvalidateItemCaches()
+
 	return nil
 }
 
@@ -171,6 +176,8 @@ func DeleteReceivingReportHistory(tx *gorm.DB, receivingReportID uint, at models
 	if err := services.InvalidateCacheByModel(models.PurchaseOrderDetailsView{}); err != nil {
 		fmt.Println("Failed to invalidate cache:", err)
 	}
+
+	InvalidateItemCaches()
 
 	return nil
 }
