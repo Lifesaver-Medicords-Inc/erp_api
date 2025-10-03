@@ -11,6 +11,7 @@ type ReceivingReportContent2 struct {
 	PreparedBy      string `json:"prepared_by"`
 	PurchaseOrderID uint   `json:"purchase_order_id"` //this is where the PO's will base
 	WarehouseName   string `json:"warehouse_name"`
+	WarehouseId     uint   `json:"warehouse_id"`
 }
 
 type ReceivingReport2 struct {
@@ -37,6 +38,7 @@ func (ReceivingReportAt2) TableName() string {
 
 type ReceivingReportDetailsContent2 struct {
 	ReceivingReportId  uint   `json:"receiving_report_id"` //parent id
+	PodId              uint   `json:"pod_id"`              //parent id
 	ItemCode           string `json:"item_code"`
 	ItemDescription    string `json:"item_description"`
 	OrderedQty         string `json:"ordered_qty"`
@@ -74,6 +76,7 @@ func (ReceivingReportDetailsAt2) TableName() string {
 
 type ReceivingHistoryContent struct {
 	PurchaseOrderID          uint   `json:"purchase_order_id"`
+	PurchaseOrderDetailsID   uint   `json:"purchase_order_details_id"`
 	ItemCode                 string `json:"item_code"`
 	ReceivingReportID        uint   `json:"receiving_report_id"`
 	ReceivingReportDetailsID uint   `json:"receiving_report_details_id"`
@@ -103,4 +106,16 @@ type ReceivingHistoryAt struct {
 
 func (ReceivingHistoryAt) TableName() string {
 	return "z_tbl_inv_warehouse_receiving_history_at"
+}
+
+type PurchaseOrderView struct {
+	Id           uint   `json:"id"`
+	SupplierId   uint   `json:"supplier_id"`
+	SupplierName string `json:"supplier_name"`
+	SupplierCode string `json:"supplier_code"`
+	DocNo        string `json:"doc_no"`
+}
+
+func (PurchaseOrderView) TableName() string {
+	return "vw_get_purchase_order"
 }

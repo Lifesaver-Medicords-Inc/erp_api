@@ -107,6 +107,9 @@ func SetupApp() *fiber.App {
 				{
 					invApi.Get("/tracker", setup_handlers.GetInvTracker)
 					invApi.Get("/name", setup_handlers.GetInvName)
+					invApi.Post("/tracker", setup_handlers.CreateInvTracker)
+					invApi.Put("/tracker", setup_handlers.UpdateInvTracker)
+					invApi.Delete("/tracker", setup_handlers.DeleteInvTracker)
 				}
 
 				itemApi := setupApi.Group("/item")
@@ -222,6 +225,7 @@ func SetupApp() *fiber.App {
 				{
 					//receiving report
 					reports2Api.Get("/receiving2", setup_handlers.GetReceivingReports2)
+					reports2Api.Get("/purchase_filter", setup_handlers.GetPurchaseOrderView)
 					reports2Api.Get("/receiving2/:id", setup_handlers.GetReceivingReport2)
 					reports2Api.Post("/receiving2", setup_handlers.CreateReceivingReport2)
 					reports2Api.Put("/receiving2", setup_handlers.UpdateReceivingReport2)

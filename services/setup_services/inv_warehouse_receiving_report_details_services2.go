@@ -22,6 +22,7 @@ func GetReceivingReportDetails2(conditions map[string]interface{}) ([]models.Rec
 func CreateReceivingReportDetails2(tx *gorm.DB, parentId uint, parentDate string, parentPoId uint, child models.ReceivingReportDetails2, at models.At) error {
 	content := models.ReceivingReportDetailsContent2{
 		ReceivingReportId:  parentId,
+		PodId:              child.PodId,
 		ItemCode:           child.ItemCode,
 		ItemDescription:    child.ItemDescription,
 		OrderedQty:         child.OrderedQty,
@@ -52,7 +53,7 @@ func CreateReceivingReportDetails2(tx *gorm.DB, parentId uint, parentDate string
 		return errors.New("failed creating warehouse area at")
 	}
 
-	if err := CreateReceivingReportHistory(tx, parentId, parentDate, parentPoId, receivingReportDetails, at); err != nil {
+	if err := CreateReceivingReportHistory(tx, parentId, parentDate, parentPoId, receivingReportDetails, child.PodId, at); err != nil {
 		return err
 	}
 

@@ -53,6 +53,9 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.Application{}, &models.ApplicationAt{})
 	// DB.AutoMigrate(&models.User{}, &models.UserAt{})
 
+	//inventory
+	//DB.AutoMigrate(&models.InvTracker{}, &models.InvTrackerAt{})
+
 	// Setup
 
 	// DB.AutoMigrate(&models.Brand{}, &models.BrandAt{})

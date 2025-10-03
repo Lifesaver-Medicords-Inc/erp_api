@@ -279,6 +279,8 @@ func InvalidateItemCaches() {
 		models.ItemPurchasingView{},
 		models.ItemSalesView{},
 		models.ItemProductionView{},
+		models.InvTrackerView{},
+		models.PurchaseOrderView{},
 	}
 	for _, key := range cacheKeys {
 		services.InvalidateCache(services.GetKey(key, nil))

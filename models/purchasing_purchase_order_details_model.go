@@ -22,7 +22,7 @@ type PurchaseOrderDetailsContent struct {
 }
 
 type PurchaseOrderDetailsView struct {
-	ID              uint   `json:"id"`
+	PodId           uint   `json:"pod_id"`
 	ItemCode        string `json:"item_code"`
 	ItemDescription string `json:"item_description"`
 	OrderedQty      string `json:"ordered_qty"`

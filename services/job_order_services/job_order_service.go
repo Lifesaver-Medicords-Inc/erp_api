@@ -125,13 +125,13 @@ func UpdateJobOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	// 🔹 Step 1: Get the existing job order record
+	//Get the existing job order record
 	var existing models.JobOrder
 	if err := tx.Where(conditions).First(&existing).Error; err != nil {
 		return body, fiber.StatusNotFound, errors.New("job order not found")
 	}
 
-	// 🔹 Step 2: Handle report_base (replace file if new one is uploaded)
+	//Handle report_base (replace file if new one is uploaded)
 	if body.ReportBase != "" {
 		// Delete old file if it exists
 		if existing.ReportBase != "" {
@@ -154,12 +154,12 @@ func UpdateJobOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 		body.ReportBase = existing.ReportBase
 	}
 
-	// 🔹 Step 3: Update record in DB
+	//Update record in DB
 	if err := services.DbUpdate(tx, &body, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating Job Order List")
 	}
 
-	// 🔹 Step 4: Save audit trail
+	//Save audit trail
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
 		at = models.At{}
@@ -178,7 +178,7 @@ func UpdateJobOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 		return body, fiber.StatusInternalServerError, errors.New("failed creating Job Order Listat")
 	}
 
-	// 🔹 Step 5: Invalidate cache
+	//Invalidate cache
 	if err := services.InvalidateCacheByModel(models.JobOrderView{}); err != nil {
 		fmt.Println("Failed to invalidate cache:", err)
 	}

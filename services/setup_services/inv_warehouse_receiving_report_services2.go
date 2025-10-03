@@ -2,6 +2,7 @@ package setup_services
 
 import (
 	"errors"
+	"sort"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -41,6 +42,27 @@ func GetReceivingReports2(conditions map[string]interface{}) (interface{}, int, 
 	if err := services.DbGet(&response.ReceivingReportHistory, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting receiving report details")
 	}
+
+	InvalidateItemCaches()
+
+	return response, 0, nil
+}
+
+func GetPurchaseOrderView(conditions map[string]interface{}) (interface{}, int, error) {
+
+	var response []models.PurchaseOrderView
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting item purchase order")
+	}
+
+	// Sort by ID ascending
+	sort.Slice(response, func(i, j int) bool {
+		return response[i].Id < response[j].Id
+	})
+
+	//Invalidate cache
+	InvalidateItemCaches()
 
 	return response, 0, nil
 }
