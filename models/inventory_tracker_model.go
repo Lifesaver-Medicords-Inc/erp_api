@@ -1,6 +1,7 @@
 package models
 
 type InvTrackerContent struct {
+	RrdId   uint   `json:"rrd_id"`
 	PodId   uint   `json:"pod_id"`
 	Remarks string `json:"remarks"`
 }
@@ -42,14 +43,34 @@ type InvTrackerView struct {
 }
 
 func (InvTrackerView) TableName() string {
-	return "vw_get_item_inventory"
+	return "vw_get_inventory_tracker"
 }
 
-type InvNameView struct {
+type WarehouseNameView struct {
 	Id   uint   `json:"id"`
 	Name string `json:"name"`
 }
 
-func (InvNameView) TableName() string {
+func (WarehouseNameView) TableName() string {
 	return "tbl_inv_warehouse_name"
+}
+
+type InvLogbookView struct {
+	Id           uint   `json:"id"`
+	PodId        uint   `json:"pod_id"`
+	GeneralName  string `json:"general_name"`
+	Brand        string `json:"brand"`
+	ItemDesc     string `json:"item_desc"`
+	Location     string `json:"location"`
+	QtyIn        uint   `json:"qty_in"`
+	QtyOut       uint   `json:"qty_out"`
+	Uom          string `json:"uom"`
+	Date         string `json:"date"`
+	RrNo         uint   `json:"rr_no"`
+	PoNo         uint   `json:"po_no"`
+	SupplierName string `json:"supplier_name"`
+}
+
+func (InvLogbookView) TableName() string {
+	return "vw_get_inventory_logbook"
 }

@@ -16,7 +16,7 @@ func GetInvTracker(conditions map[string]interface{}) (interface{}, int, error) 
 	var response []models.InvTrackerView
 
 	if err := services.DbGet(&response, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting item inventory list")
+		return response, fiber.StatusInternalServerError, errors.New("failed getting item inventory tracker")
 	}
 
 	//Invalidate cache
@@ -25,12 +25,12 @@ func GetInvTracker(conditions map[string]interface{}) (interface{}, int, error) 
 	return response, 0, nil
 }
 
-func GetInvName(conditions map[string]interface{}) (interface{}, int, error) {
+func GetInvWarehouseName(conditions map[string]interface{}) (interface{}, int, error) {
 
-	var response []models.InvNameView
+	var response []models.WarehouseNameView
 
 	if err := services.DbGet(&response, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting item inventory name")
+		return response, fiber.StatusInternalServerError, errors.New("failed getting item warehouse name")
 	}
 
 	return response, 0, nil

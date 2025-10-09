@@ -22,8 +22,20 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		return errors.New("invalid received quantity")
 	}
 
-	// Subtract Ordered - Received
-	remaining := orderedQty - receivedQty
+	rejectedQty, err := strconv.Atoi(detail.RejectedQty)
+	if err != nil {
+		return errors.New("invalid received quantity")
+	}
+
+	// Calculate remaining quantity
+	var remaining int
+	if rejectedQty == receivedQty {
+		// If rejected and received are the same, do not add rejectedQty
+		remaining = orderedQty - receivedQty
+	} else {
+		// Otherwise, include rejectedQty in remaining
+		remaining = (orderedQty - receivedQty) + rejectedQty
+	}
 
 	// Determine completeness
 	isComplete := false
@@ -40,6 +52,7 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 			ReceivingReportDetailsID: detail.ID,
 			OrderedQty:               strconv.Itoa(remaining),
 			ReceivedQty:              strconv.Itoa(receivedQty),
+			RejectedQty:              strconv.Itoa(rejectedQty),
 			DateReceived:             parentDateReceived, // can use parent DateReceived if needed
 			IsComplete:               &isComplete,        // or your logic
 		},
@@ -95,6 +108,16 @@ func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		return errors.New("invalid ordered quantity")
 	}
 
+	rejectedQty, err := strconv.Atoi(history.RejectedQty)
+	if err != nil {
+		return errors.New("invalid received quantity")
+	}
+
+	rejectedDetailQty, err := strconv.Atoi(detail.RejectedQty)
+	if err != nil {
+		return errors.New("invalid ordered quantity")
+	}
+
 	// Default completeness
 	isComplete := false
 
@@ -104,6 +127,14 @@ func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		orderedQty += diff
 	} else if receivedDetailQty > receivedQty {
 		diff := receivedDetailQty - receivedQty
+		orderedQty -= diff
+	}
+
+	if rejectedDetailQty < rejectedQty {
+		diff := rejectedQty - rejectedDetailQty
+		orderedQty += diff
+	} else if rejectedDetailQty > rejectedQty {
+		diff := rejectedDetailQty - rejectedQty
 		orderedQty -= diff
 	}
 
@@ -120,6 +151,7 @@ func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		ReceivingReportDetailsID: detail.ID,
 		OrderedQty:               strconv.Itoa(orderedQty),
 		ReceivedQty:              detail.ReceivedQty,
+		RejectedQty:              detail.RejectedQty,
 		DateReceived:             parentDateReceived,
 		IsComplete:               &isComplete,
 	}
