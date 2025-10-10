@@ -29,7 +29,7 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.BoqNotes{}, &models.BoqNotesAt{})
 	//DB.AutoMigrate(&models.Item{}, & models.ItemAt{})
 	// DB.AutoMigrate(&models.ItemSpecs{}, &models.ItemSpecsAt{})
-	// DB.AutoMigrate(&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{})
+	//DB.AutoMigrate(&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{})
 	//DB.AutoMigrate(&models.ItemImage{}, &models.ItemImageAt{})
 	// DB.AutoMigrate(&models.TradeType{}, models.TradeTypeAt{})
 	// DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
