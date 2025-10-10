@@ -16,8 +16,8 @@ func GetInvTracker(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func GetInvName(c *fiber.Ctx) error {
-	data, status, err := setup_services.GetInvName(nil)
+func GetInvWarehouseName(c *fiber.Ctx) error {
+	data, status, err := setup_services.GetInvWarehouseName(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

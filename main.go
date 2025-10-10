@@ -105,11 +105,15 @@ func SetupApp() *fiber.App {
 
 				invApi := setupApi.Group("/inv")
 				{
+					//Inventory Tracker endpoints
 					invApi.Get("/tracker", setup_handlers.GetInvTracker)
-					invApi.Get("/name", setup_handlers.GetInvName)
+					invApi.Get("/warehouse_name", setup_handlers.GetInvWarehouseName)
 					invApi.Post("/tracker", setup_handlers.CreateInvTracker)
 					invApi.Put("/tracker", setup_handlers.UpdateInvTracker)
 					invApi.Delete("/tracker", setup_handlers.DeleteInvTracker)
+
+					//Inventory Logbook endpoints
+					invApi.Get("/logbook", setup_handlers.GetInvLogbook)
 				}
 
 				itemApi := setupApi.Group("/item")

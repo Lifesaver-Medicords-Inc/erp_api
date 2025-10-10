@@ -82,6 +82,7 @@ type ReceivingHistoryContent struct {
 	ReceivingReportDetailsID uint   `json:"receiving_report_details_id"`
 	OrderedQty               string `json:"ordered_qty"`
 	ReceivedQty              string `json:"received_qty"`
+	RejectedQty              string `json:"rejected_qty"`
 	DateReceived             string `json:"date_received"`
 	IsComplete               *bool  `json:"is_complete"`
 }

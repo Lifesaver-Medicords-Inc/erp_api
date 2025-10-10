@@ -26,7 +26,6 @@ func GetReceivingReports2(conditions map[string]interface{}) (interface{}, int, 
 	type Response struct {
 		ReceivingReport        []models.ReceivingReport2        `json:"receiving_report"`
 		ReceivingReportDetails []models.ReceivingReportDetails2 `json:"receiving_report_details"` //child1
-		ReceivingReportHistory []models.ReceivingHistory        `json:"receiving_report_history"` //child2
 	}
 
 	var response Response
@@ -36,10 +35,6 @@ func GetReceivingReports2(conditions map[string]interface{}) (interface{}, int, 
 	}
 
 	if err := services.DbGet(&response.ReceivingReportDetails, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting receiving report details")
-	}
-
-	if err := services.DbGet(&response.ReceivingReportHistory, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting receiving report details")
 	}
 
