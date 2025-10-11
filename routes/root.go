@@ -29,4 +29,9 @@ func SetupRoutes(app *fiber.App) {
 
 	//Currency Routes
 	CurrencyRoutes(app)
+
+	CalendarEventRoutes(app)
+	DeliveryReceiptRoutes(app)
+	ItemReleaseRoutes(app)
+	SalesOrderRoutes(app)
 }
