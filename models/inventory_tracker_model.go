@@ -61,14 +61,18 @@ type InvLogbookView struct {
 	GeneralName  string `json:"general_name"`
 	Brand        string `json:"brand"`
 	ItemDesc     string `json:"item_desc"`
+	ItemCategory string `json:"item_category"`
+	ItemCode     string `json:"item_code"`
+	ItemModel    string `json:"item_model"`
 	Location     string `json:"location"`
 	QtyIn        uint   `json:"qty_in"`
 	QtyOut       uint   `json:"qty_out"`
 	Uom          string `json:"uom"`
 	Date         string `json:"date"`
-	RrNo         uint   `json:"rr_no"`
-	PoNo         uint   `json:"po_no"`
+	RrNo         string `json:"rr_no"`
+	PoNo         string `json:"po_no"`
 	SupplierName string `json:"supplier_name"`
+	Remarks      string `json:"remarks"`
 }
 
 func (InvLogbookView) TableName() string {
