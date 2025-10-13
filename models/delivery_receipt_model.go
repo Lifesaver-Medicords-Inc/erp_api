@@ -8,6 +8,7 @@ type DeliveryReceiptContent struct {
 	SalesOrderID   uint                       `json:"sales_order_id"`
 	ReleasedByID   uint                       `json:"released_by_id"`
 	DeliveredByID  uint                       `json:"deliverd_by_id"`
+	ReceiptNumber  string                     `json:"receipt_number"`
 	RecipientName  string                     `gorm:"size:150" json:"recipient_name"`
 	DeliveryDate   time.Time                  `json:"delivery_date"`
 	DeliveryCost   float64                    `json:"delivery_cost"`

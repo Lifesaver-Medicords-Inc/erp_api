@@ -26,6 +26,7 @@ type SalesOrderAt struct {
 	ID    uint `gorm:"primaryKey"`
 	RefId uint `json:"ref_id"`
 	SalesOrderContent
+	At
 }
 
 func (SalesOrderAt) TableName() string {

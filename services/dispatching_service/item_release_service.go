@@ -3,9 +3,11 @@ package dispatching_services
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/services"
 )
 
 type ItemReleaseService struct{}
@@ -51,29 +53,41 @@ func (s *ItemReleaseService) GetItemReleaseService(conditions map[string]interfa
 }
 
 // Create a new item release
-func (s *ItemReleaseService) CreateItemReleaseService(release *models.ItemReleaseModel) (*models.ItemReleaseModel, int, error) {
+func (s *ItemReleaseService) CreateItemReleaseService(release *models.ItemReleaseModel, at models.At) (*models.ItemReleaseModel, int, error) {
 
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
 		return release, 500, errors.New("failed to start DB transaction")
 	}
+	if err := services.DbInsert(tx, &release); err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
 
-	if err := tx.Create(release).Error; err != nil {
+			err = errors.New("duplicate record error")
+		} else {
+
+			err = errors.New("failed creating release")
+		}
 		tx.Rollback()
-		return nil, http.StatusInternalServerError, err
+		return release, 500, err
+	}
+
+	atdata := models.ItemReleaseAt{RefId: release.ID, At: at}
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		tx.Rollback()
+		return release, 500, errors.New("failed creating releaseat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return nil, http.StatusInternalServerError, err
+		return release, 500, errors.New("failed to commit transaction")
 	}
 
-	return release, http.StatusCreated, nil
+	return release, 200, nil
 }
 
 // Update existing item release
-func (s *ItemReleaseService) UpdateItemReleaseService(release *models.ItemReleaseModel, conditions map[string]interface{}) (*models.ItemReleaseModel, int, error) {
+func (s *ItemReleaseService) UpdateItemReleaseService(release *models.ItemReleaseModel, conditions map[string]interface{}, at models.At) (*models.ItemReleaseModel, int, error) {
 	var existing = &models.ItemReleaseModel{}
 
 	tx := initializers.DB.Begin()
@@ -82,45 +96,55 @@ func (s *ItemReleaseService) UpdateItemReleaseService(release *models.ItemReleas
 		return existing, 500, errors.New("failed to start DB transaction")
 	}
 
-	if err := tx.Where(conditions).First(&existing).Error; err != nil {
-		tx.Rollback()
+	if err := tx.First(&release, conditions).Error; err != nil {
 		return nil, http.StatusNotFound, err
 	}
 
-	if err := tx.Model(&existing).Updates(release).Error; err != nil {
+	if err := services.DbUpdate(tx, &release, conditions); err != nil {
+		return release, 500, errors.New("failed updating release")
+	}
+
+	atdata := models.ItemReleaseAt{RefId: release.ID, At: at}
+
+	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return nil, http.StatusInternalServerError, err
+		return release, 500, errors.New("failed creating releaseat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return nil, http.StatusInternalServerError, err
+		return release, 500, errors.New("failed to commit transaction")
 	}
-
-	return existing, http.StatusOK, nil
+	return release, 200, nil
 }
 
 // Delete an item release
-func (s *ItemReleaseService) DeleteItemReleaseService(conditions map[string]interface{}) (bool, int, error) {
+func (s *ItemReleaseService) DeleteItemReleaseService(conditions map[string]interface{}, at models.At) (*models.ItemReleaseModel, int, error) {
+
 	tx := initializers.DB.Begin()
-
 	if tx.Error != nil {
-		return false, 500, errors.New("failed to start DB transaction")
+		return &models.ItemReleaseModel{}, 500, errors.New("failed to start DB transaction")
 	}
 
-	if tx.Error != nil {
-		return false, http.StatusInternalServerError, tx.Error
+	release, status, err := s.GetItemReleaseService(conditions)
+	if err != nil {
+		return release, status, errors.New("calendar release not found")
 	}
 
-	if err := tx.Where(conditions).Delete(&models.ItemReleaseModel{}).Error; err != nil {
+	if err := services.DbDelete(tx, &release, conditions); err != nil {
+		return release, 500, errors.New("failed deleting calendar release")
+	}
+
+	atdata := models.ItemReleaseAt{RefId: release.ID, At: at}
+	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return false, http.StatusInternalServerError, err
+		return release, 500, errors.New("failed creating release audit")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return false, http.StatusInternalServerError, err
+		return release, 500, errors.New("failed to commit transaction")
 	}
 
-	return true, http.StatusOK, nil
+	return release, 200, nil
 }

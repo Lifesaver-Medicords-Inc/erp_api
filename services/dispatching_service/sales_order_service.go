@@ -3,9 +3,11 @@ package dispatching_services
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/services"
 )
 
 type SalesOrderService struct{}
@@ -44,46 +46,87 @@ func (s *SalesOrderService) GetSalesOrderService(conditions map[string]interface
 	return order, http.StatusOK, nil
 }
 
-func (s *SalesOrderService) CreateSalesOrderService(order *models.SalesOrderModel) (*models.SalesOrderModel, int, error) {
+func (s *SalesOrderService) CreateSalesOrderService(order *models.SalesOrderModel, at models.At) (*models.SalesOrderModel, int, error) {
+	tx := initializers.DB.Begin()
+
+	if err := services.DbInsert(tx, &order); err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
+
+			err = errors.New("duplicate record error")
+		} else {
+
+			err = errors.New("failed creating order")
+		}
+		tx.Rollback()
+		return order, 500, err
+	}
+
+	atdata := models.SalesOrderAt{RefId: order.ID, At: at}
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		tx.Rollback()
+		return order, 500, errors.New("failed creating orderat")
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return order, 500, errors.New("failed to commit transaction")
+	}
+
+	return order, 200, nil
+}
+
+func (s *SalesOrderService) UpdateSalesOrderService(order *models.SalesOrderModel, conditions map[string]interface{}, at models.At) (*models.SalesOrderModel, int, error) {
+
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
 		return order, 500, errors.New("failed to start DB transaction")
 	}
 
-	if err := tx.Create(order).Error; err != nil {
-		return nil, http.StatusInternalServerError, err
+	if err := services.DbUpdate(tx, &order, conditions); err != nil {
+		return order, 500, errors.New("failed updating order")
 	}
-	return order, http.StatusCreated, nil
+
+	atdata := models.SalesOrderAt{RefId: order.ID, At: at}
+
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		tx.Rollback()
+		return order, 500, errors.New("failed creating orderat")
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return order, 500, errors.New("failed to commit transaction")
+	}
+
+	return order, 200, nil
 }
 
-func (s *SalesOrderService) UpdateSalesOrderService(order *models.SalesOrderModel, conditions map[string]interface{}) (*models.SalesOrderModel, int, error) {
-	var existing = &models.SalesOrderModel{}
-
+func (s *SalesOrderService) DeleteSalesOrderService(conditions map[string]interface{}, at models.At) (*models.SalesOrderModel, int, error) {
 	tx := initializers.DB.Begin()
-
 	if tx.Error != nil {
-		return order, 500, errors.New("failed to start DB transaction")
+		return &models.SalesOrderModel{}, 500, errors.New("failed to start DB transaction")
 	}
 
-	if err := tx.Where(conditions).First(&existing).Error; err != nil {
-		return nil, http.StatusNotFound, err
-	}
-	if err := tx.Model(&existing).Updates(order).Error; err != nil {
-		return nil, http.StatusInternalServerError, err
-	}
-	return existing, http.StatusOK, nil
-}
-
-func (s *SalesOrderService) DeleteSalesOrderService(conditions map[string]interface{}) (bool, int, error) {
-	tx := initializers.DB.Begin()
-
-	if tx.Error != nil {
-		return false, 500, errors.New("failed to start DB transaction")
+	order, status, err := s.GetSalesOrderService(conditions)
+	if err != nil {
+		return order, status, errors.New("calendar order not found")
 	}
 
-	if err := tx.Where(conditions).Delete(&models.SalesOrderModel{}).Error; err != nil {
-		return false, http.StatusInternalServerError, err
+	if err := services.DbDelete(tx, &order, conditions); err != nil {
+		return order, 500, errors.New("failed deleting calendar order")
 	}
-	return true, http.StatusOK, nil
+
+	atdata := models.SalesOrderAt{RefId: order.ID, At: at}
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		tx.Rollback()
+		return order, 500, errors.New("failed creating order audit")
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return order, 500, errors.New("failed to commit transaction")
+	}
+
+	return order, 200, nil
 }

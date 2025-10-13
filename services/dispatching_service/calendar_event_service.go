@@ -55,18 +55,20 @@ func (s *CalendarEventService) CreateCalendarEventService(event *models.Calendar
 
 	if err := services.DbInsert(tx, &event); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
+
 			err = errors.New("duplicate record error")
 		} else {
-			err = errors.New("failed creating calendar event")
+
+			err = errors.New("failed creating event")
 		}
 		tx.Rollback()
 		return event, 500, err
 	}
 
-	atdata := models.PositionAt{RefId: event.ID, At: at}
+	atdata := models.CalendarEventAt{RefId: event.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return event, 500, errors.New("failed creating event audit")
+		return event, 500, errors.New("failed creating eventat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
@@ -74,7 +76,7 @@ func (s *CalendarEventService) CreateCalendarEventService(event *models.Calendar
 		return event, 500, errors.New("failed to commit transaction")
 	}
 
-	return event, 201, nil
+	return event, 200, nil
 }
 
 func (s *CalendarEventService) UpdateCalendarEventService(event *models.CalendarEventModel, conditions map[string]interface{}, at models.At) (*models.CalendarEventModel, int, error) {
@@ -84,13 +86,14 @@ func (s *CalendarEventService) UpdateCalendarEventService(event *models.Calendar
 	}
 
 	if err := services.DbUpdate(tx, &event, conditions); err != nil {
-		return event, 500, errors.New("failed updating calendar event")
+		return event, 500, errors.New("failed updating event")
 	}
 
-	atdata := models.PositionAt{RefId: event.ID, At: at}
+	atdata := models.CalendarEventAt{RefId: event.ID, At: at}
+
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return event, 500, errors.New("failed creating event audit")
+		return event, 500, errors.New("failed creating eventat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
@@ -116,7 +119,7 @@ func (s *CalendarEventService) DeleteCalendarEventService(conditions map[string]
 		return event, 500, errors.New("failed deleting calendar event")
 	}
 
-	atdata := models.PositionAt{RefId: event.ID, At: at}
+	atdata := models.CalendarEventAt{RefId: event.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
 		return event, 500, errors.New("failed creating event audit")

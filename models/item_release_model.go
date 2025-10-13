@@ -18,7 +18,8 @@ func (ItemReleaseDetailModel) TableName() string {
 }
 
 type ItemReleaseDetailAt struct {
-	ID uint `gorm:"primaryKey"`
+	ID    uint `gorm:"primaryKey"`
+	RefId uint `json:"ref_id"`
 	ItemReleaseDetailContent
 }
 
@@ -46,7 +47,8 @@ func (ItemReleaseModel) TableName() string {
 }
 
 type ItemReleaseAt struct {
-	ID uint `gorm:"primaryKey"`
+	ID    uint `gorm:"primaryKey"`
+	RefId uint `json:"ref_id"`
 	ItemReleaseContent
 	At
 }

@@ -3,12 +3,16 @@ package models
 import "time"
 
 type CalendarEventContent struct {
-	Title       string    `gorm:"size:150" json:"title"`
-	Description string    `gorm:"size:255" json:"description"`
-	StartTime   time.Time `json:"start"`
-	EndTime     time.Time `json:"end"`
-	EventType   string    `gorm:"size:50" json:"event_type"`
-	CreatedByID uint      `json:"created_by_id"`
+	ID             uint      `gorm:"primaryKey" json:"id"`
+	DepartmentType string    `json:"department_type"` // Sales, Engineering, Logistics
+	Title          string    `json:"title"`
+	Description    string    `json:"description"`
+	StartDate      time.Time `json:"start_date"`
+	EndDate        time.Time `json:"end_date"`
+	ReferenceType  string    `json:"reference_type"` // e.g., "SalesOrder", "DeliveryReceipt"
+	ReferenceId    uint      `json:"reference_id"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
 }
 
 type CalendarEventModel struct {

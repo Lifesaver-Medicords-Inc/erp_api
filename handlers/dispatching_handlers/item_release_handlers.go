@@ -68,7 +68,12 @@ func (h *ItemReleaseHandler) CreateItemReleaseHandler(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	data, code, err := h.Service.CreateItemReleaseService(&body)
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.CreateItemReleaseService(&body, at)
 	if err != nil {
 		return utils.RespondError(c, code, err.Error())
 	}
@@ -89,9 +94,15 @@ func (h *ItemReleaseHandler) UpdateItemReleaseHandler(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	conditions := map[string]interface{}{"id": idNum}
+	conditions := map[string]interface{}{
+		"id": idNum,
+	}
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
 
-	data, code, err := h.Service.UpdateItemReleaseService(&body, conditions)
+	data, code, err := h.Service.UpdateItemReleaseService(&body, conditions, at)
 	if err != nil {
 		return utils.RespondError(c, code, err.Error())
 	}
@@ -107,12 +118,19 @@ func (h *ItemReleaseHandler) DeleteItemReleaseHandler(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid ID")
 	}
 
-	conditions := map[string]interface{}{"id": idNum}
+	conditions := map[string]interface{}{
+		"id": idNum,
+	}
 
-	ok, code, err := h.Service.DeleteItemReleaseService(conditions)
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.DeleteItemReleaseService(conditions, at)
 	if err != nil {
 		return utils.RespondError(c, code, err.Error())
 	}
 
-	return utils.RespondSuccess(c, fiber.Map{"deleted": ok})
+	return utils.RespondSuccess(c, data)
 }

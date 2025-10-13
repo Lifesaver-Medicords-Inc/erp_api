@@ -63,7 +63,12 @@ func (h *SalesOrderHandler) CreateSalesOrderHandler(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	data, code, err := h.Service.CreateSalesOrderService(&body)
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.CreateSalesOrderService(&body, at)
 	if err != nil {
 		return utils.RespondError(c, code, err.Error())
 	}
@@ -85,7 +90,12 @@ func (h *SalesOrderHandler) UpdateSalesOrderHandler(c *fiber.Ctx) error {
 
 	conditions := map[string]interface{}{"id": idNum}
 
-	data, code, err := h.Service.UpdateSalesOrderService(&body, conditions)
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.UpdateSalesOrderService(&body, conditions, at)
 	if err != nil {
 		return utils.RespondError(c, code, err.Error())
 	}
@@ -102,10 +112,15 @@ func (h *SalesOrderHandler) DeleteSalesOrderHandler(c *fiber.Ctx) error {
 
 	conditions := map[string]interface{}{"id": idNum}
 
-	ok, code, err := h.Service.DeleteSalesOrderService(conditions)
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.DeleteSalesOrderService(conditions, at)
 	if err != nil {
 		return utils.RespondError(c, code, err.Error())
 	}
 
-	return utils.RespondSuccess(c, fiber.Map{"deleted": ok})
+	return utils.RespondSuccess(c, data)
 }

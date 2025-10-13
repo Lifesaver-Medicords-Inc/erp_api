@@ -58,8 +58,12 @@ func (h *DeliveryReceiptHandler) CreateDeliveryReceiptHandler(c *fiber.Ctx) erro
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
 
-	data, status, err := h.Service.CreateDeliveryReceiptService(&body)
+	data, status, err := h.Service.CreateDeliveryReceiptService(&body, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -78,8 +82,14 @@ func (h *DeliveryReceiptHandler) UpdateDeliveryReceiptHandler(c *fiber.Ctx) erro
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
-
-	data, status, err := h.Service.UpdateDeliveryReceiptService(uint(id), &body)
+	conditions := map[string]interface{}{
+		"id": id,
+	}
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+	data, status, err := h.Service.UpdateDeliveryReceiptService(&body, conditions, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -94,10 +104,19 @@ func (h *DeliveryReceiptHandler) DeleteDeliveryReceiptHandler(c *fiber.Ctx) erro
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid ID")
 	}
 
-	ok, status, err := h.Service.DeleteDeliveryReceiptService(uint(id))
+	conditions := map[string]interface{}{
+		"id": id,
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, status, err := h.Service.DeleteDeliveryReceiptService(conditions, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
-	return utils.RespondSuccess(c, ok)
+	return utils.RespondSuccess(c, data)
 }

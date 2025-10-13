@@ -1,5 +1,7 @@
 package initializers
 
+// import "github.com/pierceperado/smpc/models"
+
 func MigrateDb() {
 	// Auth
 
