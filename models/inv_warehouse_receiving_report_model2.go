@@ -38,7 +38,8 @@ func (ReceivingReportAt2) TableName() string {
 
 type ReceivingReportDetailsContent2 struct {
 	ReceivingReportId  uint   `json:"receiving_report_id"` //parent id
-	PodId              uint   `json:"pod_id"`              //parent id
+	PodId              uint   `json:"pod_id"`
+	ItemID             uint   `json:"item_id"`
 	ItemCode           string `json:"item_code"`
 	ItemDescription    string `json:"item_description"`
 	OrderedQty         string `json:"ordered_qty"`
@@ -77,6 +78,7 @@ func (ReceivingReportDetailsAt2) TableName() string {
 type ReceivingHistoryContent struct {
 	PurchaseOrderID          uint   `json:"purchase_order_id"`
 	PurchaseOrderDetailsID   uint   `json:"purchase_order_details_id"`
+	ItemID                   uint   `json:"item_id"`
 	ItemCode                 string `json:"item_code"`
 	ReceivingReportID        uint   `json:"receiving_report_id"`
 	ReceivingReportDetailsID uint   `json:"receiving_report_details_id"`
