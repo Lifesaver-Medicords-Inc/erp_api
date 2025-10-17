@@ -2,6 +2,7 @@ package models
 
 type ReceivingReportDetailsContent struct {
 	ReceivingReportId  uint   `json:"receiving_report_id"` //parent id
+	ItemID             uint   `json:"item_id"`
 	ItemCode           string `json:"item_code"`
 	ItemDescription    string `json:"item_description"`
 	OrderedQty         string `json:"ordered_qty"`

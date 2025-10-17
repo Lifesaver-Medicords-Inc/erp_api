@@ -23,6 +23,7 @@ func CreateReceivingReportDetails2(tx *gorm.DB, parentId uint, parentDate string
 	content := models.ReceivingReportDetailsContent2{
 		ReceivingReportId:  parentId,
 		PodId:              child.PodId,
+		ItemID:             child.ItemID,
 		ItemCode:           child.ItemCode,
 		ItemDescription:    child.ItemDescription,
 		OrderedQty:         child.OrderedQty,
@@ -41,7 +42,7 @@ func CreateReceivingReportDetails2(tx *gorm.DB, parentId uint, parentDate string
 		ReceivingReportDetailsContent2: content,
 	}
 	if err := services.DbInsert(tx, &receivingReportDetails); err != nil {
-		return errors.New("failed creating warehouse area")
+		return errors.New("failed creating receiving report")
 	}
 
 	ReceivingReportDetailsAt := models.ReceivingReportDetailsAt2{
@@ -50,7 +51,7 @@ func CreateReceivingReportDetails2(tx *gorm.DB, parentId uint, parentDate string
 		At:                             at,
 	}
 	if err := services.DbInsert(tx, &ReceivingReportDetailsAt); err != nil {
-		return errors.New("failed creating warehouse area at")
+		return errors.New("failed creating receiving report")
 	}
 
 	if err := CreateReceivingReportHistory(tx, parentId, parentDate, parentPoId, receivingReportDetails, child.PodId, at); err != nil {

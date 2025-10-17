@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -22,9 +23,12 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		return errors.New("invalid received quantity")
 	}
 
-	rejectedQty, err := strconv.Atoi(detail.RejectedQty)
-	if err != nil {
-		return errors.New("invalid received quantity")
+	rejectedQty := 0
+	if strings.TrimSpace(detail.RejectedQty) != "" {
+		rejectedQty, err = strconv.Atoi(detail.RejectedQty)
+		if err != nil {
+			return errors.New("invalid rejected quantity")
+		}
 	}
 
 	var remaining = orderedQty - receivedQty
@@ -37,16 +41,17 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 
 	history := models.ReceivingHistory{
 		ReceivingHistoryContent: models.ReceivingHistoryContent{
-			PurchaseOrderID:          parentPoId,        // assuming RefId = PO id
-			PurchaseOrderDetailsID:   parentPodId,       // assuming RefId = PO id
-			ReceivingReportID:        receivingReportId, // assuming RefId = PO id
+			PurchaseOrderID:          parentPoId,
+			PurchaseOrderDetailsID:   parentPodId,
+			ReceivingReportID:        receivingReportId,
+			ItemID:                   detail.ItemID,
 			ItemCode:                 detail.ItemCode,
 			ReceivingReportDetailsID: detail.ID,
 			OrderedQty:               strconv.Itoa(remaining),
 			ReceivedQty:              strconv.Itoa(receivedQty),
 			RejectedQty:              strconv.Itoa(rejectedQty),
-			DateReceived:             parentDateReceived, // can use parent DateReceived if needed
-			IsComplete:               &isComplete,        // or your logic
+			DateReceived:             parentDateReceived,
+			IsComplete:               &isComplete,
 		},
 	}
 

@@ -23,6 +23,7 @@ func CreateReceivingReportDetails(tx *gorm.DB, parentId uint, child models.Recei
 	//pwedeng directa na since di nmn nag tthrow ng ID
 	content := models.ReceivingReportDetailsContent{
 		ReceivingReportId:  parentId,
+		ItemID:             child.ItemID,
 		ItemCode:           child.ItemCode,
 		ItemDescription:    child.ItemDescription,
 		OrderedQty:         child.OrderedQty,

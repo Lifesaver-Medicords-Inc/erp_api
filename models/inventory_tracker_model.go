@@ -58,6 +58,7 @@ func (WarehouseNameView) TableName() string {
 type InvLogbookView struct {
 	Id           uint   `json:"id"`
 	PodId        uint   `json:"pod_id"`
+	ItemID       uint   `json:"item_id"`
 	GeneralName  string `json:"general_name"`
 	Brand        string `json:"brand"`
 	ItemDesc     string `json:"item_desc"`
