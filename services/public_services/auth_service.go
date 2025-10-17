@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
 	"github.com/pierceperado/smpc/utils"
@@ -66,7 +67,10 @@ func LoginAccount(c *fiber.Ctx) (models.User, int, error) {
 		"employee_id": body.EmployeeId,
 	}
 
-	if err := services.DbGet(&user, conditions); err != nil {
+	if err := initializers.DB.
+		Preload("Position").
+		Where(conditions).
+		First(&user).Error; err != nil {
 		return user, fiber.StatusUnauthorized, errors.New("invalid user credential")
 	}
 
@@ -81,7 +85,7 @@ func LoginAccount(c *fiber.Ctx) (models.User, int, error) {
 	if err := utils.CreateAuthToken(c, body.At, user.ID); err != nil {
 		return user, fiber.StatusUnauthorized, err
 	}
-	fmt.Println("LOGIN:", user)
+	fmt.Println("LOGIN:", user.Position.Name)
 
 	return user, 0, nil
 }
