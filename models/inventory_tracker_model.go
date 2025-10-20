@@ -29,6 +29,7 @@ func (InvTrackerAt) TableName() string {
 type InvTrackerView struct {
 	Id            uint   `json:"id"`
 	PodId         uint   `json:"pod_id"`
+	ItemId        uint   `json:"item_id"`
 	ItemCode      string `json:"item_code"`
 	GeneralName   string `json:"general_name"`
 	Brand         string `json:"brand"`
