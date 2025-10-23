@@ -282,6 +282,7 @@ func InvalidateItemCaches() {
 		models.InvTrackerView{},
 		models.PurchaseOrderView{},
 		models.InvLogbookView{},
+		models.AllBomView{},
 	}
 	for _, key := range cacheKeys {
 		services.InvalidateCache(services.GetKey(key, nil))
