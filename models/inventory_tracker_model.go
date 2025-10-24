@@ -29,6 +29,7 @@ func (InvTrackerAt) TableName() string {
 type InvTrackerView struct {
 	Id            uint   `json:"id"`
 	PodId         uint   `json:"pod_id"`
+	ItemId        uint   `json:"item_id"`
 	ItemCode      string `json:"item_code"`
 	GeneralName   string `json:"general_name"`
 	Brand         string `json:"brand"`
@@ -56,19 +57,25 @@ func (WarehouseNameView) TableName() string {
 }
 
 type InvLogbookView struct {
-	Id           uint   `json:"id"`
-	PodId        uint   `json:"pod_id"`
-	GeneralName  string `json:"general_name"`
-	Brand        string `json:"brand"`
-	ItemDesc     string `json:"item_desc"`
-	Location     string `json:"location"`
-	QtyIn        uint   `json:"qty_in"`
-	QtyOut       uint   `json:"qty_out"`
-	Uom          string `json:"uom"`
-	Date         string `json:"date"`
-	RrNo         uint   `json:"rr_no"`
-	PoNo         uint   `json:"po_no"`
-	SupplierName string `json:"supplier_name"`
+	Id              uint   `json:"id"`
+	PodId           uint   `json:"pod_id"`
+	ItemID          uint   `json:"item_id"`
+	GeneralName     string `json:"general_name"`
+	Brand           string `json:"brand"`
+	ItemDescription string `json:"item_description"`
+	ItemCategory    string `json:"item_category"`
+	Calibration     string `json:"calibration"`
+	ItemCode        string `json:"item_code"`
+	ItemModel       string `json:"item_model"`
+	Location        string `json:"location"`
+	QtyIn           uint   `json:"qty_in"`
+	QtyOut          uint   `json:"qty_out"`
+	Uom             string `json:"uom"`
+	Date            string `json:"date"`
+	RrNo            string `json:"rr_no"`
+	PoNo            string `json:"po_no"`
+	SupplierName    string `json:"supplier_name"`
+	Remarks         string `json:"remarks"`
 }
 
 func (InvLogbookView) TableName() string {

@@ -16,6 +16,7 @@ type AdditionalSpecsContent struct {
 	VolumeUnitOfMeasureId    uint    `json:"volume_unit_of_measure_id"`
 	Weight                   float64 `json:"weight"`
 	WeightUnitOfMeasureId    uint    `json:"weight_unit_of_measure_id"`
+	Calibration 			string  `json:"calibration"`
 	LongDescription          string  `json:"long_description"`
 }
 
