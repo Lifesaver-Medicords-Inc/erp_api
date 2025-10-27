@@ -167,6 +167,12 @@ func SetupApp() *fiber.App {
 					itemApi.Put("/type", setup_handlers.UpdateType)
 					itemApi.Delete("/type", setup_handlers.DeleteType)
 
+					// Request Endpoints
+					itemApi.Get("/request", setup_handlers.GetItemRequest)
+					itemApi.Post("/request", setup_handlers.CreateItemRequest)
+					itemApi.Put("/request", setup_handlers.UpdateItemRequest)
+					itemApi.Delete("/request", setup_handlers.DeleteItemRequest)
+
 					// Item Endpoints
 					itemApi.Get("", setup_handlers.GetItems)
 					itemApi.Get("/:id", setup_handlers.GetItem)
