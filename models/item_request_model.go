@@ -1,16 +1,17 @@
 package models
 
 type ItemRequestContent struct {
-	ReqDept    string `json:"req_dept"`
-	Purpose    string `json:"purpose"`
-	ReqDate    string `json:"req_date"`
-	ReqdDate   string `json:"reqd_date"`
-	IssueDate  string `json:"issue_date"`
-	RefDoc     string `json:"ref_doc"`
-	ReqBy      string `json:"req_by"`
-	ReceivedBy string `json:"received_by"`
-	ApprovedBy string `json:"approved_by"`
-	IssuedBy   string `json:"issued_by"`
+	ReqDept      string `json:"req_dept"`
+	Purpose      string `json:"purpose"`
+	ReqDate      string `json:"req_date"`
+	RequiredDate string `json:"required_date"`
+	IssueDate    string `json:"issue_date"`
+	RefDoc       string `json:"ref_doc"`
+	ReqBy        string `json:"req_by"`
+	ReceivedBy   string `json:"received_by"`
+	ApprovedBy   string `json:"approved_by"`
+	IssuedBy     string `json:"issued_by"`
+	IsForward    *bool  `json:"is_forward"`
 }
 type ItemRequest struct {
 	ID    uint   `gorm:"primarykey" json:"id"`

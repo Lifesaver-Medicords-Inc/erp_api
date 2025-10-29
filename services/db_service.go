@@ -211,6 +211,26 @@ func DbUpdate(tx *gorm.DB, model interface{}, conditions map[string]interface{})
 	return nil
 }
 
+func DbUpdatePointer(tx *gorm.DB, model interface{}, conditions map[string]interface{}) error {
+	query := tx.Model(model)
+
+	if len(conditions) > 0 {
+		query = query.Where(conditions)
+	}
+
+	if err := query.Select("*").Updates(model).Error; err != nil {
+		return err
+	}
+
+	key := GetKey(model, nil)
+	if err := InvalidateCache(key); err != nil {
+		return err
+	}
+	fmt.Println("Update KEY:", key)
+
+	return nil
+}
+
 func DbDelete(tx *gorm.DB, model interface{}, conditions map[string]interface{}) error {
 	//query := initializers.DB.Model(model)
 	query := tx.Model(model)
