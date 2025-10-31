@@ -169,6 +169,8 @@ func SetupApp() *fiber.App {
 
 					// Request Endpoints
 					itemApi.Get("/request", setup_handlers.GetItemRequest)
+					itemApi.Get("/all_item", setup_handlers.GetAllItemList)
+					itemApi.Get("/all_binloc", setup_handlers.GetAllBinLocation)
 					itemApi.Post("/request", setup_handlers.CreateItemRequest)
 					itemApi.Put("/request", setup_handlers.UpdateItemRequest)
 					itemApi.Delete("/request", setup_handlers.DeleteItemRequest)

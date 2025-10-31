@@ -16,6 +16,24 @@ func GetItemRequest(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
+func GetAllItemList(c *fiber.Ctx) error {
+	data, status, err := setup_services.GetAllItemList(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+func GetAllBinLocation(c *fiber.Ctx) error {
+	data, status, err := setup_services.GetAllBinLocation(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
 func CreateItemRequest(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
