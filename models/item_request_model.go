@@ -66,3 +66,32 @@ type ItemRequestDetailsAt struct {
 func (ItemRequestDetailsAt) TableName() string {
 	return "z_tbl_item_request_details_at"
 }
+
+type ItemRequestLocationContent struct {
+	IrId        uint   `json:"ir_id"`
+	IrDetailsId uint   `json:"ir_details_id"`
+	IssuedQty   uint   `json:"issued_qty"`
+	IssuedUom   string `json:"issued_uom"`
+	Location    string `json:"location"`
+	WarehouseId uint   `json:"warehouse_id"`
+}
+
+type ItemRequestLocation struct {
+	ID uint `gorm:"primarykey" json:"id"`
+	ItemRequestLocationContent
+}
+
+func (ItemRequestLocation) TableName() string {
+	return "tbl_item_request_location"
+}
+
+type ItemRequestLocationAt struct {
+	ID    uint `gorm:"primarykey" json:"id"`
+	RefId uint `json:"ref_id"`
+	ItemRequestLocationContent
+	At
+}
+
+func (ItemRequestLocationAt) TableName() string {
+	return "z_tbl_item_request_location_at"
+}
