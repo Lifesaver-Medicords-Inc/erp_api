@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
+	"github.com/pierceperado/smpc/utils"
 	"gorm.io/gorm"
 )
 
@@ -63,6 +64,17 @@ func GetAllBinLocation(conditions map[string]interface{}) (interface{}, int, err
 	return response, 0, nil
 }
 
+func GetSalesOrderIR(conditions map[string]interface{}) (interface{}, int, error) {
+
+	var response []models.SalesOrderView
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting all sales order")
+	}
+
+	return response, 0, nil
+}
+
 func CreateItemRequest(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 	var body ItemRequestBody
 
@@ -70,6 +82,9 @@ func CreateItemRequest(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
+
+	generatedDocNo := utils.DocNoGenerator(body.ItemRequest.ID)
+	body.ItemRequest.DocNo = generatedDocNo
 
 	//Insert main Item Request record
 	if err := services.DbInsert(tx, &body.ItemRequest); err != nil {
