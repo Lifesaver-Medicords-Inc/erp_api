@@ -31,6 +31,9 @@ func MigrateDb() {
 	//DB.AutoMigrate(&models.ItemImage{}, &models.ItemImageAt{})
 	// DB.AutoMigrate(&models.TradeType{}, models.TradeTypeAt{})
 	// DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
+	//DB.AutoMigrate(&models.ItemRequest{}, &models.ItemRequestAt{})
+	//DB.AutoMigrate(&models.ItemRequestDetails{}, &models.ItemRequestDetailsAt{})
+	//DB.AutoMigrate(&models.ItemRequestLocation{}, &models.ItemRequestLocationAt{})
 
 	//warehouse
 	// DB.AutoMigrate(&models.WarehouseUseType{}, &models.WarehouseUseTypeAt{})
