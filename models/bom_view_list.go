@@ -7,7 +7,7 @@ type BomViewList struct {
 	ProductionType string  `json:"production_type"`
 	ManDays        uint    `json:"man_days"`
 	LaborRate      float32 `json:"labor_rate"`
-
+	ShortDesc      string  `json:"short_desc"`
 	ItemModel      string  `json:"item_model"`
 	ItemCode       string  `json:"item_code"`
 	GeneralName    string  `json:"general_name"`
