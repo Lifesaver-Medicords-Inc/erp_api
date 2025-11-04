@@ -1,7 +1,5 @@
 package initializers
 
-import "github.com/pierceperado/smpc/models"
-
 // import (
 // 	"github.com/pierceperado/smpc/models"
 // )
