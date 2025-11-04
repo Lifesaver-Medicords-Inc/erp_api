@@ -2,7 +2,6 @@ package dispatching_services
 
 import (
 	"errors"
-	"net/http"
 	"strings"
 
 	"github.com/pierceperado/smpc/initializers"
@@ -29,9 +28,9 @@ func (s *ItemReleaseService) GetItemReleasesService(conditions map[string]interf
 	query := tx.Preload("ReleaseItems").Where(conditions).Find(&releases)
 
 	if query.Error != nil {
-		return nil, http.StatusInternalServerError, tx.Error
+		return nil, 500, tx.Error
 	}
-	return releases, http.StatusOK, nil
+	return releases, 200, nil
 }
 
 // Get a single item release
@@ -47,9 +46,9 @@ func (s *ItemReleaseService) GetItemReleaseService(conditions map[string]interfa
 	query := tx.Preload("ReleaseItems").Where(conditions).First(&release)
 
 	if query.Error != nil {
-		return nil, http.StatusNotFound, tx.Error
+		return nil, 404, tx.Error
 	}
-	return release, http.StatusOK, nil
+	return release, 200, nil
 }
 
 // Create a new item release
@@ -97,7 +96,7 @@ func (s *ItemReleaseService) UpdateItemReleaseService(release *models.ItemReleas
 	}
 
 	if err := tx.First(&release, conditions).Error; err != nil {
-		return nil, http.StatusNotFound, err
+		return nil, 404, err
 	}
 
 	if err := services.DbUpdate(tx, &release, conditions); err != nil {

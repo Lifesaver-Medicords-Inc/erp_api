@@ -1,21 +1,27 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type DeliveryReceiptContent struct {
-	ID             uint                       `gorm:"primaryKey"`
-	DeliveryNumber string                     `gorm:"size:50;unique;not null"`
-	SalesOrderID   uint                       `json:"sales_order_id"`
-	ReleasedByID   uint                       `json:"released_by_id"`
-	DeliveredByID  uint                       `json:"deliverd_by_id"`
-	ReceiptNumber  string                     `json:"receipt_number"`
-	RecipientName  string                     `gorm:"size:150" json:"recipient_name"`
-	DeliveryDate   time.Time                  `json:"delivery_date"`
-	DeliveryCost   float64                    `json:"delivery_cost"`
-	Remarks        string                     `gorm:"size:255" json:"remarks"`
-	Items          []DeliveryReceiptItemModel `gorm:"foreignKey:DeliveryReceiptID; constraint:OnDelete:CASCADE" json:"items"`
-	TripCost       TripCostModel              `gorm:"foreignKey:DeliveryReceiptID; references:ID; constraint:OnDelete:CASCADE" json:"trip_cost"`
-	//	Attachments    []Attachment
+	DeliveryReceiptNumber string         `gorm:"uniqueIndex;size:50;not null" json:"delivery_receipt_number"`
+	DeliveryReference     string         `gorm:"size:50" json:"delivery_reference,omitempty"`
+	SalesOrderID          uint           `gorm:"not null;index" json:"sales_order_id"`
+	DeliveryDate          time.Time      `gorm:"not null" json:"delivery_date"`
+	DriverName            string         `gorm:"size:100" json:"driver_name,omitempty"`
+	PlateNumber           string         `gorm:"size:50" json:"plate_number,omitempty"`
+	Status                string         `gorm:"size:50;default:'In Transit'" json:"status"`
+	Remarks               string         `gorm:"size:255" json:"remarks,omitempty"`
+	CreatedAt             time.Time      `json:"created_at"`
+	UpdatedAt             time.Time      `json:"updated_at"`
+	DeletedAt             gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+
+	SalesOrder   *SalesOrderModel   `gorm:"foreignKey:SalesOrderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"sales_order,omitempty"`
+	ItemReleases []ItemReleaseModel `gorm:"foreignKey:DeliveryReceiptID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"item_releases,omitempty"`
+	TripCost     *TripCostModel     `gorm:"foreignKey:DeliveryReceiptID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"trip_cost,omitempty"`
 }
 
 type DeliveryReceiptModel struct {
@@ -38,42 +44,21 @@ func (DeliveryReceiptAt) TableName() string {
 	return "z_tbl_delivery_receipt"
 }
 
-type DeliveryReceiptItemContent struct {
-	ID                uint `gorm:"primaryKey"`
-	DeliveryReceiptID uint `json:"delivery_receipt_id"`
-	SalesOrderItemID  uint `json:"delivery_item_id"`
-	QuantityDelivered int  `json:"quantity_delivered"`
-}
-
-type DeliveryReceiptItemModel struct {
-	ID uint `gorm:"primaryKey"`
-	DeliveryReceiptItemContent
-}
-
-func (DeliveryReceiptItemModel) TableName() string {
-	return "tbl_delivery_receipt_item"
-}
-
-type DeliveryReceiptItemAt struct {
-	ID    uint `gorm:"primaryKey" json:"id"`
-	RefId uint `json:"ref_id"`
-	DeliveryReceiptItemContent
-	At
-}
-
-func (DeliveryReceiptItemAt) TableName() string {
-	return "z_tbl_delivery_receipt_item"
-}
-
 type TripCostContent struct {
-	ID                uint    `gorm:"primaryKey"`
-	DeliveryReceiptID uint    `json:"delivery_receipt_id"`
-	Vehicle           string  `gorm:"size:100" json:"vehicle"`
-	DriverName        string  `gorm:"size:150" json:"driver_name"`
-	FuelCost          float64 `json:"fuel_cost"`
-	TollFee           float64 `json:"total_fee"`
-	OtherExpenses     float64 `json:"other_expenses"`
-	TotalCost         float64 `json:"total_cost"`
+	DeliveryReceiptID uint                  `gorm:"not null;uniqueIndex" json:"delivery_receipt_id"`
+	FuelCost          float64               `gorm:"default:0" json:"fuel_cost"`
+	TollFee           float64               `gorm:"default:0" json:"toll_fee"`
+	MealAllowance     float64               `gorm:"default:0" json:"meal_allowance"`
+	Miscellaneous     float64               `gorm:"default:0" json:"miscellaneous"`
+	TotalCost         float64               `gorm:"default:0" json:"total_cost"`
+	Remarks           string                `gorm:"size:255" json:"remarks,omitempty"`
+	CreatedAt         time.Time             `json:"created_at"`
+	UpdatedAt         time.Time             `json:"updated_at"`
+	DeletedAt         gorm.DeletedAt        `gorm:"index" json:"deleted_at,omitempty"`
+	DeliveryReceipt   *DeliveryReceiptModel `gorm:"foreignKey:DeliveryReceiptID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"delivery_receipt,omitempty"`
+	VehiclePlateNo    string                `gorm:"size:100" json:"vehicle_plate_no"`
+	DriverName        string                `gorm:"size:150" json:"driver_name"`
+	OtherExpenses     float64               `json:"other_expenses"`
 }
 
 type TripCostModel struct {

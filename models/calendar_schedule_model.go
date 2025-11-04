@@ -2,8 +2,7 @@ package models
 
 import "time"
 
-type CalendarEventContent struct {
-	ID             uint      `gorm:"primaryKey" json:"id"`
+type CalendarScheduleContent struct {
 	DepartmentType string    `json:"department_type"` // Sales, Engineering, Logistics
 	Title          string    `json:"title"`
 	Description    string    `json:"description"`
@@ -15,24 +14,24 @@ type CalendarEventContent struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
-type CalendarEventModel struct {
+type CalendarScheduleModel struct {
 	ID             uint  `gorm:"primaryKey" json:"id"`
 	DepartmentID   uint  `json:"department_id"`
 	RelatedOrderID *uint `json:"related_order_id"`
-	CalendarEventContent
+	CalendarScheduleContent
 }
 
-func (CalendarEventModel) TableName() string {
-	return "tbl_calendar_event"
+func (CalendarScheduleModel) TableName() string {
+	return "tbl_calendar_schedule"
 }
 
-type CalendarEventAt struct {
+type CalendarScheduleAt struct {
 	ID    uint `gorm:"primaryKey" json:"id"`
 	RefId uint `json:"ref_id"`
-	CalendarEventContent
+	CalendarScheduleContent
 	At
 }
 
-func (CalendarEventAt) TableName() string {
-	return "z_tbl_calendar_event_at"
+func (CalendarScheduleAt) TableName() string {
+	return "z_tbl_calendar_schedule_at"
 }

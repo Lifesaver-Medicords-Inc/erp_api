@@ -4,6 +4,7 @@ type ItemContent struct {
 	ItemNameId          uint    `json:"item_name_id"`
 	ItemClassId         uint    `json:"item_class_id"`
 	ItemBrandId         uint    `json:"item_brand_id"`
+	ItemDescription     float64 `json:"item_description"`
 	UnitOfMeasureId     uint    `json:"unit_of_measure_id"`
 	ItemModel           string  `json:"item_model"`
 	CatalogueYear       string  `json:"catalogue_year"`
@@ -25,7 +26,6 @@ func (Item) TableName() string {
 type ItemAt struct {
 	ID    uint `gorm:"primarykey" json:"id"`
 	RefId uint `json:"ref_id"`
-
 	ItemContent
 	At
 }

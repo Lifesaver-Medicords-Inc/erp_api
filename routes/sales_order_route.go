@@ -7,7 +7,7 @@ import (
 )
 
 func SalesOrderRoutes(app *fiber.App) {
-	api := app.Group("/sales-order")
+	api := app.Group("/api/sales-orders")
 
 	salesOrderService := dispatching_services.NewSalesOrderService()
 	salesOrderHandler := dispatching_handlers.NewSalesOrderHandler(salesOrderService)

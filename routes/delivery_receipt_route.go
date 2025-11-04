@@ -7,9 +7,9 @@ import (
 )
 
 func DeliveryReceiptRoutes(app *fiber.App) {
-	api := app.Group("/delivery-receipt")
+	api := app.Group("/api/delivery-receipts")
 
-	calendarService := dispatching_services.NewCalendarEventService()
+	calendarService := dispatching_services.NewCalendarScheduleService()
 	deliveryReceiptService := dispatching_services.NewDeliveryReceiptService(calendarService)
 	deliveryReceiptHandler := dispatching_handlers.NewDeliveryReceiptHandler(deliveryReceiptService)
 	api.Get("/", deliveryReceiptHandler.GetDeliveryReceiptsHandler)

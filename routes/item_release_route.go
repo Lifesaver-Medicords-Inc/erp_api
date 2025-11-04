@@ -7,7 +7,7 @@ import (
 )
 
 func ItemReleaseRoutes(app *fiber.App) {
-	api := app.Group("/item-releases")
+	api := app.Group("/api/item-releases")
 
 	itemReleasService := dispatching_services.NewItemReleaseService()
 	itemReleaseHandler := dispatching_handlers.NewItemReleaseHandler(itemReleasService)

@@ -2,7 +2,6 @@ package dispatching_services
 
 import (
 	"errors"
-	"net/http"
 	"strings"
 	"time"
 
@@ -13,12 +12,12 @@ import (
 )
 
 type DeliveryReceiptService struct {
-	CalendarEventService *CalendarEventService
+	CalendarScheduleService *CalendarScheduleService
 }
 
-func NewDeliveryReceiptService(calendarEventService *CalendarEventService) *DeliveryReceiptService {
+func NewDeliveryReceiptService(calendarScheduleService *CalendarScheduleService) *DeliveryReceiptService {
 	return &DeliveryReceiptService{
-		CalendarEventService: calendarEventService,
+		CalendarScheduleService: calendarScheduleService,
 	}
 }
 
@@ -38,9 +37,9 @@ func (s *DeliveryReceiptService) GetDeliveryReceiptsService(filters map[string]i
 	}
 
 	if err := query.Find(receipts).Error; err != nil {
-		return nil, http.StatusInternalServerError, err
+		return nil, 500, err
 	}
-	return receipts, http.StatusOK, nil
+	return receipts, 200, nil
 }
 
 func (s *DeliveryReceiptService) GetDeliveryReceiptService(filters map[string]interface{}) (*models.DeliveryReceiptModel, int, error) {
@@ -61,12 +60,12 @@ func (s *DeliveryReceiptService) GetDeliveryReceiptService(filters map[string]in
 
 	if err := query.First(receipt).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, http.StatusNotFound, err
+			return nil, 404, err
 		}
-		return nil, http.StatusInternalServerError, err
+		return nil, 500, err
 	}
 
-	return receipt, http.StatusOK, nil
+	return receipt, 200, nil
 }
 
 func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *models.DeliveryReceiptModel, at models.At) (*models.DeliveryReceiptModel, int, error) {
@@ -89,20 +88,20 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *models.Deliv
 		return data, 500, err
 	}
 
-	atdata := models.CalendarEventAt{RefId: data.ID, At: at}
+	atdata := models.CalendarScheduleAt{RefId: data.ID, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
 		return data, 500, errors.New("failed creating receiptat")
 	}
 
-	// ✅ Create logistics calendar event
-	event := models.CalendarEventModel{
+	// ✅ Create logistics calendar schedule
+	schedule := models.CalendarScheduleModel{
 		RelatedOrderID: &data.SalesOrderID,
-		CalendarEventContent: models.CalendarEventContent{
+		CalendarScheduleContent: models.CalendarScheduleContent{
 			DepartmentType: "Logistics",
-			Title:          "Delivery - Sales Order #" + data.ReceiptNumber,
-			Description:    "Delivery scheduled for " + data.RecipientName,
+			Title:          "",
+			Description:    "",
 			StartDate:      data.DeliveryDate,
 			EndDate:        data.DeliveryDate.Add(2 * time.Hour),
 			ReferenceType:  "DeliveryReceipt",
@@ -110,9 +109,9 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *models.Deliv
 		},
 	}
 
-	if _, _, err := s.CalendarEventService.CreateCalendarEventService(&event, at); err != nil {
+	if _, _, err := s.CalendarScheduleService.CreateCalendarScheduleService(&schedule, at); err != nil {
 		tx.Rollback()
-		return data, 500, errors.New("failed creating calendar event")
+		return data, 500, errors.New("failed creating calendar schedule")
 	}
 
 	if err := tx.Commit().Error; err != nil {
@@ -133,7 +132,7 @@ func (s *DeliveryReceiptService) UpdateDeliveryReceiptService(update *models.Del
 	}
 
 	if err := tx.First(&receipt, conditions).Error; err != nil {
-		return nil, http.StatusNotFound, err
+		return nil, 404, err
 	}
 
 	if err := services.DbUpdate(tx, &receipt, conditions); err != nil {

@@ -2,7 +2,6 @@ package dispatching_services
 
 import (
 	"errors"
-	"net/http"
 	"strings"
 
 	"github.com/pierceperado/smpc/initializers"
@@ -24,11 +23,25 @@ func (s *SalesOrderService) GetSalesOrdersService(conditions map[string]interfac
 		return orders, 500, errors.New("failed to start DB transaction")
 	}
 
-	query := tx.Preload("DeliveryItems").Where(conditions).Find(&orders)
+	query := tx.Preload("Items").Omit("SalesOrder").
+		Preload("Items.Item").
+		Preload("Items.Releases").Omit("SalesOrder").Omit("Item").
+		Preload("Items.Releases.Vehicle").
+		Preload("DeliveryReceipt").
+		Where(conditions).Find(&orders)
 	if query.Error != nil {
-		return nil, http.StatusInternalServerError, tx.Error
+		return nil, 404, tx.Error
 	}
-	return orders, http.StatusOK, nil
+
+	for i := range orders {
+		for j := range orders[i].Items {
+			for k := range orders[i].Items[j].Releases {
+				orders[i].Items[j].Releases[k].SalesOrderItem = nil
+			}
+		}
+	}
+
+	return orders, 200, nil
 }
 
 func (s *SalesOrderService) GetSalesOrderService(conditions map[string]interface{}) (*models.SalesOrderModel, int, error) {
@@ -39,11 +52,24 @@ func (s *SalesOrderService) GetSalesOrderService(conditions map[string]interface
 		return order, 500, errors.New("failed to start DB transaction")
 	}
 
-	query := tx.Preload("DeliveryItems").Where(conditions).First(&order)
+	query := tx.Preload("Items").Omit("SalesOrder").
+		Preload("Items.Item").
+		Preload("Items.Releases").Omit("SalesOrder").Omit("Item").
+		Preload("Items.Releases.Vehicle").
+		Preload("DeliveryReceipt").
+		Where(conditions).First(&order)
+
 	if query.Error != nil {
-		return nil, http.StatusNotFound, tx.Error
+		return nil, 404, tx.Error
 	}
-	return order, http.StatusOK, nil
+
+	for i := range order.Items {
+		for k := range order.Items[i].Releases {
+			order.Items[i].Releases[k].SalesOrderItem = nil
+		}
+	}
+
+	return order, 200, nil
 }
 
 func (s *SalesOrderService) CreateSalesOrderService(order *models.SalesOrderModel, at models.At) (*models.SalesOrderModel, int, error) {

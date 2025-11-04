@@ -9,18 +9,18 @@ import (
 	"github.com/pierceperado/smpc/utils"
 )
 
-type CalendarEventHandler struct {
-	CalendarEventService *dispatching_services.CalendarEventService
+type CalendarScheduleHandler struct {
+	CalendarScheduleService *dispatching_services.CalendarScheduleService
 }
 
-func NewCalendarEventHandler(service *dispatching_services.CalendarEventService) *CalendarEventHandler {
-	return &CalendarEventHandler{
-		CalendarEventService: service,
+func NewCalendarScheduleHandler(service *dispatching_services.CalendarScheduleService) *CalendarScheduleHandler {
+	return &CalendarScheduleHandler{
+		CalendarScheduleService: service,
 	}
 }
 
-// ✅ GET /calendar-events
-func (h *CalendarEventHandler) GetCalendarEventsHandler(c *fiber.Ctx) error {
+// ✅ GET /calendar-schedules
+func (h *CalendarScheduleHandler) GetCalendarSchedulesHandler(c *fiber.Ctx) error {
 	id := c.Query("id")
 	department := c.Query("department")
 	isCancelled := c.Query("is_cancelled")
@@ -46,15 +46,15 @@ func (h *CalendarEventHandler) GetCalendarEventsHandler(c *fiber.Ctx) error {
 		}
 	}
 
-	events, status, err := h.CalendarEventService.GetCalendarEventsService(conditions)
+	schedules, status, err := h.CalendarScheduleService.GetCalendarSchedulesService(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
-	return utils.RespondSuccess(c, events)
+	return utils.RespondSuccess(c, schedules)
 }
 
-// ✅ GET /calendar-events/:id
-func (h *CalendarEventHandler) GetCalendarEventHandler(c *fiber.Ctx) error {
+// ✅ GET /calendar-schedules/:id
+func (h *CalendarScheduleHandler) GetCalendarScheduleHandler(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -65,17 +65,17 @@ func (h *CalendarEventHandler) GetCalendarEventHandler(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	event, status, err := h.CalendarEventService.GetCalendarEventService(conditions)
+	schedule, status, err := h.CalendarScheduleService.GetCalendarScheduleService(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
-	return utils.RespondSuccess(c, event)
+	return utils.RespondSuccess(c, schedule)
 }
 
-// ✅ POST /calendar-events
-func (h *CalendarEventHandler) CreateCalendarEventHandler(c *fiber.Ctx) error {
-	var body models.CalendarEventModel
+// ✅ POST /calendar-schedules
+func (h *CalendarScheduleHandler) CreateCalendarScheduleHandler(c *fiber.Ctx) error {
+	var body models.CalendarScheduleModel
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
@@ -85,7 +85,7 @@ func (h *CalendarEventHandler) CreateCalendarEventHandler(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := h.CalendarEventService.CreateCalendarEventService(&body, at)
+	data, status, err := h.CalendarScheduleService.CreateCalendarScheduleService(&body, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -93,15 +93,15 @@ func (h *CalendarEventHandler) CreateCalendarEventHandler(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-// ✅ PUT /calendar-events/:id
-func (h *CalendarEventHandler) UpdateCalendarEventHandler(c *fiber.Ctx) error {
+// ✅ PUT /calendar-schedules/:id
+func (h *CalendarScheduleHandler) UpdateCalendarScheduleHandler(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid ID parameter")
 	}
 
-	var body models.CalendarEventModel
+	var body models.CalendarScheduleModel
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
@@ -115,7 +115,7 @@ func (h *CalendarEventHandler) UpdateCalendarEventHandler(c *fiber.Ctx) error {
 		"id": idNum,
 	}
 
-	data, status, err := h.CalendarEventService.UpdateCalendarEventService(&body, conditions, at)
+	data, status, err := h.CalendarScheduleService.UpdateCalendarScheduleService(&body, conditions, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -123,8 +123,8 @@ func (h *CalendarEventHandler) UpdateCalendarEventHandler(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-// ✅ DELETE /calendar-events/:id
-func (h *CalendarEventHandler) DeleteCalendarEventHandler(c *fiber.Ctx) error {
+// ✅ DELETE /calendar-schedules/:id
+func (h *CalendarScheduleHandler) DeleteCalendarScheduleHandler(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -140,7 +140,7 @@ func (h *CalendarEventHandler) DeleteCalendarEventHandler(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := h.CalendarEventService.DeleteCalendarEventService(conditions, at)
+	data, status, err := h.CalendarScheduleService.DeleteCalendarScheduleService(conditions, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
