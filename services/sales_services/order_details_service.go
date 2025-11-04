@@ -47,7 +47,7 @@ func CreateOrderDetail(tx *gorm.DB, parentId uint, OrderDetails models.OrderDeta
 	}
 
 	orderdetailsat := models.OrderDetailsAt{
-		RefId:               OrderDetails.Order_Details_ID,
+		RefId:               OrderDetails.OrderDetailsID,
 		OrderDetailsContent: OrderDetails.OrderDetailsContent,
 		At:                  at,
 	}
@@ -71,7 +71,7 @@ func UpdateOrderDetail(tx *gorm.DB, orderdetails models.OrderDetails, at models.
 	}
 
 	orderdetailsat := models.OrderDetailsAt{
-		RefId:               orderdetails.Order_Details_ID,
+		RefId:               orderdetails.OrderDetailsID,
 		OrderDetailsContent: orderdetails.OrderDetailsContent,
 		At:                  at,
 	}
@@ -87,7 +87,7 @@ func UpdateSalesOrderDetails(tx *gorm.DB, orderdetails models.OrderDetails, at m
 	// If no conditions passed, fallback to primary key condition
 	if len(conditions) == 0 {
 		conditions = map[string]interface{}{
-			"order_details_id": orderdetails.Order_Details_ID,
+			"order_details_id": orderdetails.OrderDetailsID,
 		}
 	}
 
@@ -148,11 +148,11 @@ func UpdateSalesOrderDetails(tx *gorm.DB, orderdetails models.OrderDetails, at m
 	if err := services.DbUpdate(tx, &orderdetails, conditions); err != nil {
 		return errors.New("failed updating requisition details")
 	}
-	if err := tx.Exec("EXEC sp_SetOrderStatus ?, ?", orderdetails.Order_Details_ID, orderType).Error; err != nil {
+	if err := tx.Exec("EXEC sp_SetOrderStatus ?, ?", orderdetails.OrderDetailsID, orderType).Error; err != nil {
 		return errors.New("failed executing stored procedure")
 	}
 	orderdetailsat := models.OrderDetailsAt{
-		RefId:               orderdetails.Order_Details_ID,
+		RefId:               orderdetails.OrderDetailsID,
 		OrderDetailsContent: orderdetails.OrderDetailsContent,
 		At:                  at,
 	}
@@ -170,7 +170,7 @@ func DeleteOrderDetail(tx *gorm.DB, orderdetails models.OrderDetails, at models.
 	}
 
 	orderdetailsat := models.OrderDetailsAt{
-		RefId:               orderdetails.Order_Details_ID,
+		RefId:               orderdetails.OrderDetailsID,
 		OrderDetailsContent: orderdetails.OrderDetailsContent,
 		At:                  at,
 	}

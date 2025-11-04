@@ -33,5 +33,4 @@ func SetupRoutes(app *fiber.App) {
 	CalendarScheduleRoutes(app)
 	DeliveryReceiptRoutes(app)
 	ItemReleaseRoutes(app)
-	SalesOrderRoutes(app)
 }

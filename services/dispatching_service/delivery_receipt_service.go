@@ -97,7 +97,7 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *models.Deliv
 
 	// ✅ Create logistics calendar schedule
 	schedule := models.CalendarScheduleModel{
-		RelatedOrderID: &data.SalesOrderID,
+		RelatedOrderID: &data.OrderID,
 		CalendarScheduleContent: models.CalendarScheduleContent{
 			DepartmentType: "Logistics",
 			Title:          "",

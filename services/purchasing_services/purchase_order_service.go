@@ -73,7 +73,7 @@ func CreatePurchaseOrder(c *fiber.Ctx, tx *gorm.DB) (PurchaseOrderBody, int, err
 	if body.OrderType == "SO" {
 		for _, detail := range body.SalesOrderDetails {
 			conditions := map[string]interface{}{
-				"order_details_id": detail.Order_Details_ID,
+				"order_details_id": detail.OrderDetailsID,
 			}
 			fmt.Println("PAPASOK SA UPDATE SOWD")
 			if err := sales_services.UpdateSalesOrderDetails(tx, detail, at, conditions, body.OrderType, body.Status, "create"); err != nil {
@@ -138,7 +138,7 @@ func UpdatePurchaseOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 		fmt.Println("ORDER TYPE: SO UPDATEEEEEEEEEEEEEEEEEEEEEEE")
 		for _, detail := range body.SalesOrderDetails {
 			conditions := map[string]interface{}{
-				"order_details_id": detail.Order_Details_ID,
+				"order_details_id": detail.OrderDetailsID,
 			}
 			fmt.Println("ORDER TYPE: SO UPDATE2222222222222222222")
 			if err := sales_services.UpdateSalesOrderDetails(tx, detail, at, conditions, body.OrderType, body.Status, "update"); err != nil {
