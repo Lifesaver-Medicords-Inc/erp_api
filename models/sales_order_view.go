@@ -1,6 +1,7 @@
 package models
 
 type SalesOrderView struct {
+	ItemId          uint   `json:"item_id"`
 	RefDoc          string `json:"ref_doc"`
 	ItemDescription string `json:"item_description"`
 	ReqUom          string `json:"req_uom"`

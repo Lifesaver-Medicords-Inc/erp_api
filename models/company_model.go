@@ -1,24 +1,28 @@
 package models
 
 type CompanyContent struct {
-	CompanyCode       string  `json:"company_code"`
-	CompanyName       string  `json:"company_name"`
-	LegalName         string  `json:"legal_name"`
-	TradeName         string  `json:"trade_name"`
-	BusinessType      string  `json:"business_type"`
-	SecRegistrationNo string  `json:"sec_registration_no"`
-	DtiRegistrationNo string  `json:"dti_registration_no"`
-	Tin               string  `json:"tin"`
-	BirBranchCode     string  `json:"bir_branch_code"`
-	RdoCode           string  `json:"rdo_code"`
-	Industry          string  `json:"industry"`
-	Status            string  `json:status`
-	IsHeadOffice      *bool   `json:"is_head_office"`
-	BegBal            float64 `json:"beg_bal"`
-	MonthlyRate       float64 `json:"monthly_rate"`
-	CurrencyCode      string  `json:"currency_code"`
-	StartFiscalDate   string  `json:"start_fiscal_date"`
-	EndFiscalDate     string  `json:"end_fiscal_date"`
+	CompanyCode              string  `json:"company_code"`
+	CompanyName              string  `json:"company_name"`
+	LegalName                string  `json:"legal_name"`
+	TradeName                string  `json:"trade_name"`
+	BusinessType             string  `json:"business_type"`
+	SecRegistrationNo        string  `json:"sec_registration_no"`
+	DtiRegistrationNo        string  `json:"dti_registration_no"`
+	Tin                      string  `json:"tin"`
+	BirBranchCode            string  `json:"bir_branch_code"`
+	RdoCode                  string  `json:"rdo_code"`
+	Industry                 string  `json:"industry"`
+	Status                   string  `json:status`
+	IsHeadOffice             *bool   `json:"is_head_office"`
+	BegBal                   float64 `json:"beg_bal"`
+	MonthlyRate              float64 `json:"monthly_rate"`
+	CurrencyCode             string  `json:"currency_code"`
+	MarkUpMultiplierPrice    float64 `json:"markup_multiplier_price"`
+	StartFiscalDate          string  `json:"start_fiscal_date"`
+	EndFiscalDate            string  `json:"end_fiscal_date"`
+	InclusionsQuotationTerms string  `json:"inclusions_quotation_terms"`
+	ExclusionsQuotationTerms string  `json:"exclusions_quotation_terms"`
+	TermAndConditions        string  `json:"term_and_conditions"`
 }
 
 type CompanyModel struct {
