@@ -20,7 +20,7 @@ type ItemRequest struct {
 }
 
 func (ItemRequest) TableName() string {
-	return "tbl_item_request"
+	return "tbl_trans_item_request"
 }
 
 type ItemRequestAt struct {
@@ -31,12 +31,15 @@ type ItemRequestAt struct {
 }
 
 func (ItemRequestAt) TableName() string {
-	return "z_tbl_item_request_at"
+	return "z_tbl_trans_item_request_at"
 }
 
 type ItemRequestDetailsContent struct {
 	ItemId          uint   `json:"item_id"`
 	ItemDescription string `json:"item_description"`
+	SOId            uint   `json:"so_id"`
+	SODId           uint   `json:"sod_id"`
+	OrderQty        uint   `json:"order_qty"`
 	ReqQty          uint   `json:"req_qty"`
 	ReqUom          string `json:"req_uom"`
 	IssuedQty       uint   `json:"issued_qty"`
@@ -53,7 +56,7 @@ type ItemRequestDetails struct {
 }
 
 func (ItemRequestDetails) TableName() string {
-	return "tbl_item_request_details"
+	return "tbl_trans_item_request_details"
 }
 
 type ItemRequestDetailsAt struct {
@@ -64,7 +67,7 @@ type ItemRequestDetailsAt struct {
 }
 
 func (ItemRequestDetailsAt) TableName() string {
-	return "z_tbl_item_request_details_at"
+	return "z_tbl_trans_item_request_details_at"
 }
 
 type ItemRequestLocationContent struct {
@@ -82,7 +85,7 @@ type ItemRequestLocation struct {
 }
 
 func (ItemRequestLocation) TableName() string {
-	return "tbl_item_request_location"
+	return "tbl_trans_item_request_location"
 }
 
 type ItemRequestLocationAt struct {
@@ -93,5 +96,37 @@ type ItemRequestLocationAt struct {
 }
 
 func (ItemRequestLocationAt) TableName() string {
-	return "z_tbl_item_request_location_at"
+	return "z_tbl_trans_item_request_location_at"
+}
+
+type ItemRequestHistoryContent struct {
+	SOId       uint   `json:"so_id"`
+	SODId      uint   `json:"sod_id"`
+	RefDoc     string `json:"ref_doc"`
+	IRId       uint   `json:"ir_id"`
+	IRDId      uint   `json:"ird_id"`
+	ItemID     uint   `json:"item_id"`
+	ReqDate    string `json:"req_date"`
+	OrderQty   *uint  `json:"order_qty"`
+	ReqQty     uint   `json:"req_qty"`
+	IsComplete *bool  `json:"is_complete"`
+}
+type ItemRequestHistory struct {
+	ID uint `gorm:"primarykey" json:"id"`
+	ItemRequestHistoryContent
+}
+
+func (ItemRequestHistory) TableName() string {
+	return "tbl_trans_item_request_history"
+}
+
+type ItemRequestHistoryAt struct {
+	ID    uint `gorm:"primarykey" json:"id"`
+	RefId uint `json:"ref_id"`
+	ItemRequestHistoryContent
+	At
+}
+
+func (ItemRequestHistoryAt) TableName() string {
+	return "z_tbl_trans_item_request_history_at"
 }

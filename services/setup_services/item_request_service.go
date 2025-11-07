@@ -4,6 +4,7 @@ import (
 	// "errors"
 
 	"errors"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -16,6 +17,7 @@ type ItemRequestBody struct {
 	ItemRequest         models.ItemRequest           `json:"item_request"`
 	ItemRequestDetails  []models.ItemRequestDetails  `json:"item_request_details"`
 	ItemRequestLocation []models.ItemRequestLocation `json:"item_request_location"`
+	ItemRequestHistory  []models.ItemRequestHistory  `json:"item_request_history"`
 }
 
 type ItemRequestGet struct {
@@ -64,6 +66,17 @@ func GetAllBinLocation(conditions map[string]interface{}) (interface{}, int, err
 	return response, 0, nil
 }
 
+func GetUserList(conditions map[string]interface{}) (interface{}, int, error) {
+
+	var response []models.UserListView
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting user list")
+	}
+
+	return response, 0, nil
+}
+
 func GetSalesOrderIR(conditions map[string]interface{}) (interface{}, int, error) {
 
 	var response []models.SalesOrderView
@@ -83,12 +96,16 @@ func CreateItemRequest(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	generatedDocNo := utils.DocNoGenerator(body.ItemRequest.ID)
-	body.ItemRequest.DocNo = generatedDocNo
-
 	//Insert main Item Request record
 	if err := services.DbInsert(tx, &body.ItemRequest); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating item request")
+	}
+
+	generatedDocNo := utils.DocNoGenerator(body.ItemRequest.ID)
+	body.ItemRequest.DocNo = generatedDocNo
+
+	if err := tx.Model(&body.ItemRequest).Update("doc_no", body.ItemRequest.DocNo).Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed updating item request doc")
 	}
 
 	//Prepare the "at" data
@@ -97,45 +114,20 @@ func CreateItemRequest(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 		at = models.At{}
 	}
 
-	//Insert Item Request Details (if any)
-	for i := range body.ItemRequestDetails {
-		detail := &body.ItemRequestDetails[i]
-		detail.IrId = body.ItemRequest.ID // assign FK to parent
-
-		if err := services.DbInsert(tx, detail); err != nil {
-			return body.ItemRequest, fiber.StatusInternalServerError, errors.New("failed creating item request details")
-		}
-
-		// Insert audit record for each detail
-		atdataDetail := models.ItemRequestDetailsAt{
-			RefId:                     detail.ID, // the ID of the inserted detail
-			ItemRequestDetailsContent: detail.ItemRequestDetailsContent,
-			At:                        at,
-		}
-
-		if err := services.DbInsert(tx, &atdataDetail); err != nil {
-			return body.ItemRequest, fiber.StatusInternalServerError, errors.New("failed creating item request details at")
-		}
+	// Insert Item Request Details
+	if err := CreateItemRequestDetails(tx, &body, at); err != nil {
+		return body.ItemRequest, fiber.StatusInternalServerError, err
 	}
 
-	//Insert Item Request Location (if any)
-	for i := range body.ItemRequestLocation {
-		location := &body.ItemRequestLocation[i]
-		location.IrId = body.ItemRequest.ID // assign FK to parent
+	// Insert Item Request Locations
+	if err := CreateItemRequestLocations(tx, &body, at); err != nil {
+		return body.ItemRequest, fiber.StatusInternalServerError, err
+	}
 
-		if err := services.DbInsert(tx, location); err != nil {
-			return body.ItemRequest, fiber.StatusInternalServerError, errors.New("failed creating item request location")
-		}
-
-		// Insert audit record for each location
-		atdataLocation := models.ItemRequestLocationAt{
-			RefId:                      location.ID, // the ID of the inserted location
-			ItemRequestLocationContent: location.ItemRequestLocationContent,
-			At:                         at,
-		}
-
-		if err := services.DbInsert(tx, &atdataLocation); err != nil {
-			return body.ItemRequest, fiber.StatusInternalServerError, errors.New("failed creating item request location at")
+	//Only create ItemRequestHistory if RefDoc is not empty
+	if body.ItemRequest.RefDoc != "" {
+		if err := CreateItemRequestHistory(tx, &body, at); err != nil {
+			return body.ItemRequest, fiber.StatusInternalServerError, err
 		}
 	}
 
@@ -151,6 +143,113 @@ func CreateItemRequest(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 	}
 
 	return body, 0, nil
+}
+
+func CreateItemRequestDetails(tx *gorm.DB, body *ItemRequestBody, at models.At) error {
+	for i := range body.ItemRequestDetails {
+		detail := &body.ItemRequestDetails[i]
+		detail.IrId = body.ItemRequest.ID // assign FK to parent
+
+		if err := services.DbInsert(tx, detail); err != nil {
+			return errors.New("failed creating item request details")
+		}
+
+		// Audit trail for each detail
+		atdataDetail := models.ItemRequestDetailsAt{
+			RefId:                     detail.ID,
+			ItemRequestDetailsContent: detail.ItemRequestDetailsContent,
+			At:                        at,
+		}
+
+		if err := services.DbInsert(tx, &atdataDetail); err != nil {
+			return errors.New("failed creating item request details at")
+		}
+	}
+	return nil
+}
+
+func CreateItemRequestHistory(tx *gorm.DB, body *ItemRequestBody, at models.At) error {
+	for i := range body.ItemRequestDetails {
+		detail := &body.ItemRequestDetails[i]
+
+		//Skip if SOId or SODId are empty (zero)
+		if detail.SOId == 0 || detail.SODId == 0 {
+			continue
+		}
+
+		// Subtract ReqQty from OrderQty
+		remainingOrderQty := uint(0)
+		if detail.OrderQty > detail.ReqQty {
+			remainingOrderQty = detail.OrderQty - detail.ReqQty
+		}
+
+		// Determine completion status
+		isComplete := false
+		if remainingOrderQty == 0 {
+			isComplete = true
+		}
+
+		// Create a history entry for each item request detail
+		history := models.ItemRequestHistory{
+			ItemRequestHistoryContent: models.ItemRequestHistoryContent{
+				IRId:       body.ItemRequest.ID,
+				IRDId:      detail.ID,
+				RefDoc:     body.ItemRequest.RefDoc,
+				ItemID:     detail.ItemId,
+				ReqDate:    body.ItemRequest.ReqDate,
+				OrderQty:   &remainingOrderQty,
+				ReqQty:     detail.ReqQty,
+				SOId:       detail.SOId,
+				SODId:      detail.SODId,
+				IsComplete: &isComplete,
+			},
+		}
+
+		if err := services.DbInsert(tx, &history); err != nil {
+			return errors.New("failed creating item request history")
+		}
+
+		// Audit trail for each history record
+		atdataHistory := models.ItemRequestHistoryAt{
+			RefId:                     history.ID,
+			ItemRequestHistoryContent: history.ItemRequestHistoryContent,
+			At:                        at,
+		}
+
+		if err := services.DbInsert(tx, &atdataHistory); err != nil {
+			return errors.New("failed creating item request history at")
+		}
+	}
+
+	InvalidateItemCaches()
+
+	return nil
+}
+
+func CreateItemRequestLocations(tx *gorm.DB, body *ItemRequestBody, at models.At) error {
+	for i := range body.ItemRequestLocation {
+		location := &body.ItemRequestLocation[i]
+		location.IrId = body.ItemRequest.ID // assign FK to parent
+
+		if err := services.DbInsert(tx, location); err != nil {
+			return errors.New("failed creating item request location")
+		}
+
+		// Audit trail for each location
+		atdataLocation := models.ItemRequestLocationAt{
+			RefId:                      location.ID,
+			ItemRequestLocationContent: location.ItemRequestLocationContent,
+			At:                         at,
+		}
+
+		if err := services.DbInsert(tx, &atdataLocation); err != nil {
+			return errors.New("failed creating item request location at")
+		}
+	}
+
+	InvalidateItemCaches()
+
+	return nil
 }
 
 func UpdateItemRequest(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (interface{}, int, error) {
@@ -172,58 +271,19 @@ func UpdateItemRequest(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfac
 		at = models.At{}
 	}
 
-	//Update details
-	for i := range body.ItemRequestDetails {
-		detail := &body.ItemRequestDetails[i]
-		detail.IrId = body.ItemRequest.ID
-
-		if detail.ID == 0 {
-			if err := services.DbInsert(tx, detail); err != nil {
-				return body.ItemRequest, fiber.StatusInternalServerError, errors.New("failed creating item request details")
-			}
-		} else {
-			if err := services.DbUpdate(tx, detail, conditions); err != nil {
-				return body.ItemRequest, fiber.StatusInternalServerError, errors.New("failed updating item request details")
-			}
-		}
-
-		// Audit record for each detail
-		atdataDetail := models.ItemRequestDetailsAt{
-			RefId:                     detail.ID,
-			ItemRequestDetailsContent: detail.ItemRequestDetailsContent,
-			At:                        at,
-		}
-
-		if err := services.DbInsert(tx, &atdataDetail); err != nil {
-			return body.ItemRequest, fiber.StatusInternalServerError, errors.New("failed creating item request details at")
-		}
+	// Handle details
+	if err := UpdateItemRequestDetails(tx, &body, conditions, at); err != nil {
+		return body.ItemRequest, fiber.StatusInternalServerError, err
 	}
 
-	//Update Location
-	for i := range body.ItemRequestLocation {
-		location := &body.ItemRequestLocation[i]
-		location.IrId = body.ItemRequest.ID
+	// Handle locations
+	if err := UpdateItemRequestLocations(tx, &body, conditions, at); err != nil {
+		return body.ItemRequest, fiber.StatusInternalServerError, err
+	}
 
-		if location.ID == 0 {
-			if err := services.DbInsert(tx, location); err != nil {
-				return body.ItemRequest, fiber.StatusInternalServerError, errors.New("failed creating item request location")
-			}
-		} else {
-			if err := services.DbUpdate(tx, location, conditions); err != nil {
-				return body.ItemRequest, fiber.StatusInternalServerError, errors.New("failed updating item request location")
-			}
-		}
-
-		// Audit record for each detail
-		atdataLocation := models.ItemRequestLocationAt{
-			RefId:                      location.ID,
-			ItemRequestLocationContent: location.ItemRequestLocationContent,
-			At:                         at,
-		}
-
-		if err := services.DbInsert(tx, &atdataLocation); err != nil {
-			return body.ItemRequest, fiber.StatusInternalServerError, errors.New("failed creating item request location at")
-		}
+	// Inside UpdateItemRequest (after updating details and locations)
+	if err := UpdateItemRequestHistory(tx, &body, conditions, at); err != nil {
+		return body.ItemRequest, fiber.StatusInternalServerError, err
 	}
 
 	//Audit record for main request
@@ -239,6 +299,137 @@ func UpdateItemRequest(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfac
 	return body, 0, nil
 }
 
+func UpdateItemRequestHistory(tx *gorm.DB, body *ItemRequestBody, conditions map[string]interface{}, at models.At) error {
+	for i := range body.ItemRequestDetails {
+		detail := &body.ItemRequestDetails[i]
+
+		//Skip if SOId or SODId are empty (zero)
+		if detail.SOId == 0 || detail.SODId == 0 {
+			continue
+		}
+
+		// Subtract ReqQty from OrderQty
+		remainingOrderQty := uint(0)
+		remainingOrderQty = detail.OrderQty - detail.ReqQty
+
+		// Determine completion status
+		isComplete := false
+		if remainingOrderQty == 0 {
+			isComplete = true
+		}
+
+		fmt.Println("the remaining qty is: ", remainingOrderQty)
+
+		// Build or update the history record
+		history := models.ItemRequestHistory{
+			ItemRequestHistoryContent: models.ItemRequestHistoryContent{
+				IRId:       body.ItemRequest.ID,
+				IRDId:      detail.ID,
+				ItemID:     detail.ItemId,
+				ReqDate:    body.ItemRequest.ReqDate,
+				OrderQty:   &remainingOrderQty,
+				ReqQty:     detail.ReqQty,
+				SOId:       detail.SOId,
+				SODId:      detail.SODId,
+				IsComplete: &isComplete,
+			},
+		}
+
+		// If an existing record exists (IRDId + IRId combination), update it
+		var existing models.ItemRequestHistory
+		err := tx.Where("ir_id = ? AND ird_id = ?", body.ItemRequest.ID, detail.ID).First(&existing).Error
+		if err == nil {
+			history.ID = existing.ID // ensure update, not insert
+			if err := services.DbUpdate(tx, &history, map[string]interface{}{"id": existing.ID}); err != nil {
+				return errors.New("failed updating item request history")
+			}
+		} else if errors.Is(err, gorm.ErrRecordNotFound) {
+			// Insert new if not found
+			if err := services.DbInsert(tx, &history); err != nil {
+				return errors.New("failed creating new item request history")
+			}
+		} else {
+			return errors.New("failed fetching item request history for update")
+		}
+
+		fmt.Println("the saved qty is: ", remainingOrderQty)
+
+		// Insert audit trail record for history update
+		atdataHistory := models.ItemRequestHistoryAt{
+			RefId:                     history.ID,
+			ItemRequestHistoryContent: history.ItemRequestHistoryContent,
+			At:                        at,
+		}
+
+		if err := services.DbInsert(tx, &atdataHistory); err != nil {
+			return errors.New("failed creating item request history audit record")
+		}
+	}
+
+	return nil
+}
+
+func UpdateItemRequestDetails(tx *gorm.DB, body *ItemRequestBody, conditions map[string]interface{}, at models.At) error {
+	for i := range body.ItemRequestDetails {
+		detail := &body.ItemRequestDetails[i]
+		detail.IrId = body.ItemRequest.ID
+
+		if detail.ID == 0 {
+			if err := services.DbInsert(tx, detail); err != nil {
+				return errors.New("failed creating item request details")
+			}
+		} else {
+			if err := services.DbUpdate(tx, detail, conditions); err != nil {
+				return errors.New("failed updating item request details")
+			}
+		}
+
+		// Audit record for each detail
+		atdataDetail := models.ItemRequestDetailsAt{
+			RefId:                     detail.ID,
+			ItemRequestDetailsContent: detail.ItemRequestDetailsContent,
+			At:                        at,
+		}
+
+		if err := services.DbInsert(tx, &atdataDetail); err != nil {
+			return errors.New("failed creating item request details at")
+		}
+	}
+	return nil
+}
+
+func UpdateItemRequestLocations(tx *gorm.DB, body *ItemRequestBody, conditions map[string]interface{}, at models.At) error {
+	for i := range body.ItemRequestLocation {
+		location := &body.ItemRequestLocation[i]
+		location.IrId = body.ItemRequest.ID
+
+		if location.ID == 0 {
+			if err := services.DbInsert(tx, location); err != nil {
+				return errors.New("failed creating item request location")
+			}
+		} else {
+			if err := services.DbUpdate(tx, location, conditions); err != nil {
+				return errors.New("failed updating item request location")
+			}
+		}
+
+		// Audit record for each location
+		atdataLocation := models.ItemRequestLocationAt{
+			RefId:                      location.ID,
+			ItemRequestLocationContent: location.ItemRequestLocationContent,
+			At:                         at,
+		}
+
+		if err := services.DbInsert(tx, &atdataLocation); err != nil {
+			return errors.New("failed creating item request location at")
+		}
+	}
+
+	InvalidateItemCaches()
+
+	return nil
+}
+
 func DeleteItemRequest(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (interface{}, int, error) {
 	var body ItemRequestBody
 
@@ -247,25 +438,27 @@ func DeleteItemRequest(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfac
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
+	//Get audit info
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
 	//Delete main Item Request
 	if err := services.DbDelete(tx, &body.ItemRequest, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed deleting item request")
 	}
 
-	// Delete all details where ir_id == body.ItemRequest.ID
-	if err := services.DbDelete(tx, &models.ItemRequestDetails{}, map[string]interface{}{"ir_id": body.ItemRequest.ID}); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed deleting all item request details")
+	if err := DeleteItemRequestDetails(tx, &body, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
 	}
 
-	// Delete all location where ir_id == body.ItemRequest.ID
-	if err := services.DbDelete(tx, &models.ItemRequestLocation{}, map[string]interface{}{"ir_id": body.ItemRequest.ID}); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed deleting all item request location")
+	if err := DeleteItemRequestLocations(tx, &body, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
 	}
 
-	//Get audit info
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
+	if err := DeleteItemRequestHistory(tx, &body, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	// Optionally fetch deleted details to log in audit trail
@@ -305,4 +498,79 @@ func DeleteItemRequest(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfac
 	}
 
 	return body, 0, nil
+}
+
+func DeleteItemRequestDetails(tx *gorm.DB, body *ItemRequestBody, at models.At) error {
+	// Delete all details
+	if err := services.DbDelete(tx, &models.ItemRequestDetails{}, map[string]interface{}{"ir_id": body.ItemRequest.ID}); err != nil {
+		return errors.New("failed deleting all item request details")
+	}
+
+	// Optionally fetch deleted details for audit trail
+	var deletedDetails []models.ItemRequestDetails
+	if err := tx.Unscoped().Where("ir_id = ?", body.ItemRequest.ID).Find(&deletedDetails).Error; err == nil {
+		for _, detail := range deletedDetails {
+			atdataDetail := models.ItemRequestDetailsAt{
+				RefId:                     detail.ID,
+				ItemRequestDetailsContent: detail.ItemRequestDetailsContent,
+				At:                        at,
+			}
+			if err := services.DbInsert(tx, &atdataDetail); err != nil {
+				return errors.New("failed creating item request details audit record")
+			}
+		}
+	}
+	return nil
+}
+
+func DeleteItemRequestLocations(tx *gorm.DB, body *ItemRequestBody, at models.At) error {
+	// Delete all locations
+	if err := services.DbDelete(tx, &models.ItemRequestLocation{}, map[string]interface{}{"ir_id": body.ItemRequest.ID}); err != nil {
+		return errors.New("failed deleting all item request location")
+	}
+
+	// Optionally fetch deleted locations for audit trail
+	var deletedLocations []models.ItemRequestLocation
+	if err := tx.Unscoped().Where("ir_id = ?", body.ItemRequest.ID).Find(&deletedLocations).Error; err == nil {
+		for _, location := range deletedLocations {
+			atdataLocation := models.ItemRequestLocationAt{
+				RefId:                      location.ID,
+				ItemRequestLocationContent: location.ItemRequestLocationContent,
+				At:                         at,
+			}
+			if err := services.DbInsert(tx, &atdataLocation); err != nil {
+				return errors.New("failed creating item request location audit record")
+			}
+		}
+	}
+
+	InvalidateItemCaches()
+
+	return nil
+}
+
+func DeleteItemRequestHistory(tx *gorm.DB, body *ItemRequestBody, at models.At) error {
+	// Delete all histories linked to the Item Request
+	if err := services.DbDelete(tx, &models.ItemRequestHistory{}, map[string]interface{}{"ir_id": body.ItemRequest.ID}); err != nil {
+		return errors.New("failed deleting all item request history")
+	}
+
+	// Optionally fetch deleted history records (Unscoped for audit)
+	var deletedHistories []models.ItemRequestHistory
+	if err := tx.Unscoped().Where("ir_id = ?", body.ItemRequest.ID).Find(&deletedHistories).Error; err == nil {
+		for _, history := range deletedHistories {
+			atdataHistory := models.ItemRequestHistoryAt{
+				RefId:                     history.ID,
+				ItemRequestHistoryContent: history.ItemRequestHistoryContent,
+				At:                        at,
+			}
+			if err := services.DbInsert(tx, &atdataHistory); err != nil {
+				return errors.New("failed creating item request history audit record")
+			}
+		}
+	}
+
+	InvalidateItemCaches()
+
+	return nil
 }
