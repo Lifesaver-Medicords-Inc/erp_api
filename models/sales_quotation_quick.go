@@ -10,7 +10,7 @@ type SalesQuotationQuickContent struct {
 	Model            string  `json:"model"`
 	Qty              uint    `json:"qty"`
 	ManDays          uint    `json:"man_days"`
-	LaborRate        uint    `json:"labor_rate"`
+	LaborRate        float64 `json:"labor_rate"`
 	UnitOfMeasure    string  `json:"unit_of_measure"`
 	ListPrice        float64 `json:"list_price"`
 	UnitPrice        float64 `json:"unit_price"`
