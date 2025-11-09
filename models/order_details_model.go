@@ -19,7 +19,7 @@ type OrderDetailsContent struct {
 	BomId              uint               `json:"bom_id"`
 	Order              *Order             `gorm:"foreignKey:Based_ID;references:Order_ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"order,omitempty"`
 	Item               *Item              `gorm:"foreignKey:Item_ID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"item,omitempty"`
-	Releases           []ItemReleaseModel `gorm:"foreignKey:OrderItemID;references:OrderDetailsID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"releases,omitempty"`
+	Releases           []ItemReleaseModel `gorm:"foreignKey:OrderID;references:OrderDetailsID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"releases,omitempty"`
 }
 
 type OrderDetails struct {

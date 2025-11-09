@@ -2,6 +2,7 @@ package dispatching_services
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -30,13 +31,14 @@ func (s *DeliveryReceiptService) GetDeliveryReceiptsService(filters map[string]i
 		return receipts, 500, errors.New("failed to start DB transaction")
 	}
 
-	query := tx.Preload("SalesOrder").Preload("ReleasedItems")
+	query := tx.Preload("Order").Preload("ItemReleases").Preload("TripCost")
 
 	for key, val := range filters {
 		query = query.Where(key+" = ?", val)
 	}
 
-	if err := query.Find(receipts).Error; err != nil {
+	// ✅ Pass pointer to slice
+	if err := query.Find(&receipts).Error; err != nil {
 		return nil, 500, err
 	}
 	return receipts, 200, nil
@@ -45,19 +47,19 @@ func (s *DeliveryReceiptService) GetDeliveryReceiptsService(filters map[string]i
 func (s *DeliveryReceiptService) GetDeliveryReceiptService(filters map[string]interface{}) (*models.DeliveryReceiptModel, int, error) {
 
 	var receipt = &models.DeliveryReceiptModel{}
-
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
 		return receipt, 500, errors.New("failed to start DB transaction")
 	}
 
-	query := tx.Preload("SalesOrder").Preload("ReleasedItems")
+	query := tx.Preload("Order").Preload("ItemReleases").Preload("TripCost")
 
 	for key, val := range filters {
 		query = query.Where(key+" = ?", val)
 	}
 
+	// ✅ Already a pointer, so this is fine
 	if err := query.First(receipt).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, 404, err
@@ -71,31 +73,45 @@ func (s *DeliveryReceiptService) GetDeliveryReceiptService(filters map[string]in
 func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *models.DeliveryReceiptModel, at models.At) (*models.DeliveryReceiptModel, int, error) {
 
 	tx := initializers.DB.Begin()
-
 	if tx.Error != nil {
 		return data, 500, errors.New("failed to start DB transaction")
 	}
 
+	// 1️⃣ Insert DeliveryReceipt
 	if err := services.DbInsert(tx, &data); err != nil {
-		if strings.Contains(err.Error(), "duplicate key") {
-
-			err = errors.New("duplicate record error")
-		} else {
-
-			err = errors.New("failed creating delivery receipt")
-		}
 		tx.Rollback()
-		return data, 500, err
+		if strings.Contains(err.Error(), "duplicate key") {
+			return data, 500, errors.New("duplicate record error")
+		}
+		return data, 500, errors.New("failed creating delivery receipt")
 	}
 
-	atdata := models.CalendarScheduleAt{RefId: data.ID, At: at}
+	// 2️⃣ Insert TripCost if exists
+	if data.TripCost != nil {
+		data.TripCost.DeliveryReceiptID = data.ID // assign the generated receipt ID
+		if err := services.DbInsert(tx, data.TripCost); err != nil {
+			tx.Rollback()
+			return data, 500, errors.New("failed creating trip cost")
+		}
+	}
 
+	// 3️⃣ Insert ItemReleases if any
+	for i := range data.ItemReleases {
+		data.ItemReleases[i].DeliveryReceiptID = data.ID // assign generated receipt ID
+		if err := services.DbInsert(tx, &data.ItemReleases[i]); err != nil {
+			tx.Rollback()
+			return data, 500, fmt.Errorf("failed creating item release: %v", err)
+		}
+	}
+
+	// 4️⃣ Insert DeliveryReceiptAt (tracking table)
+	atdata := models.CalendarScheduleAt{RefId: data.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
 		return data, 500, errors.New("failed creating receiptat")
 	}
 
-	// ✅ Create logistics calendar schedule
+	// 5️⃣ Create logistics calendar schedule
 	schedule := models.CalendarScheduleModel{
 		RelatedOrderID: &data.OrderID,
 		CalendarScheduleContent: models.CalendarScheduleContent{
@@ -114,6 +130,7 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *models.Deliv
 		return data, 500, errors.New("failed creating calendar schedule")
 	}
 
+	// 6️⃣ Commit transaction
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return data, 500, errors.New("failed to commit transaction")

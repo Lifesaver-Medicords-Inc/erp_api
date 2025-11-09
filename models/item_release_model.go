@@ -13,7 +13,7 @@ type ItemReleaseContent struct {
 	ApprovedByName    string         `json:"approved_by_name"`
 	ReleaseByID       string         `json:"release_by_id"`
 	ReleaseByName     string         `json:"release_by_name"`
-	OrderItemID       uint           `json:"order_item_id"`
+	OrderID           uint           `json:"order_id"`
 	DeliveryReceiptID uint           `json:"delivery_receipt_id"`
 	QuantityReleased  float64        `gorm:"not null" json:"quantity_released"`
 	SerialNumber      string         `gorm:"size:100" json:"serial_number,omitempty"`
@@ -26,9 +26,10 @@ type ItemReleaseContent struct {
 	UpdatedAt         time.Time      `json:"updated_at"`
 	DeletedAt         gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 	VehicleID         uint           `json:"vehicle_id"`
+	Peoples           string         `json:"peoples"`
 
-	OrderItem       *OrderDetails         `gorm:"foreignKey:OrderItemID;references:OrderDetailsID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"sales_order_item,omitempty"`
-	DeliveryReceipt *DeliveryReceiptModel `gorm:"foreignKey:DeliveryReceiptID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"delivery_receipt,omitempty"`
+	Order           *OrderDetails         `gorm:"foreignKey:OrderID;references:OrderDetailsID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	DeliveryReceipt *DeliveryReceiptModel `gorm:"foreignKey:ReleaseID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"delivery_receipt,omitempty"`
 	Vehicle         *VehicleModel         `gorm:"foreignKey:VehicleID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"vehicle,omitempty"`
 }
 
