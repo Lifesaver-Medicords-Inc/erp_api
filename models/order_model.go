@@ -24,16 +24,18 @@ type OrderContent struct {
 	GrossSales       float64 `json:"gross_sales"`
 	VatAmount        float64 `json:"vat_amount"`
 	TotalAmountDue   float64 `json:"total_amount_due"`
-	// CustomerName  string `json:"customer_name"`
-	// CustomerCode  string `json:"customer_code"`
-	// ShipTo        string `json:"ship_to"`
-	// BillTo        string `json:"bill_to"`
+	CustomerName     string  `json:"customer_name"`
+	CustomerCode     string  `json:"customer_code"`
+	ShipTo           string  `json:"ship_to"`
+	BillTo           string  `json:"bill_to"`
 	// Vat            string `json:"vat"`
 	// NetofVat       string `json:"netof_vat"`
 	// TotalAmountDue string `json:"total_amount_due"`
 	// ApprovedBy     string `json:"approved_by"`
 	// ApprovedByID   uint   `json:"approved_by_id"`
-	// Tin            string `json:"tin"`
+	Tin              string                 `json:"tin"`
+	Items            []OrderDetails         `gorm:"foreignKey:Based_ID;references:Order_ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"items,omitempty"`
+	DeliveryReceipts []DeliveryReceiptModel `gorm:"foreignKey:OrderID;references:Order_ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"delivery_receipts,omitempty"`
 }
 
 type Order struct {

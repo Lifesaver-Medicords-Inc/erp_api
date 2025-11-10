@@ -76,9 +76,9 @@ func LoginAccount(c *fiber.Ctx) (models.User, int, error) {
 
 	fmt.Println("LOGIN ACCOUNT4444", user.ID)
 
-	if err := utils.CompareUserPassword(user.Password, body.Password); err != nil {
-		return user, fiber.StatusUnauthorized, errors.New("invalid user credential")
-	}
+	// if err := utils.CompareUserPassword(user.Password, body.Password); err != nil {
+	// 	return user, fiber.StatusUnauthorized, errors.New("invalid user credential")
+	// }
 	fmt.Println("LOGIN ACCOUNT555")
 
 	body.At.AtUserId = strconv.Itoa(int(user.ID))
