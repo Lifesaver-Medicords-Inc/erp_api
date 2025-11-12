@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDateReceived string, parentPoId uint, detail models.ReceivingReportDetails2, parentPodId uint, at models.At) error {
+func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDateReceived string, parentPoId uint, detail models.ReceivingReportDetails2, parentPodId uint, body *ReceivingReportBody2, at models.At) error {
 	// Convert OrderedQty and ReceivedQty (strings) to int
 	orderedQty, err := strconv.Atoi(detail.OrderedQty)
 	if err != nil {
@@ -39,6 +39,18 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		isComplete = true
 	}
 
+	// Convert received quantity (string) to int
+	receivedQtyInt, err := strconv.Atoi(detail.ReceivedQty)
+	if err != nil {
+		return errors.New("invalid received quantity in inventory")
+	}
+
+	// Convert ordered quantity (string) to int
+	orderedQtyInt, err := strconv.Atoi(detail.OrderedQty)
+	if err != nil {
+		return errors.New("invalid ordered quantity in inventory")
+	}
+
 	history := models.ReceivingHistory{
 		ReceivingHistoryContent: models.ReceivingHistoryContent{
 			PurchaseOrderID:          parentPoId,
@@ -53,6 +65,30 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 			DateReceived:             parentDateReceived,
 			IsComplete:               &isComplete,
 		},
+	}
+
+	inventory := models.InventoryStocks{
+		InventoryStocksContent: models.InventoryStocksContent{
+			ReceivingReportId:        body.ReceivingReport.ID,
+			ReceivingReportDetailsId: detail.ID,
+			PurchaseOrderDetailsId:   history.PurchaseOrderDetailsID,
+			ReceivingReportDoc:       body.ReceivingReport.DOC,
+			PurchaseOrderDoc:         body.ReceivingReport.RefDOC,
+			ItemId:                   detail.ItemID,
+			ItemCode:                 detail.ItemCode,
+			BinLocation:              detail.BinLocation,
+			QtyIn:                    uint(receivedQtyInt),
+			QtyOut:                   uint(orderedQtyInt),
+			Uom:                      detail.ReceivedUom,
+			SupplierName:             body.ReceivingReport.SupplierName,
+			DateReceived:             body.ReceivingReport.DateReceived,
+			WarehouseName:            body.ReceivingReport.WarehouseName,
+			WarehouseId:              body.ReceivingReport.WarehouseId,
+		},
+	}
+
+	if err := CreateInventoryStock(tx, &inventory, at); err != nil {
+		return err
 	}
 
 	if err := services.DbInsert(tx, &history); err != nil {
@@ -79,7 +115,7 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 	return nil
 }
 
-func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDateReceived string, parentPoId uint, detail models.ReceivingReportDetails2, at models.At) error {
+func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDateReceived string, parentPoId uint, detail models.ReceivingReportDetails2, body *ReceivingReportBody2, at models.At) error {
 	// Try to find existing history record for this detail
 	var history models.ReceivingHistory
 	if err := tx.Where("receiving_report_details_id = ?", detail.ID).First(&history).Error; err != nil {
@@ -121,6 +157,18 @@ func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		isComplete = true
 	}
 
+	// Convert received quantity (string) to int
+	receivedQtyInt, err := strconv.Atoi(detail.ReceivedQty)
+	if err != nil {
+		return errors.New("invalid received quantity in inventory")
+	}
+
+	// Convert ordered quantity (string) to int
+	orderedQtyInt, err := strconv.Atoi(detail.OrderedQty)
+	if err != nil {
+		return errors.New("invalid ordered quantity in inventory")
+	}
+
 	// Update fields
 	history.ReceivingHistoryContent = models.ReceivingHistoryContent{
 		PurchaseOrderID:          parentPoId,
@@ -132,6 +180,30 @@ func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		RejectedQty:              detail.RejectedQty,
 		DateReceived:             parentDateReceived,
 		IsComplete:               &isComplete,
+	}
+
+	inventory := models.InventoryStocks{
+		InventoryStocksContent: models.InventoryStocksContent{
+			ReceivingReportId:        body.ReceivingReport.ID,
+			ReceivingReportDetailsId: detail.ID,
+			PurchaseOrderDetailsId:   history.PurchaseOrderDetailsID,
+			ReceivingReportDoc:       body.ReceivingReport.DOC,
+			PurchaseOrderDoc:         body.ReceivingReport.RefDOC,
+			ItemId:                   detail.ItemID,
+			ItemCode:                 detail.ItemCode,
+			BinLocation:              detail.BinLocation,
+			QtyIn:                    uint(receivedQtyInt),
+			QtyOut:                   uint(orderedQtyInt),
+			Uom:                      detail.ReceivedUom,
+			SupplierName:             body.ReceivingReport.SupplierName,
+			DateReceived:             body.ReceivingReport.DateReceived,
+			WarehouseName:            body.ReceivingReport.WarehouseName,
+			WarehouseId:              body.ReceivingReport.WarehouseId,
+		},
+	}
+
+	if err := UpdateInventoryStock(tx, &inventory, at); err != nil {
+		return err
 	}
 
 	// Save updated history
@@ -160,7 +232,7 @@ func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 	return nil
 }
 
-func DeleteReceivingReportHistory(tx *gorm.DB, receivingReportID uint, at models.At) error {
+func DeleteReceivingReportHistory(tx *gorm.DB, receivingReportID uint, body *DeleteReceivingReportBody2, at models.At) error {
 	// Delete ReceivingHistory records where receiving_report_details_id = receivingReportDetailsID
 	conditions := map[string]interface{}{
 		"receiving_report_id": receivingReportID,
@@ -170,6 +242,14 @@ func DeleteReceivingReportHistory(tx *gorm.DB, receivingReportID uint, at models
 
 	if err := services.DbDelete(tx, &models.ReceivingHistory{}, conditions); err != nil {
 		return errors.New("failed deleting receiving history")
+	}
+
+	if err := DeleteInventoryStock(tx, body.ReceivingReport.ID, at); err != nil {
+		return err
+	}
+
+	if err := DeleteInvTrackerRR(tx, body.ReceivingReport.ID, at); err != nil {
+		return err
 	}
 
 	// Insert audit trail record
@@ -185,6 +265,32 @@ func DeleteReceivingReportHistory(tx *gorm.DB, receivingReportID uint, at models
 	//Invalidate cache
 	if err := services.InvalidateCacheByModel(models.PurchaseOrderDetailsView{}); err != nil {
 		fmt.Println("Failed to invalidate cache:", err)
+	}
+
+	InvalidateItemCaches()
+
+	return nil
+}
+
+func DeleteInvTrackerRR(tx *gorm.DB, receivingReportId uint, at models.At) error {
+	// Delete all inventory tracker linked to the Receiving Report
+	if err := services.DbDelete(tx, &models.InvTracker{}, map[string]interface{}{"rr_id": receivingReportId}); err != nil {
+		return errors.New("failed deleting all inventory tracker")
+	}
+
+	// Optionally fetch deleted tracker records (Unscoped for audit)
+	var deletedInventories []models.InvTracker
+	if err := tx.Unscoped().Where("rr_id = ?", receivingReportId).Find(&deletedInventories).Error; err == nil {
+		for _, details := range deletedInventories {
+			atdataInventory := models.InvTrackerAt{
+				RefId:             details.ID,
+				InvTrackerContent: details.InvTrackerContent,
+				At:                at,
+			}
+			if err := services.DbInsert(tx, &atdataInventory); err != nil {
+				return errors.New("failed creating inventory tracker audit record")
+			}
+		}
 	}
 
 	InvalidateItemCaches()

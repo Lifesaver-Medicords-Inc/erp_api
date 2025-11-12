@@ -19,7 +19,7 @@ func GetReceivingReportDetails2(conditions map[string]interface{}) ([]models.Rec
 	return receivingReportDetails, 0, nil
 }
 
-func CreateReceivingReportDetails2(tx *gorm.DB, parentId uint, parentDate string, parentPoId uint, child models.ReceivingReportDetails2, at models.At) error {
+func CreateReceivingReportDetails2(tx *gorm.DB, parentId uint, parentDate string, parentPoId uint, child models.ReceivingReportDetails2, body *ReceivingReportBody2, at models.At) error {
 	content := models.ReceivingReportDetailsContent2{
 		ReceivingReportId:  parentId,
 		PodId:              child.PodId,
@@ -54,14 +54,14 @@ func CreateReceivingReportDetails2(tx *gorm.DB, parentId uint, parentDate string
 		return errors.New("failed creating receiving report")
 	}
 
-	if err := CreateReceivingReportHistory(tx, parentId, parentDate, parentPoId, receivingReportDetails, child.PodId, at); err != nil {
+	if err := CreateReceivingReportHistory(tx, parentId, parentDate, parentPoId, receivingReportDetails, child.PodId, body, at); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func UpdateReceivingReportDetails2(tx *gorm.DB, ReceivingReportDetails models.ReceivingReportDetails2, at models.At, conditions map[string]interface{}, parentId uint, parentDate string, parentPoId uint) error {
+func UpdateReceivingReportDetails2(tx *gorm.DB, ReceivingReportDetails models.ReceivingReportDetails2, at models.At, conditions map[string]interface{}, parentId uint, parentDate string, parentPoId uint, body *ReceivingReportBody2) error {
 
 	if err := services.DbUpdate(tx, &ReceivingReportDetails, conditions); err != nil {
 		return errors.New("failed updating receiving report details")
@@ -78,7 +78,7 @@ func UpdateReceivingReportDetails2(tx *gorm.DB, ReceivingReportDetails models.Re
 	}
 
 	// Add history record after update
-	if err := UpdateReceivingReportHistory(tx, parentId, parentDate, parentPoId, ReceivingReportDetails, at); err != nil {
+	if err := UpdateReceivingReportHistory(tx, parentId, parentDate, parentPoId, ReceivingReportDetails, body, at); err != nil {
 		return err
 	}
 
