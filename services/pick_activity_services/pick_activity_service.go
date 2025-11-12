@@ -1,0 +1,521 @@
+package pick_activity_services
+
+import (
+	// "errors"
+
+	"errors"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/services"
+	"github.com/pierceperado/smpc/services/setup_services"
+	"github.com/pierceperado/smpc/utils"
+	"gorm.io/gorm"
+)
+
+type PickActivityBody struct {
+	PickActivity         models.PickActivity           `json:"pick_activity"`
+	PickActivityDetails  []models.PickActivityDetails  `json:"pick_activity_details"`
+	PickActivityLocation []models.PickActivityLocation `json:"pick_activity_location"`
+	PickActivityHistory  []models.PickActivityHistory  `json:"pick_activity_history"`
+}
+
+type PickActivityGet struct {
+	PickActivity         []models.PickActivity         `json:"pick_activity"`
+	PickActivityDetails  []models.PickActivityDetails  `json:"pick_activity_details"`
+	PickActivityLocation []models.PickActivityLocation `json:"pick_activity_location"`
+}
+
+func GetPickActivity(conditions map[string]interface{}) (interface{}, int, error) {
+	var response PickActivityGet
+
+	if err := services.DbGet(&response.PickActivity, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New(" failed getting pick activity")
+	}
+
+	if err := services.DbGet(&response.PickActivityDetails, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New(" failed getting pick activity details")
+	}
+
+	if err := services.DbGet(&response.PickActivityLocation, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New(" failed getting pick activity locations")
+	}
+
+	return response, 0, nil
+}
+
+func GetSalesOrderPA(conditions map[string]interface{}) (interface{}, int, error) {
+
+	var response []models.SalesOrderViewPA
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting all sales order PA")
+	}
+
+	return response, 0, nil
+}
+
+func CreatePickActivity(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
+	var body PickActivityBody
+
+	//Parse the full request body (main + details)
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	//Insert main Pick Activity record
+	if err := services.DbInsert(tx, &body.PickActivity); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed creating pick activity")
+	}
+
+	generatedDocNo := utils.DocNoGenerator(body.PickActivity.ID)
+	body.PickActivity.DocNo = generatedDocNo
+
+	if err := tx.Model(&body.PickActivity).Update("doc_no", body.PickActivity.DocNo).Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed updating pick activity doc")
+	}
+
+	//Prepare the "at" data
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	// Insert Pick Activity Details
+	if err := CreatePickActivityDetails(tx, &body, at); err != nil {
+		return body.PickActivity, fiber.StatusInternalServerError, err
+	}
+
+	// Insert Pick Activity Locations
+	if err := CreatePickActivityLocations(tx, &body, at); err != nil {
+		return body.PickActivity, fiber.StatusInternalServerError, err
+	}
+
+	//Only create Pick Activity History if RefDoc is not empty
+	if body.PickActivity.ReferenceSo != "" {
+		if err := CreatePickActivityHistory(tx, &body, at); err != nil {
+			return body.PickActivity, fiber.StatusInternalServerError, err
+		}
+	}
+
+	//Insert audit record for the main request
+	atdata := models.PickActivityAt{
+		RefId:               body.PickActivity.ID,
+		PickActivityContent: body.PickActivity.PickActivityContent,
+		At:                  at,
+	}
+
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed creating pick activity at")
+	}
+
+	return body, 0, nil
+}
+
+func CreatePickActivityDetails(tx *gorm.DB, body *PickActivityBody, at models.At) error {
+	for i := range body.PickActivityDetails {
+		detail := &body.PickActivityDetails[i]
+		detail.PaId = body.PickActivity.ID // assign FK to parent
+
+		if err := services.DbInsert(tx, detail); err != nil {
+			return errors.New("failed creating pick activity details")
+		}
+
+		// Audit trail for each detail
+		atdataDetail := models.PickActivityDetailsAt{
+			RefId:                      detail.ID,
+			PickActivityDetailsContent: detail.PickActivityDetailsContent,
+			At:                         at,
+		}
+
+		if err := services.DbInsert(tx, &atdataDetail); err != nil {
+			return errors.New("failed creating pick activity details at")
+		}
+	}
+	return nil
+}
+
+func CreatePickActivityLocations(tx *gorm.DB, body *PickActivityBody, at models.At) error {
+	for i := range body.PickActivityLocation {
+		location := &body.PickActivityLocation[i]
+		location.PaId = body.PickActivity.ID // assign FK to parent
+
+		if err := services.DbInsert(tx, location); err != nil {
+			return errors.New("failed creating pick activity location")
+		}
+
+		// Audit trail for each location
+		atdataLocation := models.PickActivityLocationAt{
+			RefId:                       location.ID,
+			PickActivityLocationContent: location.PickActivityLocationContent,
+			At:                          at,
+		}
+
+		if err := services.DbInsert(tx, &atdataLocation); err != nil {
+			return errors.New("failed creating pick activity location at")
+		}
+	}
+
+	setup_services.InvalidateItemCaches()
+
+	return nil
+}
+
+func CreatePickActivityHistory(tx *gorm.DB, body *PickActivityBody, at models.At) error {
+	for i := range body.PickActivityDetails {
+		detail := &body.PickActivityDetails[i]
+
+		//Skip if SOId or SODId are empty (zero)
+		if detail.SOId == 0 || detail.SODId == 0 {
+			continue
+		}
+
+		// Subtract PickQty from LeftQty
+		remainingLeftQty := uint(0)
+		if detail.LeftQty > detail.PickQty {
+			remainingLeftQty = detail.LeftQty - detail.PickQty
+		}
+
+		// Determine completion status
+		isComplete := false
+		if remainingLeftQty == 0 {
+			isComplete = true
+		}
+
+		// Create a history entry for each pick activity detail
+		history := models.PickActivityHistory{
+			PickActivityHistoryContent: models.PickActivityHistoryContent{
+				PAId:       body.PickActivity.ID,
+				PADId:      detail.ID,
+				RefDoc:     body.PickActivity.ReferenceSo,
+				ItemID:     detail.ItemId,
+				LeftQty:    &remainingLeftQty,
+				PickQty:    detail.PickQty,
+				SOId:       detail.SOId,
+				SODId:      detail.SODId,
+				IsComplete: &isComplete,
+			},
+		}
+
+		if err := services.DbInsert(tx, &history); err != nil {
+			return errors.New("failed creating pick activity history")
+		}
+
+		// Audit trail for each history record
+		atdataHistory := models.PickActivityHistoryAt{
+			RefId:                      history.ID,
+			PickActivityHistoryContent: history.PickActivityHistoryContent,
+			At:                         at,
+		}
+
+		if err := services.DbInsert(tx, &atdataHistory); err != nil {
+			return errors.New("failed creating pick activity history at")
+		}
+	}
+
+	setup_services.InvalidateItemCaches()
+	return nil
+}
+
+func UpdatePickActivity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (interface{}, int, error) {
+	var body PickActivityBody
+
+	//Parse full request
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	//Update main Pick Activity
+	if err := services.DbUpdate(tx, &body.PickActivity, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed updating pick activity")
+	}
+
+	//Get audit info
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	// Handle locations
+	if err := UpdatePickActivityDetails(tx, &body, conditions, at); err != nil {
+		return body.PickActivity, fiber.StatusInternalServerError, err
+	}
+
+	// Inside Update Pick Activity (after updating details and locations)
+	if err := UpdatePickActivityLocations(tx, &body, conditions, at); err != nil {
+		return body.PickActivity, fiber.StatusInternalServerError, err
+	}
+
+	// Inside Update Pick Activity (after updating details and locations)
+	if err := UpdatePickActivityHistory(tx, &body, conditions, at); err != nil {
+		return body.PickActivity, fiber.StatusInternalServerError, err
+	}
+
+	//Audit record for main request
+	atdata := models.PickActivityAt{
+		RefId:               body.PickActivity.ID,
+		PickActivityContent: body.PickActivity.PickActivityContent,
+		At:                  at,
+	}
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed updating pick activity at")
+	}
+
+	return body, 0, nil
+}
+
+func UpdatePickActivityDetails(tx *gorm.DB, body *PickActivityBody, conditions map[string]interface{}, at models.At) error {
+	for i := range body.PickActivityDetails {
+		detail := &body.PickActivityDetails[i]
+		detail.PaId = body.PickActivity.ID
+
+		if detail.ID == 0 {
+			if err := services.DbInsert(tx, detail); err != nil {
+				return errors.New("failed creating pick activity details")
+			}
+		} else {
+			if err := services.DbUpdate(tx, detail, conditions); err != nil {
+				return errors.New("failed updating pick activity details")
+			}
+		}
+
+		// Audit record for each detail
+		atdataDetail := models.PickActivityDetailsAt{
+			RefId:                      detail.ID,
+			PickActivityDetailsContent: detail.PickActivityDetailsContent,
+			At:                         at,
+		}
+
+		if err := services.DbInsert(tx, &atdataDetail); err != nil {
+			return errors.New("failed creating pick activity details at")
+		}
+	}
+	return nil
+}
+
+func UpdatePickActivityLocations(tx *gorm.DB, body *PickActivityBody, conditions map[string]interface{}, at models.At) error {
+	for i := range body.PickActivityLocation {
+		location := &body.PickActivityLocation[i]
+		location.PaId = body.PickActivity.ID
+
+		if location.ID == 0 {
+			if err := services.DbInsert(tx, location); err != nil {
+				return errors.New("failed creating pick activity location")
+			}
+		} else {
+			if err := services.DbUpdate(tx, location, conditions); err != nil {
+				return errors.New("failed updating pick activity location")
+			}
+		}
+
+		// Audit record for each location
+		atdataLocation := models.PickActivityLocationAt{
+			RefId:                       location.ID,
+			PickActivityLocationContent: location.PickActivityLocationContent,
+			At:                          at,
+		}
+
+		if err := services.DbInsert(tx, &atdataLocation); err != nil {
+			return errors.New("failed creating pick activity location at")
+		}
+	}
+
+	setup_services.InvalidateItemCaches()
+
+	return nil
+}
+
+func UpdatePickActivityHistory(tx *gorm.DB, body *PickActivityBody, conditions map[string]interface{}, at models.At) error {
+	for i := range body.PickActivityDetails {
+		detail := &body.PickActivityDetails[i]
+
+		//Skip if SOId or SODId are empty (zero)
+		if detail.SOId == 0 || detail.SODId == 0 {
+			continue
+		}
+
+		// Subtract ReqQty from OrderQty
+		remainingPickQty := uint(0)
+		remainingPickQty = detail.LeftQty - detail.PickQty
+
+		// Determine completion status
+		isComplete := false
+		if remainingPickQty == 0 {
+			isComplete = true
+		}
+
+		// Build or update the history record
+		history := models.PickActivityHistory{
+			PickActivityHistoryContent: models.PickActivityHistoryContent{
+				PAId:       body.PickActivity.ID,
+				PADId:      detail.ID,
+				ItemID:     detail.ItemId,
+				LeftQty:    &remainingPickQty,
+				PickQty:    detail.PickQty,
+				SOId:       detail.SOId,
+				SODId:      detail.SODId,
+				IsComplete: &isComplete,
+			},
+		}
+
+		// If an existing record exists (IRDId + IRId combination), update it
+		var existing models.PickActivityHistory
+		err := tx.Where("pa_id = ? AND pad_id = ?", body.PickActivity.ID, detail.ID).First(&existing).Error
+		if err == nil {
+			history.ID = existing.ID // ensure update, not insert
+			if err := services.DbUpdate(tx, &history, map[string]interface{}{"id": existing.ID}); err != nil {
+				return errors.New("failed updating pick activity history")
+			}
+		} else if errors.Is(err, gorm.ErrRecordNotFound) {
+			// Insert new if not found
+			if err := services.DbInsert(tx, &history); err != nil {
+				return errors.New("failed creating new pick activity history")
+			}
+		} else {
+			return errors.New("failed fetching pick activity history for update")
+		}
+
+		// Insert audit trail record for history update
+		atdataHistory := models.PickActivityHistoryAt{
+			RefId:                      history.ID,
+			PickActivityHistoryContent: history.PickActivityHistoryContent,
+			At:                         at,
+		}
+
+		if err := services.DbInsert(tx, &atdataHistory); err != nil {
+			return errors.New("failed creating pick activity history audit record")
+		}
+	}
+
+	return nil
+}
+
+func DeletePickActivity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (interface{}, int, error) {
+	var body PickActivityBody
+
+	//Parse full request
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	//Get audit info
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	//Delete main Pick Activity
+	if err := services.DbDelete(tx, &body.PickActivity, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed deleting pick activity")
+	}
+
+	if err := DeletePickActivityDetails(tx, &body, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	if err := DeletePickActivityLocations(tx, &body, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	if err := DeletePickActivityHistory(tx, &body, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	// Optionally fetch deleted details to log in audit trail
+	var deletedDetails []models.PickActivityDetails
+	if err := tx.Unscoped().Where("pa_id = ?", body.PickActivity.ID).Find(&deletedDetails).Error; err == nil {
+		for _, detail := range deletedDetails {
+			atdataDetail := models.PickActivityDetailsAt{
+				RefId:                      detail.ID,
+				PickActivityDetailsContent: detail.PickActivityDetailsContent,
+				At:                         at,
+			}
+			if err := services.DbInsert(tx, &atdataDetail); err != nil {
+				return body.PickActivity, fiber.StatusInternalServerError, errors.New("failed creating pick activity details audit record")
+			}
+		}
+	}
+
+	//Audit record for main request
+	atdata := models.PickActivityAt{RefId: body.PickActivity.ID, PickActivityContent: body.PickActivity.PickActivityContent, At: at}
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed creating pick activity at")
+	}
+
+	return body, 0, nil
+}
+
+func DeletePickActivityDetails(tx *gorm.DB, body *PickActivityBody, at models.At) error {
+	// Delete all details
+	if err := services.DbDelete(tx, &models.PickActivityDetails{}, map[string]interface{}{"pa_id": body.PickActivity.ID}); err != nil {
+		return errors.New("failed deleting all pick activity details")
+	}
+
+	// Optionally fetch deleted details for audit trail
+	var deletedDetails []models.PickActivityDetails
+	if err := tx.Unscoped().Where("pa_id = ?", body.PickActivity.ID).Find(&deletedDetails).Error; err == nil {
+		for _, detail := range deletedDetails {
+			atdataDetail := models.PickActivityDetailsAt{
+				RefId:                      detail.ID,
+				PickActivityDetailsContent: detail.PickActivityDetailsContent,
+				At:                         at,
+			}
+			if err := services.DbInsert(tx, &atdataDetail); err != nil {
+				return errors.New("failed creating pick activity details audit record")
+			}
+		}
+	}
+	return nil
+}
+
+func DeletePickActivityLocations(tx *gorm.DB, body *PickActivityBody, at models.At) error {
+	// Delete all locations
+	if err := services.DbDelete(tx, &models.PickActivityLocation{}, map[string]interface{}{"pa_id": body.PickActivity.ID}); err != nil {
+		return errors.New("failed deleting all pick activity location")
+	}
+
+	// Optionally fetch deleted locations for audit trail
+	var deletedLocations []models.PickActivityLocation
+	if err := tx.Unscoped().Where("pa_id = ?", body.PickActivity.ID).Find(&deletedLocations).Error; err == nil {
+		for _, location := range deletedLocations {
+			atdataLocation := models.PickActivityLocationAt{
+				RefId:                       location.ID,
+				PickActivityLocationContent: location.PickActivityLocationContent,
+				At:                          at,
+			}
+			if err := services.DbInsert(tx, &atdataLocation); err != nil {
+				return errors.New("failed creating pick activity location audit record")
+			}
+		}
+	}
+
+	setup_services.InvalidateItemCaches()
+
+	return nil
+}
+
+func DeletePickActivityHistory(tx *gorm.DB, body *PickActivityBody, at models.At) error {
+	// Delete all histories linked to the Pick Activity
+	if err := services.DbDelete(tx, &models.PickActivityHistory{}, map[string]interface{}{"pa_id": body.PickActivity.ID}); err != nil {
+		return errors.New("failed deleting all pick activity history")
+	}
+
+	// Optionally fetch deleted history records (Unscoped for audit)
+	var deletedHistories []models.PickActivityHistory
+	if err := tx.Unscoped().Where("pa_id = ?", body.PickActivity.ID).Find(&deletedHistories).Error; err == nil {
+		for _, history := range deletedHistories {
+			atdataHistory := models.PickActivityHistoryAt{
+				RefId:                      history.ID,
+				PickActivityHistoryContent: history.PickActivityHistoryContent,
+				At:                         at,
+			}
+			if err := services.DbInsert(tx, &atdataHistory); err != nil {
+				return errors.New("failed creating pick activity history audit record")
+			}
+		}
+	}
+
+	setup_services.InvalidateItemCaches()
+
+	return nil
+}
