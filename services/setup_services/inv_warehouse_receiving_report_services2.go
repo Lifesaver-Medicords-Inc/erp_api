@@ -137,7 +137,7 @@ func CreateReceivingReport2(c *fiber.Ctx, tx *gorm.DB) (ReceivingReportBody2, in
 	//child1
 	for _, detail := range body.ReceivingReportDetails {
 		detail.ReceivingReportId = body.ReceivingReport.ID
-		if err := CreateReceivingReportDetails2(tx, body.ReceivingReport.ID, body.ReceivingReport.DateReceived, body.ReceivingReport.PurchaseOrderID, detail, at); err != nil {
+		if err := CreateReceivingReportDetails2(tx, body.ReceivingReport.ID, body.ReceivingReport.DateReceived, body.ReceivingReport.PurchaseOrderID, detail, &body, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
@@ -176,12 +176,12 @@ func UpdateReceivingReport2(c *fiber.Ctx, tx *gorm.DB, conditions map[string]int
 
 		if body.ReceivingReportDetails[i].ID == 0 {
 			// Create if no id was found
-			if err := CreateReceivingReportDetails2(tx, body.ReceivingReport.ID, body.ReceivingReport.DateReceived, body.ReceivingReport.PurchaseOrderID, body.ReceivingReportDetails[i], at); err != nil {
+			if err := CreateReceivingReportDetails2(tx, body.ReceivingReport.ID, body.ReceivingReport.DateReceived, body.ReceivingReport.PurchaseOrderID, body.ReceivingReportDetails[i], &body, at); err != nil {
 				return body, fiber.StatusInternalServerError, err
 			}
 		} else {
 			// Update if id has nonzero value
-			if err := UpdateReceivingReportDetails2(tx, body.ReceivingReportDetails[i], at, conditions, body.ReceivingReport.ID, body.ReceivingReport.DateReceived, body.ReceivingReport.PurchaseOrderID); err != nil {
+			if err := UpdateReceivingReportDetails2(tx, body.ReceivingReportDetails[i], at, conditions, body.ReceivingReport.ID, body.ReceivingReport.DateReceived, body.ReceivingReport.PurchaseOrderID, &body); err != nil {
 				return body, fiber.StatusInternalServerError, err
 			}
 		}
@@ -219,7 +219,7 @@ func DeleteReceivingReport2(c *fiber.Ctx, tx *gorm.DB, conditions map[string]int
 		"receiving_report_id": body.ReceivingReport.ID, //id,
 	}
 
-	if err := DeleteReceivingReportHistory(tx, body.ReceivingReport.ID, at); err != nil {
+	if err := DeleteReceivingReportHistory(tx, body.ReceivingReport.ID, &body, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 

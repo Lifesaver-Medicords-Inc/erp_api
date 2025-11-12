@@ -138,5 +138,7 @@ func DeleteInvTracker(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface
 		return body, fiber.StatusInternalServerError, errors.New("failed creating inventory tracker at")
 	}
 
+	InvalidateItemCaches()
+
 	return body, 0, nil
 }

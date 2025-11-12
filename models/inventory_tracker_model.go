@@ -1,6 +1,7 @@
 package models
 
 type InvTrackerContent struct {
+	RrId    uint   `json:"rr_id"`
 	RrdId   uint   `json:"rrd_id"`
 	PodId   uint   `json:"pod_id"`
 	Remarks string `json:"remarks"`
@@ -28,6 +29,7 @@ func (InvTrackerAt) TableName() string {
 
 type InvTrackerView struct {
 	Id            uint   `json:"id"`
+	RrId          uint   `json:"rr_id"`
 	PodId         uint   `json:"pod_id"`
 	ItemId        uint   `json:"item_id"`
 	ItemCode      string `json:"item_code"`
