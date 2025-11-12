@@ -8,8 +8,10 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
 	"github.com/pierceperado/smpc/handlers/engineering_handlers"
+	"github.com/pierceperado/smpc/handlers/item_request_handlers"
 	"github.com/pierceperado/smpc/handlers/job_orders_handlers"
 	"github.com/pierceperado/smpc/handlers/journal_entry_handlers"
+	"github.com/pierceperado/smpc/handlers/pick_activity_handlers"
 	"github.com/pierceperado/smpc/handlers/position_handlers"
 	"github.com/pierceperado/smpc/handlers/public_handlers"
 	"github.com/pierceperado/smpc/handlers/purchasing_handlers"
@@ -95,10 +97,8 @@ func SetupApp() *fiber.App {
 				jobApi := setupApi.Group("/job")
 				{
 					jobApi.Get("/order/:user_id", job_orders_handlers.GetJobOrder)
-					jobApi.Get("/sales/:sales_order", job_orders_handlers.GetSalesJobOrder)
-					jobApi.Get("/all_sales/:user_id", job_orders_handlers.GetAllSalesOrder)
+					jobApi.Get("/so_view", job_orders_handlers.GetSalesOrderViewEng)
 					jobApi.Get("/components/:bom_id", job_orders_handlers.GetComponents)
-					jobApi.Get("/sales_details/:order_id", job_orders_handlers.GetSalesDetailsJobOrder)
 					jobApi.Post("/order", job_orders_handlers.CreateJobOrder)
 					jobApi.Put("/order", job_orders_handlers.UpdateJobOrder)
 				}
@@ -167,15 +167,15 @@ func SetupApp() *fiber.App {
 					itemApi.Put("/type", setup_handlers.UpdateType)
 					itemApi.Delete("/type", setup_handlers.DeleteType)
 
-					// Request Endpoints
-					itemApi.Get("/request", setup_handlers.GetItemRequest)
-					itemApi.Get("/all_item", setup_handlers.GetAllItemList)
-					itemApi.Get("/all_binloc", setup_handlers.GetAllBinLocation)
-					itemApi.Get("/all_user", setup_handlers.GetUserList)
-					itemApi.Get("/so_doc", setup_handlers.GetSalesOrderIR)
-					itemApi.Post("/request", setup_handlers.CreateItemRequest)
-					itemApi.Put("/request", setup_handlers.UpdateItemRequest)
-					itemApi.Delete("/request", setup_handlers.DeleteItemRequest)
+					// Item Request Endpoints
+					itemApi.Get("/request", item_request_handlers.GetItemRequest)
+					itemApi.Get("/all_item", item_request_handlers.GetAllItemList)
+					itemApi.Get("/all_binloc/:itemId", item_request_handlers.GetAllBinLocation)
+					itemApi.Get("/all_user", item_request_handlers.GetUserList)
+					itemApi.Get("/so_doc", item_request_handlers.GetSalesOrderIR)
+					itemApi.Post("/request", item_request_handlers.CreateItemRequest)
+					itemApi.Put("/request", item_request_handlers.UpdateItemRequest)
+					itemApi.Delete("/request", item_request_handlers.DeleteItemRequest)
 
 					// Item Endpoints
 					itemApi.Get("", setup_handlers.GetItems)
@@ -183,6 +183,16 @@ func SetupApp() *fiber.App {
 					itemApi.Post("", setup_handlers.CreateItem)
 					itemApi.Put("", setup_handlers.UpdateItem)
 					itemApi.Delete("", setup_handlers.DeleteItem)
+				}
+
+				//Pick Activity
+				pickActivityApi := setupApi.Group("/pickAct")
+				{
+					pickActivityApi.Get("/list", pick_activity_handlers.GetPickActivity)
+					pickActivityApi.Get("/salesOrder", pick_activity_handlers.GetSalesOrderPA)
+					pickActivityApi.Post("/list", pick_activity_handlers.CreatePickActivity)
+					pickActivityApi.Put("/list", pick_activity_handlers.UpdatePickActivity)
+					pickActivityApi.Delete("/list", pick_activity_handlers.DeletePickActivity)
 				}
 
 				//warehouse
