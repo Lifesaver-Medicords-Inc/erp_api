@@ -20,7 +20,7 @@ func (VehicleFileModel) TableName() string {
 }
 
 type VehicleFileAt struct {
-	ID    uint `gorm:"primaryKey"; json:"id"`
+	ID    uint `gorm:"primaryKey" json:"id"`
 	RefId uint `json:"ref_id"`
 	At
 }
