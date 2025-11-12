@@ -58,13 +58,23 @@ type JobOrderSales struct {
 	Status       string `json:"status"`
 }
 
+func (JobOrderSales) TableName() string {
+	return "vw_get_sales_order_engineering"
+}
+
 type JobOrderSalesDetails struct {
+	Id       int    `json:"id"`
+	SoId     int    `json:"so_id"`
 	ItemCode string `json:"item_code"`
 	ItemDesc string `json:"item_desc"`
 	Stock    int    `json:"stock"`
 	ReqQty   int    `json:"req_qty"`
 	Remark   string `json:"remark"`
 	Status   string `json:"status"`
+}
+
+func (JobOrderSalesDetails) TableName() string {
+	return "vw_get_sales_order_details_engineering"
 }
 
 type Components struct {

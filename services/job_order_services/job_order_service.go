@@ -14,6 +14,11 @@ import (
 	"gorm.io/gorm"
 )
 
+type SalesOrderViewBody struct {
+	SalesOrderView        []models.JobOrderSales        `json:"sales_order_view"`
+	SalesOrderDetailsView []models.JobOrderSalesDetails `json:"sales_order_details_view"`
+}
+
 func GetJobOrder(userId int64) (interface{}, int, error) {
 	conditions := map[string]interface{}{
 		"UserId": userId,
@@ -27,40 +32,15 @@ func GetJobOrder(userId int64) (interface{}, int, error) {
 	return response, 0, nil
 }
 
-func GetSalesJobOrder(salesOrder string) (interface{}, int, error) {
-	conditions := map[string]interface{}{
-		"SalesOrder": salesOrder,
-	}
-	var response []models.JobOrderSales
+func GetSalesOrderViewEng(conditions map[string]interface{}) (interface{}, int, error) {
+	var response SalesOrderViewBody
 
-	if err := services.DbRaw(&response, "sp_GetSalesOrdersFromJobOrders", conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting job order sales list data")
+	if err := services.DbGet(&response.SalesOrderView, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New(" failed getting sales order")
 	}
 
-	return response, 0, nil
-}
-
-func GetAllSalesJobOrder(userId int64) (interface{}, int, error) {
-	conditions := map[string]interface{}{
-		"UserId": userId,
-	}
-	var response []models.JobOrderSales
-
-	if err := services.DbRaw(&response, "sp_GetAllSalesOrdersFromJobOrders", conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting job order sales list data")
-	}
-
-	return response, 0, nil
-}
-
-func GetSalesDetailsJobOrder(orderId int64) (interface{}, int, error) {
-	conditions := map[string]interface{}{
-		"OrderId": orderId,
-	}
-	var response []models.JobOrderSalesDetails
-
-	if err := services.DbRaw(&response, "sp_GetSalesOrderDetailsFromJobOrders", conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting job order sales details list data")
+	if err := services.DbGet(&response.SalesOrderDetailsView, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New(" failed getting sales order details")
 	}
 
 	return response, 0, nil
