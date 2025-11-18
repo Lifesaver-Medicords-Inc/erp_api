@@ -38,3 +38,35 @@ type InventoryStocksAt struct {
 func (InventoryStocksAt) TableName() string {
 	return "z_tbl_inv_stocks_location_at"
 }
+
+type InventoryStocksHistoryContent struct {
+	ItemRequestId        uint   `json:"item_request_id"`
+	ItemRequestDetailsId uint   `json:"item_request_details_id"`
+	InventoryStockId     uint   `json:"inventory_stock_id"`
+	ItemId               uint   `json:"item_id"`
+	BinLocation          string `json:"bin_location"`
+	StockQty             uint   `json:"stock_qty"`
+	ReqQty               uint   `json:"req_qty"`
+	TransactionDate      string `json:"transaction_date"`
+}
+
+type InventoryStocksHistory struct {
+	ID uint `gorm:"primarykey" json:"id"`
+	InventoryStocksHistoryContent
+}
+
+func (InventoryStocksHistory) TableName() string {
+	return "tbl_inv_stocks_location_history"
+}
+
+type InventoryStocksHistoryAt struct {
+	ID    uint   `gorm:"primarykey" json:"id"`
+	RefId uint   `json:"ref_id"`
+	Code  string `json:"code"`
+	InventoryStocksHistoryContent
+	At
+}
+
+func (InventoryStocksHistoryAt) TableName() string {
+	return "z_tbl_inv_stocks_location_history_at"
+}

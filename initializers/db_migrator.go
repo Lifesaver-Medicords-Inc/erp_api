@@ -37,6 +37,7 @@ func MigrateDb() {
 	//DB.AutoMigrate(&models.PickActivityLocation{}, &models.PickActivityLocationAt{})
 	//DB.AutoMigrate(&models.PickActivityHistory{}, &models.PickActivityHistoryAt{})
 	//DB.AutoMigrate(&models.InventoryStocks{}, &models.InventoryStocksAt{})
+	//DB.AutoMigrate(&models.InventoryStocksHistory{}, &models.InventoryStocksHistoryAt{})
 
 	// //warehouse
 	// DB.AutoMigrate(&models.WarehouseUseType{}, &models.WarehouseUseTypeAt{})
@@ -145,7 +146,7 @@ func MigrateDb() {
 	// // Purchasing
 	// DB.AutoMigrate(&models.PurchaseRequisition{}, &models.PurchaseRequisitionAt{})
 	// DB.AutoMigrate(&models.PROrders{}, &models.PROrdersAt{})
-	// DB.AutoMigrate(&models.PurchasingCanvassSheet{}, &models.PurchasingCanvassSheetAt{})
+	// DB.AutoMigrate(&models.PurchasingCanvassSheet{}, &models.PurchasingCanvassShInventoryStocksHistory
 	// DB.AutoMigrate(&models.PurchaseOrder{}, &models.PurchaseOrderAt{})
 	// DB.AutoMigrate(&models.PurchaseOrderDetails{}, &models.PurchaseOrderDetailsAt{})
 	// // Sales

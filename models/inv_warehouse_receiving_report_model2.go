@@ -86,7 +86,9 @@ type ReceivingHistoryContent struct {
 	ReceivedQty              string `json:"received_qty"`
 	RejectedQty              string `json:"rejected_qty"`
 	DateReceived             string `json:"date_received"`
-	IsComplete               *bool  `json:"is_complete"`
+	TransactionDate          string `json:"transaction_date"`
+	Uom                      string `json:"uom"`
+	BinLocation              string `json:"bin_location"`
 }
 
 type ReceivingHistory struct {

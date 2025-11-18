@@ -4,6 +4,7 @@ import (
 	// "errors"
 
 	"errors"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -123,16 +124,8 @@ func CreateItemRequest(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 		return body.ItemRequest, fiber.StatusInternalServerError, err
 	}
 
-	// Insert Item Request Locations
-	if err := CreateItemRequestLocations(tx, &body, at); err != nil {
+	if err := CreateItemRequestHistory(tx, &body, at); err != nil {
 		return body.ItemRequest, fiber.StatusInternalServerError, err
-	}
-
-	//Only create Item Request History if RefDoc is not empty
-	if body.ItemRequest.RefDoc != "" {
-		if err := CreateItemRequestHistory(tx, &body, at); err != nil {
-			return body.ItemRequest, fiber.StatusInternalServerError, err
-		}
 	}
 
 	//Insert audit record for the main request
@@ -177,8 +170,23 @@ func CreateItemRequestLocations(tx *gorm.DB, body *ItemRequestBody, at models.At
 		location := &body.ItemRequestLocation[i]
 		location.IrId = body.ItemRequest.ID // assign FK to parent
 
+		inventory := models.InventoryStocksHistory{
+			InventoryStocksHistoryContent: models.InventoryStocksHistoryContent{
+				ItemRequestId:        location.IrId,
+				ItemRequestDetailsId: location.IrDetailsId,
+				StockQty:             location.StockQty,
+				ReqQty:               location.IssuedQty,
+				ItemId:               location.ItemId,
+				BinLocation:          location.Location,
+			},
+		}
+
 		if err := services.DbInsert(tx, location); err != nil {
 			return errors.New("failed creating item request location")
+		}
+
+		if err := setup_services.CreateInventoryStocksHistory(tx, &inventory, at); err != nil {
+			return err
 		}
 
 		// Audit trail for each location
@@ -202,38 +210,23 @@ func CreateItemRequestHistory(tx *gorm.DB, body *ItemRequestBody, at models.At) 
 	for i := range body.ItemRequestDetails {
 		detail := &body.ItemRequestDetails[i]
 
-		//Skip if SOId or SODId are empty (zero)
-		if detail.SOId == 0 || detail.SODId == 0 {
-			continue
-		}
-
-		// Subtract ReqQty from OrderQty
-		remainingOrderQty := uint(0)
-		if detail.OrderQty > detail.ReqQty {
-			remainingOrderQty = detail.OrderQty - detail.ReqQty
-		}
-
-		// Determine completion status
-		isComplete := false
-		if remainingOrderQty == 0 {
-			isComplete = true
-		}
-
 		// Create a history entry for each item request detail
 		history := models.ItemRequestHistory{
 			ItemRequestHistoryContent: models.ItemRequestHistoryContent{
-				IRId:       body.ItemRequest.ID,
-				IRDId:      detail.ID,
-				RefDoc:     body.ItemRequest.RefDoc,
-				ItemID:     detail.ItemId,
-				ReqDate:    body.ItemRequest.ReqDate,
-				OrderQty:   &remainingOrderQty,
-				ReqQty:     detail.ReqQty,
-				SOId:       detail.SOId,
-				SODId:      detail.SODId,
-				IsComplete: &isComplete,
+				IRId:     body.ItemRequest.ID,
+				IRDId:    detail.ID,
+				RefDoc:   body.ItemRequest.RefDoc,
+				ItemID:   detail.ItemId,
+				ReqDate:  body.ItemRequest.ReqDate,
+				OrderQty: detail.OrderQty,
+				ReqQty:   detail.ReqQty,
+				SOId:     detail.SOId,
+				SODId:    detail.SODId,
 			},
 		}
+
+		// Set current date in MM/dd/yyyy format
+		history.TransactionDate = time.Now().Format("01/02/2006")
 
 		if err := services.DbInsert(tx, &history); err != nil {
 			return errors.New("failed creating item request history")
@@ -336,6 +329,17 @@ func UpdateItemRequestLocations(tx *gorm.DB, body *ItemRequestBody, conditions m
 		location := &body.ItemRequestLocation[i]
 		location.IrId = body.ItemRequest.ID
 
+		inventory := models.InventoryStocksHistory{
+			InventoryStocksHistoryContent: models.InventoryStocksHistoryContent{
+				ItemRequestId:        location.IrId,
+				ItemRequestDetailsId: location.IrDetailsId,
+				ItemId:               location.ItemId,
+				BinLocation:          location.Location,
+				StockQty:             location.StockQty,
+				ReqQty:               location.IssuedQty,
+			},
+		}
+
 		if location.ID == 0 {
 			if err := services.DbInsert(tx, location); err != nil {
 				return errors.New("failed creating item request location")
@@ -344,6 +348,10 @@ func UpdateItemRequestLocations(tx *gorm.DB, body *ItemRequestBody, conditions m
 			if err := services.DbUpdate(tx, location, conditions); err != nil {
 				return errors.New("failed updating item request location")
 			}
+		}
+
+		if err := setup_services.UpdateInventoryStocksHistory(tx, &inventory, at); err != nil {
+			return err
 		}
 
 		// Audit record for each location
@@ -372,30 +380,22 @@ func UpdateItemRequestHistory(tx *gorm.DB, body *ItemRequestBody, conditions map
 			continue
 		}
 
-		// Subtract ReqQty from OrderQty
-		remainingOrderQty := uint(0)
-		remainingOrderQty = detail.OrderQty - detail.ReqQty
-
-		// Determine completion status
-		isComplete := false
-		if remainingOrderQty == 0 {
-			isComplete = true
-		}
-
 		// Build or update the history record
 		history := models.ItemRequestHistory{
 			ItemRequestHistoryContent: models.ItemRequestHistoryContent{
-				IRId:       body.ItemRequest.ID,
-				IRDId:      detail.ID,
-				ItemID:     detail.ItemId,
-				ReqDate:    body.ItemRequest.ReqDate,
-				OrderQty:   &remainingOrderQty,
-				ReqQty:     detail.ReqQty,
-				SOId:       detail.SOId,
-				SODId:      detail.SODId,
-				IsComplete: &isComplete,
+				IRId:     body.ItemRequest.ID,
+				IRDId:    detail.ID,
+				ItemID:   detail.ItemId,
+				ReqDate:  body.ItemRequest.ReqDate,
+				OrderQty: detail.OrderQty,
+				ReqQty:   detail.ReqQty,
+				SOId:     detail.SOId,
+				SODId:    detail.SODId,
 			},
 		}
+
+		// Set current date in MM/dd/yyyy format
+		history.TransactionDate = time.Now().Format("01/02/2006")
 
 		// If an existing record exists (IRDId + IRId combination), update it
 		var existing models.ItemRequestHistory
@@ -404,11 +404,6 @@ func UpdateItemRequestHistory(tx *gorm.DB, body *ItemRequestBody, conditions map
 			history.ID = existing.ID // ensure update, not insert
 			if err := services.DbUpdate(tx, &history, map[string]interface{}{"id": existing.ID}); err != nil {
 				return errors.New("failed updating item request history")
-			}
-		} else if errors.Is(err, gorm.ErrRecordNotFound) {
-			// Insert new if not found
-			if err := services.DbInsert(tx, &history); err != nil {
-				return errors.New("failed creating new item request history")
 			}
 		} else {
 			return errors.New("failed fetching item request history for update")
@@ -552,6 +547,16 @@ func DeleteItemRequestHistory(tx *gorm.DB, body *ItemRequestBody, at models.At) 
 	// Delete all histories linked to the Item Request
 	if err := services.DbDelete(tx, &models.ItemRequestHistory{}, map[string]interface{}{"ir_id": body.ItemRequest.ID}); err != nil {
 		return errors.New("failed deleting all item request history")
+	}
+
+	inventory := models.InventoryStocksHistory{
+		InventoryStocksHistoryContent: models.InventoryStocksHistoryContent{
+			ItemRequestId: body.ItemRequest.ID,
+		},
+	}
+
+	if err := setup_services.DeleteInventoryStocksHistory(tx, &inventory, at); err != nil {
+		return err
 	}
 
 	// Optionally fetch deleted history records (Unscoped for audit)

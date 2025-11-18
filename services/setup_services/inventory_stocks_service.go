@@ -4,6 +4,8 @@ import (
 	// "errors"
 
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -36,7 +38,7 @@ func CreateInventoryStock(tx *gorm.DB, body *models.InventoryStocks, at models.A
 	return nil
 }
 
-func UpdateInventoryStock(tx *gorm.DB, body *models.InventoryStocks, at models.At) error {
+func UpdateInventoryRRStock(tx *gorm.DB, body *models.InventoryStocks, at models.At) error {
 
 	// Build or update the inventory record
 	inventory := models.InventoryStocks{
@@ -50,11 +52,6 @@ func UpdateInventoryStock(tx *gorm.DB, body *models.InventoryStocks, at models.A
 		inventory.ID = existing.ID // ensure update, not insert
 		if err := services.DbUpdate(tx, &inventory, map[string]interface{}{"id": existing.ID}); err != nil {
 			return errors.New("failed updating inventory stocks")
-		}
-	} else if errors.Is(err, gorm.ErrRecordNotFound) {
-		// Insert new if not found
-		if err := services.DbInsert(tx, &inventory); err != nil {
-			return errors.New("failed creating new inventory stocks")
 		}
 	} else {
 		return errors.New("failed fetching inventory stocks for update")
@@ -70,6 +67,100 @@ func UpdateInventoryStock(tx *gorm.DB, body *models.InventoryStocks, at models.A
 	if err := services.DbInsert(tx, &atdataInventory); err != nil {
 		return errors.New("failed creating inventory stocks audit record")
 	}
+
+	return nil
+}
+
+func CreateInventoryStocksHistory(tx *gorm.DB, body *models.InventoryStocksHistory, at models.At) error {
+
+	fmt.Println("Qtys: ", body.ReqQty, body.StockQty)
+
+	// Build or update the inventory record
+	inventory := models.InventoryStocksHistory{
+		InventoryStocksHistoryContent: body.InventoryStocksHistoryContent,
+	}
+
+	fmt.Println("Qtys: ", body.ReqQty, body.StockQty)
+
+	var existing models.InventoryStocks
+	err := tx.Where("item_id = ? AND bin_location = ?", body.ItemId, body.BinLocation).First(&existing).Error
+
+	if err == nil {
+		inventory.InventoryStockId = existing.ID
+	} else {
+		return errors.New("failed getting inventory stock location record")
+	}
+
+	// Set current date in MM/dd/yyyy format
+	inventory.TransactionDate = time.Now().Format("01/02/2006")
+
+	fmt.Println("Qtys: ", body.ReqQty, body.StockQty)
+
+	// Save updated inventory
+	if err := services.DbInsert(tx, &inventory); err != nil {
+		return errors.New("failed updating inventory stock location history")
+	}
+
+	// Insert new inventory stock At (audit trail)
+	inventoryAt := models.InventoryStocksHistoryAt{
+		RefId:                         inventory.ID,
+		InventoryStocksHistoryContent: inventory.InventoryStocksHistoryContent,
+		At:                            at,
+	}
+
+	if err := services.DbInsert(tx, &inventoryAt); err != nil {
+		return errors.New("failed creating inventory stocks at")
+	}
+
+	if err := services.InvalidateCacheByModel(models.AllBinLocationView{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
+
+	InvalidateItemCaches()
+
+	return nil
+}
+
+func UpdateInventoryStocksHistory(tx *gorm.DB, body *models.InventoryStocksHistory, at models.At) error {
+
+	// Build or update the inventory record
+	inventory := models.InventoryStocksHistory{
+		InventoryStocksHistoryContent: body.InventoryStocksHistoryContent,
+	}
+
+	var existing models.InventoryStocks
+	err := tx.Where("item_id = ? AND bin_location = ?", body.ItemId, body.BinLocation).First(&existing).Error
+
+	if err == nil {
+		inventory.InventoryStockId = existing.ID
+	} else {
+		return errors.New("failed getting inventory stock location record")
+	}
+
+	// Set current date in MM/dd/yyyy format
+	inventory.TransactionDate = time.Now().Format("01/02/2006")
+
+	// Save updated inventory
+	if err := services.DbInsert(tx, &inventory); err != nil {
+		return errors.New("failed updating inventory stock location history")
+	}
+
+	// Insert new inventory stock At (audit trail)
+	inventoryAt := models.InventoryStocksHistoryAt{
+		RefId:                         inventory.ID,
+		InventoryStocksHistoryContent: inventory.InventoryStocksHistoryContent,
+		At:                            at,
+	}
+
+	if err := services.DbInsert(tx, &inventoryAt); err != nil {
+		return errors.New("failed creating inventory stocks at")
+	}
+
+	if err := services.InvalidateCacheByModel(models.AllBinLocationView{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
+
+	InvalidateItemCaches()
 
 	return nil
 }
@@ -91,6 +182,32 @@ func DeleteInventoryStock(tx *gorm.DB, receivingId uint, at models.At) error {
 			}
 			if err := services.DbInsert(tx, &atdataInventory); err != nil {
 				return errors.New("failed creating inventory stocks audit record")
+			}
+		}
+	}
+
+	InvalidateItemCaches()
+
+	return nil
+}
+
+func DeleteInventoryStocksHistory(tx *gorm.DB, body *models.InventoryStocksHistory, at models.At) error {
+	// Delete all inventory histories linked to the Item Request
+	if err := services.DbDelete(tx, &models.InventoryStocksHistory{}, map[string]interface{}{"item_request_id": body.ItemRequestId}); err != nil {
+		return errors.New("failed deleting all inventory stocks history")
+	}
+
+	// Optionally fetch deleted history records (Unscoped for audit)
+	var deletedHistories []models.InventoryStocksHistory
+	if err := tx.Unscoped().Where("item_request_id = ?", body.ItemRequestId).Find(&deletedHistories).Error; err == nil {
+		for _, history := range deletedHistories {
+			atdataHistory := models.InventoryStocksHistoryAt{
+				RefId:                         history.ID,
+				InventoryStocksHistoryContent: history.InventoryStocksHistoryContent,
+				At:                            at,
+			}
+			if err := services.DbInsert(tx, &atdataHistory); err != nil {
+				return errors.New("failed creating inventory stock history audit record")
 			}
 		}
 	}

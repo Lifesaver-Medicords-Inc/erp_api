@@ -73,10 +73,12 @@ func (ItemRequestDetailsAt) TableName() string {
 type ItemRequestLocationContent struct {
 	IrId        uint   `json:"ir_id"`
 	IrDetailsId uint   `json:"ir_details_id"`
+	StockQty    uint   `json:"stock_qty"`
 	IssuedQty   uint   `json:"issued_qty"`
 	IssuedUom   string `json:"issued_uom"`
 	Location    string `json:"location"`
 	WarehouseId uint   `json:"warehouse_id"`
+	ItemId      uint   `json:"item_id"`
 }
 
 type ItemRequestLocation struct {
@@ -100,16 +102,16 @@ func (ItemRequestLocationAt) TableName() string {
 }
 
 type ItemRequestHistoryContent struct {
-	SOId       uint   `json:"so_id"`
-	SODId      uint   `json:"sod_id"`
-	RefDoc     string `json:"ref_doc"`
-	IRId       uint   `json:"ir_id"`
-	IRDId      uint   `json:"ird_id"`
-	ItemID     uint   `json:"item_id"`
-	ReqDate    string `json:"req_date"`
-	OrderQty   *uint  `json:"order_qty"`
-	ReqQty     uint   `json:"req_qty"`
-	IsComplete *bool  `json:"is_complete"`
+	SOId            uint   `json:"so_id"`
+	SODId           uint   `json:"sod_id"`
+	RefDoc          string `json:"ref_doc"`
+	IRId            uint   `json:"ir_id"`
+	IRDId           uint   `json:"ird_id"`
+	ItemID          uint   `json:"item_id"`
+	ReqDate         string `json:"req_date"`
+	OrderQty        uint   `json:"order_qty"`
+	ReqQty          uint   `json:"req_qty"`
+	TransactionDate string `json:"transaction_date"`
 }
 type ItemRequestHistory struct {
 	ID uint `gorm:"primarykey" json:"id"`

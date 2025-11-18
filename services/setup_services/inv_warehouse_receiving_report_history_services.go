@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -31,14 +32,6 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		}
 	}
 
-	var remaining = orderedQty - receivedQty
-
-	// Determine completeness
-	isComplete := false
-	if remaining == 0 {
-		isComplete = true
-	}
-
 	// Convert received quantity (string) to int
 	receivedQtyInt, err := strconv.Atoi(detail.ReceivedQty)
 	if err != nil {
@@ -59,11 +52,12 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 			ItemID:                   detail.ItemID,
 			ItemCode:                 detail.ItemCode,
 			ReceivingReportDetailsID: detail.ID,
-			OrderedQty:               strconv.Itoa(remaining),
+			OrderedQty:               strconv.Itoa(orderedQty),
 			ReceivedQty:              strconv.Itoa(receivedQty),
 			RejectedQty:              strconv.Itoa(rejectedQty),
 			DateReceived:             parentDateReceived,
-			IsComplete:               &isComplete,
+			Uom:                      detail.ReceivedUom,
+			BinLocation:              detail.BinLocation,
 		},
 	}
 
@@ -86,6 +80,9 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 			WarehouseId:              body.ReceivingReport.WarehouseId,
 		},
 	}
+
+	// Set current date in MM/dd/yyyy format
+	history.TransactionDate = time.Now().Format("01/02/2006")
 
 	if err := CreateInventoryStock(tx, &inventory, at); err != nil {
 		return err
@@ -125,38 +122,6 @@ func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		return err
 	}
 
-	// Convert OrderedQty and ReceivedQty (strings) to int
-	orderedQty, err := strconv.Atoi(history.OrderedQty)
-	if err != nil {
-		return errors.New("invalid ordered quantity")
-	}
-
-	receivedQty, err := strconv.Atoi(history.ReceivedQty)
-	if err != nil {
-		return errors.New("invalid received quantity")
-	}
-
-	receivedDetailQty, err := strconv.Atoi(detail.ReceivedQty)
-	if err != nil {
-		return errors.New("invalid ordered quantity")
-	}
-
-	// Default completeness
-	isComplete := false
-
-	if receivedDetailQty < receivedQty {
-		diff := receivedQty - receivedDetailQty
-		orderedQty += diff
-	} else if receivedDetailQty > receivedQty {
-		diff := receivedDetailQty - receivedQty
-		orderedQty -= diff
-	}
-
-	// Final completeness check
-	if orderedQty == 0 {
-		isComplete = true
-	}
-
 	// Convert received quantity (string) to int
 	receivedQtyInt, err := strconv.Atoi(detail.ReceivedQty)
 	if err != nil {
@@ -175,11 +140,12 @@ func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		ReceivingReportID:        receivingReportId,
 		ItemCode:                 detail.ItemCode,
 		ReceivingReportDetailsID: detail.ID,
-		OrderedQty:               strconv.Itoa(orderedQty),
+		OrderedQty:               detail.OrderedQty,
 		ReceivedQty:              detail.ReceivedQty,
 		RejectedQty:              detail.RejectedQty,
 		DateReceived:             parentDateReceived,
-		IsComplete:               &isComplete,
+		Uom:                      detail.ReceivedUom,
+		BinLocation:              detail.BinLocation,
 	}
 
 	inventory := models.InventoryStocks{
@@ -202,9 +168,12 @@ func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		},
 	}
 
-	if err := UpdateInventoryStock(tx, &inventory, at); err != nil {
+	if err := UpdateInventoryRRStock(tx, &inventory, at); err != nil {
 		return err
 	}
+
+	// Set current date in MM/dd/yyyy format
+	history.TransactionDate = time.Now().Format("01/02/2006")
 
 	// Save updated history
 	if err := services.DbUpdate(tx, &history, map[string]interface{}{"id": history.ID}); err != nil {
