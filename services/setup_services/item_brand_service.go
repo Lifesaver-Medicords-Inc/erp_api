@@ -19,7 +19,7 @@ func GetBrands(conditions map[string]interface{}) ([]models.Brand, int, error) {
 	}
 
 	return brands, 0, nil
-}
+} 
 
 func GetBrand(id int) (models.Brand, int, error) {
 	conditions := map[string]interface{}{
