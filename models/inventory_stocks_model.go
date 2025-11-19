@@ -40,14 +40,16 @@ func (InventoryStocksAt) TableName() string {
 }
 
 type InventoryStocksHistoryContent struct {
-	ItemRequestId        uint   `json:"item_request_id"`
-	ItemRequestDetailsId uint   `json:"item_request_details_id"`
-	InventoryStockId     uint   `json:"inventory_stock_id"`
-	ItemId               uint   `json:"item_id"`
-	BinLocation          string `json:"bin_location"`
-	StockQty             uint   `json:"stock_qty"`
-	ReqQty               uint   `json:"req_qty"`
-	TransactionDate      string `json:"transaction_date"`
+	ItemRequestId         uint   `json:"item_request_id"`
+	ItemRequestDetailsId  uint   `json:"item_request_details_id"`
+	PickActivityId        uint   `json:"pick_activity_id"`
+	PickActivityDetailsId uint   `json:"pick_activity_detail_id"`
+	InventoryStockId      uint   `json:"inventory_stock_id"`
+	ItemId                uint   `json:"item_id"`
+	BinLocation           string `json:"bin_location"`
+	StockQty              uint   `json:"stock_qty"`
+	ReqQty                uint   `json:"req_qty"`
+	TransactionDate       string `json:"transaction_date"`
 }
 
 type InventoryStocksHistory struct {

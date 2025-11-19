@@ -21,8 +21,9 @@ type SalesOrderViewPA struct {
 	ItemId          uint   `json:"item_id"`
 	RefDoc          string `json:"ref_doc"`
 	Customer        string `json:"customer"`
-	CustomerCode    string `json:"customer_code"`
+	Code            string `json:"code"`
 	SalesPerson     string `json:"sales_person"`
+	ItemCode        string `json:"item_code"`
 	ItemDescription string `json:"item_description"`
 	LeftQty         uint   `json:"left_qty"`
 	PickQty         uint   `json:"_qty"`

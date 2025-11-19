@@ -35,7 +35,6 @@ type PickActivityDetailsContent struct {
 	ItemDescription string `json:"item_description"`
 	SOId            uint   `json:"so_id"`
 	SODId           uint   `json:"sod_id"`
-	OrderQty        uint   `json:"order_qty"`
 	LeftQty         uint   `json:"left_qty"`
 	LeftUom         string `json:"left_uom"`
 	PickQty         uint   `json:"pick_qty"`
@@ -68,10 +67,12 @@ func (PickActivityDetailsAt) TableName() string {
 type PickActivityLocationContent struct {
 	PaId        uint   `json:"pa_id"`
 	PaDetailsId uint   `json:"pa_details_id"`
+	StockQty    uint   `json:"stock_qty"`
 	ActualQty   uint   `json:"actual_qty"`
 	ActualUom   string `json:"actual_uom"`
 	Location    string `json:"location"`
 	WarehouseId uint   `json:"warehouse_id"`
+	ItemId      uint   `json:"item_id"`
 }
 
 type PickActivityLocation struct {
@@ -95,15 +96,15 @@ func (PickActivityLocationAt) TableName() string {
 }
 
 type PickActivityHistoryContent struct {
-	SOId       uint   `json:"so_id"`
-	SODId      uint   `json:"sod_id"`
-	RefDoc     string `json:"ref_doc"`
-	PAId       uint   `json:"pa_id"`
-	PADId      uint   `json:"pad_id"`
-	ItemID     uint   `json:"item_id"`
-	LeftQty    *uint  `json:"left_qty"`
-	PickQty    uint   `json:"pick_qty"`
-	IsComplete *bool  `json:"is_complete"`
+	SOId            uint   `json:"so_id"`
+	SODId           uint   `json:"sod_id"`
+	RefDoc          string `json:"ref_doc"`
+	PAId            uint   `json:"pa_id"`
+	PADId           uint   `json:"pad_id"`
+	ItemID          uint   `json:"item_id"`
+	LeftQty         uint   `json:"left_qty"`
+	PickQty         uint   `json:"pick_qty"`
+	TransactionDate string `json:"transaction_date"`
 }
 type PickActivityHistory struct {
 	ID uint `gorm:"primarykey" json:"id"`

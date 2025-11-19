@@ -165,47 +165,6 @@ func CreateItemRequestDetails(tx *gorm.DB, body *ItemRequestBody, at models.At) 
 	return nil
 }
 
-func CreateItemRequestLocations(tx *gorm.DB, body *ItemRequestBody, at models.At) error {
-	for i := range body.ItemRequestLocation {
-		location := &body.ItemRequestLocation[i]
-		location.IrId = body.ItemRequest.ID // assign FK to parent
-
-		inventory := models.InventoryStocksHistory{
-			InventoryStocksHistoryContent: models.InventoryStocksHistoryContent{
-				ItemRequestId:        location.IrId,
-				ItemRequestDetailsId: location.IrDetailsId,
-				StockQty:             location.StockQty,
-				ReqQty:               location.IssuedQty,
-				ItemId:               location.ItemId,
-				BinLocation:          location.Location,
-			},
-		}
-
-		if err := services.DbInsert(tx, location); err != nil {
-			return errors.New("failed creating item request location")
-		}
-
-		if err := setup_services.CreateInventoryStocksHistory(tx, &inventory, at); err != nil {
-			return err
-		}
-
-		// Audit trail for each location
-		atdataLocation := models.ItemRequestLocationAt{
-			RefId:                      location.ID,
-			ItemRequestLocationContent: location.ItemRequestLocationContent,
-			At:                         at,
-		}
-
-		if err := services.DbInsert(tx, &atdataLocation); err != nil {
-			return errors.New("failed creating item request location at")
-		}
-	}
-
-	setup_services.InvalidateItemCaches()
-
-	return nil
-}
-
 func CreateItemRequestHistory(tx *gorm.DB, body *ItemRequestBody, at models.At) error {
 	for i := range body.ItemRequestDetails {
 		detail := &body.ItemRequestDetails[i]
@@ -523,6 +482,16 @@ func DeleteItemRequestLocations(tx *gorm.DB, body *ItemRequestBody, at models.At
 		return errors.New("failed deleting all item request location")
 	}
 
+	inventory := models.InventoryStocksHistory{
+		InventoryStocksHistoryContent: models.InventoryStocksHistoryContent{
+			ItemRequestId: body.ItemRequest.ID,
+		},
+	}
+
+	if err := setup_services.DeleteInventoryStocksIRHistory(tx, &inventory, at); err != nil {
+		return err
+	}
+
 	// Optionally fetch deleted locations for audit trail
 	var deletedLocations []models.ItemRequestLocation
 	if err := tx.Unscoped().Where("ir_id = ?", body.ItemRequest.ID).Find(&deletedLocations).Error; err == nil {
@@ -547,16 +516,6 @@ func DeleteItemRequestHistory(tx *gorm.DB, body *ItemRequestBody, at models.At) 
 	// Delete all histories linked to the Item Request
 	if err := services.DbDelete(tx, &models.ItemRequestHistory{}, map[string]interface{}{"ir_id": body.ItemRequest.ID}); err != nil {
 		return errors.New("failed deleting all item request history")
-	}
-
-	inventory := models.InventoryStocksHistory{
-		InventoryStocksHistoryContent: models.InventoryStocksHistoryContent{
-			ItemRequestId: body.ItemRequest.ID,
-		},
-	}
-
-	if err := setup_services.DeleteInventoryStocksHistory(tx, &inventory, at); err != nil {
-		return err
 	}
 
 	// Optionally fetch deleted history records (Unscoped for audit)

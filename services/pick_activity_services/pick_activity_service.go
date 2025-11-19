@@ -4,6 +4,7 @@ import (
 	// "errors"
 
 	"errors"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -86,11 +87,6 @@ func CreatePickActivity(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 		return body.PickActivity, fiber.StatusInternalServerError, err
 	}
 
-	// Insert Pick Activity Locations
-	if err := CreatePickActivityLocations(tx, &body, at); err != nil {
-		return body.PickActivity, fiber.StatusInternalServerError, err
-	}
-
 	//Only create Pick Activity History if RefDoc is not empty
 	if body.PickActivity.ReferenceSo != "" {
 		if err := CreatePickActivityHistory(tx, &body, at); err != nil {
@@ -135,67 +131,26 @@ func CreatePickActivityDetails(tx *gorm.DB, body *PickActivityBody, at models.At
 	return nil
 }
 
-func CreatePickActivityLocations(tx *gorm.DB, body *PickActivityBody, at models.At) error {
-	for i := range body.PickActivityLocation {
-		location := &body.PickActivityLocation[i]
-		location.PaId = body.PickActivity.ID // assign FK to parent
-
-		if err := services.DbInsert(tx, location); err != nil {
-			return errors.New("failed creating pick activity location")
-		}
-
-		// Audit trail for each location
-		atdataLocation := models.PickActivityLocationAt{
-			RefId:                       location.ID,
-			PickActivityLocationContent: location.PickActivityLocationContent,
-			At:                          at,
-		}
-
-		if err := services.DbInsert(tx, &atdataLocation); err != nil {
-			return errors.New("failed creating pick activity location at")
-		}
-	}
-
-	setup_services.InvalidateItemCaches()
-
-	return nil
-}
-
 func CreatePickActivityHistory(tx *gorm.DB, body *PickActivityBody, at models.At) error {
 	for i := range body.PickActivityDetails {
 		detail := &body.PickActivityDetails[i]
 
-		//Skip if SOId or SODId are empty (zero)
-		if detail.SOId == 0 || detail.SODId == 0 {
-			continue
-		}
-
-		// Subtract PickQty from LeftQty
-		remainingLeftQty := uint(0)
-		if detail.LeftQty > detail.PickQty {
-			remainingLeftQty = detail.LeftQty - detail.PickQty
-		}
-
-		// Determine completion status
-		isComplete := false
-		if remainingLeftQty == 0 {
-			isComplete = true
-		}
-
 		// Create a history entry for each pick activity detail
 		history := models.PickActivityHistory{
 			PickActivityHistoryContent: models.PickActivityHistoryContent{
-				PAId:       body.PickActivity.ID,
-				PADId:      detail.ID,
-				RefDoc:     body.PickActivity.ReferenceSo,
-				ItemID:     detail.ItemId,
-				LeftQty:    &remainingLeftQty,
-				PickQty:    detail.PickQty,
-				SOId:       detail.SOId,
-				SODId:      detail.SODId,
-				IsComplete: &isComplete,
+				PAId:    body.PickActivity.ID,
+				PADId:   detail.ID,
+				RefDoc:  body.PickActivity.ReferenceSo,
+				ItemID:  detail.ItemId,
+				LeftQty: detail.LeftQty,
+				PickQty: detail.PickQty,
+				SOId:    detail.SOId,
+				SODId:   detail.SODId,
 			},
 		}
+
+		// Set current date in MM/dd/yyyy format
+		history.TransactionDate = time.Now().Format("01/02/2006")
 
 		if err := services.DbInsert(tx, &history); err != nil {
 			return errors.New("failed creating pick activity history")
@@ -298,6 +253,17 @@ func UpdatePickActivityLocations(tx *gorm.DB, body *PickActivityBody, conditions
 		location := &body.PickActivityLocation[i]
 		location.PaId = body.PickActivity.ID
 
+		inventory := models.InventoryStocksHistory{
+			InventoryStocksHistoryContent: models.InventoryStocksHistoryContent{
+				PickActivityId:        location.PaId,
+				PickActivityDetailsId: location.PaDetailsId,
+				ItemId:                location.ItemId,
+				BinLocation:           location.Location,
+				StockQty:              location.StockQty,
+				ReqQty:                location.ActualQty,
+			},
+		}
+
 		if location.ID == 0 {
 			if err := services.DbInsert(tx, location); err != nil {
 				return errors.New("failed creating pick activity location")
@@ -306,6 +272,10 @@ func UpdatePickActivityLocations(tx *gorm.DB, body *PickActivityBody, conditions
 			if err := services.DbUpdate(tx, location, conditions); err != nil {
 				return errors.New("failed updating pick activity location")
 			}
+		}
+
+		if err := setup_services.UpdateInventoryStocksHistory(tx, &inventory, at); err != nil {
+			return err
 		}
 
 		// Audit record for each location
@@ -329,34 +299,21 @@ func UpdatePickActivityHistory(tx *gorm.DB, body *PickActivityBody, conditions m
 	for i := range body.PickActivityDetails {
 		detail := &body.PickActivityDetails[i]
 
-		//Skip if SOId or SODId are empty (zero)
-		if detail.SOId == 0 || detail.SODId == 0 {
-			continue
-		}
-
-		// Subtract ReqQty from OrderQty
-		remainingPickQty := uint(0)
-		remainingPickQty = detail.LeftQty - detail.PickQty
-
-		// Determine completion status
-		isComplete := false
-		if remainingPickQty == 0 {
-			isComplete = true
-		}
-
 		// Build or update the history record
 		history := models.PickActivityHistory{
 			PickActivityHistoryContent: models.PickActivityHistoryContent{
-				PAId:       body.PickActivity.ID,
-				PADId:      detail.ID,
-				ItemID:     detail.ItemId,
-				LeftQty:    &remainingPickQty,
-				PickQty:    detail.PickQty,
-				SOId:       detail.SOId,
-				SODId:      detail.SODId,
-				IsComplete: &isComplete,
+				PAId:    body.PickActivity.ID,
+				PADId:   detail.ID,
+				ItemID:  detail.ItemId,
+				LeftQty: detail.LeftQty,
+				PickQty: detail.PickQty,
+				SOId:    detail.SOId,
+				SODId:   detail.SODId,
 			},
 		}
+
+		// Set current date in MM/dd/yyyy format
+		history.TransactionDate = time.Now().Format("01/02/2006")
 
 		// If an existing record exists (IRDId + IRId combination), update it
 		var existing models.PickActivityHistory
@@ -365,11 +322,6 @@ func UpdatePickActivityHistory(tx *gorm.DB, body *PickActivityBody, conditions m
 			history.ID = existing.ID // ensure update, not insert
 			if err := services.DbUpdate(tx, &history, map[string]interface{}{"id": existing.ID}); err != nil {
 				return errors.New("failed updating pick activity history")
-			}
-		} else if errors.Is(err, gorm.ErrRecordNotFound) {
-			// Insert new if not found
-			if err := services.DbInsert(tx, &history); err != nil {
-				return errors.New("failed creating new pick activity history")
 			}
 		} else {
 			return errors.New("failed fetching pick activity history for update")
@@ -472,6 +424,16 @@ func DeletePickActivityLocations(tx *gorm.DB, body *PickActivityBody, at models.
 	// Delete all locations
 	if err := services.DbDelete(tx, &models.PickActivityLocation{}, map[string]interface{}{"pa_id": body.PickActivity.ID}); err != nil {
 		return errors.New("failed deleting all pick activity location")
+	}
+
+	inventory := models.InventoryStocksHistory{
+		InventoryStocksHistoryContent: models.InventoryStocksHistoryContent{
+			ItemRequestId: body.PickActivity.ID,
+		},
+	}
+
+	if err := setup_services.DeleteInventoryStocksPAHistory(tx, &inventory, at); err != nil {
+		return err
 	}
 
 	// Optionally fetch deleted locations for audit trail
