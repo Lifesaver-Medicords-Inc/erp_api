@@ -428,7 +428,7 @@ func DeletePickActivityLocations(tx *gorm.DB, body *PickActivityBody, at models.
 
 	inventory := models.InventoryStocksHistory{
 		InventoryStocksHistoryContent: models.InventoryStocksHistoryContent{
-			ItemRequestId: body.PickActivity.ID,
+			PickActivityId: body.PickActivity.ID,
 		},
 	}
 
