@@ -197,12 +197,12 @@ func UpdatePickActivity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfa
 	}
 
 	// Inside Update Pick Activity (after updating details and locations)
-	if err := UpdatePickActivityLocations(tx, &body, conditions, at); err != nil {
+	if err := UpdatePickActivityHistory(tx, &body, conditions, at); err != nil {
 		return body.PickActivity, fiber.StatusInternalServerError, err
 	}
 
 	// Inside Update Pick Activity (after updating details and locations)
-	if err := UpdatePickActivityHistory(tx, &body, conditions, at); err != nil {
+	if err := UpdatePickActivityLocations(tx, &body, conditions, at); err != nil {
 		return body.PickActivity, fiber.StatusInternalServerError, err
 	}
 
@@ -252,6 +252,8 @@ func UpdatePickActivityLocations(tx *gorm.DB, body *PickActivityBody, conditions
 	for i := range body.PickActivityLocation {
 		location := &body.PickActivityLocation[i]
 		location.PaId = body.PickActivity.ID
+		SodId := body.PickActivityDetails[i].SODId
+		TransDate := body.PickActivityHistory[i].TransactionDate
 
 		inventory := models.InventoryStocksHistory{
 			InventoryStocksHistoryContent: models.InventoryStocksHistoryContent{
@@ -261,7 +263,34 @@ func UpdatePickActivityLocations(tx *gorm.DB, body *PickActivityBody, conditions
 				BinLocation:           location.Location,
 				StockQty:              location.StockQty,
 				ReqQty:                location.ActualQty,
+				WarehouseId:           location.WarehouseId,
 			},
+		}
+
+		existing := models.InventoryStocks{
+			InventoryStocksContent: models.InventoryStocksContent{
+				PickActivityId:         location.PaId,
+				PickActivityDetailsId:  location.PaDetailsId,
+				PurchaseOrderDetailsId: SodId,
+				ItemId:                 location.ItemId,
+				BinLocation:            location.Location,
+				Uom:                    location.ActualUom,
+				QtyIn:                  location.ActualQty,
+				WarehouseId:            location.WarehouseId,
+				SupplierName:           body.PickActivity.Customer,
+				DateReceived:           TransDate,
+			},
+		}
+
+		err := tx.Where("bin_location = ? AND warehouse_id = ? AND item_id = ?", location.Location, location.WarehouseId, location.ItemId).First(&existing).Error
+		if err == nil {
+			if err := setup_services.UpdateInventoryStockPickActivity(tx, &existing, at); err != nil {
+				return err
+			}
+		} else {
+			if err := setup_services.CreateInventoryStock(tx, &existing, at); err != nil {
+				return err
+			}
 		}
 
 		if location.ID == 0 {
@@ -433,6 +462,10 @@ func DeletePickActivityLocations(tx *gorm.DB, body *PickActivityBody, at models.
 	}
 
 	if err := setup_services.DeleteInventoryStocksPAHistory(tx, &inventory, at); err != nil {
+		return err
+	}
+
+	if err := setup_services.DeleteInventoryStock(tx, body.PickActivity.ID, 0, at); err != nil {
 		return err
 	}
 

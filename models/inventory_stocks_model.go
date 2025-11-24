@@ -3,18 +3,15 @@ package models
 type InventoryStocksContent struct {
 	ReceivingReportId        uint   `json:"receiving_report_id"`
 	ReceivingReportDetailsId uint   `json:"receiving_report_details_id"`
+	PickActivityId           uint   `json:"pick_activity_id"`
+	PickActivityDetailsId    uint   `json:"pick_activity_details_id"`
 	PurchaseOrderDetailsId   uint   `json:"purchase_order_details_id"`
-	ReceivingReportDoc       string `json:"receiving_report_doc"`
-	PurchaseOrderDoc         string `json:"purchase_order_doc"`
 	ItemId                   uint   `json:"item_id"`
-	ItemCode                 string `json:"item_code"`
 	BinLocation              string `json:"bin_location"`
 	QtyIn                    uint   `json:"qty_in"`
-	QtyOut                   uint   `json:"qty_out"`
 	Uom                      string `json:"uom"`
 	SupplierName             string `json:"supplier_name"`
 	DateReceived             string `json:"date_received"`
-	WarehouseName            string `json:"warehouse_name"`
 	WarehouseId              uint   `json:"warehouse_id"`
 }
 
@@ -50,6 +47,7 @@ type InventoryStocksHistoryContent struct {
 	StockQty              uint   `json:"stock_qty"`
 	ReqQty                uint   `json:"req_qty"`
 	TransactionDate       string `json:"transaction_date"`
+	WarehouseId           uint   `json:"warehouse_id"`
 }
 
 type InventoryStocksHistory struct {

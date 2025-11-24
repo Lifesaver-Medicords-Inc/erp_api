@@ -42,7 +42,7 @@ func CreateInventoryStock(tx *gorm.DB, body *models.InventoryStocks, at models.A
 	return nil
 }
 
-func UpdateInventoryRRStock(tx *gorm.DB, body *models.InventoryStocks, at models.At) error {
+func UpdateInventoryStock(tx *gorm.DB, body *models.InventoryStocks, at models.At) error {
 
 	// Build or update the inventory record
 	inventory := models.InventoryStocks{
@@ -79,45 +79,39 @@ func UpdateInventoryRRStock(tx *gorm.DB, body *models.InventoryStocks, at models
 	return nil
 }
 
-func CreateInventoryStocksHistory(tx *gorm.DB, body *models.InventoryStocksHistory, at models.At) error {
+func UpdateInventoryStockPickActivity(tx *gorm.DB, body *models.InventoryStocks, at models.At) error {
+
 	// Build or update the inventory record
-	inventory := models.InventoryStocksHistory{
-		InventoryStocksHistoryContent: body.InventoryStocksHistoryContent,
+	inventory := models.InventoryStocks{
+		InventoryStocksContent: body.InventoryStocksContent,
 	}
 
+	// If an existing record exists (Bin Location + Warehouse Id, Item Id combination), update it
 	var existing models.InventoryStocks
-	err := tx.Where("item_id = ? AND bin_location = ?", body.ItemId, body.BinLocation).First(&existing).Error
-
+	err := tx.Where("bin_location = ? AND warehouse_id = ? AND item_id = ?", body.BinLocation, body.WarehouseId, body.ItemId).First(&existing).Error
 	if err == nil {
-		inventory.InventoryStockId = existing.ID
+		inventory.ID = existing.ID // ensure update, not insert
+		if err := services.DbUpdate(tx, &inventory, map[string]interface{}{"id": existing.ID}); err != nil {
+			return errors.New("failed updating inventory stocks")
+		}
 	} else {
-		return errors.New("failed getting inventory stock location record")
+		return errors.New("failed fetching inventory stocks for update")
 	}
 
-	// Set current date in MM/dd/yyyy format
-	inventory.TransactionDate = time.Now().Format("01/02/2006")
-
-	// Save updated inventory
-	if err := services.DbInsert(tx, &inventory); err != nil {
-		return errors.New("failed updating inventory stock location history")
+	// Insert audit trail record for inventory update
+	atdataInventory := models.InventoryStocksAt{
+		RefId:                  inventory.ID,
+		InventoryStocksContent: inventory.InventoryStocksContent,
+		At:                     at,
 	}
 
-	// Insert new inventory stock At (audit trail)
-	inventoryAt := models.InventoryStocksHistoryAt{
-		RefId:                         inventory.ID,
-		InventoryStocksHistoryContent: inventory.InventoryStocksHistoryContent,
-		At:                            at,
-	}
-
-	if err := services.DbInsert(tx, &inventoryAt); err != nil {
-		return errors.New("failed creating inventory stocks at")
+	if err := services.DbInsert(tx, &atdataInventory); err != nil {
+		return errors.New("failed creating inventory stocks audit record")
 	}
 
 	if err := services.InvalidateCacheByModel(models.AllBinLocationView{}); err != nil {
 		fmt.Println("Failed to invalidate cache:", err)
 	}
-
-	InvalidateItemCaches()
 
 	return nil
 }
@@ -130,20 +124,56 @@ func UpdateInventoryStocksHistory(tx *gorm.DB, body *models.InventoryStocksHisto
 	}
 
 	var existing models.InventoryStocks
-	err := tx.Where("item_id = ? AND bin_location = ?", body.ItemId, body.BinLocation).First(&existing).Error
+	err := tx.Where("item_id = ? AND bin_location = ? AND warehouse_id = ?", body.ItemId, body.BinLocation, body.WarehouseId).First(&existing).Error
 
-	if err == nil {
-		inventory.InventoryStockId = existing.ID
+	var existingHistory models.InventoryStocksHistory
+	var errh error
+
+	if body.PickActivityId == 0 && body.PickActivityDetailsId == 0 {
+		// If both are zero → DO THIS QUERY
+		errh = tx.Where(`item_id = ? AND bin_location = ? AND warehouse_id = ? 
+			AND item_request_id = ? AND item_request_details_id = ?`,
+			body.ItemId, body.BinLocation, body.WarehouseId, body.ItemRequestId, body.ItemRequestDetailsId).
+			First(&existingHistory).Error
+
 	} else {
-		return errors.New("failed getting inventory stock location record")
+		// Else → DO SOMETHING ELSE (replace with your logic)
+		errh = tx.Where(`item_id = ? AND bin_location = ? AND warehouse_id = ?
+			AND pick_activity_id = ? AND pick_activity_details_id = ?`,
+			body.ItemId, body.BinLocation, body.WarehouseId, body.PickActivityId, body.PickActivityDetailsId).
+			First(&existingHistory).Error
 	}
 
 	// Set current date in MM/dd/yyyy format
 	inventory.TransactionDate = time.Now().Format("01/02/2006")
 
-	// Save updated inventory
-	if err := services.DbInsert(tx, &inventory); err != nil {
-		return errors.New("failed updating inventory stock location history")
+	if errh == nil {
+		inventory.ID = existingHistory.ID
+		inventory.InventoryStockId = existingHistory.InventoryStockId
+
+		if err := services.DbUpdate(tx, &inventory, map[string]interface{}{"id": inventory.ID}); err != nil {
+			return errors.New("failed updating inventory stocks history")
+		}
+	} else {
+		// Save updated inventory
+		inventory.InventoryStockId = existing.ID
+
+		if err := services.DbInsert(tx, &inventory); err != nil {
+			return errors.New("failed updating inventory stock location history")
+		}
+	}
+
+	var totalReqQty int64
+	tx.Model(&models.InventoryStocksHistory{}).
+		Where("item_id = ? AND bin_location = ? AND warehouse_id = ?", body.ItemId, body.BinLocation, body.WarehouseId).
+		Select("COALESCE(SUM(req_qty),0)").
+		Scan(&totalReqQty)
+
+	// Update QtyOut in InventoryStocks
+	if err == nil {
+		if err := services.DbUpdate(tx, &existing, map[string]interface{}{"id": existing.ID}); err != nil {
+			return errors.New("failed updating total qty_out in inventory stocks")
+		}
 	}
 
 	// Insert new inventory stock At (audit trail)
@@ -166,15 +196,26 @@ func UpdateInventoryStocksHistory(tx *gorm.DB, body *models.InventoryStocksHisto
 	return nil
 }
 
-func DeleteInventoryStock(tx *gorm.DB, receivingId uint, at models.At) error {
-	// Delete all inventory stocks linked to the Receiving Report
-	if err := services.DbDelete(tx, &models.InventoryStocks{}, map[string]interface{}{"receiving_report_id": receivingId}); err != nil {
-		return errors.New("failed deleting all inventory stock")
+func DeleteInventoryStock(tx *gorm.DB, pickActivityId uint, receivingId uint, at models.At) error {
+
+	// Determine filter field
+	var filter map[string]interface{}
+	if pickActivityId != 0 {
+		filter = map[string]interface{}{"pick_activity_id": pickActivityId}
+	} else if receivingId != 0 {
+		filter = map[string]interface{}{"receiving_report_id": receivingId}
+	} else {
+		return errors.New("no valid ID provided: both pickActivityId and receivingId are zero")
 	}
 
-	// Optionally fetch deleted inventory stock records (Unscoped for audit)
+	// Delete inventory stocks
+	if err := services.DbDelete(tx, &models.InventoryStocks{}, filter); err != nil {
+		return errors.New("failed deleting inventory stock")
+	}
+
+	// Fetch deleted rows (Unscoped for audit)
 	var deletedInventories []models.InventoryStocks
-	if err := tx.Unscoped().Where("receiving_report_id = ?", receivingId).Find(&deletedInventories).Error; err == nil {
+	if err := tx.Unscoped().Where(filter).Find(&deletedInventories).Error; err == nil {
 		for _, history := range deletedInventories {
 			atdataInventory := models.InventoryStocksAt{
 				RefId:                  history.ID,
@@ -187,6 +228,7 @@ func DeleteInventoryStock(tx *gorm.DB, receivingId uint, at models.At) error {
 		}
 	}
 
+	// Cache invalidation
 	if err := services.InvalidateCacheByModel(models.AllBinLocationView{}); err != nil {
 		fmt.Println("Failed to invalidate cache:", err)
 	}

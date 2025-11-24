@@ -4,6 +4,7 @@ import (
 	// "errors"
 
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -296,6 +297,7 @@ func UpdateItemRequestLocations(tx *gorm.DB, body *ItemRequestBody, conditions m
 				BinLocation:          location.Location,
 				StockQty:             location.StockQty,
 				ReqQty:               location.IssuedQty,
+				WarehouseId:          location.WarehouseId,
 			},
 		}
 
@@ -323,6 +325,10 @@ func UpdateItemRequestLocations(tx *gorm.DB, body *ItemRequestBody, conditions m
 		if err := services.DbInsert(tx, &atdataLocation); err != nil {
 			return errors.New("failed creating item request location at")
 		}
+	}
+
+	if err := services.InvalidateCacheByModel(models.AllBinLocationView{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
 	}
 
 	setup_services.InvalidateItemCaches()
