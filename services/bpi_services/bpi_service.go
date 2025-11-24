@@ -3,6 +3,7 @@ package bpi_services
 import (
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -52,6 +53,10 @@ func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
 	if err := services.DbGet(&response.Bpi, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting bpis")
 	}
+	// Sort by ID descending
+	sort.Slice(response.Bpi, func(i, j int) bool {
+		return response.Bpi[i].ID > response.Bpi[j].ID
+	})
 
 	if err := services.DbGet(&response.General, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting bpi general list")
@@ -80,6 +85,7 @@ func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting history")
 	}
 
+	//fmt.Print("bpi response", response.Bpi)
 	return response, 0, nil
 }
 
@@ -162,7 +168,6 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 		services.InvalidateCache(key)
 	}
 	// invalidate all child keys
-	InvalidateChildKey()
 
 	//Create Bpi General
 
@@ -203,6 +208,9 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
+
+	InvalidateChildKey()
+
 	return body, 0, nil
 }
 func UpdateBpi(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Body, int, error) {
@@ -316,8 +324,11 @@ func UpdateBpi(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bo
 
 	}
 
+	InvalidateChildKey()
+
 	return body, 0, nil
 }
+
 func InvalidateChildKey() {
 
 	generalKey := services.GetKey(models.BpiGeneralView{}, nil)

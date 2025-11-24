@@ -12,7 +12,6 @@ import (
 
 func GetBpis(c *fiber.Ctx) error {
 	data, status, err := bpi_services.GetBpis(nil)
-
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
