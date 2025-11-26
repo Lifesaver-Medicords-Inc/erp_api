@@ -88,9 +88,8 @@ func UpdateInventoryStockPickActivity(tx *gorm.DB, body *models.InventoryStocks,
 
 	// If an existing record exists (Bin Location + Warehouse Id, Item Id combination), update it
 	var existing models.InventoryStocks
-	err := tx.Where("bin_location = ? AND warehouse_id = ? AND item_id = ?", body.BinLocation, body.WarehouseId, body.ItemId).First(&existing).Error
+	err := tx.Where("pick_activity_id = ? AND pick_activity_details_id = ?", inventory.PickActivityId, inventory.PickActivityDetailsId).First(&existing).Error
 	if err == nil {
-		inventory.ID = existing.ID // ensure update, not insert
 		if err := services.DbUpdate(tx, &inventory, map[string]interface{}{"id": existing.ID}); err != nil {
 			return errors.New("failed updating inventory stocks")
 		}

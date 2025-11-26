@@ -45,6 +45,17 @@ func GetPickActivity(conditions map[string]interface{}) (interface{}, int, error
 	return response, 0, nil
 }
 
+func GetBinLocation(conditions map[string]interface{}) (interface{}, int, error) {
+
+	var response []models.WarehouseArea
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting all bin location PA")
+	}
+
+	return response, 0, nil
+}
+
 func GetSalesOrderPA(conditions map[string]interface{}) (interface{}, int, error) {
 
 	var response []models.SalesOrderViewPA
@@ -63,6 +74,9 @@ func CreatePickActivity(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
+
+	// Set current date in MM/dd/yyyy format
+	body.PickActivity.TransactionDate = time.Now().Format("01/02/2006")
 
 	//Insert main Pick Activity record
 	if err := services.DbInsert(tx, &body.PickActivity); err != nil {
@@ -180,6 +194,9 @@ func UpdatePickActivity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfa
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
+	// Set current date in MM/dd/yyyy format
+	body.PickActivity.TransactionDate = time.Now().Format("01/02/2006")
+
 	//Update main Pick Activity
 	if err := services.DbUpdate(tx, &body.PickActivity, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating pick activity")
@@ -223,6 +240,7 @@ func UpdatePickActivityDetails(tx *gorm.DB, body *PickActivityBody, conditions m
 	for i := range body.PickActivityDetails {
 		detail := &body.PickActivityDetails[i]
 		detail.PaId = body.PickActivity.ID
+		TransDate := body.PickActivity.TransactionDate
 
 		if detail.ID == 0 {
 			if err := services.DbInsert(tx, detail); err != nil {
@@ -244,6 +262,40 @@ func UpdatePickActivityDetails(tx *gorm.DB, body *PickActivityBody, conditions m
 		if err := services.DbInsert(tx, &atdataDetail); err != nil {
 			return errors.New("failed creating pick activity details at")
 		}
+
+		if detail.BinLocation == "" || detail.WarehouseId == 0 || detail.ActualQty == 0 {
+			continue
+		}
+
+		// Prepare inventory stock struct
+		inventory := models.InventoryStocks{
+			InventoryStocksContent: models.InventoryStocksContent{
+				PickActivityId:         detail.PaId,
+				PickActivityDetailsId:  detail.ID,
+				PurchaseOrderDetailsId: detail.SODId,
+				ItemId:                 detail.ItemId,
+				BinLocation:            detail.BinLocation,
+				Uom:                    detail.ActualUom,
+				QtyIn:                  detail.ActualQty,
+				WarehouseId:            detail.WarehouseId,
+				SupplierName:           body.PickActivity.Customer,
+				DateReceived:           TransDate,
+			},
+		}
+
+		var existing models.InventoryStocks
+
+		err := tx.Where("item_id = ? AND pick_activity_id = ? AND pick_activity_details_id = ?", inventory.ItemId, inventory.PickActivityId, inventory.PickActivityDetailsId).First(&existing).Error
+
+		if err == nil && existing.ReceivingReportDetailsId == 0 && existing.ReceivingReportId == 0 {
+			if err := setup_services.UpdateInventoryStockPickActivity(tx, &inventory, at); err != nil {
+				return err
+			}
+		} else {
+			if err := setup_services.CreateInventoryStock(tx, &inventory, at); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -252,8 +304,6 @@ func UpdatePickActivityLocations(tx *gorm.DB, body *PickActivityBody, conditions
 	for i := range body.PickActivityLocation {
 		location := &body.PickActivityLocation[i]
 		location.PaId = body.PickActivity.ID
-		SodId := body.PickActivityDetails[i].SODId
-		TransDate := body.PickActivityHistory[i].TransactionDate
 
 		inventory := models.InventoryStocksHistory{
 			InventoryStocksHistoryContent: models.InventoryStocksHistoryContent{
@@ -265,32 +315,6 @@ func UpdatePickActivityLocations(tx *gorm.DB, body *PickActivityBody, conditions
 				ReqQty:                location.ActualQty,
 				WarehouseId:           location.WarehouseId,
 			},
-		}
-
-		existing := models.InventoryStocks{
-			InventoryStocksContent: models.InventoryStocksContent{
-				PickActivityId:         location.PaId,
-				PickActivityDetailsId:  location.PaDetailsId,
-				PurchaseOrderDetailsId: SodId,
-				ItemId:                 location.ItemId,
-				BinLocation:            location.Location,
-				Uom:                    location.ActualUom,
-				QtyIn:                  location.ActualQty,
-				WarehouseId:            location.WarehouseId,
-				SupplierName:           body.PickActivity.Customer,
-				DateReceived:           TransDate,
-			},
-		}
-
-		err := tx.Where("bin_location = ? AND warehouse_id = ? AND item_id = ?", location.Location, location.WarehouseId, location.ItemId).First(&existing).Error
-		if err == nil {
-			if err := setup_services.UpdateInventoryStockPickActivity(tx, &existing, at); err != nil {
-				return err
-			}
-		} else {
-			if err := setup_services.CreateInventoryStock(tx, &existing, at); err != nil {
-				return err
-			}
 		}
 
 		if location.ID == 0 {

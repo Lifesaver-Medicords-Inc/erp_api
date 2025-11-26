@@ -188,6 +188,7 @@ func SetupApp() *fiber.App {
 				//Pick Activity
 				pickActivityApi := setupApi.Group("/pickAct")
 				{
+					pickActivityApi.Get("/binloc", pick_activity_handlers.GetBinLocation)
 					pickActivityApi.Get("/list", pick_activity_handlers.GetPickActivity)
 					pickActivityApi.Get("/salesOrder", pick_activity_handlers.GetSalesOrderPA)
 					pickActivityApi.Post("/list", pick_activity_handlers.CreatePickActivity)

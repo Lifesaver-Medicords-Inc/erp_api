@@ -1,12 +1,13 @@
 package models
 
 type PickActivityContent struct {
-	Customer    string `json:"customer"`
-	Code        string `json:"code"`
-	ReferenceSo string `json:"reference_so"`
-	SalesPerson string `json:"sales_person"`
-	PreparedBy  string `json:"prepared_by"`
-	PickedBy    string `json:"picked_by"`
+	Customer        string `json:"customer"`
+	Code            string `json:"code"`
+	ReferenceSo     string `json:"reference_so"`
+	SalesPerson     string `json:"sales_person"`
+	PreparedBy      string `json:"prepared_by"`
+	PickedBy        string `json:"picked_by"`
+	TransactionDate string `json:"transaction_date"`
 }
 type PickActivity struct {
 	ID    uint   `gorm:"primarykey" json:"id"`
@@ -42,6 +43,7 @@ type PickActivityDetailsContent struct {
 	ActualQty       uint   `json:"actual_qty"`
 	ActualUom       string `json:"actual_uom"`
 	BinLocation     string `json:"bin_location"`
+	WarehouseId     uint   `json:"warehouse_id"`
 }
 type PickActivityDetails struct {
 	ID   uint `gorm:"primarykey" json:"id"`

@@ -16,6 +16,15 @@ func GetPickActivity(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
+func GetBinLocation(c *fiber.Ctx) error {
+	data, status, err := pick_activity_services.GetBinLocation(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
 func GetSalesOrderPA(c *fiber.Ctx) error {
 	data, status, err := pick_activity_services.GetSalesOrderPA(nil)
 	if err != nil {
