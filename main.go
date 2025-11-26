@@ -337,6 +337,8 @@ func SetupApp() *fiber.App {
 				// PROJECT TEMPLATES ENDPOINTS
 				setupApi.Get("/templates", setup_handlers.GetProjectsTemplates)
 				setupApi.Post("/templates", setup_handlers.CreateProjectTemplate)
+				setupApi.Put("/templates", setup_handlers.UpdateProjectTemplate)
+				setupApi.Delete("/templates", setup_handlers.DeleteProjectTemplate)
 
 				setupApi.Get("/boq", setup_handlers.GetItemBoqs)
 

@@ -25,18 +25,15 @@ func (SalesProjectTemplateAt) TableName() string {
 }
 
 type SalesProjectTemplateChildContent struct {
-	NodeID    uint   `json:"node_id"`
-	BasedID   uint   `json:"based_id"`
-	NodeName  string `json:"node_name"`
-	NodeLevel uint   `json:"node_level"`
-	NodeOrder uint   `json:"node_order"`
-	ItemID    uint   `json:"item_id"`
-	NodeType  string `json:"node_type"`
+	ParentId   uint   `json:"parent_id"`
+	ItemID     uint   `json:"item_id"`
+	Components string `json:"components"`
+	Level      uint   `json:"level"`
 }
 
 type SalesProjectTemplateChild struct {
-	NodesID      uint `gorm:"primarykey" json:"nodes_id"`
-	ParentNodeID uint `json:"parent_node_id"`
+	ID       uint `gorm:"primarykey" json:"id"`
+	ParentID uint `json:"parent_id"`
 	SalesProjectTemplateChildContent
 }
 
