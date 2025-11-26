@@ -91,8 +91,8 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 
-	DB.AutoMigrate(&models.SalesProjectTemplate{}, &models.SalesProjectTemplateAt{})
-	DB.AutoMigrate(&models.SalesProjectTemplateChild{}, &models.SalesProjectTemplateChildAt{})
+	//DB.AutoMigrate(&models.SalesProjectTemplate{}, &models.SalesProjectTemplateAt{})
+	//DB.AutoMigrate(&models.SalesProjectTemplateChild{}, &models.SalesProjectTemplateChildAt{})
 
 	// DB.AutoMigrate(
 	// 	&models.SalesProjectMultiplier{},
