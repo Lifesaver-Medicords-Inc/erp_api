@@ -20,7 +20,7 @@ type ItemRequest struct {
 }
 
 func (ItemRequest) TableName() string {
-	return "tbl_trans_item_request"
+	return "tbl_inv_item_request"
 }
 
 type ItemRequestAt struct {
@@ -31,7 +31,7 @@ type ItemRequestAt struct {
 }
 
 func (ItemRequestAt) TableName() string {
-	return "z_tbl_trans_item_request_at"
+	return "z_tbl_inv_item_request_at"
 }
 
 type ItemRequestDetailsContent struct {
@@ -56,7 +56,7 @@ type ItemRequestDetails struct {
 }
 
 func (ItemRequestDetails) TableName() string {
-	return "tbl_trans_item_request_details"
+	return "tbl_inv_item_request_details"
 }
 
 type ItemRequestDetailsAt struct {
@@ -67,7 +67,7 @@ type ItemRequestDetailsAt struct {
 }
 
 func (ItemRequestDetailsAt) TableName() string {
-	return "z_tbl_trans_item_request_details_at"
+	return "z_tbl_inv_item_request_details_at"
 }
 
 type ItemRequestLocationContent struct {
@@ -87,7 +87,7 @@ type ItemRequestLocation struct {
 }
 
 func (ItemRequestLocation) TableName() string {
-	return "tbl_trans_item_request_location"
+	return "tbl_inv_item_request_location"
 }
 
 type ItemRequestLocationAt struct {
@@ -98,7 +98,7 @@ type ItemRequestLocationAt struct {
 }
 
 func (ItemRequestLocationAt) TableName() string {
-	return "z_tbl_trans_item_request_location_at"
+	return "z_tbl_inv_item_request_location_at"
 }
 
 type ItemRequestHistoryContent struct {
@@ -119,7 +119,7 @@ type ItemRequestHistory struct {
 }
 
 func (ItemRequestHistory) TableName() string {
-	return "tbl_trans_item_request_history"
+	return "tbl_inv_item_request_history"
 }
 
 type ItemRequestHistoryAt struct {
@@ -130,5 +130,5 @@ type ItemRequestHistoryAt struct {
 }
 
 func (ItemRequestHistoryAt) TableName() string {
-	return "z_tbl_trans_item_request_history_at"
+	return "z_tbl_inv_item_request_history_at"
 }

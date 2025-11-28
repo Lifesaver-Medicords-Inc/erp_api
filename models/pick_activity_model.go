@@ -16,7 +16,7 @@ type PickActivity struct {
 }
 
 func (PickActivity) TableName() string {
-	return "tbl_trans_pick_activity"
+	return "tbl_inv_pick_activity"
 }
 
 type PickActivityAt struct {
@@ -27,7 +27,7 @@ type PickActivityAt struct {
 }
 
 func (PickActivityAt) TableName() string {
-	return "z_tbl_trans_pick_activity_at"
+	return "z_tbl_inv_pick_activity_at"
 }
 
 type PickActivityDetailsContent struct {
@@ -52,7 +52,7 @@ type PickActivityDetails struct {
 }
 
 func (PickActivityDetails) TableName() string {
-	return "tbl_trans_pick_activity_details"
+	return "tbl_inv_pick_activity_details"
 }
 
 type PickActivityDetailsAt struct {
@@ -63,7 +63,7 @@ type PickActivityDetailsAt struct {
 }
 
 func (PickActivityDetailsAt) TableName() string {
-	return "z_tbl_trans_pick_activity_details_at"
+	return "z_tbl_inv_pick_activity_details_at"
 }
 
 type PickActivityLocationContent struct {
@@ -83,7 +83,7 @@ type PickActivityLocation struct {
 }
 
 func (PickActivityLocation) TableName() string {
-	return "tbl_trans_pick_activity_location"
+	return "tbl_inv_pick_activity_location"
 }
 
 type PickActivityLocationAt struct {
@@ -94,7 +94,7 @@ type PickActivityLocationAt struct {
 }
 
 func (PickActivityLocationAt) TableName() string {
-	return "z_tbl_trans_pick_activity_location_at"
+	return "z_tbl_inv_pick_activity_location_at"
 }
 
 type PickActivityHistoryContent struct {
@@ -114,7 +114,7 @@ type PickActivityHistory struct {
 }
 
 func (PickActivityHistory) TableName() string {
-	return "tbl_trans_pick_activity_history"
+	return "tbl_inv_pick_activity_history"
 }
 
 type PickActivityHistoryAt struct {
@@ -125,5 +125,5 @@ type PickActivityHistoryAt struct {
 }
 
 func (PickActivityHistoryAt) TableName() string {
-	return "z_tbl_trans_pick_activity_history_at"
+	return "z_tbl_inv_pick_activity_history_at"
 }
