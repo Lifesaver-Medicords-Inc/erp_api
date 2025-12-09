@@ -23,6 +23,17 @@ type Body struct {
 	Accreditations []models.BpiAccreditation `json:"accreditations"`
 }
 
+type NewMainBody struct {
+	ID     uint `json:"id"`
+	IsMain bool `json:"is_main"`
+}
+
+type CreateBpiParentFromBranchRequest struct {
+	models.Bpi
+	GeneralId      int `json:"general_id"`
+	GeneralBasedId int `json:"general_general_id"`
+}
+
 type TestBody struct {
 	models.Bpi
 	IndustriesId []uint                  `json:"industries_id"`
@@ -159,7 +170,12 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 			}
 		}
 
-		parentat := models.BpiAt{RefId: body.ID, BpiContent: models.BpiContent{SalesId: body.SalesId, Name: body.Name, Tin: body.Tin, MainTelNo: body.MainTelNo}, At: at}
+		parentat := models.BpiAt{RefId: body.ID, BpiContent: models.BpiContent{
+			SalesId:   body.SalesId,
+			Name:      body.Name,
+			Tin:       body.Tin,
+			MainTelNo: body.MainTelNo},
+			At: at}
 		if err := services.DbInsert(tx, &parentat); err != nil {
 			return body, fiber.StatusInternalServerError, errors.New("failed creating parentat")
 		}
@@ -178,7 +194,7 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 	// Create  Bpi Contacts
 
 	for i := range body.Contacts {
-		if err := BpiContact(tx, body.ID, body.General.ID, &body.Contacts[i], at); err != nil {
+		if err := BpiContact(tx, body.ID, body.General.ID, &body.Contacts[i], body.General.SalesId, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
@@ -187,24 +203,24 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 
 	for _, v := range body.Address {
 
-		if err := BpiAddress(tx, body.ID, body.General.ID, v, at); err != nil {
+		if err := BpiAddress(tx, body.ID, body.General.ID, v, body.General.SalesId, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
 
 	//Create Bpi Items
-	if err := CreateBpiItems(tx, body.ID, body.General.ID, body.Items, at); err != nil {
+	if err := CreateBpiItems(tx, body.ID, body.General.ID, body.Items, body.General.SalesId, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 	//Create Bpi Finance
-	if err := CreateBpiFinance(tx, body.ID, body.General.ID, body.Finance, at); err != nil {
+	if err := CreateBpiFinance(tx, body.ID, body.General.ID, body.Finance, body.General.SalesId, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 	//Create Bpi Accreditations
 
 	for _, v := range body.Accreditations {
 
-		if err := CreateBpiAccreditation(tx, body.ID, body.General.ID, v, at); err != nil {
+		if err := CreateBpiAccreditation(tx, body.ID, body.General.ID, v, body.General.SalesId, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
@@ -213,6 +229,101 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 
 	return body, 0, nil
 }
+
+func CreateBpiParentFromBranch(c *fiber.Ctx, tx *gorm.DB) (models.Bpi, int, error) {
+	var req CreateBpiParentFromBranchRequest
+
+	// Parse request
+	if err := c.BodyParser(&req); err != nil {
+		fmt.Println("CreateBpiParentFromBranch Request:", req)
+		return req.Bpi, fiber.StatusBadRequest, errors.New(" cannot bind request")
+	}
+
+	// Check if parent BPI already exists
+	var count int64
+	if err := tx.Model(&models.Bpi{}).Where("id = ?", req.ID).Count(&count).Error; err != nil {
+		return req.Bpi, fiber.StatusBadRequest, errors.New("failed to query Bpi table")
+	}
+
+	if count == 0 {
+		// Insert new parent BPI
+		if err := services.DbInsert(tx, &req.Bpi); err != nil {
+			return req.Bpi, fiber.StatusInternalServerError, errors.New("failed creating parent BPI")
+		}
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	newBpiID := req.Bpi.ID // ID of newly created parent
+	originalGeneralID := req.GeneralId
+	originalGeneralBasedID := req.GeneralBasedId
+
+	fmt.Println("NEW BPI ID", newBpiID)
+	fmt.Println("ORIGINAL GENERAL ID", originalGeneralID)
+
+	// create set as new bpi history
+	if err := CreateBpiHistory(tx, newBpiID, "create", "Branch as New BPI", req.SalesId, at); err != nil {
+		return req.Bpi, fiber.StatusInternalServerError, err
+	}
+	// Update child BpiGeneral
+	if err := tx.Model(&models.BpiGeneral{}).
+		Where("id = ?", originalGeneralID).
+		Updates(map[string]interface{}{
+			"based_id": newBpiID,
+			"is_main":  true,
+		}).Error; err != nil {
+		return req.Bpi, fiber.StatusInternalServerError, errors.New("failed updating general")
+	}
+
+	// Update child BpiIndustries
+	if err := tx.Model(&models.BpiIndustries{}).
+		Where("bpi_id = ?", originalGeneralBasedID).
+		Update("bpi_id", newBpiID).Error; err != nil {
+		return req.Bpi, fiber.StatusInternalServerError, errors.New("failed updating bpi industries")
+	}
+
+	// Update child Contacts
+	if err := tx.Model(&models.BpiContacts{}).
+		Where("branch_id = ?", originalGeneralID).
+		Update("based_id", newBpiID).Error; err != nil {
+		return req.Bpi, fiber.StatusInternalServerError, errors.New("failed updating contacts")
+	}
+
+	// Update child Address
+	if err := tx.Model(&models.BpiAddress{}).
+		Where("branch_id = ?", originalGeneralID).
+		Update("based_id", newBpiID).Error; err != nil {
+		return req.Bpi, fiber.StatusInternalServerError, errors.New("failed updating addresses")
+	}
+
+	// Update child Finance
+	if err := tx.Model(&models.BpiFinance{}).
+		Where("finance_branch_id = ?", originalGeneralID).
+		Update("finance_based_id", newBpiID).Error; err != nil {
+		return req.Bpi, fiber.StatusInternalServerError, errors.New("failed updating finance")
+	}
+
+	// Update child Items
+	if err := tx.Model(&models.BpiItems{}).
+		Where("branch_id = ?", originalGeneralID).
+		Update("based_id", newBpiID).Error; err != nil {
+		return req.Bpi, fiber.StatusInternalServerError, errors.New("failed updating items")
+	}
+
+	// Update child Accreditations
+	if err := tx.Model(&models.BpiAccreditation{}).
+		Where("branch_id = ?", originalGeneralID).
+		Update("based_id", newBpiID).Error; err != nil {
+		return req.Bpi, fiber.StatusInternalServerError, errors.New("failed updating accreditations")
+	}
+
+	InvalidateChildKey()
+	return req.Bpi, fiber.StatusOK, nil
+}
+
 func UpdateBpi(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Body, int, error) {
 
 	var body Body
@@ -225,7 +336,7 @@ func UpdateBpi(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bo
 	fmt.Println("BODY Contacts  REQUEST", body.Contacts)
 	fmt.Println("BODY  Address  REQUEST", body.Address)
 	fmt.Println("BODY Items  REQUEST", body.Items)
-	fmt.Println("BODY Items  REQUEST", body.Finance)
+	fmt.Println("BODY Finance  REQUEST", body.Finance)
 
 	if err := services.DbUpdate(tx, &body.Bpi, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New(("failed updating parent"))
@@ -236,7 +347,16 @@ func UpdateBpi(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bo
 		at = models.At{}
 	}
 
-	parentat := models.BpiAt{RefId: body.ID, BpiContent: models.BpiContent{SalesId: body.SalesId, Name: body.Name, Tin: body.Tin, MainTelNo: body.MainTelNo}, At: at}
+	parentat := models.BpiAt{
+		RefId: body.ID,
+		BpiContent: models.BpiContent{
+			SalesId:   body.SalesId,
+			Name:      body.Name,
+			Tin:       body.Tin,
+			MainTelNo: body.MainTelNo,
+		},
+		At: at,
+	}
 	if err := services.DbInsert(tx, &parentat); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating bpi at")
 	}
@@ -286,8 +406,7 @@ func UpdateBpi(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bo
 	// Update  Bpi Contacts
 
 	for _, v := range body.Contacts {
-
-		if err := UpdateBpiContact(tx, body.General.ID, v, at, conditions); err != nil {
+		if err := UpdateBpiContact(tx, body.General.ID, v, body.General.SalesId, at, conditions); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 
@@ -296,20 +415,20 @@ func UpdateBpi(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bo
 	//Update Bpi Address
 
 	for _, v := range body.Address {
-		if err := UpdateBpiAddress(tx, body.General.ID, v, at, conditions); err != nil {
+		if err := UpdateBpiAddress(tx, body.General.ID, v, body.General.SalesId, at, conditions); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
 
 	//Update Bpi Items
-
-	if err := UpdateBpiItems(tx, body.ID, body.General.ID, body.Items, at); err != nil {
+	//  Add function to add new item in update function
+	if err := UpdateBpiItems(tx, body.ID, body.General.ID, body.Items, body.General.SalesId, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
 	//Update Bpi Finance
 
-	if err := UpdateBpiFinance(tx, body.Finance, at, body.ID); err != nil {
+	if err := UpdateBpiFinance(tx, body.Finance, body.General.SalesId, at, body.ID); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
@@ -318,7 +437,7 @@ func UpdateBpi(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bo
 	for _, v := range body.Accreditations {
 		fmt.Println("Body Accreditations", v)
 
-		if err := CreateBpiAccreditation(tx, body.ID, body.General.ID, v, at); err != nil {
+		if err := CreateBpiAccreditation(tx, body.ID, body.General.ID, v, body.General.SalesId, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 
@@ -327,6 +446,57 @@ func UpdateBpi(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bo
 	InvalidateChildKey()
 
 	return body, 0, nil
+}
+
+func UpdateBpiMainBranch(c *fiber.Ctx, tx *gorm.DB) ([]models.BpiGeneral, int, error) {
+	var updates []NewMainBody
+
+	if err := c.BodyParser(&updates); err != nil {
+		return nil, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	var updatedRecords []models.BpiGeneral
+
+	for _, u := range updates {
+		var record models.BpiGeneral
+
+		// Find the record first
+		if err := tx.First(&record, u.ID).Error; err != nil {
+			return updatedRecords, fiber.StatusNotFound, fmt.Errorf("record ID %d not found", u.ID)
+		}
+
+		// Update IsMain
+		record.IsMain = &u.IsMain
+		if err := tx.Save(&record).Error; err != nil {
+			return updatedRecords, fiber.StatusInternalServerError, errors.New("failed to update bpi general")
+		}
+		updatedRecords = append(updatedRecords, record)
+
+		if u.IsMain {
+
+			newmainat := models.BpiGeneralAt{
+				RefId:                     record.ID,
+				BranchName:                record.BranchName,
+				SalesId:                   record.SalesId,
+				IsMain:                    record.IsMain,
+				BpiGeneralEmbeddedContent: record.BpiGeneralEmbeddedContent,
+				At:                        models.At{},
+			}
+
+			if err := services.DbInsert(tx, &newmainat); err != nil {
+				return updatedRecords, fiber.StatusInternalServerError, errors.New("failed creating bpi general at for main branch")
+			}
+
+			if err := CreateBpiHistory(tx, record.BasedId, "update", "Set as Main Branch", "", models.At{}); err != nil {
+				return updatedRecords, fiber.StatusInternalServerError, err
+			}
+		}
+
+	}
+
+	InvalidateChildKey()
+
+	return updatedRecords, 0, nil
 }
 
 func InvalidateChildKey() {
@@ -351,4 +521,7 @@ func InvalidateChildKey() {
 
 	accreditationKey := services.GetKey(models.BpiAccreditationView{}, nil)
 	services.InvalidateCache(accreditationKey)
+
+	historyKey := services.GetKey(models.BpiHistoryView{}, nil)
+	services.InvalidateCache(historyKey)
 }

@@ -16,6 +16,7 @@ type BpiGeneralContent struct {
 	BasedId    uint   `json:"based_id"`
 	BranchName string `gorm:"unique;size:100" json:"branch_name"`
 	SalesId    string `json:"sales_id"`
+	IsMain     *bool  `json:"is_main"`
 	BpiGeneralEmbeddedContent
 }
 
@@ -35,9 +36,12 @@ func (BpiGeneral) TableName() string {
 }
 
 type BpiGeneralAt struct {
-	ID    uint `gorm:"primarykey" json:"id"`
-	RefId uint `json:"ref_id"`
-	BpiGeneralContent
+	ID         uint   `gorm:"primarykey" json:"id"`
+	RefId      uint   `json:"ref_id"`
+	BranchName string `gorm:"size:100" json:"branch_name"` // remove unique
+	SalesId    string `json:"sales_id"`
+	IsMain     *bool  `json:"is_main"`
+	BpiGeneralEmbeddedContent
 	At
 }
 

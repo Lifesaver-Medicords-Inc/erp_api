@@ -11,6 +11,7 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
+	"github.com/pierceperado/smpc/utils"
 	"gorm.io/gorm"
 )
 
@@ -38,7 +39,7 @@ func saveBase64Image(base64Str string) (string, error) {
 	return path, nil
 }
 
-func CreateBpiAccreditation(tx *gorm.DB, parentId uint, general_id uint, child models.BpiAccreditation, at models.At) error {
+func CreateBpiAccreditation(tx *gorm.DB, parentId uint, general_id uint, child models.BpiAccreditation, salesId string, at models.At) error {
 
 	child.BpiAccreditationContent.BasedId = parentId
 	child.BpiAccreditationContent.BranchId = general_id
@@ -62,12 +63,24 @@ func CreateBpiAccreditation(tx *gorm.DB, parentId uint, general_id uint, child m
 		if err := services.DbInsert(tx, &childAt); err != nil {
 			return errors.New("failed creating accreditation at")
 		}
+
+		if err := CreateBpiHistory(tx, parentId, "create", "Accreditation", salesId, at); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func UpdateBpiAccreditation(tx *gorm.DB, child models.BpiAccreditation, at models.At, parentId uint) error {
+func UpdateBpiAccreditation(tx *gorm.DB, child models.BpiAccreditation, salesId string, at models.At, parentId uint) error {
+
+	oldAccreditation := models.BpiAccreditation{}
+	if err := tx.First(&oldAccreditation, child.ID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
 
 	conditions := map[string]interface{}{
 		"based_id": parentId,
@@ -87,6 +100,22 @@ func UpdateBpiAccreditation(tx *gorm.DB, child models.BpiAccreditation, at model
 	}
 	if err := services.DbInsert(tx, &childAt); err != nil {
 		return errors.New("failed creating bpi accreditation at")
+	}
+
+	newAccreditation := models.BpiAccreditation{}
+	if err := tx.First(&newAccreditation, child.ID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	accreditationChanged := utils.HasChanged(oldAccreditation, newAccreditation)
+
+	if accreditationChanged {
+		// create accreditation history
+		if err := CreateBpiHistory(tx, parentId, "create", "Finance", salesId, at); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -6,6 +6,7 @@ type BpiGeneralView struct {
 	GeneralBasedId uint   `json:"general_based_id"`
 	BranchSalesId  string `json:"branch_sales_id"`
 	BranchName     string `json:"branch_name"`
+	IsMain         bool   `json:"is_main"`
 	BpiGeneralEmbeddedContent
 	BranchIndustryIds   string `json:"branch_industry_ids" `
 	BranchIndustryNames string `json:"branch_industry_names"`

@@ -74,6 +74,7 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.Type{}, &models.TypeAt{})
 	// DB.AutoMigrate(&models.Item{}, &models.ItemAt{})
 	// DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
+	//DB.AutoMigrate(&models.ValuationMethod{}, &models.ValuationMethodAt{})
 
 	// DB.AutoMigrate(&models.Application{}, &models.ApplicationAt{})
 
@@ -173,6 +174,7 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.BpiItems{}, &models.BpiItemsAt{})
 	// DB.AutoMigrate(&models.BpiFinance{}, &models.BpiFinanceAt{})
 	// DB.AutoMigrate(&models.BpiAccreditation{}, &models.BpiAccreditationAt{})
+	// DB.AutoMigrate(&models.BpiHistory{}, &models.BpiHistoryAt{})
 
 	// // ACCOUNTING
 	// //DB.AutoMigrate(&models.ChartOfAccounts{}, &models.ChartOfAccountsAt{})

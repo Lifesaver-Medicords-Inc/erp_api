@@ -1,14 +1,28 @@
 package models
 
-type BpiHistoryView struct {
-	BasedId     uint   `json:"based_id"`
-	BranchId    uint   `json:"branch_id"`
-	AtDate      string `json:"at_date"`
-	Actions     string `json:"actions"`
-	EditBy      string `json:"edit_by"`
-	EditHistory string `json:"edit_history"`
+type BpiHistory struct {
+	ID uint `gorm:"primarykey" json:"id"`
+	BpiHistoryContent
+}
+type BpiHistoryContent struct {
+	BasedId   uint   `json:"based_id"`
+	Date      string `json:"date"`
+	Actions   string `json:"actions"`
+	ChildType string `json:"child_type"`
+	EditBy    string `json:"edit_by"`
 }
 
-func (BpiHistoryView) TableName() string {
-	return "vw_get_bpi_history"
+func (BpiHistory) TableName() string {
+	return "tbl_bpi_history"
+}
+
+type BpiHistoryAt struct {
+	ID    uint `gorm:"primarykey" json:"id"`
+	RefId uint `json:"ref_id"`
+	BpiHistoryContent
+	At
+}
+
+func (BpiHistoryAt) TableName() string {
+	return "z_tbl_bpi_history_at"
 }

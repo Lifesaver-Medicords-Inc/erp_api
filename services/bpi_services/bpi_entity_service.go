@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func CreateBpiEntity(tx *gorm.DB, parentId uint, entityId uint, at models.At) error {
+func CreateBpiEntity(tx *gorm.DB, parentId uint, entityId uint, salesId string, at models.At) error {
 
 	fmt.Println("CREATE BPI ENTITTY")
 	content := models.BpiEntityContent{
@@ -33,10 +33,15 @@ func CreateBpiEntity(tx *gorm.DB, parentId uint, entityId uint, at models.At) er
 		return errors.New("failed creating bpi entity_at")
 	}
 
+	// create branch entity history
+	// if err := CreateBpiHistory(tx, parentId, "create", "General Entities", salesId, at); err != nil {
+	// 	return err
+	// }
+
 	return nil
 }
 
-func UpdateBpiEntity(tx *gorm.DB, parentId uint, entityId uint, at models.At) error {
+func UpdateBpiEntity(tx *gorm.DB, parentId uint, entityId uint, salesId string, at models.At) error {
 
 	conditions := map[string]interface{}{
 		"bpi_general_id": parentId,
@@ -62,6 +67,11 @@ func UpdateBpiEntity(tx *gorm.DB, parentId uint, entityId uint, at models.At) er
 
 	if err := services.DbInsert(tx, &bpiEntityAt); err != nil {
 		return errors.New("failed creating bpi_industries_at")
+	}
+
+	// create branch entity history
+	if err := CreateBpiHistory(tx, parentId, "update", "General Entities", salesId, at); err != nil {
+		return err
 	}
 
 	return nil

@@ -71,6 +71,30 @@ func CreateBpi(c *fiber.Ctx) error {
 
 }
 
+func CreateBpiParentFromBranch(c *fiber.Ctx) error {
+	tx := initializers.DB.Begin()
+
+	if tx.Error != nil {
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transactions")
+	}
+
+	data, status, err := bpi_services.CreateBpiParentFromBranch(c, tx)
+
+	fmt.Println("DATA HANDLER", data)
+
+	if err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transactions")
+	}
+	return utils.RespondSuccess(c, data)
+
+}
+
 func UpdateBpi(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
@@ -84,6 +108,27 @@ func UpdateBpi(c *fiber.Ctx) error {
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transactions")
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+func UpdateBpiMainBranch(c *fiber.Ctx) error {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return utils.RespondError(c, fiber.StatusInternalServerError, "failed to start transaction")
+	}
+
+	// Call service
+	data, status, err := bpi_services.UpdateBpiMainBranch(c, tx)
+	if err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, fiber.StatusInternalServerError, "failed to commit transaction")
 	}
 
 	return utils.RespondSuccess(c, data)

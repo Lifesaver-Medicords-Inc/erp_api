@@ -52,6 +52,12 @@ func SetupApp() *fiber.App {
 		BodyLimit: 50 * 1024 * 1024,
 	})
 
+	// Rate Limiter
+	// app.Use(limiter.New(limiter.Config{
+	// 	Max:        20,
+	// 	Expiration: 1 * time.Second,
+	// }))
+
 	app.Static("/files", "./files")
 
 	// App Logger
@@ -176,6 +182,13 @@ func SetupApp() *fiber.App {
 					itemApi.Post("/request", item_request_handlers.CreateItemRequest)
 					itemApi.Put("/request", item_request_handlers.UpdateItemRequest)
 					itemApi.Delete("/request", item_request_handlers.DeleteItemRequest)
+
+					// Item Valuation Method Endpoints
+					itemApi.Get("/valuation_method", setup_handlers.GetValuationMethods)
+					itemApi.Get("/valuation_method/:id", setup_handlers.GetValuationMethod)
+					itemApi.Post("/valuation_method", setup_handlers.CreateValuationMethod)
+					itemApi.Put("/valuation_method", setup_handlers.UpdateValuationMethod)
+					itemApi.Delete("/valuation_method", setup_handlers.DeleteValuationMethod)
 
 					// Item Endpoints
 					itemApi.Get("", setup_handlers.GetItems)
@@ -555,7 +568,9 @@ func SetupApp() *fiber.App {
 			api.Get("/bpi/entity", bpi_handlers.GetBpiEntityRecords)
 			api.Get("/bpi/list", bpi_handlers.GetBpiItemList)
 			api.Post("/bpi", bpi_handlers.CreateBpi)
+			api.Post("/bpi/createbpi", bpi_handlers.CreateBpiParentFromBranch)
 			api.Put("/bpi", bpi_handlers.UpdateBpi)
+			api.Put("/bpi/main", bpi_handlers.UpdateBpiMainBranch)
 			api.Get("/bpi/:id", sales_handlers.GetBpi)
 			api.Get("/bpi_suppliers", sales_handlers.GetBpiSuppliers) // change naming convention to snake case
 

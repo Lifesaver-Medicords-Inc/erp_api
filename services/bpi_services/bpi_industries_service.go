@@ -60,7 +60,7 @@ func UpdateBpiIndustries(tx *gorm.DB, parentId uint, industryId uint, at models.
 	return nil
 }
 
-func CreateBpiBranchIndustries(tx *gorm.DB, parentId uint, branchIndustryId uint, at models.At) error {
+func CreateBpiBranchIndustries(tx *gorm.DB, parentId uint, branchIndustryId uint, salesId string, at models.At) error {
 
 	content := models.BpiBranchIndustriesContent{
 		BpiGeneralId: parentId,
@@ -81,10 +81,15 @@ func CreateBpiBranchIndustries(tx *gorm.DB, parentId uint, branchIndustryId uint
 		return errors.New("failed creating bpi branch_industries_at")
 	}
 
+	// create branch industries history
+	// if err := CreateBpiHistory(tx, parentId, "create", "Branch Industries", salesId, at); err != nil {
+	// 	return err
+	// }
+
 	return nil
 }
 
-func UpdateBpiBranchIndustries(tx *gorm.DB, parentId uint, branchIndustryId uint, at models.At) error {
+func UpdateBpiBranchIndustries(tx *gorm.DB, parentId uint, branchIndustryId uint, salesId string, at models.At) error {
 
 	conditions := map[string]interface{}{
 		"bpi_general_id": parentId,
@@ -107,6 +112,11 @@ func UpdateBpiBranchIndustries(tx *gorm.DB, parentId uint, branchIndustryId uint
 
 	if err := services.DbInsert(tx, &bpiBranchIndustriesAt); err != nil {
 		return errors.New("failed creating bpi branch industries at")
+	}
+
+	// create branch industries history
+	if err := CreateBpiHistory(tx, parentId, "update", "Branch Industries", salesId, at); err != nil {
+		return err
 	}
 
 	return nil

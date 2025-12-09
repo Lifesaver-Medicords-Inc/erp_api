@@ -5,20 +5,21 @@ import (
 
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
+	"github.com/pierceperado/smpc/utils"
 	"gorm.io/gorm"
 )
 
-func CreateBpiItems(tx *gorm.DB, parentId uint, generalId uint, childItems []models.BpiItems, at models.At) error {
+func CreateBpiItems(tx *gorm.DB, parentId uint, generalId uint, childItems []models.BpiItems, salesId string, at models.At) error {
 
 	for _, v := range childItems {
-		if err := CreateBpiItem(tx, parentId, generalId, v, at); err != nil {
+		if err := CreateBpiItem(tx, parentId, generalId, v, salesId, at); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func CreateBpiItem(tx *gorm.DB, parentId uint, generalId uint, child models.BpiItems, at models.At) error {
+func CreateBpiItem(tx *gorm.DB, parentId uint, generalId uint, child models.BpiItems, salesId string, at models.At) error {
 
 	child.BpiItemContent.BasedId = parentId
 	child.BpiItemContent.BranchId = generalId
@@ -36,13 +37,18 @@ func CreateBpiItem(tx *gorm.DB, parentId uint, generalId uint, child models.BpiI
 		return errors.New("failed creating bpi items at")
 	}
 
+	// create items history
+	if err := CreateBpiHistory(tx, parentId, "create", "Items", salesId, at); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func UpdateBpiItems(tx *gorm.DB, parentId uint, generalId uint, childItems []models.BpiItems, at models.At) error {
+func UpdateBpiItems(tx *gorm.DB, parentId uint, generalId uint, childItems []models.BpiItems, salesId string, at models.At) error {
 
 	for _, v := range childItems {
-		if err := UpdateBpiItem(tx, parentId, generalId, v, at); err != nil {
+		if err := UpdateBpiItem(tx, parentId, generalId, v, salesId, at); err != nil {
 			return err
 		}
 	}
@@ -50,12 +56,20 @@ func UpdateBpiItems(tx *gorm.DB, parentId uint, generalId uint, childItems []mod
 	return nil
 }
 
-func UpdateBpiItem(tx *gorm.DB, parentId uint, generalId uint, child models.BpiItems, at models.At) error {
+func UpdateBpiItem(tx *gorm.DB, parentId uint, generalId uint, child models.BpiItems, salesId string, at models.At) error {
+
+	oldItem := models.BpiItems{}
+	if err := tx.First(&oldItem, child.ID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
 
 	conditions := map[string]interface{}{
 		"id": child.ID,
 	}
-	
+
 	if child.ID == 0 {
 		child.BpiItemContent.BasedId = parentId
 		child.BpiItemContent.BranchId = generalId
@@ -79,6 +93,22 @@ func UpdateBpiItem(tx *gorm.DB, parentId uint, generalId uint, child models.BpiI
 	if err := services.DbInsert(tx, &childfat); err != nil {
 		return errors.New("failed creating bpi items at  in Update Bpi items")
 	}
+
+	newItem := models.BpiItems{}
+	if err := tx.First(&newItem, child.ID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	if utils.HasChanged(oldItem, newItem) {
+		// create items history
+		if err := CreateBpiHistory(tx, parentId, "update", "Items", salesId, at); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
