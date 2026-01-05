@@ -420,36 +420,6 @@ func DeleteItemRequest(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfac
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	// Optionally fetch deleted details to log in audit trail
-	var deletedDetails []models.ItemRequestDetails
-	if err := tx.Unscoped().Where("ir_id = ?", body.ItemRequest.ID).Find(&deletedDetails).Error; err == nil {
-		for _, detail := range deletedDetails {
-			atdataDetail := models.ItemRequestDetailsAt{
-				RefId:                     detail.ID,
-				ItemRequestDetailsContent: detail.ItemRequestDetailsContent,
-				At:                        at,
-			}
-			if err := services.DbInsert(tx, &atdataDetail); err != nil {
-				return body.ItemRequest, fiber.StatusInternalServerError, errors.New("failed creating item request details audit record")
-			}
-		}
-	}
-
-	// Optionally fetch deleted location to log in audit trail
-	var deletedLocation []models.ItemRequestLocation
-	if err := tx.Unscoped().Where("ir_id = ?", body.ItemRequest.ID).Find(&deletedLocation).Error; err == nil {
-		for _, location := range deletedLocation {
-			atdataLocation := models.ItemRequestLocationAt{
-				RefId:                      location.ID,
-				ItemRequestLocationContent: location.ItemRequestLocationContent,
-				At:                         at,
-			}
-			if err := services.DbInsert(tx, &atdataLocation); err != nil {
-				return body.ItemRequest, fiber.StatusInternalServerError, errors.New("failed creating item request location audit record")
-			}
-		}
-	}
-
 	//Audit record for main request
 	atdata := models.ItemRequestAt{RefId: body.ItemRequest.ID, ItemRequestContent: body.ItemRequest.ItemRequestContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {

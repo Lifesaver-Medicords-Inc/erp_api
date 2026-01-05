@@ -47,7 +47,7 @@ func GetPickActivity(conditions map[string]interface{}) (interface{}, int, error
 
 func GetBinLocation(conditions map[string]interface{}) (interface{}, int, error) {
 
-	var response []models.WarehouseArea
+	var response []models.WarehouseAreaView
 
 	if err := services.DbGet(&response, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting all bin location PA")
@@ -424,21 +424,6 @@ func DeletePickActivity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfa
 
 	if err := DeletePickActivityHistory(tx, &body, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
-	}
-
-	// Optionally fetch deleted details to log in audit trail
-	var deletedDetails []models.PickActivityDetails
-	if err := tx.Unscoped().Where("pa_id = ?", body.PickActivity.ID).Find(&deletedDetails).Error; err == nil {
-		for _, detail := range deletedDetails {
-			atdataDetail := models.PickActivityDetailsAt{
-				RefId:                      detail.ID,
-				PickActivityDetailsContent: detail.PickActivityDetailsContent,
-				At:                         at,
-			}
-			if err := services.DbInsert(tx, &atdataDetail); err != nil {
-				return body.PickActivity, fiber.StatusInternalServerError, errors.New("failed creating pick activity details audit record")
-			}
-		}
 	}
 
 	//Audit record for main request
