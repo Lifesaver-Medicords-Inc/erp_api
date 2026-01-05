@@ -3,11 +3,10 @@ package accounting_models
 import "github.com/pierceperado/smpc/models"
 
 type TaxDetailsContent struct {
-	TaxCodeId   uint    `json:"tax_code_id"`
-	ValidFrom   string  `json:"valid_from"`
-	ValidTo     string  `json:"valid_to"`
-	ValidStatus string  `json:"valid_status"`
-	TaxRate     float64 `json:"tax_rate"`
+	TaxCodeId uint    `json:"tax_code_id"`
+	ValidFrom string  `json:"valid_from"`
+	ValidTo   string  `json:"valid_to"`
+	TaxRate   float64 `json:"tax_rate"`
 }
 type TaxDetails struct {
 	ID uint `gorm:"primarykey" json:"id"`
@@ -27,4 +26,17 @@ type TaxDetailsAt struct {
 
 func (TaxDetailsAt) TableName() string {
 	return "z_tbl_setup_tax_details_at"
+}
+
+type TaxDetailsView struct {
+	Id          int     `json:"id"`
+	TaxCodeId   uint    `json:"tax_code_id"`
+	ValidFrom   string  `json:"valid_from"`
+	ValidTo     string  `json:"valid_to"`
+	ValidStatus string  `json:"valid_status"`
+	TaxRate     float64 `json:"tax_rate"`
+}
+
+func (TaxDetailsView) TableName() string {
+	return "vw_get_tax_setup_details"
 }

@@ -3,10 +3,12 @@ package accounting_models
 import "github.com/pierceperado/smpc/models"
 
 type ChartOfAccountContent struct {
-	Code    string `json:"code"`
-	Name    string `json:"name"`
-	ClassId uint   `json:"class_id"`
-	GroupId uint   `json:"group_id"`
+	Code         string `json:"code"`
+	Name         string `json:"name"`
+	AccountClass string `json:"account_class"`
+	ClassId      uint   `json:"class_id"`
+	Group        string `json:"group"`
+	GroupId      uint   `json:"group_id"`
 }
 
 type ChartOfAccounts struct {

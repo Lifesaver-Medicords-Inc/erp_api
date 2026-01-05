@@ -17,6 +17,16 @@ func GetTaxSetup(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
+func GetChartOfAccountSetup(c *fiber.Ctx) error {
+
+	data, status, err := setup_services.GetChartOfAccountSetup(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
 func GetTaxClassificationSetup(c *fiber.Ctx) error {
 
 	codeParams := c.Params("code")

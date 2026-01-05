@@ -98,8 +98,8 @@ import (
 // 	return body, 0, nil
 // }
 
-func GetChartOfAccounts(conditions map[string]interface{}) ([]accounting_models.ChartOfAccountViewList, int, error) {
-	var response []accounting_models.ChartOfAccountViewList
+func GetChartOfAccounts(conditions map[string]interface{}) ([]accounting_models.ChartOfAccounts, int, error) {
+	var response []accounting_models.ChartOfAccounts
 
 	if err := services.DbGet(&response, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed to get chart of account")
@@ -141,14 +141,20 @@ func CreateChartOfAccounts(c *fiber.Ctx, tx *gorm.DB) (accounting_models.ChartOf
 	if !ok {
 		at = models.At{}
 	}
-	atdata := accounting_models.ChartOfAccountsAt{RefId: body.ID, ChartOfAccountContent: accounting_models.ChartOfAccountContent{Code: body.Code, Name: body.Name, ClassId: body.ClassId, GroupId: body.GroupId}, At: at}
+
+	//Insert audit record for the main request
+	atdata := accounting_models.ChartOfAccountsAt{
+		RefId:                 body.ID,
+		ChartOfAccountContent: body.ChartOfAccountContent,
+		At:                    at,
+	}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	key := services.GetKey(accounting_models.ChartOfAccountViewList{}, nil)
-	services.InvalidateCache(key)
+	InvalidateItemCaches()
+
 	return body, 0, nil
 }
 
@@ -167,14 +173,20 @@ func UpdateChartOfAccount(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 	if !ok {
 		at = models.At{}
 	}
-	atdata := accounting_models.ChartOfAccountsAt{RefId: body.ID, ChartOfAccountContent: accounting_models.ChartOfAccountContent{Code: body.Code, Name: body.Name, ClassId: body.ClassId, GroupId: body.GroupId}, At: at}
+
+	//Insert audit record for the main request
+	atdata := accounting_models.ChartOfAccountsAt{
+		RefId:                 body.ID,
+		ChartOfAccountContent: body.ChartOfAccountContent,
+		At:                    at,
+	}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	key := services.GetKey(accounting_models.ChartOfAccountViewList{}, nil)
-	services.InvalidateCache(key)
+	InvalidateItemCaches()
+
 	return body, 0, nil
 }
 
@@ -193,13 +205,19 @@ func DeleteChartOfAccount(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 	if !ok {
 		at = models.At{}
 	}
-	atdata := accounting_models.ChartOfAccountsAt{RefId: body.ID, ChartOfAccountContent: accounting_models.ChartOfAccountContent{Code: body.Code, Name: body.Name, ClassId: body.ClassId, GroupId: body.GroupId}, At: at}
+
+	//Insert audit record for the main request
+	atdata := accounting_models.ChartOfAccountsAt{
+		RefId:                 body.ID,
+		ChartOfAccountContent: body.ChartOfAccountContent,
+		At:                    at,
+	}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	key := services.GetKey(accounting_models.ChartOfAccountViewList{}, nil)
-	services.InvalidateCache(key)
+	InvalidateItemCaches()
+
 	return body, 0, nil
 }

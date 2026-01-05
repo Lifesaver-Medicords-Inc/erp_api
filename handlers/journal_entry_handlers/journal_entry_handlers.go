@@ -3,9 +3,18 @@ package journal_entry_handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
-	"github.com/pierceperado/smpc/services/journal_entry_services.go"
+	"github.com/pierceperado/smpc/services/journal_entry_services"
 	"github.com/pierceperado/smpc/utils"
 )
+
+func GetJournalEntries(c *fiber.Ctx) error {
+	data, status, err := journal_entry_services.GetJournalEntries(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
 
 func CreateJournalEntries(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()

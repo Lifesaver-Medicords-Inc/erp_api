@@ -3,16 +3,16 @@ package accounting_models
 import "github.com/pierceperado/smpc/models"
 
 type TaxContent struct {
+	Code               string `gorm:"unique;size:100" json:"code"`
 	TaxDesc            string `json:"tax_desc"`
 	InputTaxCreditable *bool  `json:"input_tax_creditable"`
-	CoaSalesId         uint   `json:"coa_sales_id"`
-	CoaPurchaseId      uint   `json:"coa_purchase_id"`
+	CoaSalesId         *uint  `json:"coa_sales_id"`
+	CoaPurchaseId      *uint  `json:"coa_purchase_id"`
 	Remarks            string `json:"remarks"`
 }
 
 type Tax struct {
-	ID   uint   `gorm:"primarykey" json:"id"`
-	Code string `gorm:"unique;size:100" json:"code"`
+	ID uint `gorm:"primarykey" json:"id"`
 	TaxContent
 }
 

@@ -385,11 +385,10 @@ func SetupApp() *fiber.App {
 					setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
 					setupApi.Get("/chart_of_account_classification/:code", setup_handlers.GetChartOfAccountClassification)
 
-					// Tax Setup
-					setupApi.Get("/tax_setup/:code", setup_handlers.GetTaxClassificationSetup)
-
+					// Tax Setup Endpoints
 					setupApi.Get("/tax", setup_handlers.GetTaxSetup)
-					//	setupApi.Get("/tax_setup:/code", setup_handlers.GetTaxClassificationSetup)
+					setupApi.Get("/tax/coa", setup_handlers.GetChartOfAccountSetup)
+					setupApi.Get("/tax_setup/:code", setup_handlers.GetTaxClassificationSetup)
 					setupApi.Post("/tax", setup_handlers.CreateTaxSetup)
 					setupApi.Put("/tax", setup_handlers.UpdateTaxSetup)
 					setupApi.Delete("/tax", setup_handlers.DeleteTaxSetup)
@@ -509,8 +508,7 @@ func SetupApp() *fiber.App {
 				// accountingApi.Delete("/sales_invoice")
 
 				// Journal Entry Endpoints
-				accountingApi.Post("/journal_entry", journal_entry_handlers.CreateJournalEntries)
-
+				accountingApi.Get("/journal_entry", journal_entry_handlers.GetJournalEntries)
 			}
 
 			// Engineering Endpoints

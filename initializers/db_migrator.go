@@ -1,7 +1,5 @@
 package initializers
 
-import "github.com/pierceperado/smpc/models"
-
 func MigrateDb() {
 	// // Auth
 
@@ -177,7 +175,7 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.BpiHistory{}, &models.BpiHistoryAt{})
 
 	// // ACCOUNTING
-	// //DB.AutoMigrate(&models.ChartOfAccounts{}, &models.ChartOfAccountsAt{})
+	// DB.AutoMigrate(&accounting_models.ChartOfAccounts{}, &accounting_models.ChartOfAccountsAt{})
 	// DB.AutoMigrate(&accounting_models.SalesInvoice{}, &accounting_models.SalesInvoiceAt{})
 	// DB.AutoMigrate(&accounting_models.Tax{}, &accounting_models.TaxAt{})
 	// DB.AutoMigrate(&accounting_models.TaxDetails{}, &accounting_models.TaxDetailsAt{})

@@ -4,11 +4,11 @@ import "github.com/pierceperado/smpc/models"
 
 type ChartClassContent struct {
 	Type string `json:"type"`
-}
-type ChartClass struct {
-	ID   uint   `gorm:"primarykey" json:"id"`
 	Code string `gorm:"unique" json:"code"`
 	Name string `json:"name"`
+}
+type ChartClass struct {
+	ID uint `gorm:"primarykey" json:"id"`
 	ChartClassContent
 }
 

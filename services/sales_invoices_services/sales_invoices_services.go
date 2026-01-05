@@ -8,7 +8,7 @@ import (
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
-	"github.com/pierceperado/smpc/services/journal_entry_services.go"
+	"github.com/pierceperado/smpc/services/journal_entry_services"
 	"github.com/pierceperado/smpc/utils"
 	"gorm.io/gorm"
 )
