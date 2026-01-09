@@ -11,6 +11,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/item_request_handlers"
 	"github.com/pierceperado/smpc/handlers/job_orders_handlers"
 	"github.com/pierceperado/smpc/handlers/journal_entry_handlers"
+	"github.com/pierceperado/smpc/handlers/journal_entry_handlers2"
 	"github.com/pierceperado/smpc/handlers/pick_activity_handlers"
 	"github.com/pierceperado/smpc/handlers/position_handlers"
 	"github.com/pierceperado/smpc/handlers/public_handlers"
@@ -384,6 +385,13 @@ func SetupApp() *fiber.App {
 					setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
 					setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
 					setupApi.Get("/chart_of_account_classification/:code", setup_handlers.GetChartOfAccountClassification)
+
+					//Journal Entry Endpoints
+					setupApi.Get("/company_setup", journal_entry_handlers2.GetCompanySetup)
+					setupApi.Get("/journal_entry", journal_entry_handlers2.GetJournalEntry)
+					setupApi.Post("/journal_entry", journal_entry_handlers2.CreateJournalEntry)
+					setupApi.Put("/journal_entry", journal_entry_handlers2.UpdateJournalEntry)
+					setupApi.Delete("/journal_entry", journal_entry_handlers2.DeleteJournalEntry)
 
 					// Tax Setup Endpoints
 					setupApi.Get("/tax", setup_handlers.GetTaxSetup)

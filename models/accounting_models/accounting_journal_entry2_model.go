@@ -8,9 +8,7 @@ type JournalEntry2Content struct {
 	DocNo              string `json:"doc_no"`
 	Period             string `json:"period"`
 	Currency           string `json:"currency"`
-	Origin             string `json:"origin"`
-	OriginNo           uint   `json:"origin_no"`
-	CreatedById        uint   `json:"created_by_id"`
+	CreatedBy          string `json:"created_by"`
 }
 type JournalEntry2 struct {
 	ID uint `gorm:"primarykey" json:"id"`

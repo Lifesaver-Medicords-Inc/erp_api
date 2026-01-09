@@ -4,13 +4,17 @@ import "github.com/pierceperado/smpc/models"
 
 type JournalEntryDetails2Content struct {
 	JournalEntryId uint    `json:"journal_entry_id"`
-	AccountID      uint    `json:"account_id"`
+	InsertedDate   string  `json:"inserted_date"`
 	PostingDate    string  `json:"posting_date"`
 	AccountTitle   string  `json:"account_title"`
 	PostingRef     string  `json:"posting_ref"`
+	PostingRefId   uint    `json:"posting_ref_id"`
+	Origin         string  `json:"origin"`
+	OriginNo       uint    `json:"origin_no"`
 	Debit          float64 `json:"debit"`
 	Credit         float64 `json:"credit"`
 	LineMemo       string  `json:"line_memo"`
+	CreatedBy      string  `json:"created_by"`
 }
 
 type JournalEntryDetails2 struct {

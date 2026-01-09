@@ -23,6 +23,16 @@ type JournalEntryGet struct {
 	JournalEntryDetails []accounting_models.JournalEntryDetails2 `json:"journal_entry_details"`
 }
 
+func GetCompanySetup(conditions map[string]interface{}) (interface{}, int, error) {
+	var response models.CompanyCacheModel
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New(" failed getting smpc company setup")
+	}
+
+	return response, 0, nil
+}
+
 func GetJournalEntry(conditions map[string]interface{}) (interface{}, int, error) {
 	var response JournalEntryGet
 
