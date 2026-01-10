@@ -19,9 +19,12 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		return errors.New("invalid ordered quantity")
 	}
 
-	receivedQty, err := strconv.Atoi(detail.ReceivedQty)
-	if err != nil {
-		return errors.New("invalid received quantity")
+	receivedQty := 0
+	if strings.TrimSpace(detail.ReceivedQty) != "" {
+		receivedQty, err = strconv.Atoi(detail.ReceivedQty)
+		if err != nil {
+			return errors.New("invalid received quantity")
+		}
 	}
 
 	rejectedQty := 0
@@ -33,9 +36,12 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 	}
 
 	// Convert received quantity (string) to int
-	receivedQtyInt, err := strconv.Atoi(detail.ReceivedQty)
-	if err != nil {
-		return errors.New("invalid received quantity in inventory")
+	receivedQtyInt := 0
+	if strings.TrimSpace(detail.ReceivedQty) != "" {
+		receivedQtyInt, err = strconv.Atoi(detail.ReceivedQty)
+		if err != nil {
+			return errors.New("invalid received quantity in inventory")
+		}
 	}
 
 	history := models.ReceivingHistory{
@@ -102,6 +108,8 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 }
 
 func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDateReceived string, parentPoId uint, detail models.ReceivingReportDetails2, body *ReceivingReportBody2, at models.At) error {
+	var err error
+
 	// Try to find existing history record for this detail
 	var history models.ReceivingHistory
 	if err := tx.Where("receiving_report_details_id = ?", detail.ID).First(&history).Error; err != nil {
@@ -112,9 +120,12 @@ func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 	}
 
 	// Convert received quantity (string) to int
-	receivedQtyInt, err := strconv.Atoi(detail.ReceivedQty)
-	if err != nil {
-		return errors.New("invalid received quantity in inventory")
+	receivedQtyInt := 0
+	if strings.TrimSpace(detail.ReceivedQty) != "" {
+		receivedQtyInt, err = strconv.Atoi(detail.ReceivedQty)
+		if err != nil {
+			return errors.New("invalid received quantity in inventory")
+		}
 	}
 
 	// Update fields
