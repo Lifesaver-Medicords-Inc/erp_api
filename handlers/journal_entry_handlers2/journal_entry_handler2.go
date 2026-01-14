@@ -2,18 +2,27 @@ package journal_entry_handlers2
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/pierceperado/smpc/initializers"
-	journal_entry1_services2 "github.com/pierceperado/smpc/services/journal_entry_services2"
+	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/models/accounting_models"
+	"github.com/pierceperado/smpc/services/journal_entry_services2"
 	"github.com/pierceperado/smpc/utils"
 )
 
-func GetCompanySetup(c *fiber.Ctx) error {
+type JournalEntryHandler2 struct {
+	Service *journal_entry_services2.JournalEntryService2
+}
+
+func NewJournalEntryHandler2(service *journal_entry_services2.JournalEntryService2) *JournalEntryHandler2 {
+	return &JournalEntryHandler2{Service: service}
+}
+
+func (h *JournalEntryHandler2) GetCompanySetup(c *fiber.Ctx) error {
 
 	conditions := map[string]interface{}{
 		"id": 1,
 	}
 
-	data, status, err := journal_entry1_services2.GetCompanySetup(conditions)
+	data, status, err := h.Service.GetCompanySetup(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -21,8 +30,8 @@ func GetCompanySetup(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func GetJournalEntry(c *fiber.Ctx) error {
-	data, status, err := journal_entry1_services2.GetJournalEntry(nil)
+func (h *JournalEntryHandler2) GetJournalEntry(c *fiber.Ctx) error {
+	data, status, err := h.Service.GetJournalEntry(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -30,61 +39,61 @@ func GetJournalEntry(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func CreateJournalEntry(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+func (h *JournalEntryHandler2) CreateJournalEntry(c *fiber.Ctx) error {
+	var body accounting_models.JournalEntryBody
+
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	data, status, err := journal_entry1_services2.CreateJournalEntry(c, tx)
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.CreateJournalEntry(&body, at)
 	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+		return utils.RespondError(c, code, err.Error())
 	}
 
 	return utils.RespondSuccess(c, data)
 }
 
-func UpdateJournalEntry(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+func (h *JournalEntryHandler2) UpdateJournalEntry(c *fiber.Ctx) error {
+	var body accounting_models.JournalEntryBody
+
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	data, status, err := journal_entry1_services2.UpdateJournalEntry(c, tx, nil)
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.UpdateJournalEntry(&body, nil, at)
 	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+		return utils.RespondError(c, code, err.Error())
 	}
 
 	return utils.RespondSuccess(c, data)
 }
 
-func DeleteJournalEntry(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+func (h *JournalEntryHandler2) DeleteJournalEntry(c *fiber.Ctx) error {
+	var body accounting_models.JournalEntryBody
+
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	data, status, err := journal_entry1_services2.DeleteJournalEntry(c, tx, nil)
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.DeleteJournalEntry(&body, at)
 	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+		return utils.RespondError(c, code, err.Error())
 	}
 
 	return utils.RespondSuccess(c, data)

@@ -43,6 +43,7 @@ func (s *SalesOrderService) GetSalesOrdersService(conditions map[string]interfac
 			}
 		}
 	}
+
 	return orders, 200, nil
 }
 

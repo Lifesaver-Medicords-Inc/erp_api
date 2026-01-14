@@ -184,6 +184,8 @@ func MigrateDb() {
 	// DB.AutoMigrate(&accounting_models.JournalEntryDetails{}, &accounting_models.JournalEntryDetailsAt{})
 	// DB.AutoMigrate(&accounting_models.JournalEntry2{}, &accounting_models.JournalEntry2At{})
 	// DB.AutoMigrate(&accounting_models.JournalEntryDetails2{}, &accounting_models.JournalEntryDetails2At{})
+	// DB.AutoMigrate(&accounting_models.InvoiceReceipt{}, &accounting_models.InvoiceReceiptAt{})
+	// DB.AutoMigrate(&accounting_models.InvoiceReceiptDetails{}, &accounting_models.InvoiceReceiptDetailsAt{})
 
 	// // JOB ORDER
 	// DB.AutoMigrate(&models.JobOrder{}, &models.JobOrderAt{})

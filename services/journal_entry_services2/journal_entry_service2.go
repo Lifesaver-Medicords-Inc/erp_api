@@ -1,11 +1,13 @@
-package journal_entry1_services2
+package journal_entry_services2
 
 import (
 	// "errors"
 
 	"errors"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
@@ -13,17 +15,13 @@ import (
 	"gorm.io/gorm"
 )
 
-type JournalEntryBody struct {
-	JournalEntry        accounting_models.JournalEntry2          `json:"journal_entry"`
-	JournalEntryDetails []accounting_models.JournalEntryDetails2 `json:"journal_entry_details"`
+type JournalEntryService2 struct{}
+
+func NewJournalEntryService2() *JournalEntryService2 {
+	return &JournalEntryService2{}
 }
 
-type JournalEntryGet struct {
-	JournalEntry        []accounting_models.JournalEntry2        `json:"journal_entry"`
-	JournalEntryDetails []accounting_models.JournalEntryDetails2 `json:"journal_entry_details"`
-}
-
-func GetCompanySetup(conditions map[string]interface{}) (interface{}, int, error) {
+func (s *JournalEntryService2) GetCompanySetup(conditions map[string]interface{}) (interface{}, int, error) {
 	var response models.CompanyCacheModel
 
 	if err := services.DbGet(&response, conditions); err != nil {
@@ -33,49 +31,46 @@ func GetCompanySetup(conditions map[string]interface{}) (interface{}, int, error
 	return response, 0, nil
 }
 
-func GetJournalEntry(conditions map[string]interface{}) (interface{}, int, error) {
-	var response JournalEntryGet
+func (s *JournalEntryService2) GetJournalEntry(conditions map[string]interface{}) (interface{}, int, error) {
+	var response accounting_models.JournalEntryGet
 
 	if err := services.DbGet(&response.JournalEntry, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New(" failed getting item request")
+		return response, fiber.StatusInternalServerError, errors.New(" failed getting journal entry")
 	}
 
 	if err := services.DbGet(&response.JournalEntryDetails, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New(" failed getting item request details")
+		return response, fiber.StatusInternalServerError, errors.New(" failed getting journal entry details")
 	}
 
 	return response, 0, nil
 }
 
-func CreateJournalEntry(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
-	var body JournalEntryBody
-
-	//Parse the full request body (main + details)
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+func (s *JournalEntryService2) CreateJournalEntry(body *accounting_models.JournalEntryBody, at models.At) (*accounting_models.JournalEntryBody, int, error) {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	//Insert main Journal Entry record
+	// Rollback once, automatically, unless committed
+	defer tx.Rollback()
+
+	// Insert main Journal Entry
 	if err := services.DbInsert(tx, &body.JournalEntry); err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
+			return body, fiber.StatusConflict, errors.New("duplicate record error")
+		}
 		return body, fiber.StatusInternalServerError, errors.New("failed creating journal entry")
 	}
 
-	generatedDocNo := utils.DocNoGenerator(body.JournalEntry.ID)
-	body.JournalEntry.DocNo = generatedDocNo
-
-	if err := tx.Model(&body.JournalEntry).Update("doc_no", body.JournalEntry.DocNo).Error; err != nil {
+	body.JournalEntry.DocNo = utils.DocNoGenerator(body.JournalEntry.ID)
+	if err := tx.Model(&body.JournalEntry).
+		Update("doc_no", body.JournalEntry.DocNo).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating journal entry doc")
 	}
 
-	//Prepare the "at" data
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
-
 	// Insert Journal Entry Details
-	if err := CreateJournalEntryDetails(tx, &body, at); err != nil {
-		return body.JournalEntry, fiber.StatusInternalServerError, err
+	if err := s.CreateJournalEntryDetails(tx, body, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	//Insert audit record for the main request
@@ -89,10 +84,15 @@ func CreateJournalEntry(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating journal entry at")
 	}
 
-	return body, 0, nil
+	// Commit once
+	if err := tx.Commit().Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	return body, fiber.StatusOK, nil
 }
 
-func CreateJournalEntryDetails(tx *gorm.DB, body *JournalEntryBody, at models.At) error {
+func (s *JournalEntryService2) CreateJournalEntryDetails(tx *gorm.DB, body *accounting_models.JournalEntryBody, at models.At) error {
 	for i := range body.JournalEntryDetails {
 		detail := &body.JournalEntryDetails[i]
 		detail.JournalEntryId = body.JournalEntry.ID // assign FK to parent
@@ -115,28 +115,23 @@ func CreateJournalEntryDetails(tx *gorm.DB, body *JournalEntryBody, at models.At
 	return nil
 }
 
-func UpdateJournalEntry(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (interface{}, int, error) {
-	var body JournalEntryBody
-
-	//Parse full request
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+func (s *JournalEntryService2) UpdateJournalEntry(body *accounting_models.JournalEntryBody, conditions map[string]interface{}, at models.At) (*accounting_models.JournalEntryBody, int, error) {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
+
+	// Rollback once, automatically, unless committed
+	defer tx.Rollback()
 
 	//Update main Journal Entry
 	if err := services.DbUpdate(tx, &body.JournalEntry, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating journal entry")
 	}
 
-	//Get audit info
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
-
 	// Handle details
-	if err := UpdateJournalEntryDetails(tx, &body, conditions, at); err != nil {
-		return body.JournalEntry, fiber.StatusInternalServerError, err
+	if err := s.UpdateJournalEntryDetails(tx, body, conditions, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	//Audit record for main request
@@ -149,10 +144,15 @@ func UpdateJournalEntry(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfa
 		return body, fiber.StatusInternalServerError, errors.New("failed updating journal entry at")
 	}
 
-	return body, 0, nil
+	// Commit once
+	if err := tx.Commit().Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	return body, fiber.StatusOK, nil
 }
 
-func UpdateJournalEntryDetails(tx *gorm.DB, body *JournalEntryBody, conditions map[string]interface{}, at models.At) error {
+func (s *JournalEntryService2) UpdateJournalEntryDetails(tx *gorm.DB, body *accounting_models.JournalEntryBody, conditions map[string]interface{}, at models.At) error {
 	for i := range body.JournalEntryDetails {
 		detail := &body.JournalEntryDetails[i]
 		detail.JournalEntryId = body.JournalEntry.ID // ensure FK is set
@@ -181,26 +181,21 @@ func UpdateJournalEntryDetails(tx *gorm.DB, body *JournalEntryBody, conditions m
 	return nil
 }
 
-func DeleteJournalEntry(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (interface{}, int, error) {
-	var body JournalEntryBody
-
-	//Parse full request
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+func (s *JournalEntryService2) DeleteJournalEntry(body *accounting_models.JournalEntryBody, at models.At) (*accounting_models.JournalEntryBody, int, error) {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	//Get audit info
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
+	// Rollback once, automatically, unless committed
+	defer tx.Rollback()
 
 	//Delete main Journal Entry
-	if err := services.DbDelete(tx, &body.JournalEntry, conditions); err != nil {
+	if err := services.DbDelete(tx, &body.JournalEntry, nil); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed deleting journal entry")
 	}
 
-	if err := DeleteJournalEntryDetails(tx, &body, at); err != nil {
+	if err := s.DeleteJournalEntryDetails(tx, body, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
@@ -210,10 +205,15 @@ func DeleteJournalEntry(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfa
 		return body, fiber.StatusInternalServerError, errors.New("failed creating journal entry at")
 	}
 
+	// Commit once
+	if err := tx.Commit().Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
 	return body, 0, nil
 }
 
-func DeleteJournalEntryDetails(tx *gorm.DB, body *JournalEntryBody, at models.At) error {
+func (s *JournalEntryService2) DeleteJournalEntryDetails(tx *gorm.DB, body *accounting_models.JournalEntryBody, at models.At) error {
 	// Delete all details
 	if err := services.DbDelete(tx, &accounting_models.JournalEntryDetails2{}, map[string]interface{}{"journal_entry_id": body.JournalEntry.ID}); err != nil {
 		return errors.New("failed deleting all journal entry details")

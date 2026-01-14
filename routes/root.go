@@ -3,6 +3,10 @@ package routes
 import "github.com/gofiber/fiber/v2"
 
 func SetupRoutes(app *fiber.App) {
+
+	// Root API group
+	api := app.Group("/api")
+
 	//User routes
 	UserRoutes(app)
 
@@ -37,4 +41,6 @@ func SetupRoutes(app *fiber.App) {
 	ItemReleaseRoutes(app)
 
 	SalesOrderRoutes(app)
+
+	AccountingRoutes(api)
 }
