@@ -42,11 +42,11 @@ type ReceivingReportDetailsContent2 struct {
 	ItemID             uint   `json:"item_id"`
 	ItemCode           string `json:"item_code"`
 	ItemDescription    string `json:"item_description"`
-	OrderedQty         string `json:"ordered_qty"`
+	OrderedQty         int    `json:"ordered_qty"`
 	OrderedUom         string `json:"ordered_uom"`
-	ReceivedQty        string `json:"received_qty"`
+	ReceivedQty        int    `json:"received_qty"`
 	ReceivedUom        string `json:"received_uom"`
-	RejectedQty        string `json:"rejected_qty"`
+	RejectedQty        int    `json:"rejected_qty"`
 	RejectedUom        string `json:"rejected_uom"`
 	ReasonForRejection string `json:"reason_for_rejection"`
 	SerialNumber       string `json:"serial_number"`
@@ -82,9 +82,9 @@ type ReceivingHistoryContent struct {
 	ItemCode                 string `json:"item_code"`
 	ReceivingReportID        uint   `json:"receiving_report_id"`
 	ReceivingReportDetailsID uint   `json:"receiving_report_details_id"`
-	OrderedQty               string `json:"ordered_qty"`
-	ReceivedQty              string `json:"received_qty"`
-	RejectedQty              string `json:"rejected_qty"`
+	OrderedQty               int    `json:"ordered_qty"`
+	ReceivedQty              int    `json:"received_qty"`
+	RejectedQty              int    `json:"rejected_qty"`
 	DateReceived             string `json:"date_received"`
 	TransactionDate          string `json:"transaction_date"`
 	Uom                      string `json:"uom"`

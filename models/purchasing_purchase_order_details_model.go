@@ -26,7 +26,7 @@ type PurchaseOrderDetailsView struct {
 	ItemID          uint   `json:"item_id"`
 	ItemCode        string `json:"item_code"`
 	ItemDescription string `json:"item_description"`
-	OrderedQty      string `json:"ordered_qty"`
+	OrderedQty      int    `json:"ordered_qty"`
 	OrderedUom      string `json:"ordered_uom"`
 	IsComplete      *bool  `json:"is_complete"`
 }

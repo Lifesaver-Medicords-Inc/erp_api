@@ -40,7 +40,7 @@ type PickActivityDetailsContent struct {
 	LeftUom         string `json:"left_uom"`
 	PickQty         uint   `json:"pick_qty"`
 	PickUom         string `json:"pick_uom"`
-	ActualQty       uint   `json:"actual_qty"`
+	ActualQty       int    `json:"actual_qty"`
 	ActualUom       string `json:"actual_uom"`
 	BinLocation     string `json:"bin_location"`
 	WarehouseId     uint   `json:"warehouse_id"`

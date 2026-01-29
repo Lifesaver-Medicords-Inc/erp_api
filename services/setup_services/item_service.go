@@ -236,7 +236,7 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (U
 }
 
 func DeleteItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Body, int, error) {
-	var body Body 
+	var body Body
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
@@ -293,6 +293,14 @@ func InvalidateItemCaches() {
 		accounting_models.ChartOfAccountViewList{},
 		accounting_models.TaxView{},
 		accounting_models.TaxDetailsView{},
+		accounting_models.ChartClass{},
+		accounting_models.ChartClassAt{},
+		accounting_models.ChartOfAccounts{},
+		accounting_models.ChartOfAccountsAt{},
+		accounting_models.Tax{},
+		accounting_models.TaxAt{},
+		accounting_models.TaxDetails{},
+		accounting_models.TaxDetailsAt{},
 	}
 	for _, key := range cacheKeys {
 		services.InvalidateCache(services.GetKey(key, nil))

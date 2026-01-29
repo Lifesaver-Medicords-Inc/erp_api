@@ -28,7 +28,7 @@ func (s *JournalEntryService2) GetCompanySetup(conditions map[string]interface{}
 		return response, fiber.StatusInternalServerError, errors.New(" failed getting smpc company setup")
 	}
 
-	return response, 0, nil
+	return response, fiber.StatusOK, nil
 }
 
 func (s *JournalEntryService2) GetJournalEntry(conditions map[string]interface{}) (interface{}, int, error) {
@@ -42,7 +42,7 @@ func (s *JournalEntryService2) GetJournalEntry(conditions map[string]interface{}
 		return response, fiber.StatusInternalServerError, errors.New(" failed getting journal entry details")
 	}
 
-	return response, 0, nil
+	return response, fiber.StatusOK, nil
 }
 
 func (s *JournalEntryService2) CreateJournalEntry(body *accounting_models.JournalEntryBody, at models.At) (*accounting_models.JournalEntryBody, int, error) {
@@ -140,6 +140,7 @@ func (s *JournalEntryService2) UpdateJournalEntry(body *accounting_models.Journa
 		JournalEntry2Content: body.JournalEntry.JournalEntry2Content,
 		At:                   at,
 	}
+
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating journal entry at")
 	}
@@ -210,7 +211,7 @@ func (s *JournalEntryService2) DeleteJournalEntry(body *accounting_models.Journa
 		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
 	}
 
-	return body, 0, nil
+	return body, fiber.StatusOK, nil
 }
 
 func (s *JournalEntryService2) DeleteJournalEntryDetails(tx *gorm.DB, body *accounting_models.JournalEntryBody, at models.At) error {
@@ -233,5 +234,41 @@ func (s *JournalEntryService2) DeleteJournalEntryDetails(tx *gorm.DB, body *acco
 			}
 		}
 	}
+	return nil
+}
+
+func (s *JournalEntryService2) AutoInsertJournalEntry(body *accounting_models.JournalEntryDetails2, date string, at models.At) error {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return errors.New("failed to start DB transaction")
+	}
+
+	// Rollback once, automatically, unless committed
+	defer tx.Rollback()
+
+	// Insert main Journal Entry Details
+	if err := services.DbInsert(tx, &body); err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
+			return errors.New("duplicate record error")
+		}
+		return errors.New("failed creating journal entry details auto insert")
+	}
+
+	//Insert audit record for the main request
+	atdata := accounting_models.JournalEntryDetails2At{
+		RefId:                       body.ID,
+		JournalEntryDetails2Content: body.JournalEntryDetails2Content,
+		At:                          at,
+	}
+
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return errors.New("failed creating journal entry details auto insert at")
+	}
+
+	// Commit once
+	if err := tx.Commit().Error; err != nil {
+		return errors.New("failed committing transaction")
+	}
+
 	return nil
 }

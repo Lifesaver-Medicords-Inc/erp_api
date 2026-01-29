@@ -8,7 +8,7 @@ type InventoryStocksContent struct {
 	PurchaseOrderDetailsId   uint   `json:"purchase_order_details_id"`
 	ItemId                   uint   `json:"item_id"`
 	BinLocation              string `json:"bin_location"`
-	QtyIn                    uint   `json:"qty_in"`
+	QtyIn                    int    `json:"qty_in"`
 	Uom                      string `json:"uom"`
 	SupplierName             string `json:"supplier_name"`
 	DateReceived             string `json:"date_received"`

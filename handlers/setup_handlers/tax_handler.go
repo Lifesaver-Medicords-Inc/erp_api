@@ -2,14 +2,23 @@ package setup_handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services/setup_services"
 	"github.com/pierceperado/smpc/utils"
 )
 
-func GetTaxSetup(c *fiber.Ctx) error {
+type TaxSetupHandler struct {
+	Service *setup_services.TaxSetupService
+}
 
-	data, status, err := setup_services.GetTaxSetup(nil)
+func NewTaxSetupHandler(service *setup_services.TaxSetupService) *TaxSetupHandler {
+	return &TaxSetupHandler{Service: service}
+}
+
+func (h *TaxSetupHandler) GetTaxSetup(c *fiber.Ctx) error {
+
+	data, status, err := h.Service.GetTaxSetup(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -17,9 +26,9 @@ func GetTaxSetup(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func GetChartOfAccountSetup(c *fiber.Ctx) error {
+func (h *TaxSetupHandler) GetChartOfAccountSetup(c *fiber.Ctx) error {
 
-	data, status, err := setup_services.GetChartOfAccountSetup(nil)
+	data, status, err := h.Service.GetChartOfAccountSetup(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -27,70 +36,72 @@ func GetChartOfAccountSetup(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func GetTaxClassificationSetup(c *fiber.Ctx) error {
+func (h *TaxSetupHandler) GetTaxClassificationSetup(c *fiber.Ctx) error {
 
 	codeParams := c.Params("code")
 
-	data, status, err := setup_services.GetTaxClassificationSetup(codeParams)
-
+	data, status, err := h.Service.GetTaxClassificationSetup(codeParams)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 	return utils.RespondSuccess(c, data)
 }
 
-func CreateTaxSetup(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
+func (h *TaxSetupHandler) CreateTaxSetup(c *fiber.Ctx) error {
+	var body accounting_models.TaxSetupBody
 
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transactions")
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
-	data, status, err := setup_services.CreateTaxSetup(c, tx)
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.CreateTaxSetup(&body, at)
 	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transactions")
-	}
-	return utils.RespondSuccess(c, data)
-}
-
-func DeleteTaxSetup(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
-
-	}
-	data, status, err := setup_services.DeleteTaxSetup(c, tx, nil)
-	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+		return utils.RespondError(c, code, err.Error())
 	}
 
 	return utils.RespondSuccess(c, data)
 }
-func UpdateTaxSetup(c *fiber.Ctx) error {
 
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transactions")
+func (h *TaxSetupHandler) UpdateTaxSetup(c *fiber.Ctx) error {
+	var body accounting_models.TaxSetupBody
+
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
-	data, status, err := setup_services.UpdateTaxSetup(c, tx, nil)
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.UpdateTaxSetup(&body, nil, at)
 	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
+		return utils.RespondError(c, code, err.Error())
 	}
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transactions")
+
+	return utils.RespondSuccess(c, data)
+}
+
+func (h *TaxSetupHandler) DeleteTaxSetup(c *fiber.Ctx) error {
+	var body accounting_models.TaxSetupBody
+
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.DeleteTaxSetup(&body, at)
+	if err != nil {
+		return utils.RespondError(c, code, err.Error())
 	}
 
 	return utils.RespondSuccess(c, data)

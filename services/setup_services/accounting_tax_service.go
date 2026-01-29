@@ -4,26 +4,22 @@ import (
 	"errors"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
 )
 
-type TaxSetupBody struct {
-	TaxSetup        accounting_models.Tax          `json:"tax_setup"`
-	TaxSetupDetails []accounting_models.TaxDetails `json:"tax_setup_details"`
+type TaxSetupService struct{}
+
+func NewTaxSetupService() *TaxSetupService {
+	return &TaxSetupService{}
 }
 
-type TaxSetupGet struct {
-	TaxSetup        []accounting_models.Tax            `json:"tax_setup"`
-	TaxSetupDetails []accounting_models.TaxDetailsView `json:"tax_setup_details"`
-	TaxSetupView    []accounting_models.TaxView        `json:"tax_setup_view"`
-}
+func (s *TaxSetupService) GetTaxSetup(conditions map[string]interface{}) (interface{}, int, error) {
 
-func GetTaxSetup(conditions map[string]interface{}) (interface{}, int, error) {
-
-	var response TaxSetupGet
+	var response accounting_models.TaxSetupGet
 
 	if err := services.DbGet(&response.TaxSetup, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New(" failed getting tax setup")
@@ -37,10 +33,10 @@ func GetTaxSetup(conditions map[string]interface{}) (interface{}, int, error) {
 		return response, fiber.StatusInternalServerError, errors.New(" failed getting tax setup view")
 	}
 
-	return response, 0, nil
+	return response, fiber.StatusOK, nil
 }
 
-func GetTaxClassificationSetup(code string) (interface{}, int, error) {
+func (s *TaxSetupService) GetTaxClassificationSetup(code string) (interface{}, int, error) {
 	conditions := map[string]interface{}{
 		"code": code,
 	}
@@ -50,10 +46,10 @@ func GetTaxClassificationSetup(code string) (interface{}, int, error) {
 		return response, fiber.StatusInternalServerError, errors.New("failed to get tax classification setup")
 	}
 
-	return response, 0, nil
+	return response, fiber.StatusOK, nil
 }
 
-func GetChartOfAccountSetup(conditions map[string]interface{}) (interface{}, int, error) {
+func (s *TaxSetupService) GetChartOfAccountSetup(conditions map[string]interface{}) (interface{}, int, error) {
 
 	var response []accounting_models.CoaView
 
@@ -61,31 +57,26 @@ func GetChartOfAccountSetup(conditions map[string]interface{}) (interface{}, int
 		return response, fiber.StatusInternalServerError, errors.New("failed getting chart of accounts view")
 	}
 
-	return response, 0, nil
+	return response, fiber.StatusOK, nil
 }
 
-func CreateTaxSetup(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
-	var body TaxSetupBody
-
-	//Parse the full request body (main + details)
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+func (s *TaxSetupService) CreateTaxSetup(body *accounting_models.TaxSetupBody, at models.At) (*accounting_models.TaxSetupBody, int, error) {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
+
+	// Rollback once, automatically, unless committed
+	defer tx.Rollback()
 
 	//Insert main Tax Setup record
 	if err := services.DbInsert(tx, &body.TaxSetup); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating tax setup")
 	}
 
-	//Prepare the "at" data
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
-
 	// Insert Tax Details
-	if err := CreateTaxDetails(tx, &body, at); err != nil {
-		return body.TaxSetup, fiber.StatusInternalServerError, err
+	if err := s.CreateTaxDetails(tx, body, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	//Insert audit record for the main request
@@ -99,10 +90,15 @@ func CreateTaxSetup(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating tax setup at")
 	}
 
-	return body, 0, nil
+	// Commit once
+	if err := tx.Commit().Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	return body, fiber.StatusOK, nil
 }
 
-func CreateTaxDetails(tx *gorm.DB, body *TaxSetupBody, at models.At) error {
+func (s *TaxSetupService) CreateTaxDetails(tx *gorm.DB, body *accounting_models.TaxSetupBody, at models.At) error {
 	for i := range body.TaxSetupDetails {
 		detail := &body.TaxSetupDetails[i]
 		detail.TaxCodeId = body.TaxSetup.ID // assign FK to parent
@@ -128,28 +124,23 @@ func CreateTaxDetails(tx *gorm.DB, body *TaxSetupBody, at models.At) error {
 	return nil
 }
 
-func UpdateTaxSetup(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (interface{}, int, error) {
-	var body TaxSetupBody
-
-	//Parse full request
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+func (s *TaxSetupService) UpdateTaxSetup(body *accounting_models.TaxSetupBody, conditions map[string]interface{}, at models.At) (*accounting_models.TaxSetupBody, int, error) {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
+
+	// Rollback once, automatically, unless committed
+	defer tx.Rollback()
 
 	//Update main Tax Setup
 	if err := services.DbUpdate(tx, &body.TaxSetup, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating tax setup")
 	}
 
-	//Get audit info
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
-
 	// Handle details
-	if err := UpdateTaxDetails(tx, &body, conditions, at); err != nil {
-		return body.TaxSetup, fiber.StatusInternalServerError, err
+	if err := s.UpdateTaxDetails(tx, body, conditions, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	//Audit record for main request
@@ -162,10 +153,15 @@ func UpdateTaxSetup(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 		return body, fiber.StatusInternalServerError, errors.New("failed updating tax setup at")
 	}
 
-	return body, 0, nil
+	// Commit once
+	if err := tx.Commit().Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	return body, fiber.StatusOK, nil
 }
 
-func UpdateTaxDetails(tx *gorm.DB, body *TaxSetupBody, conditions map[string]interface{}, at models.At) error {
+func (s *TaxSetupService) UpdateTaxDetails(tx *gorm.DB, body *accounting_models.TaxSetupBody, conditions map[string]interface{}, at models.At) error {
 	for i := range body.TaxSetupDetails {
 		detail := &body.TaxSetupDetails[i]
 		detail.TaxCodeId = body.TaxSetup.ID
@@ -197,26 +193,21 @@ func UpdateTaxDetails(tx *gorm.DB, body *TaxSetupBody, conditions map[string]int
 	return nil
 }
 
-func DeleteTaxSetup(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (interface{}, int, error) {
-	var body TaxSetupBody
-
-	//Parse full request
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+func (s *TaxSetupService) DeleteTaxSetup(body *accounting_models.TaxSetupBody, at models.At) (*accounting_models.TaxSetupBody, int, error) {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	//Get audit info
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
+	// Rollback once, automatically, unless committed
+	defer tx.Rollback()
 
 	//Delete main Tax Setup
-	if err := services.DbDelete(tx, &body.TaxSetup, conditions); err != nil {
+	if err := services.DbDelete(tx, &body.TaxSetup, nil); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed deleting tax setup")
 	}
 
-	if err := DeleteTaxDetails(tx, &body, at); err != nil {
+	if err := s.DeleteTaxDetails(tx, body, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
@@ -226,10 +217,15 @@ func DeleteTaxSetup(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 		return body, fiber.StatusInternalServerError, errors.New("failed creating tax setup at")
 	}
 
-	return body, 0, nil
+	// Commit once
+	if err := tx.Commit().Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	return body, fiber.StatusOK, nil
 }
 
-func DeleteTaxDetails(tx *gorm.DB, body *TaxSetupBody, at models.At) error {
+func (s *TaxSetupService) DeleteTaxDetails(tx *gorm.DB, body *accounting_models.TaxSetupBody, at models.At) error {
 	// Delete all details
 	if err := services.DbDelete(tx, &accounting_models.TaxDetails{}, map[string]interface{}{"tax_code_id": body.TaxSetup.ID}); err != nil {
 		return errors.New("failed deleting all tax details")

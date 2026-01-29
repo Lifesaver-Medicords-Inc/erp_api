@@ -3,8 +3,6 @@ package setup_services
 import (
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/pierceperado/smpc/models"
@@ -13,36 +11,10 @@ import (
 )
 
 func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDateReceived string, parentPoId uint, detail models.ReceivingReportDetails2, parentPodId uint, body *ReceivingReportBody2, at models.At) error {
-	// Convert OrderedQty and ReceivedQty (strings) to int
-	orderedQty, err := strconv.Atoi(detail.OrderedQty)
-	if err != nil {
-		return errors.New("invalid ordered quantity")
-	}
 
-	receivedQty := 0
-	if strings.TrimSpace(detail.ReceivedQty) != "" {
-		receivedQty, err = strconv.Atoi(detail.ReceivedQty)
-		if err != nil {
-			return errors.New("invalid received quantity")
-		}
-	}
-
-	rejectedQty := 0
-	if strings.TrimSpace(detail.RejectedQty) != "" {
-		rejectedQty, err = strconv.Atoi(detail.RejectedQty)
-		if err != nil {
-			return errors.New("invalid rejected quantity")
-		}
-	}
-
-	// Convert received quantity (string) to int
-	receivedQtyInt := 0
-	if strings.TrimSpace(detail.ReceivedQty) != "" {
-		receivedQtyInt, err = strconv.Atoi(detail.ReceivedQty)
-		if err != nil {
-			return errors.New("invalid received quantity in inventory")
-		}
-	}
+	orderedQty := detail.OrderedQty
+	receivedQty := detail.ReceivedQty
+	rejectedQty := detail.RejectedQty
 
 	history := models.ReceivingHistory{
 		ReceivingHistoryContent: models.ReceivingHistoryContent{
@@ -52,9 +24,9 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 			ItemID:                   detail.ItemID,
 			ItemCode:                 detail.ItemCode,
 			ReceivingReportDetailsID: detail.ID,
-			OrderedQty:               strconv.Itoa(orderedQty),
-			ReceivedQty:              strconv.Itoa(receivedQty),
-			RejectedQty:              strconv.Itoa(rejectedQty),
+			OrderedQty:               orderedQty,
+			ReceivedQty:              receivedQty,
+			RejectedQty:              rejectedQty,
 			DateReceived:             parentDateReceived,
 			Uom:                      detail.ReceivedUom,
 			BinLocation:              detail.BinLocation,
@@ -68,7 +40,7 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 			PurchaseOrderDetailsId:   history.PurchaseOrderDetailsID,
 			ItemId:                   detail.ItemID,
 			BinLocation:              detail.BinLocation,
-			QtyIn:                    uint(receivedQtyInt),
+			QtyIn:                    receivedQty,
 			Uom:                      detail.ReceivedUom,
 			SupplierName:             body.ReceivingReport.SupplierName,
 			DateReceived:             body.ReceivingReport.DateReceived,
@@ -108,8 +80,6 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 }
 
 func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDateReceived string, parentPoId uint, detail models.ReceivingReportDetails2, body *ReceivingReportBody2, at models.At) error {
-	var err error
-
 	// Try to find existing history record for this detail
 	var history models.ReceivingHistory
 	if err := tx.Where("receiving_report_details_id = ?", detail.ID).First(&history).Error; err != nil {
@@ -119,14 +89,7 @@ func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		return err
 	}
 
-	// Convert received quantity (string) to int
-	receivedQtyInt := 0
-	if strings.TrimSpace(detail.ReceivedQty) != "" {
-		receivedQtyInt, err = strconv.Atoi(detail.ReceivedQty)
-		if err != nil {
-			return errors.New("invalid received quantity in inventory")
-		}
-	}
+	receivedQty := detail.ReceivedQty
 
 	// Update fields
 	history.ReceivingHistoryContent = models.ReceivingHistoryContent{
@@ -149,7 +112,7 @@ func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 			PurchaseOrderDetailsId:   history.PurchaseOrderDetailsID,
 			ItemId:                   detail.ItemID,
 			BinLocation:              detail.BinLocation,
-			QtyIn:                    uint(receivedQtyInt),
+			QtyIn:                    receivedQty,
 			Uom:                      detail.ReceivedUom,
 			SupplierName:             body.ReceivingReport.SupplierName,
 			DateReceived:             body.ReceivingReport.DateReceived,

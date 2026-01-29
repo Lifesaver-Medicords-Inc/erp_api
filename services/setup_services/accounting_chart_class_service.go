@@ -7,22 +7,29 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
-	"gorm.io/gorm"
 )
 
-func GetChartClasses(conditions map[string]interface{}) ([]accounting_models.ChartClass, int, error) {
+type ChartClassService struct{}
+
+func NewChartClassService() *ChartClassService {
+	return &ChartClassService{}
+}
+
+func (s *ChartClassService) GetChartClasses(conditions map[string]interface{}) ([]accounting_models.ChartClass, int, error) {
 	var classes []accounting_models.ChartClass
 
 	if err := services.DbGet(&classes, conditions); err != nil {
 		return classes, fiber.StatusInternalServerError, errors.New("failed getting classes")
 	}
 
-	return classes, 0, nil
+	return classes, fiber.StatusOK, nil
 }
-func GetChartClass(id int) (accounting_models.ChartClass, int, error) {
+
+func (s *ChartClassService) GetChartClass(id int) (accounting_models.ChartClass, int, error) {
 	conditions := map[string]interface{}{
 		"id": id,
 	}
@@ -33,86 +40,98 @@ func GetChartClass(id int) (accounting_models.ChartClass, int, error) {
 		return class, fiber.StatusInternalServerError, errors.New("failed getting class")
 	}
 
-	return class, 0, nil
+	return class, fiber.StatusOK, nil
 }
 
-func CreateChartClass(c *fiber.Ctx, tx *gorm.DB) (accounting_models.ChartClass, int, error) {
+func (s *ChartClassService) CreateChartClass(body *accounting_models.ChartClass, at models.At) (*accounting_models.ChartClass, int, error) {
 
-	var body accounting_models.ChartClass
-	if err := c.BodyParser(&body); err != nil {
-
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
+	// Rollback once, automatically, unless committed
+	defer tx.Rollback()
+
+	// Insert main Chart Class
 	if err := services.DbInsert(tx, &body); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-			err = errors.New("duplicate record error")
-		} else {
-			err = errors.New("failed creating class")
+			return body, fiber.StatusConflict, errors.New("duplicate record error")
 		}
-
-		return body, fiber.StatusInternalServerError, err
-	}
-
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
+		return body, fiber.StatusInternalServerError, errors.New("failed creating chart class")
 	}
 
 	atdata := accounting_models.ChartClassAt{RefId: body.ID, Code: body.Code, ChartClassContent: body.ChartClassContent, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed creating classat")
+		return body, fiber.StatusInternalServerError, errors.New("failed creating chart class at")
 	}
 
-	return body, 0, nil
+	// Commit once
+	if err := tx.Commit().Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	InvalidateItemCaches()
+
+	return body, fiber.StatusOK, nil
 }
 
-func UpdateChartClass(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (accounting_models.ChartClass, int, error) {
+func (s *ChartClassService) UpdateChartClass(body *accounting_models.ChartClass, conditions map[string]interface{}, at models.At) (*accounting_models.ChartClass, int, error) {
 
-	var body accounting_models.ChartClass
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
+
+	// Rollback once, automatically, unless committed
+	defer tx.Rollback()
 
 	if err := services.DbUpdate(tx, &body, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating class")
 	}
 
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
-
 	atdata := accounting_models.ChartClassAt{RefId: body.ID, Code: body.Code, ChartClassContent: body.ChartClassContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed creating classat")
+		return body, fiber.StatusInternalServerError, errors.New("failed updating journal entry at")
 	}
 
-	return body, 0, nil
+	// Commit once
+	if err := tx.Commit().Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	InvalidateItemCaches()
+
+	return body, fiber.StatusOK, nil
 }
 
-func DeleteChartClass(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (accounting_models.ChartClass, int, error) {
+func (s *ChartClassService) DeleteChartClass(body *accounting_models.ChartClass, at models.At) (*accounting_models.ChartClass, int, error) {
 
-	var body accounting_models.ChartClass
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
+
+	// Rollback once, automatically, unless committed
+	defer tx.Rollback()
 
 	if err := services.DbDelete(tx, &body, nil); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed deleting class")
 	}
 
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
-
 	atdata := accounting_models.ChartClassAt{RefId: body.ID, Code: body.Code, ChartClassContent: body.ChartClassContent, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating classat")
 	}
 
-	return body, 0, nil
+	// Commit once
+	if err := tx.Commit().Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	InvalidateItemCaches()
+
+	return body, fiber.StatusOK, nil
 }

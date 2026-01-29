@@ -4,14 +4,22 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services/setup_services"
 	"github.com/pierceperado/smpc/utils"
 )
 
-// TWO HANDLERS FOR GETTING ChartClassS
-func GetChartClasses(c *fiber.Ctx) error {
-	data, status, err := setup_services.GetChartClasses(nil)
+type ChartClassHandler struct {
+	Service *setup_services.ChartClassService
+}
+
+func NewChartClassHandler(service *setup_services.ChartClassService) *ChartClassHandler {
+	return &ChartClassHandler{Service: service}
+}
+
+func (h *ChartClassHandler) GetChartClasses(c *fiber.Ctx) error {
+	data, status, err := h.Service.GetChartClasses(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -19,7 +27,7 @@ func GetChartClasses(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-func GetChartClass(c *fiber.Ctx) error {
+func (h *ChartClassHandler) GetChartClass(c *fiber.Ctx) error {
 
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
@@ -27,7 +35,7 @@ func GetChartClass(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	data, status, err := setup_services.GetChartClass(idNum)
+	data, status, err := h.Service.GetChartClass(idNum)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -35,65 +43,61 @@ func GetChartClass(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-///////////////////////////////
+func (h *ChartClassHandler) CreateChartClass(c *fiber.Ctx) error {
+	var body accounting_models.ChartClass
 
-// HANDLER FOR CREATING ChartClass
-func CreateChartClass(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
-	data, status, err := setup_services.CreateChartClass(c, tx)
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.CreateChartClass(&body, at)
 	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+		return utils.RespondError(c, code, err.Error())
 	}
 
 	return utils.RespondSuccess(c, data)
 }
 
-// HANDLER FOR UPDATING ChartClass
-func UpdateChartClass(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+func (h *ChartClassHandler) UpdateChartClass(c *fiber.Ctx) error {
+	var body accounting_models.ChartClass
+
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	data, status, err := setup_services.UpdateChartClass(c, tx, nil)
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.UpdateChartClass(&body, nil, at)
 	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+		return utils.RespondError(c, code, err.Error())
 	}
 
 	return utils.RespondSuccess(c, data)
 }
 
-// HANDLER DELETE ChartClass
-func DeleteChartClass(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+func (h *ChartClassHandler) DeleteChartClass(c *fiber.Ctx) error {
+	var body accounting_models.ChartClass
+
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	data, status, err := setup_services.DeleteChartClass(c, tx, nil)
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.DeleteChartClass(&body, at)
 	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+		return utils.RespondError(c, code, err.Error())
 	}
 
 	return utils.RespondSuccess(c, data)

@@ -5,110 +5,29 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
-	"gorm.io/gorm"
 )
 
-// "errors"
+type ChartOfAccountService struct{}
 
-// func GetChartOfAccounts(conditions map[string]interface{}) ([]models.ChartOfAccount, int, error) {
+func NewChartOfAccountService() *ChartOfAccountService {
+	return &ChartOfAccountService{}
+}
 
-// 	var based_service = services.NewInMemoryRepository(nil, nil, models.ChartOfAccount{}, models.ChartOfAccountAt{})
-
-// 	return based_service.FetchAll()
-// }
-// func GetChartOfAccount(id int) (models.ChartOfAccount, int, error) {
-
-// 	conditions := map[string]interface{}{
-// 		"id": id,
-// 	}
-
-// 	var Group models.ChartOfAccount
-
-// 	if err := services.DbGet(&Group, conditions); err != nil {
-// 		return Group, fiber.StatusInternalServerError, errors.New("failed getting Group")
-// 	}
-
-// 	return Group, 0, nil
-// }
-
-// func CreateChartOfAccount(c *fiber.Ctx, tx *gorm.DB) (models.ChartOfAccount, int, error) {
-
-// 	var based_service = services.NewInMemoryRepository(c, tx, models.ChartOfAccount{}, models.ChartOfAccountAt{})
-
-// 	var body models.ChartOfAccount
-// 	if err := c.BodyParser(&body); err != nil {
-
-// 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
-// 	}
-
-// 	at, ok := c.Locals("at").(models.At)
-// 	if !ok {
-// 		at = models.At{}
-// 	}
-
-// 	atdata := models.ChartOfAccountAt{RefId: body.ID, AccountCode: body.AccountCode, At: at}
-
-// 	return based_service.Create(body, atdata)
-// }
-
-// func UpdateChartOfAccount(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.ChartOfAccount, int, error) {
-
-// 	var based_service = services.NewInMemoryRepository(c, tx, models.ChartOfAccount{}, models.ChartOfAccountAt{})
-
-// 	var body models.ChartOfAccount
-// 	if err := c.BodyParser(&body); err != nil {
-// 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
-// 	}
-
-// 	at, ok := c.Locals("at").(models.At)
-// 	if !ok {
-// 		at = models.At{}
-// 	}
-
-// 	atdata := models.ChartOfAccountAt{RefId: body.ID, AccountCode: body.AccountCode, At: at}
-
-// 	return based_service.Update(body, atdata, conditions)
-// }
-
-// func DeleteChartOfAccount(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.ChartOfAccount, int, error) {
-
-// 	var body models.ChartOfAccount
-// 	if err := c.BodyParser(&body); err != nil {
-// 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
-// 	}
-
-// 	if err := services.DbDelete(tx, &body, nil); err != nil {
-// 		return body, fiber.StatusInternalServerError, errors.New("failed deleting Group")
-// 	}
-
-// 	at, ok := c.Locals("at").(models.At)
-// 	if !ok {
-// 		at = models.At{}
-// 	}
-
-// 	atdata := models.ChartOfAccountAt{RefId: body.ID, AccountCode: body.AccountCode, At: at}
-
-// 	if err := services.DbInsert(tx, &atdata); err != nil {
-// 		return body, fiber.StatusInternalServerError, errors.New("failed creating Groupat")
-// 	}
-
-// 	return body, 0, nil
-// }
-
-func GetChartOfAccounts(conditions map[string]interface{}) ([]accounting_models.ChartOfAccounts, int, error) {
+func (s *ChartOfAccountService) GetChartOfAccounts(conditions map[string]interface{}) ([]accounting_models.ChartOfAccounts, int, error) {
 	var response []accounting_models.ChartOfAccounts
 
 	if err := services.DbGet(&response, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed to get chart of account")
 	}
-	return response, 0, nil
+
+	return response, fiber.StatusOK, nil
 }
 
-func GetChartOfAccountsClassifications(code string) ([]accounting_models.ChartOfAccounts, int, error) {
-
+func (s *ChartOfAccountService) GetChartOfAccountsClassifications(code string) ([]accounting_models.ChartOfAccounts, int, error) {
 	conditions := map[string]interface{}{
 		"code": code,
 	}
@@ -118,15 +37,18 @@ func GetChartOfAccountsClassifications(code string) ([]accounting_models.ChartOf
 		return response, fiber.StatusInternalServerError, errors.New("failed to get chart of account classfications")
 	}
 
-	return response, 0, nil
+	return response, fiber.StatusOK, nil
 }
 
-func CreateChartOfAccounts(c *fiber.Ctx, tx *gorm.DB) (accounting_models.ChartOfAccounts, int, error) {
+func (s *ChartOfAccountService) CreateChartOfAccounts(body *accounting_models.ChartOfAccounts, at models.At) (*accounting_models.ChartOfAccounts, int, error) {
 
-	var body accounting_models.ChartOfAccounts
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
+
+	// Rollback once, automatically, unless committed
+	defer tx.Rollback()
 
 	if err := services.DbInsert(tx, &body); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
@@ -137,11 +59,6 @@ func CreateChartOfAccounts(c *fiber.Ctx, tx *gorm.DB) (accounting_models.ChartOf
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
-
 	//Insert audit record for the main request
 	atdata := accounting_models.ChartOfAccountsAt{
 		RefId:                 body.ID,
@@ -153,26 +70,30 @@ func CreateChartOfAccounts(c *fiber.Ctx, tx *gorm.DB) (accounting_models.ChartOf
 		return body, fiber.StatusInternalServerError, err
 	}
 
+	// Commit once
+	if err := tx.Commit().Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
 	InvalidateItemCaches()
 
-	return body, 0, nil
+	return body, fiber.StatusOK, nil
 }
 
-func UpdateChartOfAccount(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (accounting_models.ChartOfAccounts, int, error) {
+func (s *ChartOfAccountService) UpdateChartOfAccount(body *accounting_models.ChartOfAccounts, conditions map[string]interface{}, at models.At) (*accounting_models.ChartOfAccounts, int, error) {
 
-	var body accounting_models.ChartOfAccounts
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
+
+	// Rollback once, automatically, unless committed
+	defer tx.Rollback()
 
 	if err := services.DbUpdate(tx, &body, conditions); err != nil {
 
 		return body, fiber.StatusInternalServerError, err
 	}
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
 
 	//Insert audit record for the main request
 	atdata := accounting_models.ChartOfAccountsAt{
@@ -185,25 +106,29 @@ func UpdateChartOfAccount(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 		return body, fiber.StatusInternalServerError, err
 	}
 
+	// Commit once
+	if err := tx.Commit().Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
 	InvalidateItemCaches()
 
-	return body, 0, nil
+	return body, fiber.StatusOK, nil
 }
 
-func DeleteChartOfAccount(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (accounting_models.ChartOfAccounts, int, error) {
+func (s *ChartOfAccountService) DeleteChartOfAccount(body *accounting_models.ChartOfAccounts, at models.At) (*accounting_models.ChartOfAccounts, int, error) {
 
-	var body accounting_models.ChartOfAccounts
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	if err := services.DbDelete(tx, &body, conditions); err != nil {
+	// Rollback once, automatically, unless committed
+	defer tx.Rollback()
+
+	if err := services.DbDelete(tx, &body, nil); err != nil {
 
 		return body, fiber.StatusInternalServerError, err
-	}
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
 	}
 
 	//Insert audit record for the main request
@@ -217,7 +142,12 @@ func DeleteChartOfAccount(c *fiber.Ctx, tx *gorm.DB, conditions map[string]inter
 		return body, fiber.StatusInternalServerError, err
 	}
 
+	// Commit once
+	if err := tx.Commit().Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
 	InvalidateItemCaches()
 
-	return body, 0, nil
+	return body, fiber.StatusOK, nil
 }

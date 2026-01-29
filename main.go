@@ -371,30 +371,6 @@ func SetupApp() *fiber.App {
 					setupApi.Put("/chart_group", setup_handlers.UpdateChartGroup)
 					setupApi.Delete("/chart_group", setup_handlers.DeleteChartGroup)
 
-					// Chart Class Endpoints
-					setupApi.Get("/chart_class", setup_handlers.GetChartClasses)
-					setupApi.Get("/chart_class:/id", setup_handlers.GetChartClass)
-					setupApi.Post("/chart_class", setup_handlers.CreateChartClass)
-					setupApi.Put("/chart_class", setup_handlers.UpdateChartClass)
-					setupApi.Delete("/chart_class", setup_handlers.DeleteChartClass)
-
-					//Chart of Account Endpoints
-					setupApi.Get("/chart_of_account", setup_handlers.GetChartOfAccounts)
-					setupApi.Post("/chart_of_account", setup_handlers.CreateChartOfAccount)
-					setupApi.Put("/chart_of_account", setup_handlers.UpdateChartOfAccount)
-					setupApi.Delete("/chart_of_account", setup_handlers.DeleteChartOfAccount)
-					setupApi.Get("/chart_of_account_classification/:code", setup_handlers.GetChartOfAccountClassification)
-
-					// Tax Setup Endpoints
-					setupApi.Get("/tax", setup_handlers.GetTaxSetup)
-					setupApi.Get("/tax/coa", setup_handlers.GetChartOfAccountSetup)
-					setupApi.Get("/tax_setup/:code", setup_handlers.GetTaxClassificationSetup)
-					setupApi.Post("/tax", setup_handlers.CreateTaxSetup)
-					setupApi.Put("/tax", setup_handlers.UpdateTaxSetup)
-					setupApi.Delete("/tax", setup_handlers.DeleteTaxSetup)
-
-					//	setupApi.Get("/chart_of_account_classification/:code", setup_handlers.GetChartOfAccountClassification)
-
 					// GetGeneralLedgerMappers
 					setupApi.Get("/general_ledger", setup_handlers.GetGeneralLedgerMappers)
 					//	setupApi.Get("/general_ledger:/id", setup_handlers.GetChartOfAccount)

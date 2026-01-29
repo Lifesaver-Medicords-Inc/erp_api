@@ -40,3 +40,14 @@ type TaxDetailsView struct {
 func (TaxDetailsView) TableName() string {
 	return "vw_get_tax_setup_details"
 }
+
+type TaxSetupBody struct {
+	TaxSetup        Tax          `json:"tax_setup"`
+	TaxSetupDetails []TaxDetails `json:"tax_setup_details"`
+}
+
+type TaxSetupGet struct {
+	TaxSetup        []Tax            `json:"tax_setup"`
+	TaxSetupDetails []TaxDetailsView `json:"tax_setup_details"`
+	TaxSetupView    []TaxView        `json:"tax_setup_view"`
+}

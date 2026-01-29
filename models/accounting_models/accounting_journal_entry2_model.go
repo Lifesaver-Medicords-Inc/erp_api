@@ -38,7 +38,7 @@ type JournalEntryDetails2Content struct {
 	PostingRef     string  `json:"posting_ref"`
 	PostingRefId   uint    `json:"posting_ref_id"`
 	Origin         string  `json:"origin"`
-	OriginNo       uint    `json:"origin_no"`
+	OriginId       uint    `json:"origin_id"`
 	Debit          float64 `json:"debit"`
 	Credit         float64 `json:"credit"`
 	LineMemo       string  `json:"line_memo"`

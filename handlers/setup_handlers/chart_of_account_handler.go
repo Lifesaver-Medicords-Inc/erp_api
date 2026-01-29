@@ -2,26 +2,34 @@ package setup_handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services/setup_services"
 	"github.com/pierceperado/smpc/utils"
 )
 
-// TWO HANDLERS FOR GETTING ChartOfAccountS
-func GetChartOfAccounts(c *fiber.Ctx) error {
+type ChartOfAccountHandler struct {
+	Service *setup_services.ChartOfAccountService
+}
 
-	data, status, err := setup_services.GetChartOfAccounts(nil)
+func NewChartOfAccountHandler(service *setup_services.ChartOfAccountService) *ChartOfAccountHandler {
+	return &ChartOfAccountHandler{Service: service}
+}
+
+func (h *ChartOfAccountHandler) GetChartOfAccounts(c *fiber.Ctx) error {
+
+	data, status, err := h.Service.GetChartOfAccounts(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
 	return utils.RespondSuccess(c, data)
 }
-func GetChartOfAccountClassification(c *fiber.Ctx) error {
+func (h *ChartOfAccountHandler) GetChartOfAccountClassification(c *fiber.Ctx) error {
 
 	codeParams := c.Params("code")
 
-	data, status, err := setup_services.GetChartOfAccountsClassifications(codeParams)
+	data, status, err := h.Service.GetChartOfAccountsClassifications(codeParams)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
@@ -29,146 +37,61 @@ func GetChartOfAccountClassification(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-// func GetChartOfAccount(c *fiber.Ctx) error {
+func (h *ChartOfAccountHandler) CreateChartOfAccount(c *fiber.Ctx) error {
+	var body accounting_models.ChartOfAccounts
 
-// 	idParam := c.Params("id")
-// 	idNum, err := strconv.Atoi(idParam)
-// 	if err != nil {
-// 		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
-// 	}
-
-// 	data, status, err := setup_services.GetChartOfAccount(idNum)
-// 	if err != nil {
-// 		return utils.RespondError(c, status, err.Error())
-// 	}
-
-// 	return utils.RespondSuccess(c, data)
-// }
-
-///////////////////////////////
-
-// HANDLER FOR CREATING ChartOfAccount
-// func CreateChartOfAccount(c *fiber.Ctx) error {
-// 	tx := initializers.DB.Begin()
-// 	if tx.Error != nil {
-// 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
-// 	}
-// 	data, status, err := setup_services.CreateChartOfAccount(c, tx)
-// 	if err != nil {
-// 		tx.Rollback()
-// 		return utils.RespondError(c, status, err.Error())
-// 	}
-
-// 	if err := tx.Commit().Error; err != nil {
-// 		tx.Rollback()
-// 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
-// 	}
-
-// 	return utils.RespondSuccess(c, data)
-// }
-
-// HANDLER FOR UPDATING ChartOfAccount
-
-// func UpdateChartOfAccount(c *fiber.Ctx) error {
-// 	tx := initializers.DB.Begin()
-// 	if tx.Error != nil {
-// 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
-// 	}
-
-// 	data, status, err := setup_services.UpdateChartOfAccount(c, tx, nil)
-// 	if err != nil {
-// 		tx.Rollback()
-// 		return utils.RespondError(c, status, err.Error())
-// 	}
-
-// 	if err := tx.Commit().Error; err != nil {
-// 		tx.Rollback()
-// 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
-// 	}
-
-// 	return utils.RespondSuccess(c, data)
-// }
-
-// HANDLER DELETE ChartOfAccount
-
-// func DeleteChartOfAccount(c *fiber.Ctx) error {
-// 	tx := initializers.DB.Begin()
-// 	if tx.Error != nil {
-// 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
-// 	}
-
-// 	data, status, err := setup_services.DeleteChartOfAccount(c, tx, nil)
-// 	if err != nil {
-// 		tx.Rollback()
-// 		return utils.RespondError(c, status, err.Error())
-// 	}
-
-// 	if err := tx.Commit().Error; err != nil {
-// 		tx.Rollback()
-// 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
-// 	}
-
-// 	return utils.RespondSuccess(c, data)
-// }
-
-func CreateChartOfAccount(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
-
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
-
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
-	data, status, err := setup_services.CreateChartOfAccounts(c, tx)
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.CreateChartOfAccounts(&body, at)
 	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+		return utils.RespondError(c, code, err.Error())
 	}
 
 	return utils.RespondSuccess(c, data)
 }
 
-func UpdateChartOfAccount(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
+func (h *ChartOfAccountHandler) UpdateChartOfAccount(c *fiber.Ctx) error {
+	var body accounting_models.ChartOfAccounts
 
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
-
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
-	data, status, err := setup_services.UpdateChartOfAccount(c, tx, nil)
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.UpdateChartOfAccount(&body, nil, at)
 	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+		return utils.RespondError(c, code, err.Error())
 	}
 
 	return utils.RespondSuccess(c, data)
 }
 
-func DeleteChartOfAccount(c *fiber.Ctx) error {
-	tx := initializers.DB.Begin()
+func (h *ChartOfAccountHandler) DeleteChartOfAccount(c *fiber.Ctx) error {
+	var body accounting_models.ChartOfAccounts
 
-	if tx.Error != nil {
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
-
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
-	data, status, err := setup_services.DeleteChartOfAccount(c, tx, nil)
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	data, code, err := h.Service.DeleteChartOfAccount(&body, at)
 	if err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+		return utils.RespondError(c, code, err.Error())
 	}
 
 	return utils.RespondSuccess(c, data)

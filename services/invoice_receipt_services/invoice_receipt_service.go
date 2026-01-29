@@ -4,13 +4,16 @@ import (
 	// "errors"
 
 	"errors"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
+	"github.com/pierceperado/smpc/services/journal_entry_services2"
 	"github.com/pierceperado/smpc/utils"
 	"gorm.io/gorm"
 )
@@ -35,14 +38,73 @@ func (s *InvoiceReceiptService) GetInvoiceReceipt(conditions map[string]interfac
 	return response, fiber.StatusOK, nil
 }
 
+func (s *InvoiceReceiptService) GetSupplierPO(conditions map[string]interface{}) (interface{}, int, error) {
+	var poParent []accounting_models.InvoicePOView
+
+	// Get Purchase Order (Parent)
+	if err := services.DbRaw(&poParent, "sp_GetPurchaseOrderInvoice", conditions); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed getting purchase order data")
+	}
+
+	if len(poParent) == 0 {
+		return nil, fiber.StatusNotFound, errors.New("no purchase order found")
+	}
+
+	var allChildren []accounting_models.InvoicePODetailView
+
+	for _, po := range poParent {
+		var poChild []accounting_models.InvoicePODetailView
+
+		childConditions := map[string]interface{}{
+			"PurchaseId": po.ID,
+		}
+
+		if err := services.DbRaw(&poChild, "sp_GetPurchaseOrderDetailsInvoice", childConditions); err != nil {
+			return nil, fiber.StatusInternalServerError, errors.New("failed getting purchase order details data")
+		}
+
+		// Append children to one slice
+		allChildren = append(allChildren, poChild...)
+	}
+
+	// Response structure
+	response := struct {
+		PurchaseOrderView        []accounting_models.InvoicePOView       `json:"purchase_order_view"`
+		PurchaseOrderDetailsView []accounting_models.InvoicePODetailView `json:"purchase_order_details_view"`
+	}{
+		PurchaseOrderView:        poParent,
+		PurchaseOrderDetailsView: allChildren,
+	}
+
+	return response, fiber.StatusOK, nil
+}
+
+func (s *InvoiceReceiptService) GetTaxView(conditions map[string]interface{}) (interface{}, int, error) {
+	var response []accounting_models.TaxView
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New(" failed getting tax view")
+	}
+
+	return response, fiber.StatusOK, nil
+}
+
+func (s *InvoiceReceiptService) GetSupplierTradeView(conditions map[string]interface{}) (interface{}, int, error) {
+	var response []accounting_models.SupplierTradeView
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New(" failed getting supplier trade view")
+	}
+
+	return response, fiber.StatusOK, nil
+}
+
 func (s *InvoiceReceiptService) CreateInvoiceReceipt(body *accounting_models.InvoiceReceiptBody, at models.At) (*accounting_models.InvoiceReceiptBody, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
-
-	// Rollback once, automatically, unless committed
-	defer tx.Rollback()
+	defer tx.Rollback() // rollback unless committed
 
 	// Insert main Invoice Receipt
 	if err := services.DbInsert(tx, &body.InvoiceReceipt); err != nil {
@@ -52,9 +114,9 @@ func (s *InvoiceReceiptService) CreateInvoiceReceipt(body *accounting_models.Inv
 		return body, fiber.StatusInternalServerError, errors.New("failed creating invoice receipt")
 	}
 
+	// Generate and update DocNo
 	body.InvoiceReceipt.DocNo = utils.DocNoGenerator(body.InvoiceReceipt.ID)
-	if err := tx.Model(&body.InvoiceReceipt).
-		Update("doc_no", body.InvoiceReceipt.DocNo).Error; err != nil {
+	if err := tx.Model(&body.InvoiceReceipt).Update("doc_no", body.InvoiceReceipt.DocNo).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating invoice receipt doc")
 	}
 
@@ -63,20 +125,102 @@ func (s *InvoiceReceiptService) CreateInvoiceReceipt(body *accounting_models.Inv
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	//Insert audit record for the main request
+	// Find matching journal entry
+	var journals []accounting_models.JournalEntry2
+	if err := tx.Find(&journals).Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed fetching journal entries")
+	}
+
+	docDate, err := time.Parse("01/02/2006", strings.ToLower(strings.TrimSpace(body.InvoiceReceipt.DocDate)))
+	if err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("invalid invoice receipt doc date format")
+	}
+
+	var matchedJournalID uint
+	for _, j := range journals {
+		parts := strings.Split(j.Period, " to ")
+		if len(parts) != 2 {
+			continue
+		}
+		startDate, err1 := time.Parse("02/01/2006 3:04:05 pm", strings.TrimSpace(parts[0]))
+		endDate, err2 := time.Parse("02/01/2006 3:04:05 pm", strings.TrimSpace(parts[1]))
+		if err1 != nil || err2 != nil {
+			continue
+		}
+		if !docDate.Before(startDate) && !docDate.After(endDate) {
+			matchedJournalID = j.ID
+			break
+		}
+	}
+	if matchedJournalID == 0 {
+		return body, fiber.StatusNotFound, errors.New("no journal entry found for the invoice period")
+	}
+
+	// Fetch debit and credit COAs
+	var coaDEBIT, coaCREDIT accounting_models.ChartOfAccounts
+	if err := tx.First(&coaDEBIT, 40029).Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed fetching debit chart of account")
+	}
+	if err := tx.First(&coaCREDIT, 40030).Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed fetching credit chart of account")
+	}
+
+	// Helper to create journal entry
+	createJournalEntry := func(account accounting_models.ChartOfAccounts, amount float64, isCredit bool) accounting_models.JournalEntryDetails2 {
+		entry := accounting_models.JournalEntryDetails2{
+			JournalEntryDetails2Content: accounting_models.JournalEntryDetails2Content{
+				Origin:         "Invoice Receipt",
+				OriginId:       body.InvoiceReceipt.ID,
+				LineMemo:       "Auto entry - " + map[bool]string{true: "CREDIT", false: "DEBIT"}[isCredit],
+				PostingDate:    body.InvoiceReceipt.DocDate,
+				CreatedBy:      body.InvoiceReceipt.PreparedBy,
+				AccountTitle:   account.Name,
+				PostingRef:     account.Code,
+				PostingRefId:   account.ID,
+				JournalEntryId: matchedJournalID,
+			},
+		}
+		if isCredit {
+			entry.Credit = amount
+		} else {
+			entry.Debit = amount
+		}
+		return entry
+	}
+
+	jeService := journal_entry_services2.NewJournalEntryService2()
+
+	// Auto-insert debit and credit
+	for _, e := range []accounting_models.JournalEntryDetails2{
+		createJournalEntry(coaCREDIT, body.InvoiceReceipt.NetAmount, true),
+		createJournalEntry(coaDEBIT, body.InvoiceReceipt.NetAmount, false),
+	} {
+		if err := jeService.AutoInsertJournalEntry(&e, body.InvoiceReceipt.DocDate, at); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+
+	// Insert audit record
 	atdata := accounting_models.InvoiceReceiptAt{
 		RefId:                 body.InvoiceReceipt.ID,
 		InvoiceReceiptContent: body.InvoiceReceipt.InvoiceReceiptContent,
 		At:                    at,
 	}
-
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating invoice receipt at")
 	}
 
-	// Commit once
+	// Commit transaction
 	if err := tx.Commit().Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	if err := services.InvalidateCacheByModel(accounting_models.InvoicePOView{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
+
+	if err := services.InvalidateCacheByModel(accounting_models.InvoicePODetailView{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
 	}
 
 	return body, fiber.StatusOK, nil
@@ -100,128 +244,6 @@ func (s *InvoiceReceiptService) CreateInvoiceReceiptDetails(tx *gorm.DB, body *a
 
 		if err := services.DbInsert(tx, &atdataDetail); err != nil {
 			return errors.New("failed creating invoice receipt details at")
-		}
-	}
-	return nil
-}
-
-func (s *InvoiceReceiptService) UpdateInvoiceReceipt(body *accounting_models.InvoiceReceiptBody, conditions map[string]interface{}, at models.At) (*accounting_models.InvoiceReceiptBody, int, error) {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
-	}
-
-	// Rollback once, automatically, unless committed
-	defer tx.Rollback()
-
-	//Update main Invoice Receipt
-	if err := services.DbUpdate(tx, &body.InvoiceReceipt, conditions); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed updating invoice receipt")
-	}
-
-	// Handle details
-	if err := s.UpdateInvoiceReceiptDetails(tx, body, conditions, at); err != nil {
-		return body, fiber.StatusInternalServerError, err
-	}
-
-	//Audit record for main request
-	atdata := accounting_models.InvoiceReceiptAt{
-		RefId:                 body.InvoiceReceipt.ID,
-		InvoiceReceiptContent: body.InvoiceReceipt.InvoiceReceiptContent,
-		At:                    at,
-	}
-
-	if err := services.DbInsert(tx, &atdata); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed updating invoice receipt at")
-	}
-
-	// Commit once
-	if err := tx.Commit().Error; err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
-	}
-
-	return body, fiber.StatusOK, nil
-}
-
-func (s *InvoiceReceiptService) UpdateInvoiceReceiptDetails(tx *gorm.DB, body *accounting_models.InvoiceReceiptBody, conditions map[string]interface{}, at models.At) error {
-	for i := range body.InvoiceReceiptDetails {
-		detail := &body.InvoiceReceiptDetails[i]
-		detail.InvoiceReceiptID = body.InvoiceReceipt.ID // ensure FK is set
-
-		if detail.ID == 0 {
-			if err := services.DbInsert(tx, detail); err != nil {
-				return errors.New("failed creating invoice receipt details")
-			}
-		} else {
-			if err := services.DbUpdate(tx, detail, conditions); err != nil {
-				return errors.New("failed updating invoice receipt details")
-			}
-		}
-
-		// Audit record for each detail
-		atdataDetail := accounting_models.InvoiceReceiptDetailsAt{
-			RefId:                        detail.ID,
-			InvoiceReceiptDetailsContent: detail.InvoiceReceiptDetailsContent,
-			At:                           at,
-		}
-
-		if err := services.DbInsert(tx, &atdataDetail); err != nil {
-			return errors.New("failed creating invoice receipt details at")
-		}
-	}
-	return nil
-}
-
-func (s *InvoiceReceiptService) DeleteInvoiceReceipt(body *accounting_models.InvoiceReceiptBody, at models.At) (*accounting_models.InvoiceReceiptBody, int, error) {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
-	}
-
-	// Rollback once, automatically, unless committed
-	defer tx.Rollback()
-
-	//Delete main Invoice Receipt
-	if err := services.DbDelete(tx, &body.InvoiceReceipt, nil); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed deleting invoice receipt")
-	}
-
-	if err := s.DeleteInvoiceReceiptDetails(tx, body, at); err != nil {
-		return body, fiber.StatusInternalServerError, err
-	}
-
-	//Audit record for main request
-	atdata := accounting_models.InvoiceReceiptAt{RefId: body.InvoiceReceipt.ID, InvoiceReceiptContent: body.InvoiceReceipt.InvoiceReceiptContent, At: at}
-	if err := services.DbInsert(tx, &atdata); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed creating invoice receipt at")
-	}
-
-	// Commit once
-	if err := tx.Commit().Error; err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
-	}
-
-	return body, fiber.StatusOK, nil
-}
-
-func (s *InvoiceReceiptService) DeleteInvoiceReceiptDetails(tx *gorm.DB, body *accounting_models.InvoiceReceiptBody, at models.At) error {
-	// Delete all details
-	if err := services.DbDelete(tx, &accounting_models.InvoiceReceiptDetails{}, map[string]interface{}{"invoice_receipt_id": body.InvoiceReceipt.ID}); err != nil {
-		return errors.New("failed deleting all invoice receipt details")
-	}
-
-	// Optionally fetch deleted details for audit trail
-	var deletedDetails []accounting_models.InvoiceReceiptDetails
-	if err := tx.Unscoped().Where("invoice_receipt_id = ?", body.InvoiceReceipt.ID).Find(&deletedDetails).Error; err == nil {
-		for _, detail := range deletedDetails {
-			atdataDetail := accounting_models.InvoiceReceiptDetailsAt{
-				RefId:                        detail.ID,
-				InvoiceReceiptDetailsContent: detail.InvoiceReceiptDetailsContent,
-				At:                           at,
-			}
-			if err := services.DbInsert(tx, &atdataDetail); err != nil {
-				return errors.New("failed creating invoice receipt details audit record")
-			}
 		}
 	}
 	return nil
