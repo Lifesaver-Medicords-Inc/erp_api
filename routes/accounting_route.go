@@ -2,10 +2,12 @@ package routes
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/handlers/ap_voucher_handlers"
 	"github.com/pierceperado/smpc/handlers/bulk_invoice_receipt_handlers"
 	"github.com/pierceperado/smpc/handlers/invoice_receipt_handlers"
 	"github.com/pierceperado/smpc/handlers/journal_entry_handlers2"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
+	"github.com/pierceperado/smpc/services/ap_voucher_services"
 	"github.com/pierceperado/smpc/services/bulk_invoice_receipt_services"
 	"github.com/pierceperado/smpc/services/invoice_receipt_services"
 	"github.com/pierceperado/smpc/services/journal_entry_services2"
@@ -29,6 +31,13 @@ func AccountingRoutes(router fiber.Router) {
 	bulkInvoiceReceiptHandler := bulk_invoice_receipt_handlers.NewBulkInvoiceReceiptHandler(bulkInvoiceReceiptService)
 	accountingApi.Get("/bulk_invoice_receipt", bulkInvoiceReceiptHandler.GetBulkInvoiceReceipt)
 	accountingApi.Post("/bulk_invoice_receipt", bulkInvoiceReceiptHandler.CreateBulkInvoiceReceipt)
+
+	//AP Voucher Endpoints
+	apVoucherService := ap_voucher_services.NewApVoucherService()
+	apVoucherHandler := ap_voucher_handlers.NewApVoucherHandler(apVoucherService)
+	accountingApi.Get("/ap_voucher/invoice/:supplier_id", apVoucherHandler.GetInvoiceView)
+	accountingApi.Get("/ap_voucher", apVoucherHandler.GetApVoucher)
+	accountingApi.Post("/ap_voucher", apVoucherHandler.CreateApVoucher)
 
 	//Journal Entry Endpoints
 	journalEntryService2 := journal_entry_services2.NewJournalEntryService2()

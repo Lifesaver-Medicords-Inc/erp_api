@@ -17,7 +17,7 @@ type InvoiceReceiptContent struct {
 	OtherCharges float64 `json:"other_charges"`
 	NetAmount    float64 `json:"net_amount"`
 	TwasAmount   float64 `json:"twas_amount"`
-	ApVoucher    string  `json:"ap_voucher"`
+	ApVoucher    *bool   `json:"ap_voucher"`
 	Type         string  `json:"type"`
 	Remarks      string  `json:"remarks"`
 	PreparedBy   string  `json:"prepared_by"`

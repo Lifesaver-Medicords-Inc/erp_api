@@ -100,7 +100,7 @@ func (s *BulkInvoiceReceiptService) CreateBulkInvoiceReceipt(body *accounting_mo
 	if err := tx.First(&coaDEBIT, 40029).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching debit chart of account")
 	}
-	if err := tx.First(&coaCREDIT, 40030).Error; err != nil {
+	if err := tx.First(&coaCREDIT, 50030).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching credit chart of account")
 	}
 
@@ -108,7 +108,7 @@ func (s *BulkInvoiceReceiptService) CreateBulkInvoiceReceipt(body *accounting_mo
 	createJournalEntry := func(account accounting_models.ChartOfAccounts, amount float64, isCredit bool) accounting_models.JournalEntryDetails2 {
 		entry := accounting_models.JournalEntryDetails2{
 			JournalEntryDetails2Content: accounting_models.JournalEntryDetails2Content{
-				Origin:         "Invoice Receipt",
+				Origin:         "Bulk Invoice Receipt",
 				OriginId:       body.BulkInvoiceReceipt.ID,
 				LineMemo:       "Auto entry - " + map[bool]string{true: "CREDIT", false: "DEBIT"}[isCredit],
 				PostingDate:    body.BulkInvoiceReceipt.DocDate,
