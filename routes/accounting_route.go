@@ -6,11 +6,13 @@ import (
 	"github.com/pierceperado/smpc/handlers/bulk_invoice_receipt_handlers"
 	"github.com/pierceperado/smpc/handlers/invoice_receipt_handlers"
 	"github.com/pierceperado/smpc/handlers/journal_entry_handlers2"
+	"github.com/pierceperado/smpc/handlers/payment_voucher_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/services/ap_voucher_services"
 	"github.com/pierceperado/smpc/services/bulk_invoice_receipt_services"
 	"github.com/pierceperado/smpc/services/invoice_receipt_services"
 	"github.com/pierceperado/smpc/services/journal_entry_services2"
+	"github.com/pierceperado/smpc/services/payment_voucher_services"
 	"github.com/pierceperado/smpc/services/setup_services"
 )
 
@@ -31,6 +33,13 @@ func AccountingRoutes(router fiber.Router) {
 	bulkInvoiceReceiptHandler := bulk_invoice_receipt_handlers.NewBulkInvoiceReceiptHandler(bulkInvoiceReceiptService)
 	accountingApi.Get("/bulk_invoice_receipt", bulkInvoiceReceiptHandler.GetBulkInvoiceReceipt)
 	accountingApi.Post("/bulk_invoice_receipt", bulkInvoiceReceiptHandler.CreateBulkInvoiceReceipt)
+
+	//Payment Voucher Endpoints
+	paymentVoucherService := payment_voucher_services.NewPaymentVoucherService()
+	paymentVoucherHandler := payment_voucher_handlers.NewPaymentVoucherHandler(paymentVoucherService)
+	accountingApi.Get("/payment_voucher", paymentVoucherHandler.GetPaymentVoucher)
+	accountingApi.Post("/payment_voucher", paymentVoucherHandler.CreatePaymentVoucher)
+	accountingApi.Get("/payment_voucher/ap_voucher/:supplier_id", paymentVoucherHandler.GetSupplierAPVoucher)
 
 	//AP Voucher Endpoints
 	apVoucherService := ap_voucher_services.NewApVoucherService()
