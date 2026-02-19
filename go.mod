@@ -15,7 +15,6 @@ require (
 )
 
 require golang.org/x/net v0.35.0 // indirect
-	github.com/shopspring/decimal v1.4.0 // indirect
 
 require (
 	github.com/andybalholm/brotli v1.1.1 // indirect
