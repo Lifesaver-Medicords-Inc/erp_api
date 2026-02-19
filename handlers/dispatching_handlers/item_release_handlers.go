@@ -63,7 +63,7 @@ func (h *ItemReleaseHandler) GetItemReleaseHandler(c *fiber.Ctx) error {
 
 // POST /item-releases
 func (h *ItemReleaseHandler) CreateItemReleaseHandler(c *fiber.Ctx) error {
-	var body models.ItemReleaseModel
+	var body models.ItemRelease
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
@@ -89,7 +89,7 @@ func (h *ItemReleaseHandler) UpdateItemReleaseHandler(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid ID")
 	}
 
-	var body models.ItemReleaseModel
+	var body models.ItemRelease
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
@@ -128,6 +128,30 @@ func (h *ItemReleaseHandler) DeleteItemReleaseHandler(c *fiber.Ctx) error {
 	}
 
 	data, code, err := h.Service.DeleteItemReleaseService(conditions, at)
+	if err != nil {
+		return utils.RespondError(c, code, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+func (h *ItemReleaseHandler) GetSalesOrderItemReleaseDetailsHandler(c *fiber.Ctx) error {
+	id := c.Query("id")
+	status := c.Query("status")
+	salesOrderId := c.Query("salesOrderId")
+
+	conditions := make(map[string]interface{})
+	if idNum, _ := strconv.Atoi(id); idNum != 0 {
+		conditions["id"] = idNum
+	}
+	if status != "" {
+		conditions["status"] = status
+	}
+	if soID, _ := strconv.Atoi(salesOrderId); soID != 0 {
+		conditions["sales_order_id"] = soID
+	}
+
+	data, code, err := h.Service.GetSalesOrderDetails(conditions)
 	if err != nil {
 		return utils.RespondError(c, code, err.Error())
 	}

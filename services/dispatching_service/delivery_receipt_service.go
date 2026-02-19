@@ -2,7 +2,6 @@ package dispatching_services
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -95,14 +94,14 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *models.Deliv
 		}
 	}
 
-	// 3️⃣ Insert ItemReleases if any
-	for i := range data.ItemReleases {
-		data.ItemReleases[i].DeliveryReceiptID = data.ID // assign generated receipt ID
-		if err := services.DbInsert(tx, &data.ItemReleases[i]); err != nil {
-			tx.Rollback()
-			return data, 500, fmt.Errorf("failed creating item release: %v", err)
-		}
-	}
+	// // 3️⃣ Insert ItemReleases if any
+	// for i := range data.ItemReleases {
+	// 	data.ItemReleases[i].DeliveryReceiptID = data.ID // assign generated receipt ID
+	// 	if err := services.DbInsert(tx, &data.ItemReleases[i]); err != nil {
+	// 		tx.Rollback()
+	// 		return data, 500, fmt.Errorf("failed creating item release: %v", err)
+	// 	}
+	// }
 
 	// 4️⃣ Insert DeliveryReceiptAt (tracking table)
 	atdata := models.CalendarScheduleAt{RefId: data.ID, At: at}
@@ -113,15 +112,12 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *models.Deliv
 
 	// 5️⃣ Create logistics calendar schedule
 	schedule := models.CalendarScheduleModel{
-		RelatedOrderID: &data.OrderID,
+		ReferenceDocId: &data.OrderID,
 		CalendarScheduleContent: models.CalendarScheduleContent{
 			DepartmentType: "Logistics",
-			Title:          "",
 			Description:    "",
-			StartDate:      data.DeliveryDate,
-			EndDate:        data.DeliveryDate.Add(2 * time.Hour),
-			ReferenceType:  "DeliveryReceipt",
-			ReferenceId:    data.ID,
+			StartDate:      data.DeliveryDate.Format(time.RFC3339),
+			EndDate:        data.DeliveryDate.Add(2 * time.Hour).Format(time.RFC3339),
 		},
 	}
 

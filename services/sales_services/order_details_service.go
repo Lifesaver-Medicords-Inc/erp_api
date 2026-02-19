@@ -84,7 +84,8 @@ func UpdateOrderDetail(tx *gorm.DB, orderdetails models.OrderDetails, at models.
 }
 
 func UpdateSalesOrderDetails(tx *gorm.DB, orderdetails models.OrderDetails, at models.At, conditions map[string]interface{}, orderType string, status string, mode string) error {
-	// If no conditions passed, fallback to primary key condition
+
+	fmt.Println("UPDATE SO SERVICE ORDER DETAILS", orderdetails)
 	if len(conditions) == 0 {
 		conditions = map[string]interface{}{
 			"order_details_id": orderdetails.OrderDetailsID,
@@ -151,15 +152,15 @@ func UpdateSalesOrderDetails(tx *gorm.DB, orderdetails models.OrderDetails, at m
 	if err := tx.Exec("EXEC sp_SetOrderStatus ?, ?", orderdetails.OrderDetailsID, orderType).Error; err != nil {
 		return errors.New("failed executing stored procedure")
 	}
-	orderdetailsat := models.OrderDetailsAt{
-		RefId:               orderdetails.OrderDetailsID,
-		OrderDetailsContent: orderdetails.OrderDetailsContent,
-		At:                  at,
-	}
+	// orderdetailsat := models.OrderDetailsAt{
+	// 	RefId:               orderdetails.Based_ID,
+	// 	OrderDetailsContent: orderdetails.OrderDetailsContent,
+	// 	At:                  at,
+	// }
 
-	if err := services.DbInsert(tx, &orderdetailsat); err != nil {
-		return errors.New("failed creating order details at")
-	}
+	// if err := services.DbInsert(tx, &orderdetailsat); err != nil {
+	// 	return errors.New("failed creating order details at")
+	// }
 
 	return nil
 }

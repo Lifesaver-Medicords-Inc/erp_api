@@ -1,0 +1,17 @@
+package models
+
+type SalesOrderItemReleaseView struct {
+	SalesOrderDetailsID uint   `json:"sales_order_details_id"`
+	SalesOrderID        uint   `json:"sales_order_id"`
+	RefDocNo            string `json:"ref_doc_no"`
+	ItemID              uint   `json:"item_id"`
+	ItemDescription     string `json:"item_description"`
+	RequiredQty         uint   `json:"required_qty"`
+	RequiredUomID       uint   `json:"required_uom_id"`
+	RequiredUom         string `json:"required_uom"`
+	DeliveryPreference  string `json:"delivery_preference"`
+}
+
+func (SalesOrderItemReleaseView) TableName() string {
+	return "vw_get_sales_order_item_release"
+}

@@ -1,23 +1,21 @@
 package models
 
-import "time"
-
 type CalendarScheduleContent struct {
-	DepartmentType string    `json:"department_type"` // Sales, Engineering, Logistics
-	Title          string    `json:"title"`
-	Description    string    `json:"description"`
-	StartDate      time.Time `json:"start_date"`
-	EndDate        time.Time `json:"end_date"`
-	ReferenceType  string    `json:"reference_type"` // e.g., "SalesOrder", "DeliveryReceipt"
-	ReferenceId    uint      `json:"reference_id"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	DepartmentType string `json:"department_type"` // Sales, Engineering, Logistics
+	StartDate      string `json:"start_date"`
+	EndDate        string `json:"end_date"`
+	CategoryId     uint   `json:"category_id"`
+	Description    string `json:"description"`
+	Location       string `json:"location"`
+	People         string `json:"people"`
+	VehicleId      uint   `json:"vehicle_id"`
+	Notes          string `json:"notes"`
 }
 
 type CalendarScheduleModel struct {
 	ID             uint  `gorm:"primaryKey" json:"id"`
 	DepartmentID   uint  `json:"department_id"`
-	RelatedOrderID *uint `json:"related_order_id"`
+	ReferenceDocId *uint `json:"reference_doc_id,omitempty"`
 	CalendarScheduleContent
 }
 

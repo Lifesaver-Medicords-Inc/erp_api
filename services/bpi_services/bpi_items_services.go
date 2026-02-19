@@ -47,9 +47,48 @@ func CreateBpiItem(tx *gorm.DB, parentId uint, generalId uint, child models.BpiI
 
 func UpdateBpiItems(tx *gorm.DB, parentId uint, generalId uint, childItems []models.BpiItems, salesId string, at models.At) error {
 
+	var existingIDs []uint
+	if err := tx.
+		Model(&models.BpiItems{}).
+		Where("based_id = ?", parentId).
+		Pluck("id", &existingIDs).Error; err != nil {
+		return err
+	}
+
+	// 2. Build incoming ID map
+	incomingMap := make(map[uint]bool)
 	for _, v := range childItems {
-		if err := UpdateBpiItem(tx, parentId, generalId, v, salesId, at); err != nil {
-			return err
+		if v.ID > 0 {
+			incomingMap[v.ID] = true
+		}
+	}
+
+	// 3. DELETE items removed from the list
+	for _, id := range existingIDs {
+		if !incomingMap[id] {
+			if err := tx.Delete(&models.BpiItems{}, id).Error; err != nil {
+				return err
+			}
+
+			// history
+			if err := CreateBpiHistory(tx, parentId, "delete", "Items", salesId, at); err != nil {
+				return err
+			}
+		}
+	}
+
+	// 4. CREATE / UPDATE
+	for _, v := range childItems {
+		if v.ID == 0 {
+			// CREATE
+			if err := CreateBpiItem(tx, parentId, generalId, v, salesId, at); err != nil {
+				return err
+			}
+		} else {
+			// UPDATE
+			if err := UpdateBpiItem(tx, parentId, generalId, v, salesId, at); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -136,6 +175,28 @@ func UpdateBpiItemCanvass(tx *gorm.DB, canvassId uint, price float64, conditions
 
 	if err := services.DbInsert(tx, &childat); err != nil {
 		return errors.New("failed to creating bpi items at in Update Bpi items canvass")
+	}
+
+	return nil
+}
+func DeleteBpiItem( tx *gorm.DB, parentId uint, itemId uint, salesId string, at models.At,) error {
+
+	
+	if err := tx.
+		Where("ref_id = ?", itemId).
+		Delete(&models.BpiItemsAt{}).Error; err != nil {
+		return errors.New("failed deleting bpi item at")
+	}
+
+	// delete main item
+	if err := tx.
+		Delete(&models.BpiItems{}, itemId).Error; err != nil {
+		return errors.New("failed deleting bpi item")
+	}
+
+	// history
+	if err := CreateBpiHistory(tx, parentId, "delete", "Items", salesId, at); err != nil {
+		return err
 	}
 
 	return nil

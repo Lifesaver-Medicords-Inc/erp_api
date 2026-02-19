@@ -7,23 +7,23 @@ import (
 )
 
 type DeliveryReceiptContent struct {
-	DeliveryReceiptNumber string             `gorm:"uniqueIndex;size:50;not null" json:"delivery_receipt_number"`
-	DeliveryReference     string             `gorm:"size:50" json:"delivery_reference,omitempty"`
-	OrderID               uint               `gorm:"not null" json:"order_id"`
-	DeliveryDate          time.Time          `gorm:"not null" json:"delivery_date"`
-	DriverName            string             `gorm:"size:100" json:"driver_name,omitempty"`
-	PlateNumber           string             `gorm:"size:50" json:"plate_number,omitempty"`
-	Status                string             `gorm:"size:50;default:'In Transit'" json:"status"`
-	Remarks               string             `gorm:"size:255" json:"remarks,omitempty"`
-	CreatedAt             time.Time          `json:"created_at"`
-	UpdatedAt             time.Time          `json:"updated_at"`
-	DeletedAt             gorm.DeletedAt     `gorm:"index" json:"deleted_at,omitempty"`
-	ReleaseID             uint               ` json:"release_id"`
-	DeliveryType          string             `json:"delivery_type,omitempty"`
-	Order                 *Order             `gorm:"foreignKey:Order_ID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"order,omitempty"`
-	ItemReleases          []ItemReleaseModel `gorm:"foreignKey:ID;references:ReleaseID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"item_releases,omitempty"`
-	TripCost              *TripCostModel     `gorm:"foreignKey:DeliveryReceiptID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"trip_cost,omitempty"`
-	AttachedFile          *ReceiptFileModel  `gorm:"foreignKey:DeliveryReceiptID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"attached_file,omitempty"`
+	DeliveryReceiptNumber string            `gorm:"uniqueIndex;size:50;not null" json:"delivery_receipt_number"`
+	DeliveryReference     string            `gorm:"size:50" json:"delivery_reference,omitempty"`
+	OrderID               uint              `gorm:"not null" json:"order_id"`
+	DeliveryDate          time.Time         `gorm:"not null" json:"delivery_date"`
+	DriverName            string            `gorm:"size:100" json:"driver_name,omitempty"`
+	PlateNumber           string            `gorm:"size:50" json:"plate_number,omitempty"`
+	Status                string            `gorm:"size:50;default:'In Transit'" json:"status"`
+	Remarks               string            `gorm:"size:255" json:"remarks,omitempty"`
+	CreatedAt             time.Time         `json:"created_at"`
+	UpdatedAt             time.Time         `json:"updated_at"`
+	DeletedAt             gorm.DeletedAt    `gorm:"index" json:"deleted_at,omitempty"`
+	ReleaseID             uint              ` json:"release_id"`
+	DeliveryType          string            `json:"delivery_type,omitempty"`
+	Order                 *Order            `gorm:"foreignKey:Order_ID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"order,omitempty"`
+	ItemReleases          []ItemRelease     `gorm:"foreignKey:ID;references:ReleaseID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"item_releases,omitempty"`
+	TripCost              *TripCostModel    `gorm:"foreignKey:DeliveryReceiptID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"trip_cost,omitempty"`
+	AttachedFile          *ReceiptFileModel `gorm:"foreignKey:DeliveryReceiptID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"attached_file,omitempty"`
 }
 
 type DeliveryReceiptModel struct {

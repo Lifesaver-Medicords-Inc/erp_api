@@ -26,15 +26,9 @@ type SaveBody struct {
 	ItemSpecs       ItemSpecs                    `json:"itemspecs"`
 	AdditionalSpecs models.AdditionalSpecsSchema `json:"additionalspecs"`
 	ItemImages      ItemImage                    `json:"itemimages"`
+	ItemInventory   models.ItemInventory         `json:"iteminventory"`
 }
 
-type UpdateBody struct {
-	models.Item
-	TradeTypeId     []uint                       `json:"trade_type_id"`
-	ItemSpecs       ItemSpecs                    `json:"itemspecs"`
-	AdditionalSpecs models.AdditionalSpecsSchema `json:"additionalspecs"`
-	ItemImages      ItemImage                    `json:"itemimages"`
-}
 type ItemImage struct {
 	NewImages     []models.ItemImage `json:"newimages"`
 	ReplaceImages []models.ItemImage `json:"replaceimages"`
@@ -63,13 +57,15 @@ type SpecsField struct {
 
 func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 	type Response struct {
-		Items           []models.ItemView            `json:"items"`
-		ItemSpecs       []models.ItemSpecs           `json:"itemspecs"`
-		AdditionalSpecs []models.AdditionalSpecsView `json:"additionalspecs"`
-		ItemImage       []models.ItemImage           `json:"itemimages"`
-		ItemPurchasing  []models.ItemPurchasingView  `json:"itempurchasing"`
-		ItemSales       []models.ItemSalesView       `json:"itemsales"`
-		ItemProductions []models.ItemProductionView  `json:"itemproduction"`
+		Items            []models.ItemView                        `json:"items"`
+		ItemSpecs        []models.ItemSpecs                       `json:"itemspecs"`
+		AdditionalSpecs  []models.AdditionalSpecsView             `json:"additionalspecs"`
+		ItemImage        []models.ItemImage                       `json:"itemimages"`
+		ItemPurchasing   []models.ItemPurchasingView              `json:"itempurchasing"`
+		ItemSales        []models.ItemSalesView                   `json:"itemsales"`
+		ItemInventory    []models.ItemInventory                   `json:"iteminventory"`
+		ItemAvailableInv []models.ItemAvailableInventoryModelView `json:"itemavailableinv"`
+		ItemProductions  []models.ItemProductionView              `json:"itemproduction"`
 	}
 
 	var response Response
@@ -91,6 +87,12 @@ func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 	}
 	if err := services.DbGet(&response.ItemSales, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting item sales")
+	}
+	if err := services.DbGet(&response.ItemInventory, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting item production")
+	}
+	if err := services.DbGet(&response.ItemAvailableInv, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting item available inventory")
 	}
 	if err := services.DbGet(&response.ItemProductions, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting item production")
@@ -174,13 +176,16 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 	if err := CreateItemImageChild(tx, savebody.ID, savebody.ItemImages.NewImages, at); err != nil {
 		return savebody, fiber.StatusInternalServerError, err
 	}
+	if err := CreateItemInventory(tx, savebody.ID, savebody.ItemInventory, at); err != nil {
+		return savebody, fiber.StatusInternalServerError, err
+	}
 
 	InvalidateItemCaches()
 	return savebody, 0, nil
 }
 
-func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (UpdateBody, int, error) {
-	var body UpdateBody
+func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (SaveBody, int, error) {
+	var body SaveBody
 	if err := c.BodyParser(&body); err != nil {
 		fmt.Println("Parsing Error:", err)
 
@@ -227,6 +232,10 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (U
 	}
 
 	if err := UpdateItemImage(tx, body.ID, body.ItemImages, at, conditions); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	if err := UpdateItemInventory(tx, body.ID, body.ItemInventory, at, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
@@ -290,6 +299,8 @@ func InvalidateItemCaches() {
 		models.PurchaseOrderDetailsView{},
 		models.InvLogbookView{},
 		models.InvTrackerView{},
+		models.ItemAvailableInventoryModelView{},
+		models.ItemProductionView{},
 		accounting_models.ChartOfAccountViewList{},
 		accounting_models.TaxView{},
 		accounting_models.TaxDetailsView{},

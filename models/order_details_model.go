@@ -1,25 +1,24 @@
 package models
 
 type OrderDetailsContent struct {
-	Based_ID           uint               `json:"based_id"`
-	Quotation_Quick_ID uint               `json:"quotation_quick_id"`
-	Item_ID            uint               `json:"item_id"`
-	DeliveryPreference string             `json:"delivery_preference"`
-	Status             string             `json:"status"`
-	HasStocks          bool               `json:"has_stocks"`
-	Qty                int                `json:"qty"`
-	Numbering          string             `json:"numbering"`
-	ItemCode           string             `json:"item_code"`
-	ItemDescription    string             `json:"item_description"`
-	ListPrice          float64            `json:"list_price"`
-	PercentDiscount    float32            `json:"percent_discount"`
-	TotalPrice         float64            `json:"total_price"`
-	AllocatedQty       *int               `json:"allocated_qty"`
-	OrderType          string             `json:"order_type"`
-	BomId              uint               `json:"bom_id"`
-	Order              *Order             `gorm:"foreignKey:Based_ID;references:Order_ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"order,omitempty"`
-	Item               *Item              `gorm:"foreignKey:Item_ID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"item,omitempty"`
-	Releases           []ItemReleaseModel `gorm:"foreignKey:OrderID;references:OrderDetailsID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"releases,omitempty"`
+	Based_ID           uint    `json:"based_id"`
+	Quotation_Quick_ID uint    `json:"quotation_quick_id"`
+	Item_ID            uint    `json:"item_id"`
+	DeliveryPreference string  `json:"delivery_preference"`
+	Status             string  `json:"status"`
+	HasStocks          bool    `json:"has_stocks"`
+	Qty                int     `json:"qty"`
+	Numbering          string  `json:"numbering"`
+	ItemCode           string  `json:"item_code"`
+	ItemDescription    string  `json:"item_description"`
+	ListPrice          float64 `json:"list_price"`
+	PercentDiscount    float32 `json:"percent_discount"`
+	TotalPrice         float64 `json:"total_price"`
+	AllocatedQty       *int    `json:"allocated_qty"`
+	OrderType          string  `json:"order_type"`
+	BomId              uint    `json:"bom_id"`
+	Order              *Order  `gorm:"foreignKey:Based_ID;references:Order_ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"order,omitempty"`
+	Item               *Item   `gorm:"foreignKey:Item_ID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"item,omitempty"`
 }
 
 type OrderDetails struct {

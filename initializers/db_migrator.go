@@ -1,5 +1,8 @@
 package initializers
 
+import (
+	"github.com/pierceperado/smpc/models"
+)
 func MigrateDb() {
 	// // Auth
 
@@ -27,6 +30,7 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{})
 	// DB.AutoMigrate(&models.ItemImage{}, &models.ItemImageAt{})
 	// DB.AutoMigrate(&models.TradeType{}, models.TradeTypeAt{})
+	// DB.AutoMigrate(&models.ItemInventory{}, &models.ItemInventoryAt{})
 	// DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
 	//DB.AutoMigrate(&models.ItemRequest{}, &models.ItemRequestAt{})
 	//DB.AutoMigrate(&models.ItemRequestDetails{}, &models.ItemRequestDetailsAt{})
@@ -78,8 +82,8 @@ func MigrateDb() {
 
 	// // // Sales
 
-	//DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
-	//DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
+	DB.AutoMigrate(&models.Order{}, &models.OrderAt{})
+	DB.AutoMigrate(&models.OrderDetails{}, &models.OrderDetailsAt{})
 	// DB.AutoMigrate(&models.Opportunity{}, &models.OpportunityAt{})
 
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
@@ -204,10 +208,15 @@ func MigrateDb() {
 	// //JOB ORDER
 	// DB.AutoMigrate(&models.JobOrder{}, &models.JobOrderAt{})
 
-	// DB.AutoMigrate(&models.CalendarScheduleModel{}, &models.CalendarScheduleAt{},
+	// DB.AutoMigrate(
 	// 	&models.DeliveryReceiptModel{}, &models.DeliveryReceiptAt{}, &models.DeliveryReceiptAt{}, &models.TripCostModel{},
 	// 	&models.TripCostContentAt{}, &models.ItemReleaseModel{}, &models.ItemReleaseAt{},
 	// 	&models.ReceiptFileModel{}, &models.ReceiptFileAt{},
 	// )
-
+	// DB.AutoMigrate(&models.CalendarCategoryModel{}, models.CalendarCategoryAt{})
+	//DB.AutoMigrate(&dispatching_models.CalendarCostTypeModel{}, dispatching_models.CalendarCostTypeAt{})
+	// DB.AutoMigrate(
+	// 	&models.ItemRelease{}, &models.ItemReleaseAt{},
+	// 	&models.ItemReleaseDetails{}, &models.ItemReleaseDetailsAt{},
+	// )
 }

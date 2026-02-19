@@ -56,7 +56,7 @@ func CreatePurchaseOrder(c *fiber.Ctx, tx *gorm.DB) (PurchaseOrderBody, int, err
 	}
 
 	purchaseorderat := models.PurchaseOrderAt{
-		RefId:                body.ID,
+		RefId:                body.PurchaseOrder.ID,
 		PurchaseOrderContent: body.PurchaseOrderContent,
 		At:                   at,
 	}

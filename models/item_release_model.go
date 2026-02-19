@@ -1,54 +1,70 @@
 package models
 
-import (
-	"time"
-
-	"gorm.io/gorm"
-)
-
 type ItemReleaseContent struct {
-	RequestedByID     uint           `json:"requested_by_id"`
-	RequestedByName   string         `json:"requested_by_name"`
-	ApprovedByID      *uint          `json:"approved_by_id"`
-	ApprovedByName    string         `json:"approved_by_name"`
-	ReleaseByID       string         `json:"release_by_id"`
-	ReleaseByName     string         `json:"release_by_name"`
-	OrderID           uint           `json:"order_id"`
-	DeliveryReceiptID uint           `json:"delivery_receipt_id"`
-	QuantityReleased  float64        `gorm:"not null" json:"quantity_released"`
-	SerialNumber      string         `gorm:"size:100" json:"serial_number,omitempty"`
-	DepartedAt        *time.Time     `json:"departed_at,omitempty"`
-	ArrivedAt         *time.Time     `json:"arrived_at,omitempty"`
-	ReturnedAt        *time.Time     `json:"returned_at,omitempty"`
-	Status            string         `gorm:"size:50;default:'Pending'" json:"status"`
-	Remarks           string         `gorm:"size:255" json:"remarks,omitempty"`
-	CreatedAt         time.Time      `json:"created_at"`
-	UpdatedAt         time.Time      `json:"updated_at"`
-	DeletedAt         gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
-	VehicleID         uint           `json:"vehicle_id"`
-	Peoples           string         `json:"peoples"`
-
-	Order           *OrderDetails         `gorm:"foreignKey:OrderID;references:OrderDetailsID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	DeliveryReceipt *DeliveryReceiptModel `gorm:"foreignKey:ReleaseID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"delivery_receipt,omitempty"`
-	Vehicle         *VehicleModel         `gorm:"foreignKey:VehicleID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"vehicle,omitempty"`
+	RequestDate    string `json:"request_date"`
+	RequiredDate   string `json:"required_date"`
+	ReleasedDate   string `json:"released_date"`
+	ReferenceDocNo string `gorm:"size:50" json:"reference_doc_no"`
+	RequestedBy    string `json:"requested_by"`
+	ReceivedBy     string `json:"received_by"`
+	ApprovedBy     string `json:"approved_by"`
+	IssuedBy       string `json:"issued_by"`
+	IsForward      *bool  `json:"is_forward"`
 }
 
-type ItemReleaseModel struct {
-	ID uint `gorm:"primaryKey"  json:"id"`
+type ItemRelease struct {
+	ID    uint   `gorm:"primaryKey" json:"id"`
+	DocNo string `gorm:"size:50;unique" json:"doc_no"`
 	ItemReleaseContent
+	ItemReleaseDetails []ItemReleaseDetails `gorm:"foreignKey:ItemReleaseID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"item_release_details,omitempty"`
 }
 
-func (ItemReleaseModel) TableName() string {
-	return "tbl_item_release"
+func (ItemRelease) TableName() string {
+	return "tbl_inv_item_release"
 }
 
 type ItemReleaseAt struct {
-	ID    uint `gorm:"primaryKey"  json:"id"`
-	RefId uint `json:"ref_id"`
+	ID    uint   `gorm:"primaryKey" json:"id"`
+	RefId uint   `json:"ref_id"`
+	DocNo string `gorm:"size:50;" json:"doc_no"`
 	ItemReleaseContent
 	At
 }
 
 func (ItemReleaseAt) TableName() string {
-	return "z_tbl_item_release"
+	return "z_tbl_inv_item_release_at"
+}
+
+type ItemReleaseDetailsContent struct {
+	ItemReleaseID       uint   `gorm:"not null;index" json:"item_release_id"`
+	SalesOrderID        uint   `json:"sales_order_id"`
+	SalesOrderDetailsID uint   `json:"sales_order_details_id"`
+	ItemID              uint   `json:"item_id"`
+	ItemDescription     string `json:"item_description"`
+	RequiredQty         uint   `json:"required_qty"`
+	RequiredUomID       string `json:"required_uom"`
+	ReleasedQty         uint   `json:"released_qty"`
+	ReleasedUomID       string `json:"released_uom"`
+	SerialNo            string `json:"serial_no"`
+	DeliveryPreference  string `json:"delivery_preference"`
+}
+
+type ItemReleaseDetails struct {
+	ID uint `gorm:"primaryKey" json:"id"`
+	ItemReleaseDetailsContent
+}
+
+func (ItemReleaseDetails) TableName() string {
+	return "tbl_inv_item_release_details"
+}
+
+type ItemReleaseDetailsAt struct {
+	ID    uint `gorm:"primaryKey" json:"id"`
+	RefId uint `json:"ref_id"`
+	ItemReleaseDetailsContent
+	At
+}
+
+func (ItemReleaseDetailsAt) TableName() string {
+	return "z_tbl_inv_item_release_details_at"
 }

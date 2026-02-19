@@ -14,12 +14,8 @@ require (
 	gorm.io/gorm v1.25.12
 )
 
-require (
-	github.com/philhofer/fwd v1.1.3-0.20240916144458-20a13a1f6b7c // indirect
+require golang.org/x/net v0.35.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
-	github.com/tinylib/msgp v1.2.5 // indirect
-	golang.org/x/net v0.35.0 // indirect
-)
 
 require (
 	github.com/andybalholm/brotli v1.1.1 // indirect
@@ -29,7 +25,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.8
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
+	github.com/google/uuid v1.6.0
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect

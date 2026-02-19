@@ -7,14 +7,14 @@ import (
 )
 
 func ItemReleaseRoutes(app *fiber.App) {
-	api := app.Group("/api/item-releases")
+	releases := app.Group("/api/item-releases")
 
 	itemReleasService := dispatching_services.NewItemReleaseService()
 	itemReleaseHandler := dispatching_handlers.NewItemReleaseHandler(itemReleasService)
-	api.Get("/", itemReleaseHandler.GetItemReleasesHandler)
-	api.Get("/:id", itemReleaseHandler.GetItemReleaseHandler)
-	api.Post("/", itemReleaseHandler.CreateItemReleaseHandler)
-	api.Put("/:id", itemReleaseHandler.UpdateItemReleaseHandler)
-	api.Delete("/:id", itemReleaseHandler.DeleteItemReleaseHandler)
-
+	releases.Get("/sales-order-details/", itemReleaseHandler.GetSalesOrderItemReleaseDetailsHandler)
+	releases.Get("/", itemReleaseHandler.GetItemReleasesHandler)
+	releases.Get("/:id", itemReleaseHandler.GetItemReleaseHandler)
+	releases.Post("/", itemReleaseHandler.CreateItemReleaseHandler)
+	releases.Put("/:id", itemReleaseHandler.UpdateItemReleaseHandler)
+	releases.Delete("/:id", itemReleaseHandler.DeleteItemReleaseHandler)
 }

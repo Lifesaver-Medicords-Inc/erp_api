@@ -16,8 +16,8 @@ func NewItemReleaseService() *ItemReleaseService {
 }
 
 // Get all item releases with optional conditions
-func (s *ItemReleaseService) GetItemReleasesService(conditions map[string]interface{}) ([]models.ItemReleaseModel, int, error) {
-	var releases = []models.ItemReleaseModel{}
+func (s *ItemReleaseService) GetItemReleasesService(conditions map[string]interface{}) ([]models.ItemRelease, int, error) {
+	var releases = []models.ItemRelease{}
 
 	tx := initializers.DB.Begin()
 
@@ -25,7 +25,7 @@ func (s *ItemReleaseService) GetItemReleasesService(conditions map[string]interf
 		return releases, 500, errors.New("failed to start DB transaction")
 	}
 
-	query := tx.Preload("ReleaseItems").Where(conditions).Find(&releases)
+	query := tx.Preload("ItemReleaseDetails").Where(conditions).Find(&releases)
 
 	if query.Error != nil {
 		return nil, 500, tx.Error
@@ -34,8 +34,8 @@ func (s *ItemReleaseService) GetItemReleasesService(conditions map[string]interf
 }
 
 // Get a single item release
-func (s *ItemReleaseService) GetItemReleaseService(conditions map[string]interface{}) (*models.ItemReleaseModel, int, error) {
-	var release = &models.ItemReleaseModel{}
+func (s *ItemReleaseService) GetItemReleaseService(conditions map[string]interface{}) (*models.ItemRelease, int, error) {
+	var release = &models.ItemRelease{}
 
 	tx := initializers.DB.Begin()
 
@@ -52,7 +52,7 @@ func (s *ItemReleaseService) GetItemReleaseService(conditions map[string]interfa
 }
 
 // Create a new item release
-func (s *ItemReleaseService) CreateItemReleaseService(release *models.ItemReleaseModel, at models.At) (*models.ItemReleaseModel, int, error) {
+func (s *ItemReleaseService) CreateItemReleaseService(release *models.ItemRelease, at models.At) (*models.ItemRelease, int, error) {
 
 	tx := initializers.DB.Begin()
 
@@ -86,8 +86,8 @@ func (s *ItemReleaseService) CreateItemReleaseService(release *models.ItemReleas
 }
 
 // Update existing item release
-func (s *ItemReleaseService) UpdateItemReleaseService(release *models.ItemReleaseModel, conditions map[string]interface{}, at models.At) (*models.ItemReleaseModel, int, error) {
-	var existing = &models.ItemReleaseModel{}
+func (s *ItemReleaseService) UpdateItemReleaseService(release *models.ItemRelease, conditions map[string]interface{}, at models.At) (*models.ItemRelease, int, error) {
+	var existing = &models.ItemRelease{}
 
 	tx := initializers.DB.Begin()
 
@@ -118,11 +118,11 @@ func (s *ItemReleaseService) UpdateItemReleaseService(release *models.ItemReleas
 }
 
 // Delete an item release
-func (s *ItemReleaseService) DeleteItemReleaseService(conditions map[string]interface{}, at models.At) (*models.ItemReleaseModel, int, error) {
+func (s *ItemReleaseService) DeleteItemReleaseService(conditions map[string]interface{}, at models.At) (*models.ItemRelease, int, error) {
 
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return &models.ItemReleaseModel{}, 500, errors.New("failed to start DB transaction")
+		return &models.ItemRelease{}, 500, errors.New("failed to start DB transaction")
 	}
 
 	release, status, err := s.GetItemReleaseService(conditions)
@@ -146,4 +146,20 @@ func (s *ItemReleaseService) DeleteItemReleaseService(conditions map[string]inte
 	}
 
 	return release, 200, nil
+}
+
+func (s *ItemReleaseService) GetSalesOrderDetails(conditions map[string]interface{}) ([]models.SalesOrderItemReleaseView, int, error) {
+	var releases []models.SalesOrderItemReleaseView
+
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return releases, 500, errors.New("failed to start DB transaction")
+	}
+
+	query := tx.Where(conditions).Find(&releases)
+	if query.Error != nil {
+		return nil, 500, tx.Error
+	}
+
+	return releases, 200, nil
 }

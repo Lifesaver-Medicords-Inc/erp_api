@@ -1,11 +1,11 @@
 package models
 
 type PurchaseOrderList struct {
-	ID             int    `json:"id"`
-	DocNo          string `json:"doc_no"`
-	SupplierName   string `json:"supplier_name"`
-	TotalAmountDue string `json:"total_amount_due"`
-	LeadTime       string `json:"lead_time"`
+	ID int    `json:"id"`
+	DocNo           string `json:"doc_no"`
+	SupplierName    string `json:"supplier_name"`
+	TotalAmountDue  string `json:"total_amount_due"`
+	LeadTime        string `json:"lead_time"`
 }
 
 type PurchasingActivePO struct {
