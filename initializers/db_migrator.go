@@ -154,7 +154,7 @@ func MigrateDb() {
 	// // Purchasing
 	// DB.AutoMigrate(&models.PurchaseRequisition{}, &models.PurchaseRequisitionAt{})
 	// DB.AutoMigrate(&models.PROrders{}, &models.PROrdersAt{})
-	// DB.AutoMigrate(&models.PurchasingCanvassSheet{}, &models.PurchasingCanvassShInventoryStocksHistory{})
+	//DB.AutoMigrate(&models.PurchasingCanvassSheet{}, &models.PurchasingCanvassSheetAt{})
 	// DB.AutoMigrate(&models.PurchaseOrder{}, &models.PurchaseOrderAt{})
 	// DB.AutoMigrate(&models.PurchaseOrderDetails{}, &models.PurchaseOrderDetailsAt{})
 	// // Sales
@@ -215,7 +215,7 @@ func MigrateDb() {
 	// 	&models.ReceiptFileModel{}, &models.ReceiptFileAt{},
 	// )
 
-	// //LOGISTICS
+	//DB.AutoMigrate(&dispatching_models.CalendarCategoryModel{}, dispatching_models.CalendarCategoryAt{})
 	// //DB.AutoMigrate(&models.CalendarCategoryModel{}, models.CalendarCategoryAt{})
 	// DB.AutoMigrate(&dispatching_models.CalendarCostTypeModel{}, dispatching_models.CalendarCostTypeAt{})
 	// DB.AutoMigrate(
