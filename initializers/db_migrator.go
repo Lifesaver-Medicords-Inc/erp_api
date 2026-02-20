@@ -1,7 +1,11 @@
 package initializers
 
+// models "github.com/pierceperado/smpc/models"
+// "github.com/pierceperado/smpc/models/accounting_models"
+// dispatching_models "github.com/pierceperado/smpc/models/dispatching_model"
+
 func MigrateDb() {
-	// // Auth
+	// Auth
 
 	// DB.AutoMigrate(&models.User{}, &models.UserAt{})
 	// DB.AutoMigrate(&models.User{}, &models.UserAt{})
@@ -29,16 +33,16 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.TradeType{}, models.TradeTypeAt{})
 	// DB.AutoMigrate(&models.ItemInventory{}, &models.ItemInventoryAt{})
 	// DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
-	//DB.AutoMigrate(&models.ItemRequest{}, &models.ItemRequestAt{})
-	//DB.AutoMigrate(&models.ItemRequestDetails{}, &models.ItemRequestDetailsAt{})
-	//DB.AutoMigrate(&models.ItemRequestLocation{}, &models.ItemRequestLocationAt{})
-	//DB.AutoMigrate(&models.ItemRequestHistory{}, &models.ItemRequestHistoryAt{})
-	//DB.AutoMigrate(&models.PickActivity{}, &models.PickActivityAt{})
-	//DB.AutoMigrate(&models.PickActivityDetails{}, &models.PickActivityDetailsAt{})
-	//DB.AutoMigrate(&models.PickActivityLocation{}, &models.PickActivityLocationAt{})
-	//DB.AutoMigrate(&models.PickActivityHistory{}, &models.PickActivityHistoryAt{})
-	//DB.AutoMigrate(&models.InventoryStocks{}, &models.InventoryStocksAt{})
-	//DB.AutoMigrate(&models.InventoryStocksHistory{}, &models.InventoryStocksHistoryAt{})
+	// DB.AutoMigrate(&models.ItemRequest{}, &models.ItemRequestAt{})
+	// DB.AutoMigrate(&models.ItemRequestDetails{}, &models.ItemRequestDetailsAt{})
+	// DB.AutoMigrate(&models.ItemRequestLocation{}, &models.ItemRequestLocationAt{})
+	// DB.AutoMigrate(&models.ItemRequestHistory{}, &models.ItemRequestHistoryAt{})
+	// DB.AutoMigrate(&models.PickActivity{}, &models.PickActivityAt{})
+	// DB.AutoMigrate(&models.PickActivityDetails{}, &models.PickActivityDetailsAt{})
+	// DB.AutoMigrate(&models.PickActivityLocation{}, &models.PickActivityLocationAt{})
+	// DB.AutoMigrate(&models.PickActivityHistory{}, &models.PickActivityHistoryAt{})
+	// DB.AutoMigrate(&models.InventoryStocks{}, &models.InventoryStocksAt{})
+	// DB.AutoMigrate(&models.InventoryStocksHistory{}, &models.InventoryStocksHistoryAt{})
 
 	// //warehouse
 	// DB.AutoMigrate(&models.WarehouseUseType{}, &models.WarehouseUseTypeAt{})
@@ -73,7 +77,7 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.Type{}, &models.TypeAt{})
 	// DB.AutoMigrate(&models.Item{}, &models.ItemAt{})
 	// DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
-	//DB.AutoMigrate(&models.ValuationMethod{}, &models.ValuationMethodAt{})
+	// DB.AutoMigrate(&models.ValuationMethod{}, &models.ValuationMethodAt{})
 
 	// DB.AutoMigrate(&models.Application{}, &models.ApplicationAt{})
 
@@ -91,8 +95,8 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.SalesQuotation{}, &models.SalesQuotationAt{})
 	// DB.AutoMigrate(&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{})
 
-	//DB.AutoMigrate(&models.SalesProjectTemplate{}, &models.SalesProjectTemplateAt{})
-	//DB.AutoMigrate(&models.SalesProjectTemplateChild{}, &models.SalesProjectTemplateChildAt{})
+	// DB.AutoMigrate(&models.SalesProjectTemplate{}, &models.SalesProjectTemplateAt{})
+	// DB.AutoMigrate(&models.SalesProjectTemplateChild{}, &models.SalesProjectTemplateChildAt{})
 
 	// DB.AutoMigrate(
 	// 	&models.SalesProjectMultiplier{},
@@ -150,7 +154,7 @@ func MigrateDb() {
 	// // Purchasing
 	// DB.AutoMigrate(&models.PurchaseRequisition{}, &models.PurchaseRequisitionAt{})
 	// DB.AutoMigrate(&models.PROrders{}, &models.PROrdersAt{})
-	// DB.AutoMigrate(&models.PurchasingCanvassSheet{}, &models.PurchasingCanvassShInventoryStocksHistory
+	// DB.AutoMigrate(&models.PurchasingCanvassSheet{}, &models.PurchasingCanvassShInventoryStocksHistory{})
 	// DB.AutoMigrate(&models.PurchaseOrder{}, &models.PurchaseOrderAt{})
 	// DB.AutoMigrate(&models.PurchaseOrderDetails{}, &models.PurchaseOrderDetailsAt{})
 	// // Sales
@@ -207,11 +211,13 @@ func MigrateDb() {
 
 	// DB.AutoMigrate(
 	// 	&models.DeliveryReceiptModel{}, &models.DeliveryReceiptAt{}, &models.DeliveryReceiptAt{}, &models.TripCostModel{},
-	// 	&models.TripCostContentAt{}, &models.ItemReleaseModel{}, &models.ItemReleaseAt{},
+	// 	&models.TripCostContentAt{}, &models.ItemRelease{}, &models.ItemReleaseAt{},
 	// 	&models.ReceiptFileModel{}, &models.ReceiptFileAt{},
 	// )
-	// DB.AutoMigrate(&models.CalendarCategoryModel{}, models.CalendarCategoryAt{})
-	//DB.AutoMigrate(&dispatching_models.CalendarCostTypeModel{}, dispatching_models.CalendarCostTypeAt{})
+
+	// //LOGISTICS
+	// //DB.AutoMigrate(&models.CalendarCategoryModel{}, models.CalendarCategoryAt{})
+	// DB.AutoMigrate(&dispatching_models.CalendarCostTypeModel{}, dispatching_models.CalendarCostTypeAt{})
 	// DB.AutoMigrate(
 	// 	&models.ItemRelease{}, &models.ItemReleaseAt{},
 	// 	&models.ItemReleaseDetails{}, &models.ItemReleaseDetailsAt{},
