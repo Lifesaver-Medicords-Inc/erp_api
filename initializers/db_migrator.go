@@ -1,7 +1,5 @@
 package initializers
 
-import "github.com/pierceperado/smpc/models"
-
 // models "github.com/pierceperado/smpc/models"
 // "github.com/pierceperado/smpc/models/accounting_models"
 // dispatching_models "github.com/pierceperado/smpc/models/dispatching_model"
@@ -215,10 +213,10 @@ func MigrateDb() {
 	//DB.AutoMigrate(&dispatching_models.CalendarCategoryModel{}, dispatching_models.CalendarCategoryAt{})
 	// //DB.AutoMigrate(&models.CalendarCategoryModel{}, models.CalendarCategoryAt{})
 	// DB.AutoMigrate(&dispatching_models.CalendarCostTypeModel{}, dispatching_models.CalendarCostTypeAt{})
-	DB.AutoMigrate(
-		&models.ItemRelease{}, &models.ItemReleaseAt{},
-		&models.ItemReleaseDetails{}, &models.ItemReleaseDetailsAt{},
-	)
+	// DB.AutoMigrate(
+	// 	&models.ItemRelease{}, &models.ItemReleaseAt{},
+	// 	&models.ItemReleaseDetails{}, &models.ItemReleaseDetailsAt{},
+	// )
 
 	// DB.AutoMigrate(
 	// 	&models.DeliveryReceiptModel{}, &models.DeliveryReceiptAt{}, &models.DeliveryReceiptAt{}, &models.TripCostModel{},
