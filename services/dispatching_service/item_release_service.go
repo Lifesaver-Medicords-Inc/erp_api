@@ -2,11 +2,11 @@ package dispatching_services
 
 import (
 	"errors"
-	"strings"
 
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
+	"github.com/pierceperado/smpc/utils"
 )
 
 type ItemReleaseService struct{}
@@ -55,26 +55,31 @@ func (s *ItemReleaseService) GetItemReleaseService(conditions map[string]interfa
 func (s *ItemReleaseService) CreateItemReleaseService(release *models.ItemRelease, at models.At) (*models.ItemRelease, int, error) {
 
 	tx := initializers.DB.Begin()
-
 	if tx.Error != nil {
 		return release, 500, errors.New("failed to start DB transaction")
 	}
-	if err := services.DbInsert(tx, &release); err != nil {
-		if strings.Contains(err.Error(), "duplicate key") {
 
-			err = errors.New("duplicate record error")
-		} else {
-
-			err = errors.New("failed creating release")
-		}
+	nextDocNo, err := utils.NextDocNo(tx, new(models.ItemRelease), "doc_no")
+	if err != nil {
 		tx.Rollback()
-		return release, 500, err
+		return release, 500, errors.New("failed getting next doc number")
 	}
 
-	atdata := models.ItemReleaseAt{RefId: release.ID, At: at}
-	if err := services.DbInsert(tx, &atdata); err != nil {
+	release.DocNo = nextDocNo
+
+	if err := tx.Create(release).Error; err != nil {
 		tx.Rollback()
-		return release, 500, errors.New("failed creating releaseat")
+		return release, 500, errors.New("failed creating item release")
+	}
+
+	atdata := models.ItemReleaseAt{
+		RefId: release.ID,
+		At:    at,
+	}
+
+	if err := tx.Create(&atdata).Error; err != nil {
+		tx.Rollback()
+		return release, 500, errors.New("failed creating release audit")
 	}
 
 	if err := tx.Commit().Error; err != nil {
