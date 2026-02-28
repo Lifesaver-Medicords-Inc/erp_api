@@ -14,7 +14,7 @@ type ItemReleaseContent struct {
 
 type ItemRelease struct {
 	ID    uint `gorm:"primaryKey" json:"id"`
-	DocNo int  `gorm:"size:50; unique" json:"doc_no"`
+	DocNo int  `gorm:"size:50" json:"doc_no"`
 	ItemReleaseContent
 	ItemReleaseDetails []ItemReleaseDetails `gorm:"foreignKey:ItemReleaseID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"item_release_details,omitempty"`
 }

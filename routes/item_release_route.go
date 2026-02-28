@@ -12,6 +12,7 @@ func ItemReleaseRoutes(app *fiber.App) {
 	itemReleasService := dispatching_services.NewItemReleaseService()
 	itemReleaseHandler := dispatching_handlers.NewItemReleaseHandler(itemReleasService)
 	releases.Get("/sales-order-details/", itemReleaseHandler.GetSalesOrderItemReleaseDetailsHandler)
+	releases.Get("/item-stock-and-locations/:itemId", itemReleaseHandler.GetItemStockAndLocationsHandler)
 	releases.Get("/", itemReleaseHandler.GetItemReleasesHandler)
 	releases.Get("/:id", itemReleaseHandler.GetItemReleaseHandler)
 	releases.Post("/", itemReleaseHandler.CreateItemReleaseHandler)

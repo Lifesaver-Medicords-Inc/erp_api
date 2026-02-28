@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	dispatching_models "github.com/pierceperado/smpc/models/dispatching_model"
@@ -22,15 +23,15 @@ func (s *CalendarCostTypeService) GetCalendarCostTypesService(conditions map[str
 	var costType = &[]dispatching_models.CalendarCostTypeModel{}
 
 	if tx.Error != nil {
-		return costType, 500, errors.New("failed to start DB transaction")
+		return costType, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := tx.Where(conditions).Find(costType).Error; err != nil {
 		fmt.Println("ERROR:", err)
-		return costType, 404, errors.New("failed getting calendar cost types")
+		return costType, fiber.StatusInternalServerError, errors.New("failed getting calendar cost types")
 	}
 
-	return costType, 200, nil
+	return costType, fiber.StatusOK, nil
 }
 
 func (s *CalendarCostTypeService) GetCalendarCostTypeService(conditions map[string]interface{}) (*dispatching_models.CalendarCostTypeModel, int, error) {
@@ -38,20 +39,20 @@ func (s *CalendarCostTypeService) GetCalendarCostTypeService(conditions map[stri
 	var costType = &dispatching_models.CalendarCostTypeModel{}
 
 	if tx.Error != nil {
-		return costType, 500, errors.New("failed to start DB transaction")
+		return costType, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := tx.Where(conditions).First(costType).Error; err != nil {
-		return costType, 404, errors.New("calendar cost type not found")
+		return costType, fiber.StatusNotFound, errors.New("calendar cost type not found")
 	}
 
-	return costType, 200, nil
+	return costType, fiber.StatusOK, nil
 }
 
 func (s *CalendarCostTypeService) CreateCalendarCostTypeService(costType *dispatching_models.CalendarCostTypeModel, at models.At) (*dispatching_models.CalendarCostTypeModel, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return costType, 500, errors.New("failed to start DB transaction")
+		return costType, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &costType); err != nil {
@@ -63,52 +64,52 @@ func (s *CalendarCostTypeService) CreateCalendarCostTypeService(costType *dispat
 			err = errors.New("failed creating cost type")
 		}
 		tx.Rollback()
-		return costType, 500, err
+		return costType, fiber.StatusInternalServerError, err
 	}
 
 	atdata := dispatching_models.CalendarCostTypeAt{RefId: costType.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return costType, 500, errors.New("failed creating costtypeat")
+		return costType, fiber.StatusInternalServerError, errors.New("failed creating costtypeat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return costType, 500, errors.New("failed to commit transaction")
+		return costType, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return costType, 200, nil
+	return costType, fiber.StatusOK, nil
 }
 
 func (s *CalendarCostTypeService) UpdateCalendarCostTypeService(costType *dispatching_models.CalendarCostTypeModel, conditions map[string]interface{}, at models.At) (*dispatching_models.CalendarCostTypeModel, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return costType, 500, errors.New("failed to start DB transaction")
+		return costType, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbUpdate(tx, &costType, conditions); err != nil {
-		return costType, 500, errors.New("failed updating cost type")
+		return costType, fiber.StatusInternalServerError, errors.New("failed updating cost type")
 	}
 
 	atdata := dispatching_models.CalendarCostTypeAt{RefId: costType.ID, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return costType, 500, errors.New("failed creating  costtypeat")
+		return costType, fiber.StatusInternalServerError, errors.New("failed creating  costtypeat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return costType, 500, errors.New("failed to commit transaction")
+		return costType, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return costType, 200, nil
+	return costType, fiber.StatusOK, nil
 }
 
 func (s *CalendarCostTypeService) DeleteCalendarCostTypeService(conditions map[string]interface{}, at models.At) (*dispatching_models.CalendarCostTypeModel, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return &dispatching_models.CalendarCostTypeModel{}, 500, errors.New("failed to start DB transaction")
+		return &dispatching_models.CalendarCostTypeModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	costType, status, err := s.GetCalendarCostTypeService(conditions)
@@ -117,19 +118,19 @@ func (s *CalendarCostTypeService) DeleteCalendarCostTypeService(conditions map[s
 	}
 
 	if err := services.DbDelete(tx, &costType, conditions); err != nil {
-		return costType, 500, errors.New("failed deleting calendar cost type")
+		return costType, fiber.StatusInternalServerError, errors.New("failed deleting calendar cost type")
 	}
 
 	atdata := dispatching_models.CalendarCostTypeAt{RefId: costType.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return costType, 500, errors.New("failed creating costtype audit")
+		return costType, fiber.StatusInternalServerError, errors.New("failed creating costtype audit")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return costType, 500, errors.New("failed to commit transaction")
+		return costType, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return costType, 200, nil
+	return costType, fiber.StatusOK, nil
 }

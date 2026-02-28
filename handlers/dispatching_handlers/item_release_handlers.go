@@ -1,6 +1,7 @@
 package dispatching_handlers
 
 import (
+	"fmt"
 	"strconv"
 
 	dispatching_services "github.com/pierceperado/smpc/services/dispatching_service"
@@ -93,6 +94,7 @@ func (h *ItemReleaseHandler) UpdateItemReleaseHandler(c *fiber.Ctx) error {
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
+	fmt.Println("Release Body: ", body)
 
 	conditions := map[string]interface{}{
 		"id": idNum,
@@ -106,6 +108,8 @@ func (h *ItemReleaseHandler) UpdateItemReleaseHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return utils.RespondError(c, code, err.Error())
 	}
+
+	fmt.Println("returned data:", data)
 
 	return utils.RespondSuccess(c, data)
 }
@@ -136,7 +140,7 @@ func (h *ItemReleaseHandler) DeleteItemReleaseHandler(c *fiber.Ctx) error {
 }
 
 func (h *ItemReleaseHandler) GetSalesOrderItemReleaseDetailsHandler(c *fiber.Ctx) error {
-	id := c.Query("id")
+	id := c.Params("id")
 	status := c.Query("status")
 	salesOrderId := c.Query("salesOrderId")
 
@@ -152,6 +156,21 @@ func (h *ItemReleaseHandler) GetSalesOrderItemReleaseDetailsHandler(c *fiber.Ctx
 	}
 
 	data, code, err := h.Service.GetSalesOrderDetails(conditions)
+	if err != nil {
+		return utils.RespondError(c, code, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+func (h *ItemReleaseHandler) GetItemStockAndLocationsHandler(c *fiber.Ctx) error {
+	itemIdParam := c.Params("itemId")
+	itemIdNum, err := strconv.ParseUint(itemIdParam, 10, 64)
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid Item ID")
+	}
+
+	data, code, err := h.Service.GetItemStockAndLocation(uint(itemIdNum))
 	if err != nil {
 		return utils.RespondError(c, code, err.Error())
 	}

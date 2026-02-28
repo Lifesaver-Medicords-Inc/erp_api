@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	dispatching_models "github.com/pierceperado/smpc/models/dispatching_model"
@@ -23,15 +24,15 @@ func (s *EngineeringCalendarScheduleService) GetEngineeringSchedules(conditions 
 	var schedules = &[]dispatching_models.EngineeringCalendarScheduleModel{}
 
 	if tx.Error != nil {
-		return schedules, 500, errors.New("failed to start DB transaction")
+		return schedules, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := tx.Where(conditions).Find(schedules).Error; err != nil {
 		fmt.Println("ERROR:", err)
-		return schedules, 404, errors.New("failed getting engineering calendar schedules")
+		return schedules, fiber.StatusNotFound, errors.New("failed getting engineering calendar schedules")
 	}
 
-	return schedules, 200, nil
+	return schedules, fiber.StatusOK, nil
 }
 
 // GET a single engineering schedule by ID
@@ -40,21 +41,21 @@ func (s *EngineeringCalendarScheduleService) GetEngineeringSchedule(conditions m
 	var schedule = &dispatching_models.EngineeringCalendarScheduleModel{}
 
 	if tx.Error != nil {
-		return schedule, 500, errors.New("failed to start DB transaction")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := tx.Where(conditions).First(schedule).Error; err != nil {
-		return schedule, 404, errors.New("engineering calendar schedule not found")
+		return schedule, fiber.StatusNotFound, errors.New("engineering calendar schedule not found")
 	}
 
-	return schedule, 200, nil
+	return schedule, fiber.StatusOK, nil
 }
 
 // CREATE an engineering schedule
 func (s *EngineeringCalendarScheduleService) CreateEngineeringSchedule(schedule *dispatching_models.EngineeringCalendarScheduleModel, at models.At) (*dispatching_models.EngineeringCalendarScheduleModel, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return schedule, 500, errors.New("failed to start DB transaction")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &schedule); err != nil {
@@ -64,7 +65,7 @@ func (s *EngineeringCalendarScheduleService) CreateEngineeringSchedule(schedule 
 			err = errors.New("failed creating engineering schedule")
 		}
 		tx.Rollback()
-		return schedule, 500, err
+		return schedule, fiber.StatusInternalServerError, err
 	}
 
 	atdata := dispatching_models.EngineeringCalendarScheduleModelAt{CalendarSchedulesBaseAt: dispatching_models.CalendarSchedulesBaseAt{
@@ -73,26 +74,26 @@ func (s *EngineeringCalendarScheduleService) CreateEngineeringSchedule(schedule 
 	}}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return schedule, 500, errors.New("failed creating engineering schedule audit")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed creating engineering schedule audit")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return schedule, 500, errors.New("failed to commit transaction")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return schedule, 200, nil
+	return schedule, fiber.StatusOK, nil
 }
 
 // UPDATE an engineering schedule
 func (s *EngineeringCalendarScheduleService) UpdateEngineeringSchedule(schedule *dispatching_models.EngineeringCalendarScheduleModel, conditions map[string]interface{}, at models.At) (*dispatching_models.EngineeringCalendarScheduleModel, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return schedule, 500, errors.New("failed to start DB transaction")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbUpdate(tx, &schedule, conditions); err != nil {
-		return schedule, 500, errors.New("failed updating engineering schedule")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed updating engineering schedule")
 	}
 
 	atdata := dispatching_models.EngineeringCalendarScheduleModelAt{CalendarSchedulesBaseAt: dispatching_models.CalendarSchedulesBaseAt{
@@ -101,22 +102,22 @@ func (s *EngineeringCalendarScheduleService) UpdateEngineeringSchedule(schedule 
 	}}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return schedule, 500, errors.New("failed creating engineering schedule audit")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed creating engineering schedule audit")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return schedule, 500, errors.New("failed to commit transaction")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return schedule, 200, nil
+	return schedule, fiber.StatusOK, nil
 }
 
 // DELETE an engineering schedule
 func (s *EngineeringCalendarScheduleService) DeleteEngineeringSchedule(conditions map[string]interface{}, at models.At) (*dispatching_models.EngineeringCalendarScheduleModel, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return &dispatching_models.EngineeringCalendarScheduleModel{}, 500, errors.New("failed to start DB transaction")
+		return &dispatching_models.EngineeringCalendarScheduleModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	schedule, status, err := s.GetEngineeringSchedule(conditions)
@@ -125,7 +126,7 @@ func (s *EngineeringCalendarScheduleService) DeleteEngineeringSchedule(condition
 	}
 
 	if err := services.DbDelete(tx, &schedule, conditions); err != nil {
-		return schedule, 500, errors.New("failed deleting engineering calendar schedule")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed deleting engineering calendar schedule")
 	}
 
 	atdata := dispatching_models.EngineeringCalendarScheduleModelAt{CalendarSchedulesBaseAt: dispatching_models.CalendarSchedulesBaseAt{
@@ -134,13 +135,13 @@ func (s *EngineeringCalendarScheduleService) DeleteEngineeringSchedule(condition
 	}}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return schedule, 500, errors.New("failed creating engineering schedule audit")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed creating engineering schedule audit")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return schedule, 500, errors.New("failed to commit transaction")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return schedule, 200, nil
+	return schedule, fiber.StatusOK, nil
 }

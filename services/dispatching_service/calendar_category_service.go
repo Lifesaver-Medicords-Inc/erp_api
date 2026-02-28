@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	dispatching_models "github.com/pierceperado/smpc/models/dispatching_model"
@@ -22,15 +23,15 @@ func (s *CalendarCategoryService) GetCalendarCategoriesService(conditions map[st
 	var categories = &[]dispatching_models.CalendarCategoryModel{}
 
 	if tx.Error != nil {
-		return categories, 500, errors.New("failed to start DB transaction")
+		return categories, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	if err := tx.Where(conditions).Find(categories).Error; err != nil {
+	if err := services.DbGet(categories, conditions); err != nil {
 		fmt.Println("ERROR:", err)
-		return categories, 404, errors.New("failed getting calendar categories")
+		return categories, fiber.StatusInternalServerError, errors.New("failed getting calendar categories")
 	}
 
-	return categories, 200, nil
+	return categories, fiber.StatusOK, nil
 }
 
 func (s *CalendarCategoryService) GetCalendarCategoryService(conditions map[string]interface{}) (*dispatching_models.CalendarCategoryModel, int, error) {
@@ -38,20 +39,20 @@ func (s *CalendarCategoryService) GetCalendarCategoryService(conditions map[stri
 	var categories = &dispatching_models.CalendarCategoryModel{}
 
 	if tx.Error != nil {
-		return categories, 500, errors.New("failed to start DB transaction")
+		return categories, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	if err := tx.Where(conditions).First(categories).Error; err != nil {
-		return categories, 404, errors.New("calendar category not found")
+	if err := services.DbGet(categories, conditions); err != nil {
+		return categories, fiber.StatusNotFound, errors.New("calendar category not found")
 	}
 
-	return categories, 200, nil
+	return categories, fiber.StatusOK, nil
 }
 
 func (s *CalendarCategoryService) CreateCalendarCategoryService(category *dispatching_models.CalendarCategoryModel, at models.At) (*dispatching_models.CalendarCategoryModel, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return category, 500, errors.New("failed to start DB transaction")
+		return category, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &category); err != nil {
@@ -63,52 +64,52 @@ func (s *CalendarCategoryService) CreateCalendarCategoryService(category *dispat
 			err = errors.New("failed creating category")
 		}
 		tx.Rollback()
-		return category, 500, err
+		return category, fiber.StatusInternalServerError, err
 	}
 
 	atdata := dispatching_models.CalendarCategoryAt{RefId: category.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return category, 500, errors.New("failed creating categoryat")
+		return category, fiber.StatusInternalServerError, errors.New("failed creating categoryat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return category, 500, errors.New("failed to commit transaction")
+		return category, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return category, 200, nil
+	return category, fiber.StatusOK, nil
 }
 
 func (s *CalendarCategoryService) UpdateCalendarCategoryService(category *dispatching_models.CalendarCategoryModel, conditions map[string]interface{}, at models.At) (*dispatching_models.CalendarCategoryModel, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return category, 500, errors.New("failed to start DB transaction")
+		return category, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbUpdate(tx, &category, conditions); err != nil {
-		return category, 500, errors.New("failed updating category")
+		return category, fiber.StatusInternalServerError, errors.New("failed updating category")
 	}
 
 	atdata := dispatching_models.CalendarCategoryAt{RefId: category.ID, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return category, 500, errors.New("failed creating categoryat")
+		return category, fiber.StatusInternalServerError, errors.New("failed creating categoryat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return category, 500, errors.New("failed to commit transaction")
+		return category, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return category, 200, nil
+	return category, fiber.StatusOK, nil
 }
 
 func (s *CalendarCategoryService) DeleteCalendarCategoryService(conditions map[string]interface{}, at models.At) (*dispatching_models.CalendarCategoryModel, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return &dispatching_models.CalendarCategoryModel{}, 500, errors.New("failed to start DB transaction")
+		return &dispatching_models.CalendarCategoryModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	category, status, err := s.GetCalendarCategoryService(conditions)
@@ -117,19 +118,19 @@ func (s *CalendarCategoryService) DeleteCalendarCategoryService(conditions map[s
 	}
 
 	if err := services.DbDelete(tx, &category, conditions); err != nil {
-		return category, 500, errors.New("failed deleting calendar category")
+		return category, fiber.StatusInternalServerError, errors.New("failed deleting calendar category")
 	}
 
 	atdata := dispatching_models.CalendarCategoryAt{RefId: category.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return category, 500, errors.New("failed creating categoryat")
+		return category, fiber.StatusInternalServerError, errors.New("failed creating categoryat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return category, 500, errors.New("failed to commit transaction")
+		return category, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return category, 200, nil
+	return category, fiber.StatusOK, nil
 }

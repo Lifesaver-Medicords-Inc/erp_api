@@ -3,8 +3,10 @@ package dispatching_services
 import (
 	"errors"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/models/inventory_model"
 	"github.com/pierceperado/smpc/services"
 	"github.com/pierceperado/smpc/utils"
 )
@@ -19,18 +21,11 @@ func NewItemReleaseService() *ItemReleaseService {
 func (s *ItemReleaseService) GetItemReleasesService(conditions map[string]interface{}) ([]models.ItemRelease, int, error) {
 	var releases = []models.ItemRelease{}
 
-	tx := initializers.DB.Begin()
-
-	if tx.Error != nil {
-		return releases, 500, errors.New("failed to start DB transaction")
+	if err := services.DbGetRel(&releases, conditions, "ItemReleaseDetails"); err != nil {
+		return releases, fiber.StatusInternalServerError, err
 	}
 
-	query := tx.Preload("ItemReleaseDetails").Where(conditions).Find(&releases)
-
-	if query.Error != nil {
-		return nil, 500, tx.Error
-	}
-	return releases, 200, nil
+	return releases, fiber.StatusOK, nil
 }
 
 // Get a single item release
@@ -40,15 +35,13 @@ func (s *ItemReleaseService) GetItemReleaseService(conditions map[string]interfa
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return release, 500, errors.New("failed to start DB transaction")
+		return release, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	query := tx.Preload("ReleaseItems").Where(conditions).First(&release)
-
-	if query.Error != nil {
-		return nil, 404, tx.Error
+	if err := services.DbGetRel(release, conditions, "ItemReleaseDetails"); err != nil {
+		return release, fiber.StatusNotFound, err
 	}
-	return release, 200, nil
+	return release, fiber.StatusOK, nil
 }
 
 // Create a new item release
@@ -56,20 +49,20 @@ func (s *ItemReleaseService) CreateItemReleaseService(release *models.ItemReleas
 
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return release, 500, errors.New("failed to start DB transaction")
+		return release, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	nextDocNo, err := utils.NextDocNo(tx, new(models.ItemRelease), "doc_no")
 	if err != nil {
 		tx.Rollback()
-		return release, 500, errors.New("failed getting next doc number")
+		return release, fiber.StatusInternalServerError, errors.New("failed getting next doc number")
 	}
 
 	release.DocNo = nextDocNo
 
-	if err := tx.Create(release).Error; err != nil {
+	if err := services.DbInsert(tx, release); err != nil {
 		tx.Rollback()
-		return release, 500, errors.New("failed creating item release")
+		return release, fiber.StatusInternalServerError, errors.New("failed creating item release")
 	}
 
 	atdata := models.ItemReleaseAt{
@@ -79,47 +72,48 @@ func (s *ItemReleaseService) CreateItemReleaseService(release *models.ItemReleas
 
 	if err := tx.Create(&atdata).Error; err != nil {
 		tx.Rollback()
-		return release, 500, errors.New("failed creating release audit")
+		return release, fiber.StatusInternalServerError, errors.New("failed creating releaseat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return release, 500, errors.New("failed to commit transaction")
+		return release, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return release, 200, nil
+	return release, fiber.StatusCreated, nil
 }
 
-// Update existing item release
 func (s *ItemReleaseService) UpdateItemReleaseService(release *models.ItemRelease, conditions map[string]interface{}, at models.At) (*models.ItemRelease, int, error) {
-	var existing = &models.ItemRelease{}
 
+	// Start transaction
 	tx := initializers.DB.Begin()
-
 	if tx.Error != nil {
-		return existing, 500, errors.New("failed to start DB transaction")
+		return nil, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	if err := tx.First(&release, conditions).Error; err != nil {
-		return nil, 404, err
-	}
-
-	if err := services.DbUpdate(tx, &release, conditions); err != nil {
-		return release, 500, errors.New("failed updating release")
-	}
-
-	atdata := models.ItemReleaseAt{RefId: release.ID, At: at}
-
-	if err := services.DbInsert(tx, &atdata); err != nil {
+	if err := services.DbUpdate(tx, release, conditions); err != nil {
 		tx.Rollback()
-		return release, 500, errors.New("failed creating releaseat")
+		return release, fiber.StatusInternalServerError, errors.New("failed updating item release")
 	}
 
+	// Insert audit record
+	atdata := models.ItemReleaseAt{
+		RefId: release.ID,
+		At:    at,
+	}
+	if err := tx.Create(&atdata).Error; err != nil {
+		tx.Rollback()
+		return release, fiber.StatusInternalServerError, errors.New("failed creating release audit")
+	}
+
+	// Commit transaction
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return release, 500, errors.New("failed to commit transaction")
+		return release, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
-	return release, 200, nil
+
+	// Return updated record
+	return release, fiber.StatusOK, nil
 }
 
 // Delete an item release
@@ -127,7 +121,7 @@ func (s *ItemReleaseService) DeleteItemReleaseService(conditions map[string]inte
 
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return &models.ItemRelease{}, 500, errors.New("failed to start DB transaction")
+		return &models.ItemRelease{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	release, status, err := s.GetItemReleaseService(conditions)
@@ -136,21 +130,21 @@ func (s *ItemReleaseService) DeleteItemReleaseService(conditions map[string]inte
 	}
 
 	if err := services.DbDelete(tx, &release, conditions); err != nil {
-		return release, 500, errors.New("failed deleting calendar release")
+		return release, fiber.StatusInternalServerError, errors.New("failed deleting calendar release")
 	}
 
 	atdata := models.ItemReleaseAt{RefId: release.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return release, 500, errors.New("failed creating release audit")
+		return release, fiber.StatusInternalServerError, errors.New("failed creating release audit")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return release, 500, errors.New("failed to commit transaction")
+		return release, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return release, 200, nil
+	return release, fiber.StatusOK, nil
 }
 
 func (s *ItemReleaseService) GetSalesOrderDetails(conditions map[string]interface{}) ([]models.SalesOrderItemReleaseView, int, error) {
@@ -158,13 +152,28 @@ func (s *ItemReleaseService) GetSalesOrderDetails(conditions map[string]interfac
 
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return releases, 500, errors.New("failed to start DB transaction")
+		return releases, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	query := tx.Where(conditions).Find(&releases)
 	if query.Error != nil {
-		return nil, 500, tx.Error
+		return nil, fiber.StatusInternalServerError, tx.Error
 	}
 
-	return releases, 200, nil
+	return releases, fiber.StatusOK, nil
+}
+
+func (s *ItemReleaseService) GetItemStockAndLocation(itemId uint) ([]inventory_model.ItemStockAndLocationView, int, error) {
+	conditions := map[string]interface{}{
+		"ItemId": itemId,
+	}
+
+	var response []inventory_model.ItemStockAndLocationView
+
+	// Call stored procedure
+	if err := services.DbRaw(&response, "sp_GetItemStockAndLocation", conditions); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed getting it stock and locations")
+	}
+
+	return response, fiber.StatusOK, nil
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	dispatching_models "github.com/pierceperado/smpc/models/dispatching_model"
@@ -23,15 +24,15 @@ func (s *SalesCalendarScheduleService) GetSalesSchedules(conditions map[string]i
 	var schedules = &[]dispatching_models.SalesCalendarScheduleModel{}
 
 	if tx.Error != nil {
-		return schedules, 500, errors.New("failed to start DB transaction")
+		return schedules, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := tx.Where(conditions).Find(schedules).Error; err != nil {
 		fmt.Println("ERROR:", err)
-		return schedules, 404, errors.New("failed getting sales calendar schedules")
+		return schedules, fiber.StatusNotFound, errors.New("failed getting sales calendar schedules")
 	}
 
-	return schedules, 200, nil
+	return schedules, fiber.StatusOK, nil
 }
 
 // GET a single sales schedule by ID
@@ -40,32 +41,32 @@ func (s *SalesCalendarScheduleService) GetSalesSchedule(conditions map[string]in
 	var schedule = &dispatching_models.SalesCalendarScheduleModel{}
 
 	if tx.Error != nil {
-		return schedule, 500, errors.New("failed to start DB transaction")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := tx.Where(conditions).First(schedule).Error; err != nil {
-		return schedule, 404, errors.New("sales calendar schedule not found")
+		return schedule, fiber.StatusNotFound, errors.New("sales calendar schedule not found")
 	}
 
-	return schedule, 200, nil
+	return schedule, fiber.StatusOK, nil
 }
 
 // CREATE a sales schedule
 func (s *SalesCalendarScheduleService) CreateSalesSchedule(schedule *dispatching_models.SalesCalendarScheduleModel, at models.At) (*dispatching_models.SalesCalendarScheduleModel, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return schedule, 500, errors.New("failed to start DB transaction")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &schedule); err != nil {
-		
+
 		if strings.Contains(err.Error(), "duplicate key") {
 			err = errors.New("duplicate record error")
 		} else {
 			err = errors.New("failed creating sales schedule")
 		}
 		tx.Rollback()
-		return schedule, 500, err
+		return schedule, fiber.StatusInternalServerError, err
 	}
 
 	atdata := dispatching_models.SalesCalendarScheduleModelAt{CalendarSchedulesBaseAt: dispatching_models.CalendarSchedulesBaseAt{
@@ -74,26 +75,26 @@ func (s *SalesCalendarScheduleService) CreateSalesSchedule(schedule *dispatching
 	}}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return schedule, 500, errors.New("failed creating sales schedule audit")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed creating sales schedule audit")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return schedule, 500, errors.New("failed to commit transaction")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return schedule, 200, nil
+	return schedule, fiber.StatusOK, nil
 }
 
 // UPDATE a sales schedule
 func (s *SalesCalendarScheduleService) UpdateSalesSchedule(schedule *dispatching_models.SalesCalendarScheduleModel, conditions map[string]interface{}, at models.At) (*dispatching_models.SalesCalendarScheduleModel, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return schedule, 500, errors.New("failed to start DB transaction")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbUpdate(tx, &schedule, conditions); err != nil {
-		return schedule, 500, errors.New("failed updating sales schedule")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed updating sales schedule")
 	}
 
 	atdata := dispatching_models.SalesCalendarScheduleModelAt{CalendarSchedulesBaseAt: dispatching_models.CalendarSchedulesBaseAt{
@@ -102,22 +103,22 @@ func (s *SalesCalendarScheduleService) UpdateSalesSchedule(schedule *dispatching
 	}}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return schedule, 500, errors.New("failed creating sales schedule audit")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed creating sales schedule audit")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return schedule, 500, errors.New("failed to commit transaction")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return schedule, 200, nil
+	return schedule, fiber.StatusOK, nil
 }
 
 // DELETE a sales schedule
 func (s *SalesCalendarScheduleService) DeleteSalesSchedule(conditions map[string]interface{}, at models.At) (*dispatching_models.SalesCalendarScheduleModel, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return &dispatching_models.SalesCalendarScheduleModel{}, 500, errors.New("failed to start DB transaction")
+		return &dispatching_models.SalesCalendarScheduleModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	schedule, status, err := s.GetSalesSchedule(conditions)
@@ -126,7 +127,7 @@ func (s *SalesCalendarScheduleService) DeleteSalesSchedule(conditions map[string
 	}
 
 	if err := services.DbDelete(tx, &schedule, conditions); err != nil {
-		return schedule, 500, errors.New("failed deleting sales calendar schedule")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed deleting sales calendar schedule")
 	}
 
 	atdata := dispatching_models.SalesCalendarScheduleModelAt{CalendarSchedulesBaseAt: dispatching_models.CalendarSchedulesBaseAt{
@@ -135,13 +136,13 @@ func (s *SalesCalendarScheduleService) DeleteSalesSchedule(conditions map[string
 	}}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return schedule, 500, errors.New("failed creating sales schedule audit")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed creating sales schedule audit")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return schedule, 500, errors.New("failed to commit transaction")
+		return schedule, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return schedule, 200, nil
+	return schedule, fiber.StatusOK, nil
 }

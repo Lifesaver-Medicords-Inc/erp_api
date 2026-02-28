@@ -146,6 +146,39 @@ func GetKey(model interface{}, conditions map[string]interface{}) string {
 
 	return fmt.Sprintf("model:%s:conditions:%s", modelName, conditionsStr)
 }
+func DbGetRel(model interface{}, conditions map[string]interface{}, preloads ...string) error {
+	fmt.Println("CONDITION GET SERVICES", conditions)
+
+	ctx := context.Background()
+	key := GetKey(model, conditions)
+
+	fmt.Println("GET Rel Keeey", key)
+
+	cache, err := initializers.RC.Get(ctx, key).Result()
+
+	if err == redis.Nil {
+		if err := fetchRelDB(model, conditions, preloads); err != nil {
+			return err
+		}
+
+		if err := cacheData(ctx, key, model); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return errors.New("failed getting cache")
+
+	} else {
+
+		fmt.Println("Getting from Cache")
+		fmt.Println("MODEL", model)
+
+		if err := json.Unmarshal([]byte(cache), model); err != nil {
+			return errors.New("failed deserializing cache")
+		}
+	}
+
+	return nil
+}
 
 func fetchDB(model interface{}, conditions map[string]interface{}) error {
 
@@ -160,6 +193,16 @@ func fetchDB(model interface{}, conditions map[string]interface{}) error {
 	}
 
 	return nil
+}
+func fetchRelDB(model interface{}, conditions map[string]interface{}, preloads []string) error {
+
+	query := initializers.DB
+
+	for _, p := range preloads {
+		query = query.Preload(p)
+	}
+
+	return query.Where(conditions).Find(model).Error
 }
 
 func cacheData(ctx context.Context, cacheKey string, model interface{}) error {
