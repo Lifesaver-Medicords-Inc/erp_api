@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -20,7 +21,7 @@ func NewCompanyService() *CompanyService {
 func (c *CompanyService) CreateCompanyService(company *models.CompanyModel, at models.At) (*models.CompanyModel, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return company, 500, errors.New("failed to start DB transaction")
+		return company, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &company); err != nil {
@@ -32,21 +33,21 @@ func (c *CompanyService) CreateCompanyService(company *models.CompanyModel, at m
 			err = errors.New("failed creating company")
 		}
 		tx.Rollback()
-		return company, 500, err
+		return company, fiber.StatusInternalServerError, err
 	}
 
 	atdata := models.CompanyAt{RefId: company.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return company, 500, errors.New("failed creating companyat")
+		return company, fiber.StatusInternalServerError, errors.New("failed creating companyat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return company, 500, errors.New("failed to commit transaction")
+		return company, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return company, 201, nil
+	return company, fiber.StatusCreated, nil
 }
 
 func (c *CompanyService) GetCompanyService(conditions map[string]interface{}) (*models.CompanyModel, int, error) {
@@ -54,14 +55,14 @@ func (c *CompanyService) GetCompanyService(conditions map[string]interface{}) (*
 
 	var company = &models.CompanyModel{}
 	if tx.Error != nil {
-		return company, 500, errors.New("failed to start DB transaction")
+		return company, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := tx.Where(conditions).Preload("Address").Preload("Contacts").First(company).Error; err != nil {
-		return company, 404, errors.New("failed getting company")
+		return company, fiber.StatusNotFound, errors.New("failed getting company")
 	}
 
-	return company, 200, nil
+	return company, fiber.StatusOK, nil
 }
 
 func (c *CompanyService) GetCompaniesService(conditions map[string]interface{}) (*[]models.CompanyModel, int, error) {
@@ -70,40 +71,40 @@ func (c *CompanyService) GetCompaniesService(conditions map[string]interface{}) 
 	var companies = &[]models.CompanyModel{}
 
 	if tx.Error != nil {
-		return companies, 500, errors.New("failed to start DB transaction")
+		return companies, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := tx.Where(conditions).Preload("Address").Preload("Contacts").Find(companies).Error; err != nil {
 		fmt.Println("ERROR:", err)
-		return companies, 404, errors.New("failed getting companies")
+		return companies, fiber.StatusNotFound, errors.New("failed getting companies")
 	}
-	return companies, 200, nil
+	return companies, fiber.StatusOK, nil
 }
 
 func (c *CompanyService) UpdateCompanyService(company *models.CompanyModel, conditions map[string]interface{}, at models.At) (*models.CompanyModel, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return company, 500, errors.New("failed to start DB transaction")
+		return company, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbUpdate(tx, &company, conditions); err != nil {
-		return company, 500, errors.New("failed updating company")
+		return company, fiber.StatusInternalServerError, errors.New("failed updating company")
 	}
 
 	atdata := models.CompanyAt{RefId: company.ID, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return company, 500, errors.New("failed creating companyat")
+		return company, fiber.StatusInternalServerError, errors.New("failed creating companyat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return company, 500, errors.New("failed to commit transaction")
+		return company, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return company, 200, nil
+	return company, fiber.StatusOK, nil
 }
 
 func (c *CompanyService) DeleteCompanyService(conditions map[string]interface{}, at models.At) (*models.CompanyModel, int, error) {
@@ -111,7 +112,7 @@ func (c *CompanyService) DeleteCompanyService(conditions map[string]interface{},
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return &models.CompanyModel{}, 500, errors.New("failed to start DB transaction")
+		return &models.CompanyModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	company, status, err := c.GetCompanyService(conditions)
@@ -122,28 +123,28 @@ func (c *CompanyService) DeleteCompanyService(conditions map[string]interface{},
 	fmt.Println(company)
 	fmt.Println(conditions)
 	if err := services.DbDelete(tx, &company, conditions); err != nil {
-		return company, 500, errors.New("failed deleting company")
+		return company, fiber.StatusInternalServerError, errors.New("failed deleting company")
 	}
-	
+
 	atdata := models.CompanyAt{RefId: company.ID, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return company, 500, errors.New("failed creating companyat")
+		return company, fiber.StatusInternalServerError, errors.New("failed creating companyat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return company, 500, errors.New("failed to commit transaction")
+		return company, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return company, 200, nil
+	return company, fiber.StatusOK, nil
 }
 
 func (c *CompanyService) CreateCompanyAddressService(address *models.CompanyAddressModel, at models.At) (*models.CompanyAddressModel, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return address, 500, errors.New("failed to start DB transaction")
+		return address, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &address); err != nil {
@@ -155,27 +156,27 @@ func (c *CompanyService) CreateCompanyAddressService(address *models.CompanyAddr
 			err = errors.New("failed creating address")
 		}
 		tx.Rollback()
-		return address, 500, err
+		return address, fiber.StatusInternalServerError, err
 	}
 
 	atdata := models.CompanyAddressAt{RefId: address.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return address, 500, errors.New("failed creating companyat")
+		return address, fiber.StatusInternalServerError, errors.New("failed creating companyat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return address, 500, errors.New("failed to commit transaction")
+		return address, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return address, 201, nil
+	return address, fiber.StatusCreated, nil
 }
 
 func (c *CompanyService) CreateCompanyContactService(contact *models.CompanyContactModel, at models.At) (*models.CompanyContactModel, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-		return contact, 500, errors.New("failed to start DB transaction")
+		return contact, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &contact); err != nil {
@@ -187,71 +188,71 @@ func (c *CompanyService) CreateCompanyContactService(contact *models.CompanyCont
 			err = errors.New("failed creating contact")
 		}
 		tx.Rollback()
-		return contact, 500, err
+		return contact, fiber.StatusInternalServerError, err
 	}
 
 	atdata := models.CompanyContactAt{RefId: contact.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return contact, 500, errors.New("failed creating contactat")
+		return contact, fiber.StatusInternalServerError, errors.New("failed creating contactat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return contact, 500, errors.New("failed to commit transaction")
+		return contact, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return contact, 201, nil
+	return contact, fiber.StatusCreated, nil
 }
 
 func (c *CompanyService) UpdateCompanyAddressService(address *models.CompanyAddressModel, conditions map[string]interface{}, at models.At) (*models.CompanyAddressModel, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return address, 500, errors.New("failed to start DB transaction")
+		return address, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbUpdate(tx, &address, conditions); err != nil {
-		return address, 500, errors.New("failed updating company address")
+		return address, fiber.StatusInternalServerError, errors.New("failed updating company address")
 	}
 
 	atdata := models.CompanyAddressAt{RefId: address.ID, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return address, 500, errors.New("failed creating company address at")
+		return address, fiber.StatusInternalServerError, errors.New("failed creating company address at")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return address, 500, errors.New("failed to commit transaction")
+		return address, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return address, 200, nil
+	return address, fiber.StatusOK, nil
 }
 
 func (c *CompanyService) UpdateCompanyContactService(contact *models.CompanyContactModel, conditions map[string]interface{}, at models.At) (*models.CompanyContactModel, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return contact, 500, errors.New("failed to start DB transaction")
+		return contact, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbUpdate(tx, &contact, conditions); err != nil {
-		return contact, 500, errors.New("failed updating company contact")
+		return contact, fiber.StatusInternalServerError, errors.New("failed updating company contact")
 	}
 
 	atdata := models.CompanyContactAt{RefId: contact.ID, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return contact, 500, errors.New("failed creating company contact at")
+		return contact, fiber.StatusInternalServerError, errors.New("failed creating company contact at")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return contact, 500, errors.New("failed to commit transaction")
+		return contact, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return contact, 200, nil
+	return contact, fiber.StatusOK, nil
 }

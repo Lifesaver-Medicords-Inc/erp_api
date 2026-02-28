@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -20,7 +21,7 @@ func NewSalesOrderService() *SalesOrderService {
 // 	tx := initializers.DB.Begin()
 
 // 	if tx.Error != nil {
-// 		return orders, 500, errors.New("failed to start DB transaction")
+// 		return orders, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 // 	}
 
 // 	query := tx.Preload("Items").Omit("Order").
@@ -33,7 +34,7 @@ func NewSalesOrderService() *SalesOrderService {
 // 		Preload("DeliveryReceipts.AttachedFile").Omit("DeliveryReceipt").
 // 		Where(conditions).Find(&orders)
 // 	if query.Error != nil {
-// 		return nil, 404, tx.Error
+// 		return nil, fiber.StatusNotFound, tx.Error
 // 	}
 
 // 	for i := range orders {
@@ -43,7 +44,7 @@ func NewSalesOrderService() *SalesOrderService {
 // 			}
 // 		}
 // 	}
-// 	return orders, 200, nil
+// 	return orders, fiber.StatusOK, nil
 // }
 
 // func (s *SalesOrderService) GetSalesOrderService(conditions map[string]interface{}) (*models.Order, int, error) {
@@ -51,7 +52,7 @@ func NewSalesOrderService() *SalesOrderService {
 // 	tx := initializers.DB.Begin()
 
 // 	if tx.Error != nil {
-// 		return order, 500, errors.New("failed to start DB transaction")
+// 		return order, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 // 	}
 
 // 	query := tx.Preload("Items").Omit("Order").
@@ -65,7 +66,7 @@ func NewSalesOrderService() *SalesOrderService {
 // 		Where(conditions).First(&order)
 
 // 	if query.Error != nil {
-// 		return nil, 404, tx.Error
+// 		return nil, fiber.StatusNotFound, tx.Error
 // 	}
 
 // 	for i := range order.Items {
@@ -74,7 +75,7 @@ func NewSalesOrderService() *SalesOrderService {
 // 		}
 // 	}
 
-// 	return order, 200, nil
+// 	return order, fiber.StatusOK, nil
 // }
 
 func (s *SalesOrderService) CreateSalesOrderService(order *models.Order, at models.At) (*models.Order, int, error) {
@@ -89,21 +90,21 @@ func (s *SalesOrderService) CreateSalesOrderService(order *models.Order, at mode
 			err = errors.New("failed creating order")
 		}
 		tx.Rollback()
-		return order, 500, err
+		return order, fiber.StatusInternalServerError, err
 	}
 
 	atdata := models.OrderAt{RefId: order.Order_ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return order, 500, errors.New("failed creating orderat")
+		return order, fiber.StatusInternalServerError, errors.New("failed creating orderat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return order, 500, errors.New("failed to commit transaction")
+		return order, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return order, 200, nil
+	return order, fiber.StatusOK, nil
 }
 
 func (s *SalesOrderService) UpdateSalesOrderService(order *models.Order, conditions map[string]interface{}, at models.At) (*models.Order, int, error) {
@@ -111,32 +112,32 @@ func (s *SalesOrderService) UpdateSalesOrderService(order *models.Order, conditi
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return order, 500, errors.New("failed to start DB transaction")
+		return order, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbUpdate(tx, &order, conditions); err != nil {
-		return order, 500, errors.New("failed updating order")
+		return order, fiber.StatusInternalServerError, errors.New("failed updating order")
 	}
 
 	atdata := models.OrderAt{RefId: order.Order_ID, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return order, 500, errors.New("failed creating orderat")
+		return order, fiber.StatusInternalServerError, errors.New("failed creating orderat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return order, 500, errors.New("failed to commit transaction")
+		return order, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return order, 200, nil
+	return order, fiber.StatusOK, nil
 }
 
 // func (s *SalesOrderService) DeleteSalesOrderService(conditions map[string]interface{}, at models.At) (*models.Order, int, error) {
 // 	tx := initializers.DB.Begin()
 // 	if tx.Error != nil {
-// 		return &models.Order{}, 500, errors.New("failed to start DB transaction")
+// 		return &models.Order{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 // 	}
 
 // 	order, status, err := s.GetSalesOrderService(conditions)
@@ -145,19 +146,19 @@ func (s *SalesOrderService) UpdateSalesOrderService(order *models.Order, conditi
 // 	}
 
 // 	if err := services.DbDelete(tx, &order, conditions); err != nil {
-// 		return order, 500, errors.New("failed deleting calendar order")
+// 		return order, fiber.StatusInternalServerError, errors.New("failed deleting calendar order")
 // 	}
 
 // 	atdata := models.OrderAt{RefId: order.Order_ID, At: at}
 // 	if err := services.DbInsert(tx, &atdata); err != nil {
 // 		tx.Rollback()
-// 		return order, 500, errors.New("failed creating order audit")
+// 		return order, fiber.StatusInternalServerError, errors.New("failed creating order audit")
 // 	}
 
 // 	if err := tx.Commit().Error; err != nil {
 // 		tx.Rollback()
-// 		return order, 500, errors.New("failed to commit transaction")
+// 		return order, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 // 	}
 
-// 	return order, 200, nil
+// 	return order, fiber.StatusOK, nil
 // }

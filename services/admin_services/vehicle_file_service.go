@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
@@ -34,19 +35,19 @@ func (fs *VehicleFileService) SaveUploadedFileService(file multipart.File, heade
 
 	err := os.MkdirAll(fs.UploadDir, os.ModePerm)
 	if err != nil {
-		return nil, 500, errors.New("failed to save file")
+		return nil, fiber.StatusInternalServerError, errors.New("failed to save file")
 	}
 
 	dst, err := os.Create(savePath)
 	if err != nil {
-		return nil, 500, errors.New("failed to save file")
+		return nil, fiber.StatusInternalServerError, errors.New("failed to save file")
 	}
 	defer dst.Close()
 
 	// Copy file
 	_, err = io.Copy(dst, file)
 	if err != nil {
-		return nil, 500, errors.New("failed to save file")
+		return nil, fiber.StatusInternalServerError, errors.New("failed to save file")
 	}
 
 	// Detect file MIME type
@@ -65,7 +66,7 @@ func (fs *VehicleFileService) SaveUploadedFileService(file multipart.File, heade
 			Size:         int(header.Size),
 		},
 	}
-	return record, 200, nil
+	return record, fiber.StatusOK, nil
 }
 
 func (fs *VehicleFileService) SaveVehicleFileService(file *models.VehicleFileModel, at models.At) (*models.VehicleFileModel, int, error) {
@@ -73,7 +74,7 @@ func (fs *VehicleFileService) SaveVehicleFileService(file *models.VehicleFileMod
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return &models.VehicleFileModel{}, 500, errors.New("failed to start DB transaction")
+		return &models.VehicleFileModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := services.DbInsert(tx, &file); err != nil {
@@ -91,21 +92,21 @@ func (fs *VehicleFileService) SaveVehicleFileService(file *models.VehicleFileMod
 			err = errors.New("failed saving file")
 		}
 		tx.Rollback()
-		return file, 500, err
+		return file, fiber.StatusInternalServerError, err
 	}
 
 	atdata := models.VehicleAt{RefId: file.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return file, 500, errors.New("saving fileat")
+		return file, fiber.StatusInternalServerError, errors.New("saving fileat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return file, 500, errors.New("failed to commit transaction")
+		return file, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return file, 200, nil
+	return file, fiber.StatusOK, nil
 }
 
 func (v *VehicleFileService) GetVehicleFileService(conditions map[string]interface{}) (*models.VehicleFileModel, int, error) {
@@ -114,14 +115,14 @@ func (v *VehicleFileService) GetVehicleFileService(conditions map[string]interfa
 	var file = &models.VehicleFileModel{}
 
 	if tx.Error != nil {
-		return file, 500, errors.New("failed to start DB transaction")
+		return file, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := tx.Where(conditions).First(file).Error; err != nil {
-		return file, 404, errors.New("failed getting vehicle file")
+		return file, fiber.StatusNotFound, errors.New("failed getting vehicle file")
 	}
 
-	return file, 200, nil
+	return file, fiber.StatusOK, nil
 }
 
 func (v *VehicleFileService) GetVehicleFilesService(conditions map[string]interface{}) (*[]models.VehicleModel, int, error) {
@@ -131,20 +132,20 @@ func (v *VehicleFileService) GetVehicleFilesService(conditions map[string]interf
 	var vehicles = &[]models.VehicleModel{}
 
 	if tx.Error != nil {
-		return vehicles, 500, errors.New("failed to start DB transaction")
+		return vehicles, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	if err := tx.Where(conditions).Find(vehicles).Error; err != nil {
-		return vehicles, 404, errors.New("failed getting vehicles files")
+		return vehicles, fiber.StatusNotFound, errors.New("failed getting vehicles files")
 	}
-	return vehicles, 200, nil
+	return vehicles, fiber.StatusOK, nil
 }
 
 func (fs *VehicleFileService) RemoveVehicleFileService(conditions map[string]interface{}, at models.At) (*models.VehicleFileModel, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return &models.VehicleFileModel{}, 500, errors.New("failed to start DB transaction")
+		return &models.VehicleFileModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
 	file, status, err := fs.GetVehicleFileService(conditions)
@@ -154,7 +155,7 @@ func (fs *VehicleFileService) RemoveVehicleFileService(conditions map[string]int
 	}
 
 	if err := services.DbDelete(tx, &file, conditions); err != nil {
-		return file, 500, errors.New("failed deleting vehicle file")
+		return file, fiber.StatusInternalServerError, errors.New("failed deleting vehicle file")
 	}
 
 	os.Remove(file.FilePath)
@@ -163,13 +164,13 @@ func (fs *VehicleFileService) RemoveVehicleFileService(conditions map[string]int
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
-		return file, 500, errors.New("failed creating vehiclefileat")
+		return file, fiber.StatusInternalServerError, errors.New("failed creating vehiclefileat")
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return file, 500, errors.New("failed to commit transaction")
+		return file, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
-	return file, 200, nil
+	return file, fiber.StatusOK, nil
 }
