@@ -6,11 +6,10 @@ type SalesProjectItemsContent struct {
 	BomID      uint `json:"bom_id"`
 	ItemID     uint `json:"item_id"`
 
-	NodeID       uint   `json:"node_id"`
-	NodeName     string `json:"node_name"`
-	ParentNodeID uint   `json:"parent_node_id"`
-	NodeOrder    uint   `json:"node_order"`
-	NodeType     string `json:"node_type"`
+	ReferenceCode string `json:"reference_code"`
+
+	ManDays   uint    `json:"man_days"`
+	LaborRate float64 `json:"labor_rate"`
 
 	Components       string  `json:"components"`
 	Model            string  `json:"model"`

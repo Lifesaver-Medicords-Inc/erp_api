@@ -100,20 +100,22 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.SalesProjectTemplate{}, &models.SalesProjectTemplateAt{})
 	// DB.AutoMigrate(&models.SalesProjectTemplateChild{}, &models.SalesProjectTemplateChildAt{})
 
-	// DB.AutoMigrate(
+	DB.AutoMigrate(
 	// 	&models.SalesProjectMultiplier{},
 	// 	&models.SalesProjectMultiplierAt{},
 	// 	&models.SalesProjectHistory{},
 	// 	&models.SalesProjectHistoryAt{},
 	// 	&models.SalesProjectItemSet{},
 	// 	&models.SalesProjectItemSetAt{},
-	// 	&models.SalesProjectContent{},
-	// 	&models.SalesProjectContentAt{},
+	// &models.SalesProjectContent{},
+	// &models.SalesProjectContentAt{},
+	// &models.SalesProjectContentFinal{},
+	// &models.SalesProjectContentFinalAt{},
 	// 	&models.SalesProjectAdvancedConditions{},
 	// 	&models.SalesProjectAdvancedConditionsAt{},
-	// 	&models.SalesProjectItems{},
-	// 	&models.SalesProjectItemsAt{},
-	// )
+	// &models.SalesProjectItems{},
+	// &models.SalesProjectItemsAt{},
+	)
 
 	// DB.AutoMigrate(
 	// 	&models.SalesQuotation{},

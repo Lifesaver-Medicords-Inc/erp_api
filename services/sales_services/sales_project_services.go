@@ -126,7 +126,7 @@ func GetSalesProjectsWS(conditions map[string]interface{}, multiplierConditions 
 		return response, fiber.StatusInternalServerError, err
 	}
 
-	if len(response.SalesProjectItemSet) == 0 {
+	if len(response.SalesProjectItemSet) == 0 { 
 		return response, fiber.StatusNotFound, errors.New("no item set found")
 	}
 	basedID := response.SalesProjectItemSet[0].ItemSetID
