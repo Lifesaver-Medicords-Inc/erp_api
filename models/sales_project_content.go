@@ -16,12 +16,12 @@ type SalesProjectContentContent struct {
 	NoOfPumpSet        string `json:"no_of_pump_set"`
 	ItemSetDescription string `json:"item_set_description"`
 	ItemSetNotes       string `json:"item_set_notes"`
-	Final              string `json:"final"`
 }
 
 type SalesProjectContent struct {
 	ContentID uint `json:"content_id" gorm:"primaryKey"`
 	SalesProjectContentContent
+	SalesProjectContentFinal []SalesProjectContentFinal `json:"sales_project_content_final" gorm:"foreignKey:SalesProjectContentID;references:ContentID"`
 }
 
 func (SalesProjectContent) TableName() string {

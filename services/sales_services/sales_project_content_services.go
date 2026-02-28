@@ -20,6 +20,12 @@ func CreateProjectContent(tx *gorm.DB, parentId uint, ProjectContent models.Sale
 		return errors.New("failed creating project content")
 	}
 
+	for _, v := range ProjectContent.SalesProjectContentFinal {
+		if err := CreateProjectContentFinal(tx, ProjectContent.ContentID, v, at); err != nil {
+			return errors.New("failed creating project content finals")
+		}
+	}
+
 	projectcontentat := models.SalesProjectContentAt{
 		RefID:                      ProjectContent.ContentID,
 		SalesProjectContentContent: ProjectContent.SalesProjectContentContent,
