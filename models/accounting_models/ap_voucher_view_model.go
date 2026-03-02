@@ -15,5 +15,7 @@ type APVoucherPaymentDetailsView struct {
 	APVoucherId        int     `json:"ap_voucher_id"`
 	DocNo              string  `json:"doc_no"`
 	DueDate            string  `json:"due_date"`
+	TwasApplied        float64 `json:"twas_applied"`
 	TransAmount        float64 `json:"trans_amount"`
+	OpenAmount         float64 `json:"open_amount"`
 }

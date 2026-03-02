@@ -1,10 +1,11 @@
 package accounting_models
 
 type InvoicePOView struct {
-	ID           uint   `json:"id"`
-	PONumber     string `json:"po_number"`
-	DocDate      string `json:"doc_date"`
-	SupplierName string `json:"supplier_name"`
+	ID            uint    `json:"id"`
+	PONumber      string  `json:"po_number"`
+	DocDate       string  `json:"doc_date"`
+	SupplierName  string  `json:"supplier_name"`
+	TotalAmountPo float64 `json:"total_amount_po"`
 }
 
 type InvoicePODetailView struct {

@@ -197,6 +197,11 @@ func MigrateDb() {
 	// DB.AutoMigrate(&accounting_models.ApVoucherDetails{}, &accounting_models.ApVoucherDetailsAt{})
 	// DB.AutoMigrate(&accounting_models.PaymentVoucher{}, &accounting_models.PaymentVoucherAt{})
 	// DB.AutoMigrate(&accounting_models.PaymentVoucherDetails{}, &accounting_models.PaymentVoucherDetailsAt{})
+	// DB.AutoMigrate(&accounting_models.BpiOverpayment{}, &accounting_models.BpiOverpaymentAt{})
+	// DB.AutoMigrate(&accounting_models.SalesInvoice2{}, &accounting_models.SalesInvoice2At{})
+	// DB.AutoMigrate(&accounting_models.SalesInvoiceDetails2{}, &accounting_models.SalesInvoiceDetails2At{})
+	// DB.AutoMigrate(&accounting_models.PaymentReceipt{}, &accounting_models.PaymentReceiptAt{})
+	// DB.AutoMigrate(&accounting_models.PaymentReceiptDetails{}, &accounting_models.PaymentReceiptDetailsAt{})
 
 	// // JOB ORDER
 	// DB.AutoMigrate(&models.JobOrder{}, &models.JobOrderAt{})

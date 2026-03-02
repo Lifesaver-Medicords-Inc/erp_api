@@ -7,9 +7,12 @@ type JournalEntry2Content struct {
 	JournalDescription string `json:"journal_description"`
 	DocNo              string `json:"doc_no"`
 	Period             string `json:"period"`
+	PeriodFrom         string `json:"period_from"`
+	PeriodTo           string `json:"period_to"`
 	Currency           string `json:"currency"`
 	CreatedBy          string `json:"created_by"`
 }
+
 type JournalEntry2 struct {
 	ID uint `gorm:"primarykey" json:"id"`
 	JournalEntry2Content
@@ -28,6 +31,22 @@ type JournalEntry2At struct {
 
 func (JournalEntry2At) TableName() string {
 	return "z_tbl_accounting_journal_entry2_at"
+}
+
+type JournalEntryCurrent struct {
+	ID                 uint   `json:"id"`
+	JournalName        string `json:"journal_name"`
+	JournalDescription string `json:"journal_description"`
+	DocNo              string `json:"doc_no"`
+	Period             string `json:"period"`
+	PeriodFrom         string `json:"period_from"`
+	PeriodTo           string `json:"period_to"`
+	Currency           string `json:"currency"`
+	CreatedBy          string `json:"created_by"`
+}
+
+func (JournalEntryCurrent) TableName() string {
+	return "tbl_accounting_journal_entry2"
 }
 
 type JournalEntryDetails2Content struct {

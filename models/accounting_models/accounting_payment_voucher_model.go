@@ -9,6 +9,7 @@ type PaymentVoucherContent struct {
 	ReferenceApv      string  `json:"reference_apv"`
 	Currency          string  `json:"currency"`
 	TransactionAmount float64 `json:"transaction_amount"`
+	UnappliedAmount   float64 `json:"unapplied_amount"`
 	DocNo             string  `json:"doc_no"`
 	DocDate           string  `json:"doc_date"`
 	Remarks           string  `json:"remarks"`
@@ -53,10 +54,8 @@ type PaymentVoucherDetailsContent struct {
 	DocNo              string  `json:"doc_no"`
 	DueDate            string  `json:"due_date"`
 	TransAmount        float64 `json:"trans_amount"`
-	OpenAmount         float64 `json:"open_amount"`
 	AmountApplied      float64 `json:"amount_applied"`
 	TwasApplied        float64 `json:"twas_applied"`
-	Balance            float64 `json:"balance"`
 }
 type PaymentVoucherDetails struct {
 	ID uint `gorm:"primarykey" json:"id"`
@@ -78,12 +77,28 @@ func (PaymentVoucherDetailsAt) TableName() string {
 	return "z_tbl_accounting_payment_voucher_details_at"
 }
 
+type PaymentVoucherDetailsGet struct {
+	ID                 uint    `json:"id"`
+	PaymentVoucherID   uint    `json:"payment_voucher_id"`
+	ApVoucherDetailsId uint    `json:"ap_voucher_details_id"`
+	DocNo              string  `json:"doc_no"`
+	DueDate            string  `json:"due_date"`
+	TransAmount        float64 `json:"trans_amount"`
+	OpenAmount         float64 `json:"open_amount"`
+	AmountApplied      float64 `json:"amount_applied"`
+	TwasApplied        float64 `json:"twas_applied"`
+}
+
+func (PaymentVoucherDetailsGet) TableName() string {
+	return "vw_get_payment_voucher_details"
+}
+
 type PaymentVoucherBody struct {
 	PaymentVoucher        PaymentVoucher          `json:"payment_voucher"`
 	PaymentVoucherDetails []PaymentVoucherDetails `json:"payment_voucher_details"`
 }
 
 type PaymentVoucherGet struct {
-	PaymentVoucher        []PaymentVoucher        `json:"payment_voucher"`
-	PaymentVoucherDetails []PaymentVoucherDetails `json:"payment_voucher_details"`
+	PaymentVoucher        []PaymentVoucher           `json:"payment_voucher"`
+	PaymentVoucherDetails []PaymentVoucherDetailsGet `json:"payment_voucher_details"`
 }

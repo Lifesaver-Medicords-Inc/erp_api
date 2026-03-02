@@ -4,7 +4,9 @@ import (
 	// "errors"
 
 	"errors"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
@@ -26,6 +28,39 @@ func (s *JournalEntryService2) GetCompanySetup(conditions map[string]interface{}
 
 	if err := services.DbGet(&response, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New(" failed getting smpc company setup")
+	}
+
+	return response, fiber.StatusOK, nil
+}
+
+func (s *JournalEntryService2) GetCurrentJournal(conditions map[string]interface{}) (interface{}, int, error) {
+	var response accounting_models.JournalEntryCurrent
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		fmt.Println("DB ERROR:", err)
+		return response, fiber.StatusInternalServerError, errors.New("failed getting journal entry")
+	}
+
+	// Define layout based on your format
+	layout := "02/01/2006 3:04:05 pm"
+
+	// Parse period_from
+	periodFrom, err := time.Parse(layout, response.PeriodFrom)
+	if err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("invalid period_from format")
+	}
+
+	// Parse period_to
+	periodTo, err := time.Parse(layout, response.PeriodTo)
+	if err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("invalid period_to format")
+	}
+
+	now := time.Now()
+
+	// Check if current date is within the period
+	if now.Before(periodFrom) || now.After(periodTo) {
+		return nil, fiber.StatusNotFound, errors.New("no active journal entry for current date")
 	}
 
 	return response, fiber.StatusOK, nil
