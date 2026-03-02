@@ -30,6 +30,15 @@ func (h *JournalEntryHandler2) GetCompanySetup(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
+func (h *JournalEntryHandler2) GetCurrentJournal(c *fiber.Ctx) error {
+	data, status, err := h.Service.GetCurrentJournal(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
 func (h *JournalEntryHandler2) GetJournalEntry(c *fiber.Ctx) error {
 	data, status, err := h.Service.GetJournalEntry(nil)
 	if err != nil {

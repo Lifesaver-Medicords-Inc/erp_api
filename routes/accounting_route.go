@@ -6,13 +6,17 @@ import (
 	"github.com/pierceperado/smpc/handlers/bulk_invoice_receipt_handlers"
 	"github.com/pierceperado/smpc/handlers/invoice_receipt_handlers"
 	"github.com/pierceperado/smpc/handlers/journal_entry_handlers2"
+	"github.com/pierceperado/smpc/handlers/payment_receipt_handlers"
 	"github.com/pierceperado/smpc/handlers/payment_voucher_handlers"
+	"github.com/pierceperado/smpc/handlers/sales_invoice_handlers2"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/services/ap_voucher_services"
 	"github.com/pierceperado/smpc/services/bulk_invoice_receipt_services"
 	"github.com/pierceperado/smpc/services/invoice_receipt_services"
 	"github.com/pierceperado/smpc/services/journal_entry_services2"
+	"github.com/pierceperado/smpc/services/payment_receipt_services"
 	"github.com/pierceperado/smpc/services/payment_voucher_services"
+	"github.com/pierceperado/smpc/services/sales_invoice_services2"
 	"github.com/pierceperado/smpc/services/setup_services"
 )
 
@@ -27,6 +31,21 @@ func AccountingRoutes(router fiber.Router) {
 	accountingApi.Get("/invoice_receipt/supplier_trade", invoiceReceiptHandler.GetSupplierTradeView)
 	accountingApi.Get("/invoice_receipt/supplier_po/:supplier_id", invoiceReceiptHandler.GetSupplierPO)
 	accountingApi.Post("/invoice_receipt", invoiceReceiptHandler.CreateInvoiceReceipt)
+
+	//Payment Receipt Endpoints
+	paymentReceiptService := payment_receipt_services.NewPaymentReceiptService()
+	paymentReceiptHandler := payment_receipt_handlers.NewPaymentReceiptHandler(paymentReceiptService)
+	accountingApi.Get("/payment_receipt", paymentReceiptHandler.GetPaymentReceipt)
+	accountingApi.Post("/payment_receipt", paymentReceiptHandler.CreatePaymentReceipt)
+
+	//Sales Invoice Endpoints
+	salesInvoiceService := sales_invoice_services2.NewSalesInvoiceService()
+	salesInvoiceHandler := sales_invoice_handlers2.NewSalesInvoiceHandler(salesInvoiceService)
+	accountingApi.Get("/customer", salesInvoiceHandler.GetCustomer)
+	accountingApi.Get("/customer_so/:customer_id", salesInvoiceHandler.GetCustomerSO)
+	accountingApi.Get("/exchange_rate/:base_code", salesInvoiceHandler.GetExchangeRate)
+	accountingApi.Get("/sales_invoice2", salesInvoiceHandler.GetSalesInvoice)
+	accountingApi.Post("/sales_invoice2", salesInvoiceHandler.CreateSalesInvoice)
 
 	//Bulk Invoice Receipt Endpoints
 	bulkInvoiceReceiptService := bulk_invoice_receipt_services.NewBulkInvoiceReceiptService()
@@ -52,6 +71,7 @@ func AccountingRoutes(router fiber.Router) {
 	journalEntryService2 := journal_entry_services2.NewJournalEntryService2()
 	journalEntryHandler2 := journal_entry_handlers2.NewJournalEntryHandler2(journalEntryService2)
 	accountingApi.Get("/company_setup", journalEntryHandler2.GetCompanySetup)
+	accountingApi.Get("/current_journal", journalEntryHandler2.GetCurrentJournal)
 	accountingApi.Get("/journal_entry2", journalEntryHandler2.GetJournalEntry)
 	accountingApi.Post("/journal_entry2", journalEntryHandler2.CreateJournalEntry)
 	accountingApi.Put("/journal_entry2", journalEntryHandler2.UpdateJournalEntry)

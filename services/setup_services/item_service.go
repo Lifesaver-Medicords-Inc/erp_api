@@ -316,6 +316,8 @@ func InvalidateItemCaches() {
 		accounting_models.TaxAt{},
 		accounting_models.TaxDetails{},
 		accounting_models.TaxDetailsAt{},
+		accounting_models.SupplierTradeView{},
+		accounting_models.PaymentVoucherDetailsGet{},
 	}
 	for _, key := range cacheKeys {
 		services.InvalidateCache(services.GetKey(key, nil))
