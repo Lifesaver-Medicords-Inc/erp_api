@@ -1,6 +1,8 @@
 package payment_receipt_handlers
 
 import (
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/models/accounting_models"
@@ -18,6 +20,25 @@ func NewPaymentReceiptHandler(service *payment_receipt_services.PaymentReceiptSe
 
 func (h *PaymentReceiptHandler) GetPaymentReceipt(c *fiber.Ctx) error {
 	data, status, err := h.Service.GetPaymentReceipt(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+func (h *PaymentReceiptHandler) GetCustomerSalesInvoice(c *fiber.Ctx) error {
+	idParam := c.Params("customer_id")
+	idNum, err := strconv.Atoi(idParam)
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
+	}
+
+	conditions := map[string]interface{}{
+		"CustomerId": idNum,
+	}
+
+	data, status, err := h.Service.GetCustomerSalesInvoice(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

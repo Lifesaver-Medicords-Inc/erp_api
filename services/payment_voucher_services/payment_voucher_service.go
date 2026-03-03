@@ -140,7 +140,10 @@ func (s *PaymentVoucherService) CreatePaymentVoucher(body *accounting_models.Pay
 
 	// Fetch debit and credit COAs
 	var coaDEBIT, coaCREDIT accounting_models.ChartOfAccounts
-	if err := tx.First(&coaDEBIT, 40029).Error; err != nil {
+
+	debitCOAId := s.getDebitCOAId(body)
+
+	if err := tx.First(&coaDEBIT, debitCOAId).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching debit chart of account")
 	}
 	if err := tx.First(&coaCREDIT, 40030).Error; err != nil {
@@ -306,4 +309,15 @@ func (s *PaymentVoucherService) InsertDifferenceDebit(tx *gorm.DB, body *account
 	}
 
 	return nil
+}
+
+func (s *PaymentVoucherService) getDebitCOAId(body *accounting_models.PaymentVoucherBody) uint {
+
+	// If CashAmount is greater than 0 (and not zero)
+	if body.PaymentVoucher.CashAmount > 0 {
+		return 70034
+	}
+
+	// If zero or empty (default float64 is 0)
+	return 70035
 }

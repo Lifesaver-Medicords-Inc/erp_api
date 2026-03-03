@@ -4,6 +4,7 @@ import (
 	// "errors"
 
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
 	"github.com/pierceperado/smpc/services/journal_entry_services2"
+	"github.com/pierceperado/smpc/services/overpayment_services"
 	"github.com/pierceperado/smpc/services/setup_services"
 	"github.com/pierceperado/smpc/utils"
 	"gorm.io/gorm"
@@ -33,6 +35,21 @@ func (s *PaymentReceiptService) GetPaymentReceipt(conditions map[string]interfac
 
 	if err := services.DbGet(&response.PaymentReceiptDetails, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New(" failed getting payment receipt details")
+	}
+
+	return response, fiber.StatusOK, nil
+}
+
+func (s *PaymentReceiptService) GetCustomerSalesInvoice(conditions map[string]interface{}) (interface{}, int, error) {
+	var response []accounting_models.SalesInvoiceReceiptView
+
+	// Get Sales Invoice (Parent)
+	if err := services.DbRaw(&response, "sp_GetSIPaymentReceipt", conditions); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed getting customer sales invoice data")
+	}
+
+	if len(response) == 0 {
+		return nil, fiber.StatusNotFound, errors.New("no sales invoice found")
 	}
 
 	return response, fiber.StatusOK, nil
@@ -95,12 +112,15 @@ func (s *PaymentReceiptService) CreatePaymentReceipt(body *accounting_models.Pay
 		return body, fiber.StatusNotFound, errors.New("no journal entry found for the payment receipt period")
 	}
 
+	debitCOAId := s.getDebitCOAId(body)
+
 	// Fetch debit and credit COAs
 	var coaDEBIT, coaCREDIT accounting_models.ChartOfAccounts
-	if err := tx.First(&coaDEBIT, 40029).Error; err != nil {
+
+	if err := tx.First(&coaDEBIT, debitCOAId).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching debit chart of account")
 	}
-	if err := tx.First(&coaCREDIT, 40030).Error; err != nil {
+	if err := tx.First(&coaCREDIT, 70037).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching credit chart of account")
 	}
 
@@ -129,14 +149,25 @@ func (s *PaymentReceiptService) CreatePaymentReceipt(body *accounting_models.Pay
 
 	jeService := journal_entry_services2.NewJournalEntryService2()
 
+	// Compute total applied from details
+	var totalApplied float64
+	for _, d := range body.PaymentReceiptDetails {
+		totalApplied += d.AmountApplied
+	}
+
 	// Auto-insert debit and credit
 	for _, e := range []accounting_models.JournalEntryDetails2{
 		createJournalEntry(coaCREDIT, body.PaymentReceipt.TransactionAmount, true),
-		createJournalEntry(coaDEBIT, body.PaymentReceipt.TransactionAmount, false),
+		createJournalEntry(coaDEBIT, totalApplied, false),
 	} {
 		if err := jeService.AutoInsertJournalEntry(&e, body.PaymentReceipt.DocDate, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
+	}
+
+	//Insert difference debit if needed
+	if err := s.InsertDifferenceDebit(tx, body, matchedJournalID, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	// Insert audit record
@@ -152,6 +183,10 @@ func (s *PaymentReceiptService) CreatePaymentReceipt(body *accounting_models.Pay
 	// Commit transaction
 	if err := tx.Commit().Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	if err := services.InvalidateCacheByModel(accounting_models.SalesInvoiceReceiptView{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
 	}
 
 	setup_services.InvalidateItemCaches()
@@ -180,4 +215,79 @@ func (s *PaymentReceiptService) CreatePaymentReceiptDetails(tx *gorm.DB, body *a
 		}
 	}
 	return nil
+}
+
+func (s *PaymentReceiptService) InsertDifferenceDebit(tx *gorm.DB, body *accounting_models.PaymentReceiptBody, matchedJournalID uint, at models.At) error {
+
+	//Compute total applied from details
+	var totalApplied float64
+	for _, d := range body.PaymentReceiptDetails {
+		totalApplied += d.AmountApplied
+	}
+
+	transactionAmount := body.PaymentReceipt.TransactionAmount
+
+	//If transaction amount is greater than applied
+	if transactionAmount > totalApplied {
+
+		difference := transactionAmount - totalApplied
+
+		//Fetch COA 60030
+		var coaDifference accounting_models.ChartOfAccounts
+		if err := tx.First(&coaDifference, 60030).Error; err != nil {
+			return errors.New("failed fetching difference chart of account (60030)")
+		}
+
+		//Create DEBIT journal entry
+		entry := accounting_models.JournalEntryDetails2{
+			JournalEntryDetails2Content: accounting_models.JournalEntryDetails2Content{
+				Origin:         "Payment Receipt",
+				OriginId:       body.PaymentReceipt.ID,
+				LineMemo:       "Auto entry - DEBIT",
+				PostingDate:    body.PaymentReceipt.DocDate,
+				CreatedBy:      body.PaymentReceipt.PreparedBy,
+				AccountTitle:   coaDifference.Name,
+				PostingRef:     coaDifference.Code,
+				PostingRefId:   coaDifference.ID,
+				JournalEntryId: matchedJournalID,
+				Debit:          difference,
+			},
+		}
+
+		//Create overpayment record
+		overpayment := accounting_models.BpiOverpayment{
+			BpiOverpaymentContent: accounting_models.BpiOverpaymentContent{
+				BpiId:             body.PaymentReceipt.CustomerId,
+				OverpaymentAmount: difference,
+				ReferenceDate:     body.PaymentReceipt.DocDate,
+				ReferenceDocType:  "Payment Receipt",
+				ReferenceDocId:    body.PaymentReceipt.ID,
+			},
+		}
+
+		overService := overpayment_services.NewOverpaymentService()
+
+		if err := overService.CreateBpiOverpayment(tx, &overpayment, at); err != nil {
+			return err
+		}
+
+		jeService := journal_entry_services2.NewJournalEntryService2()
+
+		if err := jeService.AutoInsertJournalEntry(&entry, body.PaymentReceipt.DocDate, at); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *PaymentReceiptService) getDebitCOAId(body *accounting_models.PaymentReceiptBody) uint {
+
+	// If CashAmount is greater than 0 (and not zero)
+	if body.PaymentReceipt.CashAmount > 0 {
+		return 70034
+	}
+
+	// If zero or empty (default float64 is 0)
+	return 70035
 }
