@@ -37,6 +37,7 @@ func AccountingRoutes(router fiber.Router) {
 	paymentReceiptHandler := payment_receipt_handlers.NewPaymentReceiptHandler(paymentReceiptService)
 	accountingApi.Get("/payment_receipt", paymentReceiptHandler.GetPaymentReceipt)
 	accountingApi.Post("/payment_receipt", paymentReceiptHandler.CreatePaymentReceipt)
+	accountingApi.Get("/payment_receipt/sales_invoice/:customer_id", paymentReceiptHandler.GetCustomerSalesInvoice)
 
 	//Sales Invoice Endpoints
 	salesInvoiceService := sales_invoice_services2.NewSalesInvoiceService()

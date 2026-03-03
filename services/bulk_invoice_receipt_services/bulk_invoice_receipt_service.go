@@ -100,7 +100,7 @@ func (s *BulkInvoiceReceiptService) CreateBulkInvoiceReceipt(body *accounting_mo
 	if err := tx.First(&coaDEBIT, 50030).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching debit chart of account")
 	}
-	if err := tx.First(&coaCREDIT, 40030).Error; err != nil {
+	if err := tx.First(&coaCREDIT, 70036).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching credit chart of account")
 	}
 

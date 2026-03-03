@@ -184,10 +184,10 @@ func (s *SalesInvoiceService) CreateSalesInvoice(body *accounting_models.SalesIn
 
 	// Fetch debit and credit COAs
 	var coaDEBIT, coaCREDIT accounting_models.ChartOfAccounts
-	if err := tx.First(&coaDEBIT, 40029).Error; err != nil {
+	if err := tx.First(&coaDEBIT, 70032).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching debit chart of account")
 	}
-	if err := tx.First(&coaCREDIT, 40030).Error; err != nil {
+	if err := tx.First(&coaCREDIT, 70033).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching credit chart of account")
 	}
 
