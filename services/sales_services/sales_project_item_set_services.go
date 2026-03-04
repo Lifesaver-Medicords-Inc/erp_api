@@ -77,7 +77,7 @@ func GetProjectItemSets(id int) (models.SalesProjectItemSet, int, error) {
 }
 
 // DO UDPATE SOON
-func UpdateProjectItemSet(tx *gorm.DB, itemset models.SalesProjectItemSet, at models.At, conditions map[string]interface{}) error {
+func  UpdateProjectItemSet(tx *gorm.DB, itemset models.SalesProjectItemSet, at models.At, conditions map[string]interface{}) error {
 	if err := services.DbUpdate(tx, &itemset, conditions); err != nil {
 		return errors.New("failed updating project item set")
 	}

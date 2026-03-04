@@ -277,6 +277,131 @@ func CreateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, erro
 	return body, 0, nil
 }
 
+func UpdateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, error) {
+	var body CreateProjectBody
+	if err := c.BodyParser(&body); err != nil {
+		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	}
+
+	if body.ID == 0 {
+		return body, fiber.StatusBadRequest, errors.New("invalid sales project id")
+	}
+
+	// ---- UPDATE SALES QUOTATION ----
+	if err := services.DbUpdate(tx, &body.SalesQuotation, map[string]interface{}{
+		"id": body.ID,
+	}); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed updating sales project")
+	}
+
+	// ---- AT CONTEXT ----
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	// ---- UPDATE SALES QUOTATION AT ----
+	atData := models.SalesQuotationAt{
+		RefId:                 body.ID,
+		SalesQuotationContent: body.SalesQuotationContent,
+		At:                    at,
+	}
+
+	if err := services.DbUpdate(tx, &atData, map[string]interface{}{
+		"ref_id": body.ID,
+	}); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed updating sales quotation at")
+	}
+
+	// ---- MULTIPLIERS (RESET) ----
+	if err := services.DbDelete(tx, &models.SalesProjectMultiplier{}, map[string]interface{}{
+		"based_id": body.ID,
+	}); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	for _, v := range body.SalesProjectMultiplier {
+		if err := CreateSalesProjectMultiplier(tx, body.ID, v, at); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+
+	// ---- HISTORY (RESET) ----
+	if err := services.DbDelete(tx, &models.SalesProjectHistory{}, map[string]interface{}{
+		"based_id": body.ID,
+	}); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	for _, v := range body.SalesProjectHistory {
+		if err := CreateSalesProjectHistory(tx, body.ID, v, at); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+
+	// ---- ITEM SET ----
+	if err := UpdateProjectItemSet(tx, body.SalesProjectItemSet, at, map[string]interface{}{}); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	itemSetID := body.SalesProjectItemSet.ItemSetID
+
+	// ---- CONTENT ----
+	if err := services.DbDelete(tx, &models.SalesProjectContent{}, map[string]interface{}{
+		"item_set_id": itemSetID,
+	}); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	if err := CreateProjectContent(tx, itemSetID, body.SalesProjectContent, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	// ---- ADVANCED CONDITIONS ----
+	if err := services.DbDelete(tx, &models.SalesProjectAdvancedConditions{}, map[string]interface{}{
+		"item_set_id": itemSetID,
+	}); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	if err := CreateProjectAdvancedConditions(
+		tx,
+		itemSetID,
+		body.SalesProjectContentAdvancedCondition,
+		at,
+	); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	// ---- ITEMS ----
+	if err := services.DbDelete(tx, &models.SalesProjectItems{}, map[string]interface{}{
+		"item_set_id": itemSetID,
+	}); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	for _, v := range body.SalesProjectItems {
+		if err := CreateProjectItems(tx, itemSetID, v, at); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+
+	// ---- WIRINGS ----
+	if err := services.DbDelete(tx, &models.SalesProjectWiring{}, map[string]interface{}{
+		"item_set_id": itemSetID,
+	}); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	for _, v := range body.SalesProjectWirings {
+		if err := CreateProjectWiring(tx, itemSetID, v, at); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+
+	return body, fiber.StatusOK, nil
+}
+
 func CreateNewProjectItemss(c *fiber.Ctx, tx *gorm.DB) (CreateNewProjectItemz, int, error) {
 	var body CreateNewProjectItemz
 
