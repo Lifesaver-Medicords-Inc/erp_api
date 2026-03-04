@@ -32,6 +32,7 @@ type SalesQuotationContent struct {
 	CreatedBy            string  `json:"created_by"`
 	FinalRefNo           string  `json:"final_ref_no"`
 	IsFinalized          bool    `json:"is_finalized"`
+	IsProject            bool    `json:"is_project"`
 }
 
 type SalesQuotation struct {
