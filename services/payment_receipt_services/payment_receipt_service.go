@@ -120,7 +120,7 @@ func (s *PaymentReceiptService) CreatePaymentReceipt(body *accounting_models.Pay
 	if err := tx.First(&coaDEBIT, debitCOAId).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching debit chart of account")
 	}
-	if err := tx.First(&coaCREDIT, 70037).Error; err != nil {
+	if err := tx.First(&coaCREDIT, 70032).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching credit chart of account")
 	}
 
@@ -165,8 +165,8 @@ func (s *PaymentReceiptService) CreatePaymentReceipt(body *accounting_models.Pay
 		}
 	}
 
-	//Insert difference debit if needed
-	if err := s.InsertDifferenceDebit(tx, body, matchedJournalID, at); err != nil {
+	//Insert difference credit if needed
+	if err := s.InsertDifferenceCredit(tx, body, matchedJournalID, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
@@ -217,7 +217,7 @@ func (s *PaymentReceiptService) CreatePaymentReceiptDetails(tx *gorm.DB, body *a
 	return nil
 }
 
-func (s *PaymentReceiptService) InsertDifferenceDebit(tx *gorm.DB, body *accounting_models.PaymentReceiptBody, matchedJournalID uint, at models.At) error {
+func (s *PaymentReceiptService) InsertDifferenceCredit(tx *gorm.DB, body *accounting_models.PaymentReceiptBody, matchedJournalID uint, at models.At) error {
 
 	//Compute total applied from details
 	var totalApplied float64
@@ -232,36 +232,36 @@ func (s *PaymentReceiptService) InsertDifferenceDebit(tx *gorm.DB, body *account
 
 		difference := transactionAmount - totalApplied
 
-		//Fetch COA 60030
+		//Fetch COA 70038
 		var coaDifference accounting_models.ChartOfAccounts
-		if err := tx.First(&coaDifference, 60030).Error; err != nil {
-			return errors.New("failed fetching difference chart of account (60030)")
+		if err := tx.First(&coaDifference, 70038).Error; err != nil {
+			return errors.New("failed fetching difference chart of account (70038)")
 		}
 
-		//Create DEBIT journal entry
+		//Create CREDIT journal entry
 		entry := accounting_models.JournalEntryDetails2{
 			JournalEntryDetails2Content: accounting_models.JournalEntryDetails2Content{
 				Origin:         "Payment Receipt",
 				OriginId:       body.PaymentReceipt.ID,
-				LineMemo:       "Auto entry - DEBIT",
+				LineMemo:       "Auto entry - CREDIT",
 				PostingDate:    body.PaymentReceipt.DocDate,
 				CreatedBy:      body.PaymentReceipt.PreparedBy,
 				AccountTitle:   coaDifference.Name,
 				PostingRef:     coaDifference.Code,
 				PostingRefId:   coaDifference.ID,
 				JournalEntryId: matchedJournalID,
-				Debit:          difference,
+				Credit:         difference,
 			},
 		}
 
 		//Create overpayment record
 		overpayment := accounting_models.BpiOverpayment{
 			BpiOverpaymentContent: accounting_models.BpiOverpaymentContent{
-				BpiId:             body.PaymentReceipt.CustomerId,
-				OverpaymentAmount: difference,
-				ReferenceDate:     body.PaymentReceipt.DocDate,
-				ReferenceDocType:  "Payment Receipt",
-				ReferenceDocId:    body.PaymentReceipt.ID,
+				BpiId:                body.PaymentReceipt.CustomerId,
+				BpiOverpaymentAmount: difference,
+				ReferenceDate:        body.PaymentReceipt.DocDate,
+				ReferenceDocType:     "Payment Receipt",
+				ReferenceDocId:       body.PaymentReceipt.ID,
 			},
 		}
 

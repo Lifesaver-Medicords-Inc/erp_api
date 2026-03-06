@@ -184,10 +184,10 @@ func (s *SalesInvoiceService) CreateSalesInvoice(body *accounting_models.SalesIn
 
 	// Fetch debit and credit COAs
 	var coaDEBIT, coaCREDIT accounting_models.ChartOfAccounts
-	if err := tx.First(&coaDEBIT, 70032).Error; err != nil {
+	if err := tx.First(&coaDEBIT, 40029).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching debit chart of account")
 	}
-	if err := tx.First(&coaCREDIT, 70033).Error; err != nil {
+	if err := tx.First(&coaCREDIT, 60030).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching credit chart of account")
 	}
 
@@ -248,6 +248,10 @@ func (s *SalesInvoiceService) CreateSalesInvoice(body *accounting_models.SalesIn
 	}
 
 	if err := services.InvalidateCacheByModel(accounting_models.InvoiceSODetailView{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
+
+	if err := services.InvalidateCacheByModel(accounting_models.SalesInvoiceReceiptView{}); err != nil {
 		fmt.Println("Failed to invalidate cache:", err)
 	}
 

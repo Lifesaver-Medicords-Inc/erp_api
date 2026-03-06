@@ -91,6 +91,14 @@ func (s *ApVoucherService) CreateApVoucher(body *accounting_models.ApVoucherBody
 		fmt.Println("Failed to invalidate cache:", err)
 	}
 
+	if err := services.InvalidateCacheByModel(accounting_models.APVoucherPaymentView{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
+
+	if err := services.InvalidateCacheByModel(accounting_models.APVoucherPaymentDetailsView{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
+
 	return body, fiber.StatusOK, nil
 }
 
