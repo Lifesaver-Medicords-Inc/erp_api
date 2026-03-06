@@ -3,11 +3,12 @@ package accounting_models
 import "github.com/pierceperado/smpc/models"
 
 type BpiOverpaymentContent struct {
-	BpiId             uint    `json:"bpi_id"`
-	OverpaymentAmount float64 `json:"overpayment_amount"`
-	ReferenceDate     string  `json:"reference_date"`
-	ReferenceDocType  string  `json:"reference_doc_type"`
-	ReferenceDocId    uint    `json:"reference_doc_id"`
+	BpiId                    uint    `json:"bpi_id"`
+	BpiOverpaymentAmount     float64 `json:"bpi_overpayment_amount"`
+	CompanyOverpaymentAmount float64 `json:"company_overpayment_amount"`
+	ReferenceDate            string  `json:"reference_date"`
+	ReferenceDocType         string  `json:"reference_doc_type"`
+	ReferenceDocId           uint    `json:"reference_doc_id"`
 }
 
 type BpiOverpayment struct {

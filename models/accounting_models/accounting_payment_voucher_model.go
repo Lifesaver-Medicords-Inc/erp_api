@@ -3,29 +3,31 @@ package accounting_models
 import "github.com/pierceperado/smpc/models"
 
 type PaymentVoucherContent struct {
-	Supplier          string  `json:"supplier"`
-	SupplierCode      string  `json:"supplier_code"`
-	SupplierId        uint    `json:"supplier_id"`
-	ReferenceApv      string  `json:"reference_apv"`
-	Currency          string  `json:"currency"`
-	TransactionAmount float64 `json:"transaction_amount"`
-	UnappliedAmount   float64 `json:"unapplied_amount"`
-	DocNo             string  `json:"doc_no"`
-	DocDate           string  `json:"doc_date"`
-	Remarks           string  `json:"remarks"`
-	CashAmount        float64 `json:"cash_amount"`
-	CheckAmount       float64 `json:"check_amount"`
-	CheckBank         string  `json:"check_bank"`
-	CheckAccountNo    string  `json:"check_account_no"`
-	RefCheckNo        string  `json:"ref_check_no"`
-	CheckDate         string  `json:"check_date"`
-	TransferAmount    float64 `json:"transfer_amount"`
-	TransferType      string  `json:"transfer_type"`
-	TransferBank      string  `json:"transfer_bank"`
-	TransferAccountNo string  `json:"transfer_account_no"`
-	RefDocNo          string  `json:"ref_doc_no"`
-	RefDocDate        string  `json:"ref_doc_date"`
-	PreparedBy        string  `json:"prepared_by"`
+	Supplier             string  `json:"supplier"`
+	SupplierCode         string  `json:"supplier_code"`
+	SupplierId           uint    `json:"supplier_id"`
+	ReferenceApv         string  `json:"reference_apv"`
+	Currency             string  `json:"currency"`
+	TransactionAmount    float64 `json:"transaction_amount"`
+	UnappliedAmount      float64 `json:"unapplied_amount"`
+	OverpaymentAmount    float64 `json:"overpayment_amount"`
+	DocNo                string  `json:"doc_no"`
+	DocDate              string  `json:"doc_date"`
+	Remarks              string  `json:"remarks"`
+	CashAmount           float64 `json:"cash_amount"`
+	CheckAmount          float64 `json:"check_amount"`
+	CheckBank            string  `json:"check_bank"`
+	CheckAccountNo       string  `json:"check_account_no"`
+	RefCheckNo           string  `json:"ref_check_no"`
+	CheckDate            string  `json:"check_date"`
+	TransferAmount       float64 `json:"transfer_amount"`
+	TransferType         string  `json:"transfer_type"`
+	TransferBank         string  `json:"transfer_bank"`
+	TransferAccountNo    string  `json:"transfer_account_no"`
+	RefDocNo             string  `json:"ref_doc_no"`
+	RefDocDate           string  `json:"ref_doc_date"`
+	PreparedBy           string  `json:"prepared_by"`
+	IsOverpaymentApplied *bool   `json:"is_overpayment_applied"`
 }
 
 type PaymentVoucher struct {
