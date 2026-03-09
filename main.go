@@ -196,6 +196,7 @@ func SetupApp() *fiber.App {
 					itemApi.Post("", setup_handlers.CreateItem)
 					itemApi.Put("", setup_handlers.UpdateItem)
 					itemApi.Delete("", setup_handlers.DeleteItem)
+					itemApi.Post("/migrate", setup_handlers.CreateItemByMigration)
 				}
 
 				//Pick Activity
