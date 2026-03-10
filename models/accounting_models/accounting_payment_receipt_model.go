@@ -6,6 +6,7 @@ type PaymentReceiptContent struct {
 	Customer          string  `json:"customer"`
 	CustomerCode      string  `json:"customer_code"`
 	CustomerId        uint    `json:"customer_id"`
+	CustomerAddress   string  `json:"customer_address"`
 	ReferenceCrNo     string  `json:"reference_cr_no"`
 	DateCollect       string  `json:"date_collect"`
 	ReferenceOrNo     string  `json:"reference_or_no"`
@@ -21,6 +22,12 @@ type PaymentReceiptContent struct {
 	CheckType         string  `json:"check_type"`
 	CheckDate         string  `json:"check_date"`
 	CheckAmount       float64 `json:"check_amount"`
+	TransferAmount    float64 `json:"transfer_amount"`
+	TransferType      string  `json:"transfer_type"`
+	TransferBank      string  `json:"transfer_bank"`
+	TransferAccountNo string  `json:"transfer_account_no"`
+	RefDocNo          string  `json:"ref_doc_no"`
+	RefDocDate        string  `json:"ref_doc_date"`
 	PreparedBy        string  `json:"prepared_by"`
 }
 

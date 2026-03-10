@@ -9,6 +9,7 @@ type SalesInvoiceContent2 struct {
 	PaymentTerm     string  `json:"payment_term"`
 	CustomerAddress string  `json:"customer_address"`
 	TaxCode         string  `json:"tax_code"`
+	Tin             string  `json:"tin"`
 	Journal         string  `json:"journal"`
 	BaseRate        float64 `json:"base_rate"`
 	Currency        string  `json:"currency"`
