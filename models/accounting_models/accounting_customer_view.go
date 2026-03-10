@@ -7,6 +7,7 @@ type CustomerView struct {
 	PaymentTerm       string  `json:"payment_term"`
 	TaxCode           string  `json:"tax_code"`
 	Tax               string  `json:"tax"`
+	Tin               string  `json:"tin"`
 	CustomerAddress   string  `json:"customer_address"`
 	OverpaymentAmount float64 `json:"overpayment_amount"`
 }
