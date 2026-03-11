@@ -13,6 +13,8 @@ func DeliveryReceiptRoutes(app *fiber.App) {
 	deliveryReceiptService := dispatching_services.NewDeliveryReceiptService(calendarService)
 	deliveryReceiptHandler := dispatching_handlers.NewDeliveryReceiptHandler(deliveryReceiptService)
 	api.Get("/", deliveryReceiptHandler.GetDeliveryReceiptsHandler)
+	api.Get("/so-with-approved-ir/", deliveryReceiptHandler.GetSOWithApprovedIRHandler)
+	api.Get("/so-with-approved-ir-details/:item_release_id", deliveryReceiptHandler.GetSOWithApprovedIRDetailsHandler)
 	api.Get("/:id", deliveryReceiptHandler.GetDeliveryReceiptHandler)
 	api.Post("/", deliveryReceiptHandler.CreateDeliveryReceiptHandler)
 	api.Put("/:id", deliveryReceiptHandler.UpdateDeliveryReceiptHandler)

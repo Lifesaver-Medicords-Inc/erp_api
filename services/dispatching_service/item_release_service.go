@@ -21,6 +21,12 @@ func NewItemReleaseService() *ItemReleaseService {
 func (s *ItemReleaseService) GetItemReleasesService(conditions map[string]interface{}) ([]models.ItemRelease, int, error) {
 	var releases = []models.ItemRelease{}
 
+	tx := initializers.DB.Begin()
+
+	if tx.Error != nil {
+		return releases, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+	}
+
 	if err := services.DbGetRel(&releases, conditions, "ItemReleaseDetails"); err != nil {
 		return releases, fiber.StatusInternalServerError, err
 	}
@@ -80,6 +86,8 @@ func (s *ItemReleaseService) CreateItemReleaseService(release *models.ItemReleas
 		return release, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
+	InvalidateIRCaches()
+
 	return release, fiber.StatusCreated, nil
 }
 
@@ -111,6 +119,8 @@ func (s *ItemReleaseService) UpdateItemReleaseService(release *models.ItemReleas
 		tx.Rollback()
 		return release, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
+
+	InvalidateIRCaches()
 
 	// Return updated record
 	return release, fiber.StatusOK, nil
@@ -144,20 +154,16 @@ func (s *ItemReleaseService) DeleteItemReleaseService(conditions map[string]inte
 		return release, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
+	InvalidateIRCaches()
+
 	return release, fiber.StatusOK, nil
 }
 
 func (s *ItemReleaseService) GetSalesOrderDetails(conditions map[string]interface{}) ([]models.SalesOrderItemReleaseView, int, error) {
 	var releases []models.SalesOrderItemReleaseView
 
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return releases, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
-	}
-
-	query := tx.Where(conditions).Find(&releases)
-	if query.Error != nil {
-		return nil, fiber.StatusInternalServerError, tx.Error
+	if err := services.DbGet(&releases, conditions); err != nil {
+		return releases, fiber.StatusInternalServerError, errors.New("failed getting so with approved ir")
 	}
 
 	return releases, fiber.StatusOK, nil
@@ -176,4 +182,13 @@ func (s *ItemReleaseService) GetItemStockAndLocation(itemId uint) ([]inventory_m
 	}
 
 	return response, fiber.StatusOK, nil
+}
+
+func InvalidateIRCaches() {
+	cacheKeys := []interface{}{
+		models.SalesOrderItemReleaseView{},
+	}
+	for _, key := range cacheKeys {
+		services.InvalidateCache(services.GetKey(key, nil))
+	}
 }

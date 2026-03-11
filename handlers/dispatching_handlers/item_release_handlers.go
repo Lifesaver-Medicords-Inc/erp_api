@@ -140,22 +140,8 @@ func (h *ItemReleaseHandler) DeleteItemReleaseHandler(c *fiber.Ctx) error {
 }
 
 func (h *ItemReleaseHandler) GetSalesOrderItemReleaseDetailsHandler(c *fiber.Ctx) error {
-	id := c.Params("id")
-	status := c.Query("status")
-	salesOrderId := c.Query("salesOrderId")
 
-	conditions := make(map[string]interface{})
-	if idNum, _ := strconv.Atoi(id); idNum != 0 {
-		conditions["id"] = idNum
-	}
-	if status != "" {
-		conditions["status"] = status
-	}
-	if soID, _ := strconv.Atoi(salesOrderId); soID != 0 {
-		conditions["sales_order_id"] = soID
-	}
-
-	data, code, err := h.Service.GetSalesOrderDetails(conditions)
+	data, code, err := h.Service.GetSalesOrderDetails(nil)
 	if err != nil {
 		return utils.RespondError(c, code, err.Error())
 	}

@@ -4,6 +4,7 @@ type ItemReleaseContent struct {
 	RequestDate    string `json:"request_date"`
 	RequiredDate   string `json:"required_date"`
 	ReleasedDate   string `json:"released_date"`
+	SalesOrderId   uint   `json:"sales_order_id"`
 	ReferenceDocNo string `gorm:"size:50" json:"reference_doc_no"`
 	RequestedBy    string `json:"requested_by"`
 	ReceivedBy     string `json:"received_by"`

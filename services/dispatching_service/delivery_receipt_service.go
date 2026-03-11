@@ -2,13 +2,15 @@ package dispatching_services
 
 import (
 	"errors"
+	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
+	dispatching_models "github.com/pierceperado/smpc/models/dispatching_model"
 	"github.com/pierceperado/smpc/services"
+	"github.com/pierceperado/smpc/utils"
 	"gorm.io/gorm"
 )
 
@@ -22,31 +24,25 @@ func NewDeliveryReceiptService(calendarScheduleService *CalendarScheduleService)
 	}
 }
 
-func (s *DeliveryReceiptService) GetDeliveryReceiptsService(filters map[string]interface{}) ([]models.DeliveryReceiptModel, int, error) {
+// Get all delivery receipts with optional conditions
+func (s *DeliveryReceiptService) GetDeliveryReceiptsService(conditions map[string]interface{}) ([]dispatching_models.DeliveryReceipt, int, error) {
+	var receipts = []dispatching_models.DeliveryReceipt{}
 
-	var receipts = []models.DeliveryReceiptModel{}
-	tx := initializers.DB.Begin()
+	// Temporarily invalidate cache to force fresh DB fetch
+	// key := services.GetKey(&receipts, conditions)
+	// services.InvalidateCache(key)
 
-	if tx.Error != nil {
-		return receipts, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+	if err := services.DbGetRel(&receipts, conditions, "DeliveryReceiptItems", "DeliveryReceiptCosts", "DeliveryReceiptCosts.ReceiptFiles"); err != nil {
+		return receipts, fiber.StatusInternalServerError, err
 	}
 
-	query := tx.Preload("Order").Preload("ItemReleases").Preload("TripCost")
-
-	for key, val := range filters {
-		query = query.Where(key+" = ?", val)
-	}
-
-	// ✅ Pass pointer to slice
-	if err := query.Find(&receipts).Error; err != nil {
-		return nil, fiber.StatusInternalServerError, err
-	}
 	return receipts, fiber.StatusOK, nil
 }
 
-func (s *DeliveryReceiptService) GetDeliveryReceiptService(filters map[string]interface{}) (*models.DeliveryReceiptModel, int, error) {
+// Get a single delivery receipt
+func (s *DeliveryReceiptService) GetDeliveryReceiptService(conditions map[string]interface{}) (*dispatching_models.DeliveryReceipt, int, error) {
+	var receipt = &dispatching_models.DeliveryReceipt{}
 
-	var receipt = &models.DeliveryReceiptModel{}
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
@@ -55,7 +51,7 @@ func (s *DeliveryReceiptService) GetDeliveryReceiptService(filters map[string]in
 
 	query := tx.Preload("Order").Preload("ItemReleases").Preload("TripCost")
 
-	for key, val := range filters {
+	for key, val := range conditions {
 		query = query.Where(key+" = ?", val)
 	}
 
@@ -70,15 +66,24 @@ func (s *DeliveryReceiptService) GetDeliveryReceiptService(filters map[string]in
 	return receipt, fiber.StatusOK, nil
 }
 
-func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *models.DeliveryReceiptModel, at models.At) (*models.DeliveryReceiptModel, int, error) {
+// Create a new delivery receipt
+func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *dispatching_models.DeliveryReceipt, at models.At) (*dispatching_models.DeliveryReceipt, int, error) {
 
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return data, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	// 1️⃣ Insert DeliveryReceipt
-	if err := services.DbInsert(tx, &data); err != nil {
+	nextDocNo, err := utils.NextDocNo(tx, new(dispatching_models.DeliveryReceipt), "doc_no")
+	if err != nil {
+		tx.Rollback()
+		return data, fiber.StatusInternalServerError, errors.New("failed getting next doc number")
+	}
+
+	data.DocNo = nextDocNo
+	data.ID = 0 // safety: never trust client-provided ID
+
+	if err := services.DbInsert(tx, data); err != nil { // only once
 		tx.Rollback()
 		if strings.Contains(err.Error(), "duplicate key") {
 			return data, fiber.StatusInternalServerError, errors.New("duplicate record error")
@@ -86,39 +91,17 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *models.Deliv
 		return data, fiber.StatusInternalServerError, errors.New("failed creating delivery receipt")
 	}
 
-	// 2️⃣ Insert TripCost if exists
-	if data.TripCost != nil {
-		data.TripCost.DeliveryReceiptID = data.ID // assign the generated receipt ID
-		if err := services.DbInsert(tx, data.TripCost); err != nil {
-			tx.Rollback()
-			return data, fiber.StatusInternalServerError, errors.New("failed creating trip cost")
-		}
-	}
-
-	// // 3️⃣ Insert ItemReleases if any
-	// for i := range data.ItemReleases {
-	// 	data.ItemReleases[i].DeliveryReceiptID = data.ID // assign generated receipt ID
-	// 	if err := services.DbInsert(tx, &data.ItemReleases[i]); err != nil {
-	// 		tx.Rollback()
-	// 		return data, fiber.StatusInternalServerError, fmt.Errorf("failed creating item release: %v", err)
-	// 	}
-	// }
-
-	// 4️⃣ Insert DeliveryReceiptAt (tracking table)
 	atdata := models.CalendarScheduleAt{RefId: data.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
 		return data, fiber.StatusInternalServerError, errors.New("failed creating receiptat")
 	}
 
-	// 5️⃣ Create logistics calendar schedule
 	schedule := models.CalendarScheduleModel{
-		ReferenceDocId: &data.OrderID,
+		ReferenceDocId: &data.SalesOrderID,
 		CalendarScheduleContent: models.CalendarScheduleContent{
 			DepartmentType: "Logistics",
 			Description:    "",
-			StartDate:      data.DeliveryDate.Format(time.RFC3339),
-			EndDate:        data.DeliveryDate.Add(2 * time.Hour).Format(time.RFC3339),
 		},
 	}
 
@@ -127,33 +110,72 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *models.Deliv
 		return data, fiber.StatusInternalServerError, errors.New("failed creating calendar schedule")
 	}
 
-	// 6️⃣ Commit transaction
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return data, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
+	InvalidateDRCaches()
+
 	return data, fiber.StatusCreated, nil
 }
 
-func (s *DeliveryReceiptService) UpdateDeliveryReceiptService(update *models.DeliveryReceiptModel, conditions map[string]interface{}, at models.At) (*models.DeliveryReceiptModel, int, error) {
-	var receipt = &models.DeliveryReceiptModel{}
+// Update an existing delivery receipt
+func (s *DeliveryReceiptService) UpdateDeliveryReceiptService(update *dispatching_models.DeliveryReceipt, conditions map[string]interface{}, at models.At) (*dispatching_models.DeliveryReceipt, int, error) {
+	var receipt = &dispatching_models.DeliveryReceipt{}
 
 	tx := initializers.DB.Begin()
-
 	if tx.Error != nil {
 		return receipt, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	if err := tx.First(&receipt, conditions).Error; err != nil {
+	if err := tx.First(receipt, conditions).Error; err != nil {
+		tx.Rollback()
 		return nil, fiber.StatusNotFound, err
 	}
 
-	if err := services.DbUpdate(tx, &receipt, conditions); err != nil {
+	if err := services.DbUpdate(tx, update, conditions); err != nil {
+		tx.Rollback()
 		return receipt, fiber.StatusInternalServerError, errors.New("failed updating receipt")
 	}
 
-	atdata := models.DeliveryReceiptAt{RefId: receipt.ID, At: at}
+	// ✅ Delete then re-insert items
+	if err := tx.Where("delivery_receipt_id = ?", receipt.ID).
+		Delete(&dispatching_models.DeliveryReceiptItems{}).Error; err != nil {
+		tx.Rollback()
+		return receipt, fiber.StatusInternalServerError, errors.New("failed deleting old items")
+	}
+	if len(update.DeliveryReceiptItems) > 0 {
+		for i := range update.DeliveryReceiptItems {
+			update.DeliveryReceiptItems[i].DeliveryReceiptID = receipt.ID
+		}
+		if err := tx.Create(&update.DeliveryReceiptItems).Error; err != nil {
+			tx.Rollback()
+			return receipt, fiber.StatusInternalServerError, errors.New("failed reinserting items")
+		}
+	}
+
+	// ✅ Delete then re-insert costs
+	if err := tx.Where("delivery_receipt_id = ?", receipt.ID).
+		Delete(&dispatching_models.DeliveryReceiptCosts{}).Error; err != nil {
+		tx.Rollback()
+		return receipt, fiber.StatusInternalServerError, errors.New("failed deleting old costs")
+	}
+	if len(update.DeliveryReceiptCosts) > 0 {
+		for i := range update.DeliveryReceiptCosts {
+			update.DeliveryReceiptCosts[i].DeliveryReceiptID = receipt.ID
+		}
+		if err := tx.Create(&update.DeliveryReceiptCosts).Error; err != nil {
+			tx.Rollback()
+			return receipt, fiber.StatusInternalServerError, errors.New("failed reinserting costs")
+		}
+	}
+
+	atdata := dispatching_models.DeliveryReceiptAt{
+		RefId: receipt.ID,
+		DocNo: strconv.Itoa(receipt.DocNo),
+		At:    at,
+	}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
@@ -164,14 +186,17 @@ func (s *DeliveryReceiptService) UpdateDeliveryReceiptService(update *models.Del
 		tx.Rollback()
 		return receipt, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
-	return receipt, fiber.StatusOK, nil
+
+	InvalidateDRCaches()
+	return update, fiber.StatusOK, nil
 }
 
-func (s *DeliveryReceiptService) DeleteDeliveryReceiptService(conditions map[string]interface{}, at models.At) (*models.DeliveryReceiptModel, int, error) {
+// Delete a delivery receipt
+func (s *DeliveryReceiptService) DeleteDeliveryReceiptService(conditions map[string]interface{}, at models.At) (*dispatching_models.DeliveryReceipt, int, error) {
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
-		return &models.DeliveryReceiptModel{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+		return &dispatching_models.DeliveryReceipt{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 	release, status, err := s.GetDeliveryReceiptService(conditions)
 	if err != nil {
@@ -182,7 +207,7 @@ func (s *DeliveryReceiptService) DeleteDeliveryReceiptService(conditions map[str
 		return release, fiber.StatusInternalServerError, errors.New("failed deleting delivery receipt")
 	}
 
-	atdata := models.DeliveryReceiptAt{RefId: release.ID, At: at}
+	atdata := dispatching_models.DeliveryReceiptAt{RefId: release.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
 		return release, fiber.StatusInternalServerError, errors.New("failed creating receipt audit")
@@ -193,5 +218,40 @@ func (s *DeliveryReceiptService) DeleteDeliveryReceiptService(conditions map[str
 		return release, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
+	InvalidateDRCaches()
+
 	return release, fiber.StatusOK, nil
+}
+
+// Load SO with approved IR
+func (s *DeliveryReceiptService) GetSOWithApprovedIRService(conditions map[string]interface{}) ([]dispatching_models.SalesOrderWithApprovedIRView, int, error) {
+	var salesOrder []dispatching_models.SalesOrderWithApprovedIRView
+
+	if err := services.DbGet(&salesOrder, conditions); err != nil {
+		return salesOrder, fiber.StatusInternalServerError, errors.New("failed getting so with approved ir")
+	}
+
+	return salesOrder, fiber.StatusOK, nil
+}
+
+func (s *DeliveryReceiptService) GetSOWithApprovedIRDetailsService(itemReleaseID int64) (interface{}, int, error) {
+	var response []dispatching_models.IRDetailsApprovedSOView
+
+	conditions := map[string]interface{}{
+		"ItemReleaseId": itemReleaseID,
+	}
+
+	if err := services.DbRaw(&response, "sp_GetItemReleaseDetails", conditions); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed getting item release details data")
+	}
+
+	return response, fiber.StatusOK, nil
+}
+func InvalidateDRCaches() {
+	cacheKeys := []interface{}{
+		dispatching_models.SalesOrderWithApprovedIRView{},
+	}
+	for _, key := range cacheKeys {
+		services.InvalidateCache(services.GetKey(key, nil))
+	}
 }
