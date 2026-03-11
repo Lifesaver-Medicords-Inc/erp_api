@@ -35,7 +35,7 @@ func init() {
 	initializers.InitWmJobOrder()
 	initializers.InitWmQuotation()
 	initializers.InitLogger()
-
+	//migrations.RunSQLMigrations()
 }
 
 func main() {
