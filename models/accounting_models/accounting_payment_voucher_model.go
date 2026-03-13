@@ -10,7 +10,7 @@ type PaymentVoucherContent struct {
 	Currency          string  `json:"currency"`
 	TransactionAmount float64 `json:"transaction_amount"`
 	UnappliedAmount   float64 `json:"unapplied_amount"`
-	DocNo             string  `json:"doc_no"`
+	DocNo             int     `json:"doc_no"`
 	DocDate           string  `json:"doc_date"`
 	Remarks           string  `json:"remarks"`
 	CashAmount        float64 `json:"cash_amount"`
@@ -51,7 +51,7 @@ func (PaymentVoucherAt) TableName() string {
 type PaymentVoucherDetailsContent struct {
 	PaymentVoucherID   uint    `json:"payment_voucher_id"`
 	ApVoucherDetailsId uint    `json:"ap_voucher_details_id"`
-	DocNo              string  `json:"doc_no"`
+	DocNo              int     `json:"doc_no"`
 	DueDate            string  `json:"due_date"`
 	TransAmount        float64 `json:"trans_amount"`
 	AmountApplied      float64 `json:"amount_applied"`

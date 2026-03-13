@@ -106,18 +106,19 @@ func (s *InvoiceReceiptService) CreateInvoiceReceipt(body *accounting_models.Inv
 	}
 	defer tx.Rollback() // rollback unless committed
 
+	nextDocNo, err := utils.NextDocNo(tx, new(accounting_models.InvoiceReceipt), "doc_no")
+	if err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed getting next doc number")
+	}
+
+	body.InvoiceReceipt.DocNo = nextDocNo
+
 	// Insert main Invoice Receipt
 	if err := services.DbInsert(tx, &body.InvoiceReceipt); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			return body, fiber.StatusConflict, errors.New("duplicate record error")
 		}
 		return body, fiber.StatusInternalServerError, errors.New("failed creating invoice receipt")
-	}
-
-	// Generate and update DocNo
-	body.InvoiceReceipt.DocNo = utils.DocNoGenerator(body.InvoiceReceipt.ID)
-	if err := tx.Model(&body.InvoiceReceipt).Update("doc_no", body.InvoiceReceipt.DocNo).Error; err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed updating invoice receipt doc")
 	}
 
 	// Insert Invoice Receipt Details

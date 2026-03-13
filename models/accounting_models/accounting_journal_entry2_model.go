@@ -5,7 +5,7 @@ import "github.com/pierceperado/smpc/models"
 type JournalEntry2Content struct {
 	JournalName        string `json:"journal_name"`
 	JournalDescription string `json:"journal_description"`
-	DocNo              string `json:"doc_no"`
+	DocNo              int    `json:"doc_no"`
 	Period             string `json:"period"`
 	PeriodFrom         string `json:"period_from"`
 	PeriodTo           string `json:"period_to"`

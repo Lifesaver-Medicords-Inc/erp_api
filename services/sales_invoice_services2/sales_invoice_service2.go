@@ -132,18 +132,19 @@ func (s *SalesInvoiceService) CreateSalesInvoice(body *accounting_models.SalesIn
 	}
 	defer tx.Rollback() // rollback unless committed
 
+	nextDocNo, err := utils.NextDocNo(tx, new(accounting_models.SalesInvoice2), "doc_no")
+	if err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed getting next doc number")
+	}
+
+	body.SalesInvoice2.DocNo = nextDocNo
+
 	// Insert main Sales Invoice
 	if err := services.DbInsert(tx, &body.SalesInvoice2); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			return body, fiber.StatusConflict, errors.New("duplicate record error")
 		}
 		return body, fiber.StatusInternalServerError, errors.New("failed creating sales invoice")
-	}
-
-	// Generate and update DocNo
-	body.SalesInvoice2.DocNo = utils.DocNoGenerator(body.SalesInvoice2.ID)
-	if err := tx.Model(&body.SalesInvoice2).Update("doc_no", body.SalesInvoice2.DocNo).Error; err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed updating sales invoice doc")
 	}
 
 	// Insert Sales Invoice Details

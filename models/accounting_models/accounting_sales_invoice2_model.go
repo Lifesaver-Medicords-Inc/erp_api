@@ -14,7 +14,7 @@ type SalesInvoiceContent2 struct {
 	BaseRate        float64 `json:"base_rate"`
 	Currency        string  `json:"currency"`
 	ExchangeRate    float64 `json:"exchange_rate"`
-	DocNo           string  `json:"doc_no"`
+	DocNo           int     `json:"doc_no"`
 	DocDate         string  `json:"doc_date"`
 	PostingDate     string  `json:"posting_date"`
 	ReferenceDocDr  string  `json:"reference_doc_dr"`

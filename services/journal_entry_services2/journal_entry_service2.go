@@ -89,18 +89,19 @@ func (s *JournalEntryService2) CreateJournalEntry(body *accounting_models.Journa
 	// Rollback once, automatically, unless committed
 	defer tx.Rollback()
 
+	nextDocNo, err := utils.NextDocNo(tx, new(accounting_models.JournalEntry2), "doc_no")
+	if err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed getting next doc number")
+	}
+
+	body.JournalEntry.DocNo = nextDocNo
+
 	// Insert main Journal Entry
 	if err := services.DbInsert(tx, &body.JournalEntry); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			return body, fiber.StatusConflict, errors.New("duplicate record error")
 		}
 		return body, fiber.StatusInternalServerError, errors.New("failed creating journal entry")
-	}
-
-	body.JournalEntry.DocNo = utils.DocNoGenerator(body.JournalEntry.ID)
-	if err := tx.Model(&body.JournalEntry).
-		Update("doc_no", body.JournalEntry.DocNo).Error; err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed updating journal entry doc")
 	}
 
 	// Insert Journal Entry Details

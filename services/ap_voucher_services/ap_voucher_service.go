@@ -53,18 +53,19 @@ func (s *ApVoucherService) CreateApVoucher(body *accounting_models.ApVoucherBody
 	}
 	defer tx.Rollback() // rollback unless committed
 
+	nextDocNo, err := utils.NextDocNo(tx, new(accounting_models.ApVoucher), "doc_no")
+	if err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed getting next doc number")
+	}
+
+	body.ApVoucher.DocNo = nextDocNo
+
 	// Insert main Ap Voucher
 	if err := services.DbInsert(tx, &body.ApVoucher); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			return body, fiber.StatusConflict, errors.New("duplicate record error")
 		}
 		return body, fiber.StatusInternalServerError, errors.New("failed creating ap voucher")
-	}
-
-	// Generate and update DocNo
-	body.ApVoucher.DocNo = utils.DocNoGenerator(body.ApVoucher.ID)
-	if err := tx.Model(&body.ApVoucher).Update("doc_no", body.ApVoucher.DocNo).Error; err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed updating ap voucher doc")
 	}
 
 	// Insert Ap Voucher Details

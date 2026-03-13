@@ -62,18 +62,19 @@ func (s *PaymentReceiptService) CreatePaymentReceipt(body *accounting_models.Pay
 	}
 	defer tx.Rollback() // rollback unless committed
 
+	nextDocNo, err := utils.NextDocNo(tx, new(accounting_models.PaymentReceipt), "doc_no")
+	if err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed getting next doc number")
+	}
+
+	body.PaymentReceipt.DocNo = nextDocNo
+
 	// Insert main Payment Receipt
 	if err := services.DbInsert(tx, &body.PaymentReceipt); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			return body, fiber.StatusConflict, errors.New("duplicate record error")
 		}
 		return body, fiber.StatusInternalServerError, errors.New("failed creating payment receipt")
-	}
-
-	// Generate and update DocNo
-	body.PaymentReceipt.DocNo = utils.DocNoGenerator(body.PaymentReceipt.ID)
-	if err := tx.Model(&body.PaymentReceipt).Update("doc_no", body.PaymentReceipt.DocNo).Error; err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed updating payment receipt doc")
 	}
 
 	// Insert Payment Receipt Details
