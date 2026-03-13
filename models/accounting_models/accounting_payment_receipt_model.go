@@ -14,7 +14,7 @@ type PaymentReceiptContent struct {
 	TransactionAmount float64 `json:"transaction_amount"`
 	Currency          string  `json:"currency"`
 	UnappliedAmount   float64 `json:"unapplied_amount"`
-	DocNo             string  `json:"doc_no"`
+	DocNo             int     `json:"doc_no"`
 	DocDate           string  `json:"doc_date"`
 	BankCode          string  `json:"bank_code"`
 	BankBranch        string  `json:"bank_branch"`
@@ -56,7 +56,7 @@ type PaymentReceiptDetailsContent struct {
 	SalesOrderDetailsId   uint    `json:"sales_order_details_id"`
 	SalesInvoiceDetailsId uint    `json:"sales_invoice_details_id"`
 	SalesInvoiceId        uint    `json:"sales_invoice_id"`
-	DocNo                 string  `json:"doc_no"`
+	DocNo                 int     `json:"doc_no"`
 	DocDate               string  `json:"doc_date"`
 	DueDate               string  `json:"due_date"`
 	OpenAmount            float64 `json:"open_amount"`

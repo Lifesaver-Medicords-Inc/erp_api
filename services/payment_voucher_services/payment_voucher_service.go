@@ -88,18 +88,19 @@ func (s *PaymentVoucherService) CreatePaymentVoucher(body *accounting_models.Pay
 	}
 	defer tx.Rollback() // rollback unless committed
 
+	nextDocNo, err := utils.NextDocNo(tx, new(accounting_models.PaymentVoucher), "doc_no")
+	if err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed getting next doc number")
+	}
+
+	body.PaymentVoucher.DocNo = nextDocNo
+
 	// Insert main Payment Voucher
 	if err := services.DbInsert(tx, &body.PaymentVoucher); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			return body, fiber.StatusConflict, errors.New("duplicate record error")
 		}
 		return body, fiber.StatusInternalServerError, errors.New("failed creating payment voucher")
-	}
-
-	// Generate and update DocNo
-	body.PaymentVoucher.DocNo = utils.DocNoGenerator(body.PaymentVoucher.ID)
-	if err := tx.Model(&body.PaymentVoucher).Update("doc_no", body.PaymentVoucher.DocNo).Error; err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed updating payment voucher doc")
 	}
 
 	// Insert Payment Voucher Details

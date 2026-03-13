@@ -45,18 +45,19 @@ func (s *BulkInvoiceReceiptService) CreateBulkInvoiceReceipt(body *accounting_mo
 	}
 	defer tx.Rollback() // rollback unless committed
 
+	nextDocNo, err := utils.NextDocNo(tx, new(accounting_models.BulkInvoiceReceipt), "doc_no")
+	if err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed getting next doc number")
+	}
+
+	body.BulkInvoiceReceipt.DocNo = nextDocNo
+
 	// Insert main Bulk Invoice Receipt
 	if err := services.DbInsert(tx, &body.BulkInvoiceReceipt); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			return body, fiber.StatusConflict, errors.New("duplicate record error")
 		}
 		return body, fiber.StatusInternalServerError, errors.New("failed creating bulk invoice receipt")
-	}
-
-	// Generate and update DocNo
-	body.BulkInvoiceReceipt.DocNo = utils.DocNoGenerator(body.BulkInvoiceReceipt.ID)
-	if err := tx.Model(&body.BulkInvoiceReceipt).Update("doc_no", body.BulkInvoiceReceipt.DocNo).Error; err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed updating bulk invoice receipt doc")
 	}
 
 	// Insert Bulk Invoice Receipt Details

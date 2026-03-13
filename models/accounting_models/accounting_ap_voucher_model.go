@@ -9,7 +9,7 @@ type ApVoucherContent struct {
 	SupplierCode      string  `json:"supplier_code"`
 	SupplierId        uint    `json:"supplier_id"`
 	Currency          string  `json:"currency"`
-	DocNo             string  `json:"doc_no"`
+	DocNo             int     `json:"doc_no"`
 	DocDate           string  `json:"doc_date"`
 	TransactionAmount float64 `json:"transaction_amount"`
 	PreparedBy        string  `json:"prepared_by"`
@@ -38,7 +38,7 @@ func (ApVoucherAt) TableName() string {
 type ApVoucherDetailsContent struct {
 	ApVoucherId      uint    `json:"ap_voucher_id"`
 	InvoiceReceiptId uint    `json:"invoice_receipt_id"`
-	ReceiptNo        string  `json:"receipt_no"`
+	ReceiptNo        int     `json:"receipt_no"`
 	IrDocDate        string  `json:"ir_doc_date"`
 	IrDueDate        string  `json:"ir_due_date"`
 	TwasAmount       float64 `json:"twas_amount"`

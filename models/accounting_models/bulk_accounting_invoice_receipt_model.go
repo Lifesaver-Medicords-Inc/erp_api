@@ -13,7 +13,7 @@ type BulkInvoiceReceiptContent struct {
 	TaxCode         string  `json:"tax_code"`
 	TaxCodeId       uint    `json:"tax_code_id"`
 	InvoiceDue      string  `json:"invoice_due"`
-	DocNo           string  `json:"doc_no"`
+	DocNo           int     `json:"doc_no"`
 	DocDate         string  `json:"doc_date"`
 	InvoiceType     string  `json:"invoice_type"`
 	OtherCharges    float64 `json:"other_charges"`
