@@ -48,6 +48,10 @@ type ItemSpecs struct {
 	Template           string       `json:"template"`
 	Fields             []SpecsField `json:"fields"`
 	ManufacturerOrigin string       `json:"manufacturer_origin"`
+	Fla1               string       `json:"fla_1"`
+	Fla2               string       `json:"fla_2"`
+	Volt1              string       `json:"volt_1"`
+	Volt2              string       `json:"volt_2"`
 }
 
 type SpecsField struct {

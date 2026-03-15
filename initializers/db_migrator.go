@@ -1,7 +1,5 @@
 package initializers
 
-import dispatching_models "github.com/pierceperado/smpc/models/dispatching_model"
-
 // models "github.com/pierceperado/smpc/models"
 // "github.com/pierceperado/smpc/models/accounting_models"
 // dispatching_models "github.com/pierceperado/smpc/models/dispatching_model"
@@ -29,7 +27,7 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.WiringUserInput{}, &models.WiringUserInputAt{})
 	// DB.AutoMigrate(&models.BoqNotes{}, &models.BoqNotesAt{})
 	// DB.AutoMigrate(&models.Item{}, &models.ItemAt{})
-	// DB.AutoMigrate(&models.ItemSpecs{}, &models.ItemSpecsAt{})
+	//DB.AutoMigrate(&models.ItemSpecs{}, &models.ItemSpecsAt{})
 	// DB.AutoMigrate(&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{})
 	// DB.AutoMigrate(&models.ItemImage{}, &models.ItemImageAt{})
 	// DB.AutoMigrate(&models.TradeType{}, models.TradeTypeAt{})
@@ -222,12 +220,12 @@ func MigrateDb() {
 	// 	&models.ItemReleaseDetails{}, &models.ItemReleaseDetailsAt{},
 	// )
 
-	DB.AutoMigrate(
-		&dispatching_models.DeliveryReceipt{}, &dispatching_models.DeliveryReceiptAt{},
-		&dispatching_models.DeliveryReceiptItems{}, &dispatching_models.DeliveryReceiptItemsAt{},
-		&dispatching_models.DeliveryReceiptCosts{}, &dispatching_models.DeliveryReceiptCostsAt{},
-		&dispatching_models.ReceiptFile{}, &dispatching_models.ReceiptFileAt{},
-	)
+	// DB.AutoMigrate(
+	// 	&dispatching_models.DeliveryReceipt{}, &dispatching_models.DeliveryReceiptAt{},
+	// 	&dispatching_models.DeliveryReceiptItems{}, &dispatching_models.DeliveryReceiptItemsAt{},
+	// 	&dispatching_models.DeliveryReceiptCosts{}, &dispatching_models.DeliveryReceiptCostsAt{},
+	// 	&dispatching_models.ReceiptFile{}, &dispatching_models.ReceiptFileAt{},
+	// )
 
 	// DB.AutoMigrate(
 	// 	&models.CalendarScheduleModel{}, &models.CalendarScheduleAt{},

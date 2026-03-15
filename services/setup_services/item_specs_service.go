@@ -42,6 +42,10 @@ func CreateItemSpec(tx *gorm.DB, basedId uint, itemSpecs ItemSpecs, at models.At
 			Title:              field.Title,
 			Value:              field.Value,
 			ManufacturerOrigin: itemSpecs.ManufacturerOrigin,
+			Fla_1:              itemSpecs.Fla1,
+			Fla_2:              itemSpecs.Fla2,
+			Volt_1:             itemSpecs.Volt1,
+			Volt_2:             itemSpecs.Volt2,
 		}
 
 		itemspecs := models.ItemSpecs{ItemSpecsContent: content}
@@ -75,6 +79,10 @@ func UpdateItemSpec(tx *gorm.DB, basedId uint, itemSpecs ItemSpecs, at models.At
 			Title:              field.Title,
 			Value:              field.Value,
 			ManufacturerOrigin: itemSpecs.ManufacturerOrigin,
+			Fla_1:              itemSpecs.Fla1,
+			Fla_2:              itemSpecs.Fla2,
+			Volt_1:             itemSpecs.Volt1,
+			Volt_2:             itemSpecs.Volt2,
 		}
 
 		itemspecs := models.ItemSpecs{ItemSpecsContent: content}

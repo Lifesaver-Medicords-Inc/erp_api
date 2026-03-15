@@ -5,6 +5,10 @@ type ItemSpecsContent struct {
 	Template           string `json:"template"`
 	Title              string `json:"title"`
 	Value              string `json:"value"`
+	Fla_1              string `json:"fla_1"`
+	Fla_2              string `json:"fla_2"`
+	Volt_1             string `json:"volt_1"`
+	Volt_2             string `json:"volt_2"`
 	ManufacturerOrigin string `json:"manufacturer_origin"`
 }
 
