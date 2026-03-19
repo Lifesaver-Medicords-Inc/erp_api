@@ -5,6 +5,7 @@ type SalesOrderItemReleaseView struct {
 	SalesOrderID        uint   `json:"sales_order_id"`
 	RefDocNo            string `json:"ref_doc_no"`
 	ItemID              uint   `json:"item_id"`
+	ItemCode            string `json:"item_code"`
 	ItemDescription     string `json:"item_description"`
 	RequiredQty         uint   `json:"required_qty"`
 	RequiredUomID       uint   `json:"required_uom_id"`

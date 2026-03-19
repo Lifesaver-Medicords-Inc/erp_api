@@ -41,6 +41,7 @@ type ItemReleaseDetailsContent struct {
 	SalesOrderID        uint   `json:"sales_order_id"`
 	SalesOrderDetailsID uint   `json:"sales_order_details_id"`
 	ItemID              uint   `json:"item_id"`
+	ItemCode            string `json:"item_code"`
 	ItemDescription     string `json:"item_description"`
 	RequiredQty         uint   `json:"required_qty"`
 	RequiredUomID       string `json:"required_uom"`
