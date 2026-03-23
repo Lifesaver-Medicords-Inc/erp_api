@@ -1,6 +1,8 @@
 package bulk_invoice_receipt_handlers
 
 import (
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/models/accounting_models"
@@ -17,12 +19,48 @@ func NewBulkInvoiceReceiptHandler(service *bulk_invoice_receipt_services.BulkInv
 }
 
 func (h *BulkInvoiceReceiptHandler) GetBulkInvoiceReceipt(c *fiber.Ctx) error {
-	data, status, err := h.Service.GetBulkInvoiceReceipt(nil)
+	idStr := c.Params("id")
+
+	if idStr == "" {
+		// handle "get all" case
+		data, status, pagination, err := h.Service.GetBulkInvoiceReceipt(nil, 0)
+		if err != nil {
+			return utils.RespondError(c, status, err.Error())
+		}
+		return utils.RespondSuccess(c, data, pagination)
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id <= 0 {
+		return utils.RespondError(c, fiber.StatusBadRequest, "invalid id")
+	}
+
+	data, status, pagination, err := h.Service.GetBulkInvoiceReceipt(nil, id)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data, pagination)
+}
+
+func (h *BulkInvoiceReceiptHandler) GetBulkInvoiceReceiptSearch(c *fiber.Ctx) error {
+
+	search := c.Params("search")
+
+	var id int
+	if idParam := c.Params("id"); idParam != "" {
+		var err error
+		id, err = strconv.Atoi(idParam)
+		if err != nil {
+			return utils.RespondError(c, fiber.StatusBadRequest, "invalid id")
+		}
+	}
+
+	data, status, pagination, err := h.Service.GetBulkInvoiceReceiptSearch(nil, search, id)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
-	return utils.RespondSuccess(c, data)
+	return utils.RespondSuccess(c, data, pagination)
 }
 
 func (h *BulkInvoiceReceiptHandler) CreateBulkInvoiceReceipt(c *fiber.Ctx) error {

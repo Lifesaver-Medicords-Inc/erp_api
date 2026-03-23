@@ -5,6 +5,11 @@ import (
 	"github.com/gofiber/fiber/v2/log"
 )
 
+type PaginationMeta struct {
+	HasNext  bool `json:"has_next"`
+	PageSize int  `json:"page_size"`
+}
+
 func RespondError(c *fiber.Ctx, status int, message string) error {
 
 	log.Error("Exception Message", message)
@@ -15,12 +20,16 @@ func RespondError(c *fiber.Ctx, status int, message string) error {
 	})
 }
 
-func RespondSuccess(c *fiber.Ctx, data interface{}) error {
+func RespondSuccess(c *fiber.Ctx, data interface{}, pagination ...PaginationMeta) error {
 
-	//log.Infof("SUCCESS: %s", data)
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+	response := fiber.Map{
 		"success": true,
 		"data":    data,
-	})
+	}
+
+	if len(pagination) > 0 {
+		response["pagination"] = pagination[0]
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response)
 }

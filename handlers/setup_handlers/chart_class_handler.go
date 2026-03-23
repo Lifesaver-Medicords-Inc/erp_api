@@ -19,12 +19,23 @@ func NewChartClassHandler(service *setup_services.ChartClassService) *ChartClass
 }
 
 func (h *ChartClassHandler) GetChartClasses(c *fiber.Ctx) error {
-	data, status, err := h.Service.GetChartClasses(nil)
+	search := c.Params("search")
+
+	var id int
+	if idParam := c.Params("id"); idParam != "" {
+		var err error
+		id, err = strconv.Atoi(idParam)
+		if err != nil {
+			return utils.RespondError(c, fiber.StatusBadRequest, "invalid id")
+		}
+	}
+
+	data, status, pagination, err := h.Service.GetChartClasses(nil, search, id)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
-	return utils.RespondSuccess(c, data)
+	return utils.RespondSuccess(c, data, pagination)
 }
 
 func (h *ChartClassHandler) GetChartClass(c *fiber.Ctx) error {

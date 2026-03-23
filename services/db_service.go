@@ -13,6 +13,213 @@ import (
 	"gorm.io/gorm"
 )
 
+func DbSearch(model interface{}, conditions map[string]interface{}, term string, columns []string, cursor int) (hasNext bool, retPageSize int, err error) {
+	const pageSize = 2
+
+	ctx := context.Background()
+
+	// --- Base cache conditions (shared between data keys) ---
+	baseConditions := make(map[string]interface{})
+	for k, v := range conditions {
+		baseConditions[k] = v
+	}
+	baseConditions["__search_term"] = term
+	baseConditions["__search_cols"] = columns
+
+	// --- Cache key for the cursor-paginated slice ---
+	pagedConditions := make(map[string]interface{})
+	for k, v := range baseConditions {
+		pagedConditions[k] = v
+	}
+	pagedConditions["__cursor"] = cursor
+	pagedConditions["__pageSize"] = pageSize
+	dataKey := GetKey(model, pagedConditions)
+
+	fmt.Println("Search Cursor Data Key:", dataKey)
+
+	// --- Try to get paginated records from cache ---
+	// We cache pageSize+1 results to determine hasNext, but only populate model with pageSize
+	type cursorCache struct {
+		Records json.RawMessage `json:"records"`
+		HasNext bool            `json:"has_next"`
+	}
+
+	cache, dataErr := initializers.RC.Get(ctx, dataKey).Result()
+	if dataErr == redis.Nil {
+		fmt.Println("Getting search cursor data from DB")
+
+		// Fetch pageSize+1 to determine if there's a next page
+		query := buildSearchQuery(conditions, term, columns)
+		if cursor > 0 {
+			query = query.Where("id < ?", cursor)
+		}
+
+		// Use a slice of the same underlying type to hold pageSize+1
+		slicePtr := makeSlicePtr(model)
+		if err = query.Order("id DESC").Limit(pageSize + 1).Find(slicePtr).Error; err != nil {
+			return false, 0, err
+		}
+
+		hasNext = reflectLen(slicePtr) > pageSize
+
+		// Trim to pageSize before populating model
+		trimSlice(slicePtr, pageSize)
+		copySlice(model, slicePtr)
+
+		// Cache records + hasNext together
+		recordsData, marshalErr := json.Marshal(slicePtr)
+		if marshalErr != nil {
+			return false, 0, errors.New("failed marshaling search cursor records")
+		}
+		payload, marshalErr := json.Marshal(cursorCache{Records: recordsData, HasNext: hasNext})
+		if marshalErr != nil {
+			return false, 0, errors.New("failed marshaling search cursor cache")
+		}
+		if redisErr := initializers.RC.Set(ctx, dataKey, payload, time.Hour).Err(); redisErr != nil {
+			return false, 0, errors.New("failed caching search cursor data")
+		}
+	} else if dataErr != nil {
+		return false, 0, errors.New("failed getting search cursor cache")
+	} else {
+		fmt.Println("Getting search cursor data from Cache")
+		var cached cursorCache
+		if err = json.Unmarshal([]byte(cache), &cached); err != nil {
+			return false, 0, errors.New("failed deserializing search cursor cache")
+		}
+		if err = json.Unmarshal(cached.Records, model); err != nil {
+			return false, 0, errors.New("failed deserializing search cursor records cache")
+		}
+		hasNext = cached.HasNext
+	}
+
+	return hasNext, pageSize, nil
+}
+
+// buildSearchQuery constructs the base *gorm.DB query with conditions and search term,
+// shared between the count and paginated fetch to avoid duplication.
+func buildSearchQuery(conditions map[string]interface{}, term string, columns []string) *gorm.DB {
+	query := initializers.DB
+
+	if len(conditions) > 0 {
+		query = query.Where(conditions)
+	}
+
+	if term != "" && len(columns) > 0 {
+		orClause := ""
+		args := []interface{}{}
+		for i, col := range columns {
+			if i > 0 {
+				orClause += " OR "
+			}
+			orClause += fmt.Sprintf("%s LIKE ?", col)
+			args = append(args, fmt.Sprintf("%%%s%%", term))
+		}
+		query = query.Where(orClause, args...)
+	}
+
+	return query
+}
+
+func DbGetPaginated(model interface{}, conditions map[string]interface{}, cursor int) (hasNext bool, retPageSize int, err error) {
+	const pageSize = 2
+
+	ctx := context.Background()
+
+	// --- Cache key for the cursor-paginated slice ---
+	pagedConditions := make(map[string]interface{})
+	for k, v := range conditions {
+		pagedConditions[k] = v
+	}
+	pagedConditions["__cursor"] = cursor
+	pagedConditions["__pageSize"] = pageSize
+	dataKey := GetKey(model, pagedConditions)
+
+	fmt.Println("Cursor Paginated Data Key:", dataKey)
+
+	type cursorCache struct {
+		Records json.RawMessage `json:"records"`
+		HasNext bool            `json:"has_next"`
+	}
+
+	// --- Try to get paginated records from cache ---
+	cache, dataErr := initializers.RC.Get(ctx, dataKey).Result()
+	if dataErr == redis.Nil {
+		fmt.Println("Getting cursor paginated data from DB")
+
+		query := initializers.DB.Model(model)
+		if len(conditions) > 0 {
+			query = query.Where(conditions)
+		}
+		if cursor > 0 {
+			query = query.Where("id < ?", cursor)
+		}
+
+		// Fetch pageSize+1 to determine if there's a next page
+		slicePtr := makeSlicePtr(model)
+		if err = query.Order("id DESC").Limit(pageSize + 1).Find(slicePtr).Error; err != nil {
+			return false, 0, err
+		}
+
+		hasNext = reflectLen(slicePtr) > pageSize
+
+		// Trim to pageSize before populating model
+		trimSlice(slicePtr, pageSize)
+		copySlice(model, slicePtr)
+
+		// Cache records + hasNext together
+		recordsData, marshalErr := json.Marshal(slicePtr)
+		if marshalErr != nil {
+			return false, 0, errors.New("failed marshaling cursor records")
+		}
+		payload, marshalErr := json.Marshal(cursorCache{Records: recordsData, HasNext: hasNext})
+		if marshalErr != nil {
+			return false, 0, errors.New("failed marshaling cursor cache")
+		}
+		if redisErr := initializers.RC.Set(ctx, dataKey, payload, time.Hour).Err(); redisErr != nil {
+			return false, 0, errors.New("failed caching cursor paginated data")
+		}
+	} else if dataErr != nil {
+		return false, 0, errors.New("failed getting cursor paginated cache")
+	} else {
+		fmt.Println("Getting cursor paginated data from Cache")
+		var cached cursorCache
+		if err = json.Unmarshal([]byte(cache), &cached); err != nil {
+			return false, 0, errors.New("failed deserializing cursor cache")
+		}
+		if err = json.Unmarshal(cached.Records, model); err != nil {
+			return false, 0, errors.New("failed deserializing cursor records cache")
+		}
+		hasNext = cached.HasNext
+	}
+
+	return hasNext, pageSize, nil
+}
+
+// makeSlicePtr creates a new *[]T pointer matching the element type of model (which must be a *[]T).
+func makeSlicePtr(model interface{}) interface{} {
+	t := reflect.TypeOf(model) // *[]T
+	// t is *[]T → Elem() is []T → new gives *[]T
+	return reflect.New(t.Elem()).Interface()
+}
+
+// reflectLen returns the length of the slice pointed to by slicePtr (*[]T).
+func reflectLen(slicePtr interface{}) int {
+	return reflect.ValueOf(slicePtr).Elem().Len()
+}
+
+// trimSlice truncates the slice pointed to by slicePtr (*[]T) to at most n elements.
+func trimSlice(slicePtr interface{}, n int) {
+	v := reflect.ValueOf(slicePtr).Elem()
+	if v.Len() > n {
+		v.Set(v.Slice(0, n))
+	}
+}
+
+// copySlice copies the slice value from src (*[]T) into dst (*[]T).
+func copySlice(dst interface{}, src interface{}) {
+	reflect.ValueOf(dst).Elem().Set(reflect.ValueOf(src).Elem())
+}
+
 func DbRaw(model interface{}, procName string, conditions map[string]interface{}) error {
 	ctx := context.Background()
 	key := GetKey(model, conditions)
@@ -231,6 +438,10 @@ func DbInsert(tx *gorm.DB, model interface{}) error {
 		return err
 	}
 
+	if err := InvalidateCacheByModel(model); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -249,6 +460,11 @@ func DbUpdate(tx *gorm.DB, model interface{}, conditions map[string]interface{})
 	if err := InvalidateCache(key); err != nil {
 		return err
 	}
+
+	if err := InvalidateCacheByModel(model); err != nil {
+		return err
+	}
+
 	fmt.Println("Update KEY:", key)
 
 	return nil
@@ -290,6 +506,11 @@ func DbDelete(tx *gorm.DB, model interface{}, conditions map[string]interface{})
 	if err := InvalidateCache(key); err != nil {
 		return err
 	}
+
+	if err := InvalidateCacheByModel(model); err != nil {
+		return err
+	}
+
 	fmt.Println("DELETE Key", key)
 
 	return nil
@@ -325,6 +546,14 @@ func InvalidateCacheByPattern(pattern string) error {
 
 func InvalidateCacheByModel(model interface{}) error {
 	t := reflect.TypeOf(model)
+
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t.Kind() == reflect.Slice {
+		t = t.Elem()
+	}
+
 	typeName := t.Name()
 
 	pattern := fmt.Sprintf("model:%s*", typeName)

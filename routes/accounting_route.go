@@ -51,8 +51,9 @@ func AccountingRoutes(router fiber.Router) {
 	//Bulk Invoice Receipt Endpoints
 	bulkInvoiceReceiptService := bulk_invoice_receipt_services.NewBulkInvoiceReceiptService()
 	bulkInvoiceReceiptHandler := bulk_invoice_receipt_handlers.NewBulkInvoiceReceiptHandler(bulkInvoiceReceiptService)
-	accountingApi.Get("/bulk_invoice_receipt", bulkInvoiceReceiptHandler.GetBulkInvoiceReceipt)
 	accountingApi.Post("/bulk_invoice_receipt", bulkInvoiceReceiptHandler.CreateBulkInvoiceReceipt)
+	accountingApi.Get("/bulk_invoice_receipt/search/:id?/:search?", bulkInvoiceReceiptHandler.GetBulkInvoiceReceiptSearch)
+	accountingApi.Get("/bulk_invoice_receipt/:id?", bulkInvoiceReceiptHandler.GetBulkInvoiceReceipt)
 
 	//Payment Voucher Endpoints
 	paymentVoucherService := payment_voucher_services.NewPaymentVoucherService()
@@ -81,11 +82,10 @@ func AccountingRoutes(router fiber.Router) {
 	// Chart Class Endpoints
 	chartClassService := setup_services.NewChartClassService()
 	chartClassHandler := setup_handlers.NewChartClassHandler(chartClassService)
-	accountingApi.Get("/chart_class", chartClassHandler.GetChartClasses)
-	accountingApi.Get("/chart_class:/id", chartClassHandler.GetChartClass)
 	accountingApi.Post("/chart_class", chartClassHandler.CreateChartClass)
 	accountingApi.Put("/chart_class", chartClassHandler.UpdateChartClass)
 	accountingApi.Delete("/chart_class", chartClassHandler.DeleteChartClass)
+	accountingApi.Get("/chart_class/:id?/:search?", chartClassHandler.GetChartClasses)
 
 	//Chart of Account Endpoints
 	chartOfAccountService := setup_services.NewChartOfAccountService()

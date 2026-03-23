@@ -24,18 +24,69 @@ func NewBulkInvoiceReceiptService() *BulkInvoiceReceiptService {
 	return &BulkInvoiceReceiptService{}
 }
 
-func (s *BulkInvoiceReceiptService) GetBulkInvoiceReceipt(conditions map[string]interface{}) (interface{}, int, error) {
+func (s *BulkInvoiceReceiptService) GetBulkInvoiceReceiptSearch(conditions map[string]string, search string, id int) (interface{}, int, utils.PaginationMeta, error) {
+	var response []accounting_models.BulkInvoiceReceipt
+
+	searchColumns := []string{
+		"supplier",
+		"supplier_code",
+		"tax_code",
+		"invoice_due",
+		"doc_no",
+		"doc_date",
+		"net_amount",
+	}
+
+	hasNext, pageSize, err := services.DbSearch(&response, nil, search, searchColumns, id)
+	if err != nil {
+		return response, fiber.StatusInternalServerError, utils.PaginationMeta{}, errors.New("failed getting bulk invoice receipt")
+	}
+
+	pagination := utils.PaginationMeta{
+		HasNext:  hasNext,
+		PageSize: pageSize,
+	}
+
+	return response, fiber.StatusOK, pagination, nil
+}
+
+func (s *BulkInvoiceReceiptService) GetBulkInvoiceReceipt(conditions map[string]interface{}, id int) (interface{}, int, utils.PaginationMeta, error) {
 	var response accounting_models.BulkInvoiceReceiptGet
 
-	if err := services.DbGet(&response.BulkInvoiceReceipt, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New(" failed getting bulk invoice receipt")
+	// 👇 Use paginated version
+	hasNext, pageSize, err := services.DbGetPaginated(&response.BulkInvoiceReceipt, conditions, id)
+	if err != nil {
+		return response, fiber.StatusInternalServerError, utils.PaginationMeta{}, errors.New("failed getting bulk invoice receipt")
 	}
 
-	if err := services.DbGet(&response.BulkInvoiceReceiptDetails, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New(" failed getting bulk invoice receipt details")
+	if err := s.GetBulkInvoiceReceiptDetails(&response); err != nil {
+		return response, fiber.StatusInternalServerError, utils.PaginationMeta{}, err
 	}
 
-	return response, fiber.StatusOK, nil
+	pagination := utils.PaginationMeta{
+		HasNext:  hasNext,
+		PageSize: pageSize,
+	}
+
+	return response, fiber.StatusOK, pagination, nil
+}
+
+func (s *BulkInvoiceReceiptService) GetBulkInvoiceReceiptDetails(response *accounting_models.BulkInvoiceReceiptGet) error {
+	for _, receipt := range response.BulkInvoiceReceipt {
+		var details []accounting_models.BulkInvoiceReceiptDetails
+
+		conditions := map[string]interface{}{
+			"bulk_invoice_receipt_id": receipt.ID,
+		}
+
+		if err := services.DbGet(&details, conditions); err != nil {
+			return errors.New("failed getting bulk invoice receipt details")
+		}
+
+		response.BulkInvoiceReceiptDetails = append(response.BulkInvoiceReceiptDetails, details...)
+	}
+
+	return nil
 }
 
 func (s *BulkInvoiceReceiptService) CreateBulkInvoiceReceipt(body *accounting_models.BulkInvoiceReceiptBody, at models.At) (*accounting_models.BulkInvoiceReceiptBody, int, error) {

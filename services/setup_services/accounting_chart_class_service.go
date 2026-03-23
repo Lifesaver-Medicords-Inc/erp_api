@@ -11,6 +11,7 @@ import (
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
+	"github.com/pierceperado/smpc/utils"
 )
 
 type ChartClassService struct{}
@@ -19,14 +20,26 @@ func NewChartClassService() *ChartClassService {
 	return &ChartClassService{}
 }
 
-func (s *ChartClassService) GetChartClasses(conditions map[string]interface{}) ([]accounting_models.ChartClass, int, error) {
+func (s *ChartClassService) GetChartClasses(conditions map[string]interface{}, search string, id int) (interface{}, int, utils.PaginationMeta, error) {
 	var classes []accounting_models.ChartClass
 
-	if err := services.DbGet(&classes, conditions); err != nil {
-		return classes, fiber.StatusInternalServerError, errors.New("failed getting classes")
+	searchColumns := []string{
+		"code",
+		"name",
+		"type",
 	}
 
-	return classes, fiber.StatusOK, nil
+	hasNext, pageSize, err := services.DbSearch(&classes, nil, search, searchColumns, id)
+	if err != nil {
+		return classes, fiber.StatusInternalServerError, utils.PaginationMeta{}, errors.New("failed getting chart classes")
+	}
+
+	pagination := utils.PaginationMeta{
+		HasNext:  hasNext,
+		PageSize: pageSize,
+	}
+
+	return classes, fiber.StatusOK, pagination, nil
 }
 
 func (s *ChartClassService) GetChartClass(id int) (accounting_models.ChartClass, int, error) {
