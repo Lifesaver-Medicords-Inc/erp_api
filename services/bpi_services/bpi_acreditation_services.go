@@ -113,7 +113,7 @@ func UpdateBpiAccreditation(tx *gorm.DB, child models.BpiAccreditation, salesId 
 
 	if accreditationChanged {
 		// create accreditation history
-		if err := CreateBpiHistory(tx, parentId, "create", "Finance", salesId, at); err != nil {
+		if err := CreateBpiHistory(tx, parentId, "update", "Finance", salesId, at); err != nil {
 			return err
 		}
 	}

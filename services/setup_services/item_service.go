@@ -23,10 +23,14 @@ type Body struct {
 type SaveBody struct {
 	models.Item
 	TradeTypeId     []uint                       `json:"trade_type_id"`
-	ItemSpecs       ItemSpecs                    `json:"itemspecs"`
+	ItemSpecs       models.ItemSpecs             `json:"itemspecs"`
 	AdditionalSpecs models.AdditionalSpecsSchema `json:"additionalspecs"`
 	ItemImages      ItemImage                    `json:"itemimages"`
 	ItemInventory   models.ItemInventory         `json:"iteminventory"`
+}
+type ItemSpecsWithTemplate struct {
+	ItemSpecs      models.ItemSpecs `json:"itemspecs"`
+	TemplateFields []Field          `json:"template_fields"`
 }
 
 type ItemImage struct {
@@ -77,7 +81,7 @@ func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 	if err := services.DbGet(&response.Items, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting items")
 	}
-	if err := services.DbGet(&response.ItemSpecs, conditions); err != nil {
+	if err := services.DbGetRel(&response.ItemSpecs, conditions, "ItemSpecsTemplate"); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting item spec")
 	}
 	if err := services.DbGet(&response.AdditionalSpecs, conditions); err != nil {
@@ -272,7 +276,7 @@ func DeleteItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (B
 		"based_id": body.ID,
 	}
 
-	if err := DeleteItemSpecs(tx, body.ItemSpecs, at, conditions); err != nil {
+	if err := DeleteItemSpec(tx, conditions, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
