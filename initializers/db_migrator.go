@@ -1,7 +1,5 @@
 package initializers
 
-import "github.com/pierceperado/smpc/models"
-
 // models "github.com/pierceperado/smpc/models"
 // "github.com/pierceperado/smpc/models/accounting_models"
 // dispatching_models "github.com/pierceperado/smpc/models/dispatching_model"
@@ -29,8 +27,8 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.WiringUserInput{}, &models.WiringUserInputAt{})
 	// DB.AutoMigrate(&models.BoqNotes{}, &models.BoqNotesAt{})
 	// DB.AutoMigrate(&models.Item{}, &models.ItemAt{})
-	DB.AutoMigrate(&models.ItemSpecs{}, &models.ItemSpecsAt{})
-	DB.AutoMigrate(&models.ItemSpecsTemplate{}, &models.ItemSpecsTemplateAt{})
+	//DB.AutoMigrate(&models.ItemSpecs{}, &models.ItemSpecsAt{})
+	//DB.AutoMigrate(&models.ItemSpecsTemplate{}, &models.ItemSpecsTemplateAt{})
 	// DB.AutoMigrate(&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{})
 	// DB.AutoMigrate(&models.ItemImage{}, &models.ItemImageAt{})
 	// DB.AutoMigrate(&models.TradeType{}, models.TradeTypeAt{})
@@ -80,6 +78,8 @@ func MigrateDb() {
 	// DB.AutoMigrate(&models.Type{}, &models.TypeAt{})
 	// DB.AutoMigrate(&models.Item{}, &models.ItemAt{})
 	// DB.AutoMigrate(&models.Model{}, &models.ModelAt{})
+	//DB.AutoMigrate(&models.Material{}, &models.MaterialAt{})
+	//DB.AutoMigrate(&models.PumpCount{}, &models.PumpCountAt{})
 	// DB.AutoMigrate(&models.ValuationMethod{}, &models.ValuationMethodAt{})
 
 	// DB.AutoMigrate(&models.Application{}, &models.ApplicationAt{})
