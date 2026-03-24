@@ -1,11 +1,9 @@
 package setup_services
 
 import (
-	// "errors"
-
 	"errors"
-	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -77,33 +75,59 @@ func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 	}
 
 	var response Response
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var firstErr error
 
-	if err := services.DbGet(&response.Items, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting items")
+	// Run all 9 queries in parallel
+	queries := []struct {
+		name string
+		fn   func() error
+	}{
+		{"items", func() error { return services.DbGet(&response.Items, conditions) }},
+		{"itemspecs", func() error { return services.DbGetRel(&response.ItemSpecs, conditions, "ItemSpecsTemplate") }},
+		{"additionalspecs", func() error { return services.DbGet(&response.AdditionalSpecs, conditions) }},
+		{"itemimage", func() error { return services.DbGet(&response.ItemImage, conditions) }},
+		{"itempurchasing", func() error { return services.DbGet(&response.ItemPurchasing, conditions) }},
+		{"itemsales", func() error { return services.DbGet(&response.ItemSales, conditions) }},
+		{"iteminventory", func() error { return services.DbGet(&response.ItemInventory, conditions) }},
+		{"itemavailableinv", func() error { return services.DbGet(&response.ItemAvailableInv, conditions) }},
+		{"itemproductions", func() error { return services.DbGet(&response.ItemProductions, conditions) }},
 	}
-	if err := services.DbGetRel(&response.ItemSpecs, conditions, "ItemSpecsTemplate"); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting item spec")
+
+	errorMap := map[string]string{
+		"items":            "failed getting items",
+		"itemspecs":        "failed getting item spec",
+		"additionalspecs":  "failed getting item additional spec",
+		"itemimage":        "failed getting item image",
+		"itempurchasing":   "failed getting item purchasing",
+		"itemsales":        "failed getting item sales",
+		"iteminventory":    "failed getting item production",
+		"itemavailableinv": "failed getting item available inventory",
+		"itemproductions":  "failed getting item production",
 	}
-	if err := services.DbGet(&response.AdditionalSpecs, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting item additional spec")
+
+	for _, q := range queries {
+		wg.Add(1)
+		go func(query struct {
+			name string
+			fn   func() error
+		}) {
+			defer wg.Done()
+			if err := query.fn(); err != nil {
+				mu.Lock()
+				if firstErr == nil {
+					firstErr = errors.New(errorMap[query.name])
+				}
+				mu.Unlock()
+			}
+		}(q)
 	}
-	if err := services.DbGet(&response.ItemImage, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting item image")
-	}
-	if err := services.DbGet(&response.ItemPurchasing, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting item purchasing")
-	}
-	if err := services.DbGet(&response.ItemSales, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting item sales")
-	}
-	if err := services.DbGet(&response.ItemInventory, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting item production")
-	}
-	if err := services.DbGet(&response.ItemAvailableInv, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting item available inventory")
-	}
-	if err := services.DbGet(&response.ItemProductions, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed getting item production")
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return response, fiber.StatusInternalServerError, firstErr
 	}
 
 	return response, 0, nil
@@ -139,7 +163,6 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 	var savebody SaveBody
 
 	if err := c.BodyParser(&savebody); err != nil {
-		fmt.Println("SAVING ERROR:", err)
 		return savebody, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
@@ -153,10 +176,7 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 		return savebody, fiber.StatusInternalServerError, err
 	}
 
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
+	at := extractAtFromContext(c)
 
 	atdata := models.ItemAt{
 		RefId:       savebody.ID,
@@ -195,8 +215,6 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (SaveBody, int, error) {
 	var body SaveBody
 	if err := c.BodyParser(&body); err != nil {
-		fmt.Println("Parsing Error:", err)
-
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
@@ -209,10 +227,7 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
+	at := extractAtFromContext(c)
 
 	atdata := models.ItemAt{
 		RefId:       body.ID,
@@ -248,7 +263,6 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 	}
 
 	InvalidateItemCaches()
-	fmt.Println("UPDATE ITEM BODY: ", body)
 	return body, 0, nil
 }
 
@@ -262,10 +276,7 @@ func DeleteItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (B
 		return body, fiber.StatusInternalServerError, errors.New("failed deleting item")
 	}
 
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
+	at := extractAtFromContext(c)
 
 	atdata := models.ItemAt{RefId: body.ID, ItemContent: body.ItemContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
@@ -280,13 +291,17 @@ func DeleteItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (B
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	itemview := services.GetKey(models.ItemView{}, nil)
-	services.InvalidateCache(itemview)
-
-	additionspecsview := services.GetKey(models.AdditionalSpecsView{}, nil)
-	services.InvalidateCache(additionspecsview)
+	InvalidateItemCaches()
 
 	return body, 0, nil
+}
+
+func extractAtFromContext(c *fiber.Ctx) models.At {
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+	return at
 }
 
 func InvalidateItemCaches() {
@@ -305,10 +320,7 @@ func InvalidateItemCaches() {
 		models.SalesOrderViewIR{},
 		models.SalesOrderViewPA{},
 		models.PurchaseOrderDetailsView{},
-		models.InvLogbookView{},
-		models.InvTrackerView{},
 		models.ItemAvailableInventoryModelView{},
-		models.ItemProductionView{},
 		accounting_models.ChartOfAccountViewList{},
 		accounting_models.TaxView{},
 		accounting_models.TaxDetailsView{},

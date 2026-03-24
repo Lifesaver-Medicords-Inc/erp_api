@@ -27,7 +27,8 @@ import (
 func init() {
 	initializers.LoadEnv()
 	initializers.ConnectDb()
-	initializers.MigrateDb()
+	//initializers.MigrateAll()
+	//initializers.MigrateModel()
 	initializers.InitRedis()
 	initializers.InitWm()
 	initializers.InitWm2()
