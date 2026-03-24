@@ -23,86 +23,97 @@ import (
 func AccountingRoutes(router fiber.Router) {
 	accountingApi := router.Group("/accounting")
 
-	//Invoice Receipt Endpoints
-	invoiceReceiptService := invoice_receipt_services.NewInvoiceReceiptService()
-	invoiceReceiptHandler := invoice_receipt_handlers.NewInvoiceReceiptHandler(invoiceReceiptService)
-	accountingApi.Get("/invoice_receipt", invoiceReceiptHandler.GetInvoiceReceipt)
-	accountingApi.Get("/invoice_receipt/tax_view", invoiceReceiptHandler.GetTaxView)
-	accountingApi.Get("/invoice_receipt/supplier_trade", invoiceReceiptHandler.GetSupplierTradeView)
-	accountingApi.Get("/invoice_receipt/supplier_po/:supplier_id", invoiceReceiptHandler.GetSupplierPO)
-	accountingApi.Post("/invoice_receipt", invoiceReceiptHandler.CreateInvoiceReceipt)
+	setupInvoiceReceiptRoutes(accountingApi)
+	setupPaymentReceiptRoutes(accountingApi)
+	setupSalesInvoiceRoutes(accountingApi)
+	setupBulkInvoiceReceiptRoutes(accountingApi)
+	setupPaymentVoucherRoutes(accountingApi)
+	setupAPVoucherRoutes(accountingApi)
+	setupJournalEntryRoutes(accountingApi)
+	setupChartClassRoutes(accountingApi)
+	setupChartOfAccountRoutes(accountingApi)
+	setupTaxSetupRoutes(accountingApi)
+}
 
-	//Payment Receipt Endpoints
-	paymentReceiptService := payment_receipt_services.NewPaymentReceiptService()
-	paymentReceiptHandler := payment_receipt_handlers.NewPaymentReceiptHandler(paymentReceiptService)
-	accountingApi.Get("/payment_receipt", paymentReceiptHandler.GetPaymentReceipt)
-	accountingApi.Post("/payment_receipt", paymentReceiptHandler.CreatePaymentReceipt)
-	accountingApi.Get("/payment_receipt/sales_invoice/:customer_id", paymentReceiptHandler.GetCustomerSalesInvoice)
+func setupInvoiceReceiptRoutes(api fiber.Router) {
+	handler := invoice_receipt_handlers.NewInvoiceReceiptHandler(invoice_receipt_services.NewInvoiceReceiptService())
+	api.Get("/invoice_receipt", handler.GetInvoiceReceipt)
+	api.Get("/invoice_receipt/tax_view", handler.GetTaxView)
+	api.Get("/invoice_receipt/supplier_trade", handler.GetSupplierTradeView)
+	api.Get("/invoice_receipt/supplier_po/:supplier_id", handler.GetSupplierPO)
+	api.Post("/invoice_receipt", handler.CreateInvoiceReceipt)
+}
 
-	//Sales Invoice Endpoints
-	salesInvoiceService := sales_invoice_services2.NewSalesInvoiceService()
-	salesInvoiceHandler := sales_invoice_handlers2.NewSalesInvoiceHandler(salesInvoiceService)
-	accountingApi.Get("/customer", salesInvoiceHandler.GetCustomer)
-	accountingApi.Get("/customer_so/:customer_id", salesInvoiceHandler.GetCustomerSO)
-	accountingApi.Get("/exchange_rate/:base_code", salesInvoiceHandler.GetExchangeRate)
-	accountingApi.Get("/sales_invoice2", salesInvoiceHandler.GetSalesInvoice)
-	accountingApi.Post("/sales_invoice2", salesInvoiceHandler.CreateSalesInvoice)
+func setupPaymentReceiptRoutes(api fiber.Router) {
+	handler := payment_receipt_handlers.NewPaymentReceiptHandler(payment_receipt_services.NewPaymentReceiptService())
+	api.Get("/payment_receipt", handler.GetPaymentReceipt)
+	api.Post("/payment_receipt", handler.CreatePaymentReceipt)
+	api.Get("/payment_receipt/sales_invoice/:customer_id", handler.GetCustomerSalesInvoice)
+}
 
-	//Bulk Invoice Receipt Endpoints
-	bulkInvoiceReceiptService := bulk_invoice_receipt_services.NewBulkInvoiceReceiptService()
-	bulkInvoiceReceiptHandler := bulk_invoice_receipt_handlers.NewBulkInvoiceReceiptHandler(bulkInvoiceReceiptService)
-	accountingApi.Post("/bulk_invoice_receipt", bulkInvoiceReceiptHandler.CreateBulkInvoiceReceipt)
-	accountingApi.Get("/bulk_invoice_receipt/search/:id?/:search?", bulkInvoiceReceiptHandler.GetBulkInvoiceReceiptSearch)
-	accountingApi.Get("/bulk_invoice_receipt/:id?", bulkInvoiceReceiptHandler.GetBulkInvoiceReceipt)
+func setupSalesInvoiceRoutes(api fiber.Router) {
+	handler := sales_invoice_handlers2.NewSalesInvoiceHandler(sales_invoice_services2.NewSalesInvoiceService())
+	api.Get("/customer", handler.GetCustomer)
+	api.Get("/customer_so/:customer_id", handler.GetCustomerSO)
+	api.Get("/exchange_rate/:base_code", handler.GetExchangeRate)
+	api.Get("/sales_invoice2", handler.GetSalesInvoice)
+	api.Post("/sales_invoice2", handler.CreateSalesInvoice)
+}
 
-	//Payment Voucher Endpoints
-	paymentVoucherService := payment_voucher_services.NewPaymentVoucherService()
-	paymentVoucherHandler := payment_voucher_handlers.NewPaymentVoucherHandler(paymentVoucherService)
-	accountingApi.Get("/payment_voucher", paymentVoucherHandler.GetPaymentVoucher)
-	accountingApi.Post("/payment_voucher", paymentVoucherHandler.CreatePaymentVoucher)
-	accountingApi.Get("/payment_voucher/ap_voucher/:supplier_id", paymentVoucherHandler.GetSupplierAPVoucher)
+func setupBulkInvoiceReceiptRoutes(api fiber.Router) {
+	handler := bulk_invoice_receipt_handlers.NewBulkInvoiceReceiptHandler(bulk_invoice_receipt_services.NewBulkInvoiceReceiptService())
+	api.Post("/bulk_invoice_receipt", handler.CreateBulkInvoiceReceipt)
+	api.Get("/bulk_invoice_receipt/search", handler.GetBulkInvoiceReceiptSearch)
+	api.Get("/bulk_invoice_receipt", handler.GetBulkInvoiceReceipt)
+}
 
-	//AP Voucher Endpoints
-	apVoucherService := ap_voucher_services.NewApVoucherService()
-	apVoucherHandler := ap_voucher_handlers.NewApVoucherHandler(apVoucherService)
-	accountingApi.Get("/ap_voucher/invoice/:supplier_id", apVoucherHandler.GetInvoiceView)
-	accountingApi.Get("/ap_voucher", apVoucherHandler.GetApVoucher)
-	accountingApi.Post("/ap_voucher", apVoucherHandler.CreateApVoucher)
+func setupPaymentVoucherRoutes(api fiber.Router) {
+	handler := payment_voucher_handlers.NewPaymentVoucherHandler(payment_voucher_services.NewPaymentVoucherService())
+	api.Get("/payment_voucher", handler.GetPaymentVoucher)
+	api.Post("/payment_voucher", handler.CreatePaymentVoucher)
+	api.Get("/payment_voucher/ap_voucher/:supplier_id", handler.GetSupplierAPVoucher)
+}
 
-	//Journal Entry Endpoints
-	journalEntryService2 := journal_entry_services2.NewJournalEntryService2()
-	journalEntryHandler2 := journal_entry_handlers2.NewJournalEntryHandler2(journalEntryService2)
-	accountingApi.Get("/company_setup", journalEntryHandler2.GetCompanySetup)
-	accountingApi.Get("/current_journal", journalEntryHandler2.GetCurrentJournal)
-	accountingApi.Get("/journal_entry2", journalEntryHandler2.GetJournalEntry)
-	accountingApi.Post("/journal_entry2", journalEntryHandler2.CreateJournalEntry)
-	accountingApi.Put("/journal_entry2", journalEntryHandler2.UpdateJournalEntry)
-	accountingApi.Delete("/journal_entry2", journalEntryHandler2.DeleteJournalEntry)
+func setupAPVoucherRoutes(api fiber.Router) {
+	handler := ap_voucher_handlers.NewApVoucherHandler(ap_voucher_services.NewApVoucherService())
+	api.Get("/ap_voucher/invoice/:supplier_id", handler.GetInvoiceView)
+	api.Get("/ap_voucher", handler.GetApVoucher)
+	api.Post("/ap_voucher", handler.CreateApVoucher)
+}
 
-	// Chart Class Endpoints
-	chartClassService := setup_services.NewChartClassService()
-	chartClassHandler := setup_handlers.NewChartClassHandler(chartClassService)
-	accountingApi.Post("/chart_class", chartClassHandler.CreateChartClass)
-	accountingApi.Put("/chart_class", chartClassHandler.UpdateChartClass)
-	accountingApi.Delete("/chart_class", chartClassHandler.DeleteChartClass)
-	accountingApi.Get("/chart_class/:id?/:search?", chartClassHandler.GetChartClasses)
+func setupJournalEntryRoutes(api fiber.Router) {
+	handler := journal_entry_handlers2.NewJournalEntryHandler2(journal_entry_services2.NewJournalEntryService2())
+	api.Get("/company_setup", handler.GetCompanySetup)
+	api.Get("/current_journal", handler.GetCurrentJournal)
+	api.Get("/journal_entry2", handler.GetJournalEntry)
+	api.Post("/journal_entry2", handler.CreateJournalEntry)
+	api.Put("/journal_entry2", handler.UpdateJournalEntry)
+	api.Delete("/journal_entry2", handler.DeleteJournalEntry)
+}
 
-	//Chart of Account Endpoints
-	chartOfAccountService := setup_services.NewChartOfAccountService()
-	chartOfAccountHandler := setup_handlers.NewChartOfAccountHandler(chartOfAccountService)
-	accountingApi.Get("/chart_of_account", chartOfAccountHandler.GetChartOfAccounts)
-	accountingApi.Post("/chart_of_account", chartOfAccountHandler.CreateChartOfAccount)
-	accountingApi.Put("/chart_of_account", chartOfAccountHandler.UpdateChartOfAccount)
-	accountingApi.Delete("/chart_of_account", chartOfAccountHandler.DeleteChartOfAccount)
-	accountingApi.Get("/chart_of_account_classification/:code", chartOfAccountHandler.GetChartOfAccountClassification)
+func setupChartClassRoutes(api fiber.Router) {
+	handler := setup_handlers.NewChartClassHandler(setup_services.NewChartClassService())
+	api.Post("/chart_class", handler.CreateChartClass)
+	api.Put("/chart_class", handler.UpdateChartClass)
+	api.Delete("/chart_class", handler.DeleteChartClass)
+	api.Get("/chart_class", handler.GetChartClasses)
+}
 
-	// Tax Setup Endpoints
-	taxSetupService := setup_services.NewTaxSetupService()
-	taxSetupHandler := setup_handlers.NewTaxSetupHandler(taxSetupService)
-	accountingApi.Get("/tax", taxSetupHandler.GetTaxSetup)
-	accountingApi.Get("/tax/coa", taxSetupHandler.GetChartOfAccountSetup)
-	accountingApi.Get("/tax_setup/:code", taxSetupHandler.GetTaxClassificationSetup)
-	accountingApi.Post("/tax", taxSetupHandler.CreateTaxSetup)
-	accountingApi.Put("/tax", taxSetupHandler.UpdateTaxSetup)
-	accountingApi.Delete("/tax", taxSetupHandler.DeleteTaxSetup)
+func setupChartOfAccountRoutes(api fiber.Router) {
+	handler := setup_handlers.NewChartOfAccountHandler(setup_services.NewChartOfAccountService())
+	api.Get("/chart_of_account", handler.GetChartOfAccounts)
+	api.Post("/chart_of_account", handler.CreateChartOfAccount)
+	api.Put("/chart_of_account", handler.UpdateChartOfAccount)
+	api.Delete("/chart_of_account", handler.DeleteChartOfAccount)
+	api.Get("/chart_of_account_classification/:code", handler.GetChartOfAccountClassification)
+}
+
+func setupTaxSetupRoutes(api fiber.Router) {
+	handler := setup_handlers.NewTaxSetupHandler(setup_services.NewTaxSetupService())
+	api.Get("/tax", handler.GetTaxSetup)
+	api.Get("/tax/coa", handler.GetChartOfAccountSetup)
+	api.Get("/tax_setup/:code", handler.GetTaxClassificationSetup)
+	api.Post("/tax", handler.CreateTaxSetup)
+	api.Put("/tax", handler.UpdateTaxSetup)
+	api.Delete("/tax", handler.DeleteTaxSetup)
 }

@@ -19,7 +19,7 @@ func NewBulkInvoiceReceiptHandler(service *bulk_invoice_receipt_services.BulkInv
 }
 
 func (h *BulkInvoiceReceiptHandler) GetBulkInvoiceReceipt(c *fiber.Ctx) error {
-	idStr := c.Params("id")
+	idStr := c.Query("id")
 
 	if idStr == "" {
 		// handle "get all" case
@@ -44,10 +44,10 @@ func (h *BulkInvoiceReceiptHandler) GetBulkInvoiceReceipt(c *fiber.Ctx) error {
 
 func (h *BulkInvoiceReceiptHandler) GetBulkInvoiceReceiptSearch(c *fiber.Ctx) error {
 
-	search := c.Params("search")
+	search := c.Query("search")
 
 	var id int
-	if idParam := c.Params("id"); idParam != "" {
+	if idParam := c.Query("id"); idParam != "" {
 		var err error
 		id, err = strconv.Atoi(idParam)
 		if err != nil {

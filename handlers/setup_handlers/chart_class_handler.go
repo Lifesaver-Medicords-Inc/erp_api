@@ -19,10 +19,10 @@ func NewChartClassHandler(service *setup_services.ChartClassService) *ChartClass
 }
 
 func (h *ChartClassHandler) GetChartClasses(c *fiber.Ctx) error {
-	search := c.Params("search")
+	search := c.Query("search")
 
 	var id int
-	if idParam := c.Params("id"); idParam != "" {
+	if idParam := c.Query("id"); idParam != "" {
 		var err error
 		id, err = strconv.Atoi(idParam)
 		if err != nil {

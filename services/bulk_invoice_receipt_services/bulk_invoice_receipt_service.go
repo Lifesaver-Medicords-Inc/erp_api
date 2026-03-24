@@ -37,7 +37,11 @@ func (s *BulkInvoiceReceiptService) GetBulkInvoiceReceiptSearch(conditions map[s
 		"net_amount",
 	}
 
-	hasNext, pageSize, err := services.DbSearch(&response, nil, search, searchColumns, id)
+	numericColumns := []string{
+		"net_amount",
+	}
+
+	hasNext, pageSize, err := services.DbSearch(&response, nil, search, searchColumns, numericColumns, id, "id")
 	if err != nil {
 		return response, fiber.StatusInternalServerError, utils.PaginationMeta{}, errors.New("failed getting bulk invoice receipt")
 	}

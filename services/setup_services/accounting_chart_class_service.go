@@ -29,7 +29,7 @@ func (s *ChartClassService) GetChartClasses(conditions map[string]interface{}, s
 		"type",
 	}
 
-	hasNext, pageSize, err := services.DbSearch(&classes, nil, search, searchColumns, id)
+	hasNext, pageSize, err := services.DbSearch(&classes, nil, search, searchColumns, nil, id, "id")
 	if err != nil {
 		return classes, fiber.StatusInternalServerError, utils.PaginationMeta{}, errors.New("failed getting chart classes")
 	}

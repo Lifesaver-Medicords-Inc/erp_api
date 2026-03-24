@@ -13,10 +13,14 @@ import (
 	"gorm.io/gorm"
 )
 
-func DbSearch(model interface{}, conditions map[string]interface{}, term string, columns []string, cursor int) (hasNext bool, retPageSize int, err error) {
+func DbSearch(model interface{}, conditions map[string]interface{}, term string, columns []string, numericColumns []string, cursor int, idCol string) (hasNext bool, retPageSize int, err error) {
 	const pageSize = 2
 
 	ctx := context.Background()
+
+	if idCol == "" {
+		idCol = "id"
+	}
 
 	// --- Base cache conditions (shared between data keys) ---
 	baseConditions := make(map[string]interface{})
@@ -33,6 +37,7 @@ func DbSearch(model interface{}, conditions map[string]interface{}, term string,
 	}
 	pagedConditions["__cursor"] = cursor
 	pagedConditions["__pageSize"] = pageSize
+	pagedConditions["__id_col"] = idCol
 	dataKey := GetKey(model, pagedConditions)
 
 	fmt.Println("Search Cursor Data Key:", dataKey)
@@ -49,14 +54,13 @@ func DbSearch(model interface{}, conditions map[string]interface{}, term string,
 		fmt.Println("Getting search cursor data from DB")
 
 		// Fetch pageSize+1 to determine if there's a next page
-		query := buildSearchQuery(conditions, term, columns)
+		query := buildSearchQuery(conditions, term, columns, numericColumns)
 		if cursor > 0 {
-			query = query.Where("id < ?", cursor)
+			query = query.Where(fmt.Sprintf("%s < ?", idCol), cursor)
 		}
 
-		// Use a slice of the same underlying type to hold pageSize+1
 		slicePtr := makeSlicePtr(model)
-		if err = query.Order("id DESC").Limit(pageSize + 1).Find(slicePtr).Error; err != nil {
+		if err = query.Order(fmt.Sprintf("%s DESC", idCol)).Limit(pageSize + 1).Find(slicePtr).Error; err != nil {
 			return false, 0, err
 		}
 
@@ -97,7 +101,7 @@ func DbSearch(model interface{}, conditions map[string]interface{}, term string,
 
 // buildSearchQuery constructs the base *gorm.DB query with conditions and search term,
 // shared between the count and paginated fetch to avoid duplication.
-func buildSearchQuery(conditions map[string]interface{}, term string, columns []string) *gorm.DB {
+func buildSearchQuery(conditions map[string]interface{}, term string, columns []string, numericColumns []string) *gorm.DB {
 	query := initializers.DB
 
 	if len(conditions) > 0 {
@@ -105,13 +109,23 @@ func buildSearchQuery(conditions map[string]interface{}, term string, columns []
 	}
 
 	if term != "" && len(columns) > 0 {
+		// Build a set for O(1) lookup
+		numericSet := make(map[string]bool, len(numericColumns))
+		for _, col := range numericColumns {
+			numericSet[col] = true
+		}
+
 		orClause := ""
 		args := []interface{}{}
 		for i, col := range columns {
 			if i > 0 {
 				orClause += " OR "
 			}
-			orClause += fmt.Sprintf("%s LIKE ?", col)
+			if numericSet[col] {
+				orClause += fmt.Sprintf("CAST(CAST(%s AS DECIMAL(18,2)) AS VARCHAR(50)) LIKE ?", col)
+			} else {
+				orClause += fmt.Sprintf("%s LIKE ?", col)
+			}
 			args = append(args, fmt.Sprintf("%%%s%%", term))
 		}
 		query = query.Where(orClause, args...)
