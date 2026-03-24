@@ -9,7 +9,7 @@ SELECT a.id,
     a.bom_qty,
     c.item_name,
     b.item_code,
-    b.short_desc,
+    e.long_description AS short_desc,
     d.name as uom_name
 FROM tbl_setup_item_bom_details a
     LEFT JOIN tbl_setup_item b ON a.item_id = b.id

@@ -1,7 +1,7 @@
 CREATE
 OR ALTER VIEW [dbo].[vw_get_all_item_bom] AS
 SELECT a.id AS item_id,
-    a.short_desc,
+    c.long_description AS short_desc,
     a.item_code,
     a.item_model,
     b.name AS general_name,

@@ -1,5 +1,5 @@
 CREATE
-OR ALTER VIEW [dbo].[get_bpi_history] AS
+OR ALTER VIEW [dbo].[get_customer] AS
 SELECT *
 FROM (
         SELECT a.id AS based_id,
@@ -7,11 +7,17 @@ FROM (
             a.AT_DATE AS at_date,
             a.AT_ACTION AS actions,
             CONCAT_WS(',', b.first_name, b.last_name) AS edit_by,
-            CONCAT_WS(',', a.name, a.main_tel_no, a.main_website, a.tin) AS edit_history
+            CONCAT_WS(
+                ',',
+                a.name,
+                a.main_tel_no,
+                a.main_website,
+                a.tin
+            ) AS edit_history
         FROM z_tbl_bpi_at a
             LEFT JOIN tbl_setup_users b ON a.AT_USER_ID = b.id
         UNION ALL
-        SELECT a.based_id,
+        SELECT a.id,
             '' AS branch_id,
             a.AT_DATE AS at_date,
             a.AT_ACTION AS actions,
@@ -82,12 +88,13 @@ FROM (
                 c.code,
                 a.price,
                 a.notes,
-                d.short_desc
+                e.long_description
             ) AS edit_history
         FROM z_tbl_bpi_items_at a
             LEFT JOIN tbl_setup_users b ON a.AT_USER_ID = b.id
             LEFT JOIN tbl_setup_payment_terms c ON a.payment_terms_id = c.id
             LEFT JOIN tbl_setup_item d ON a.item_id = d.id
+            LEFT JOIN tbl_setup_item_additional_specs e ON d.id = e.based_id
         UNION ALL
         SELECT a.based_id,
             a.branch_id,

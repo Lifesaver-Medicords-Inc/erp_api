@@ -1,7 +1,7 @@
 CREATE
 OR ALTER VIEW [dbo].[GetBpiItemList] AS
 SELECT a.id,
-    c.long_description,
+    c.long_description AS short_desc,
     a.item_code,
     b.name AS general_name,
     d.name AS item_brand_name

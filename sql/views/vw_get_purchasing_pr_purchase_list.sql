@@ -27,7 +27,7 @@ SELECT a.item_id,
         ORDER BY a.pr_order_id ASC
     ) AS qtys,
     MIN(c.item_code) AS item_code,
-    MIN(c.short_desc) AS item_description,
+    MIN(g.long_description) AS item_description,
     MIN(d.name) AS unit_of_measure,
     MIN(e.name) AS item_name,
     MIN(f.name) AS item_brand,
@@ -40,6 +40,7 @@ FROM tbl_purchasing_purchase_requisition_orders a
     LEFT JOIN tbl_setup_item_unit_measurement d ON c.unit_of_measure_id = d.id
     LEFT JOIN tbl_setup_item_name e ON c.item_name_id = e.id
     LEFT JOIN tbl_setup_item_brand f ON c.item_brand_id = f.id
+    LEFT JOIN tbl_setup_item_additional_specs g ON c.id = g.based_id
 WHERE a.status = 'CANVASS'
     AND b.status = 'APPROVED'
     AND a.item_id <> 0

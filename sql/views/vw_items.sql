@@ -2,7 +2,7 @@ CREATE
 OR ALTER VIEW [dbo].[vw_items] AS
 SELECT a.id,
     a.item_name_id,
-    a.short_desc,
+    h.long_description,
     a.item_class_id,
     a.item_brand_id,
     a.unit_of_measure_id,
@@ -12,7 +12,6 @@ SELECT a.id,
     a.price,
     a.item_code,
     a.is_stop_selling,
-    a.item_description,
     b.name AS item_name,
     d.name AS item_class,
     e.name AS item_brand,
@@ -24,6 +23,7 @@ FROM tbl_setup_item a
     LEFT JOIN tbl_setup_item_class d ON a.item_class_id = d.id
     LEFT JOIN tbl_setup_item_brand e ON a.item_brand_id = e.id
     LEFT JOIN tbl_setup_item_unit_measurement f ON a.unit_of_measure_id = f.id
+    LEFT JOIN tbl_setup_item_additional_specs h ON a.id = h.based_id
     LEFT JOIN (
         SELECT ISNULL(STRING_AGG(b.trade_type_id, ','), '') AS trade_type_id,
             ISNULL(STRING_AGG(b.name, ','), '') AS trade_type_names,

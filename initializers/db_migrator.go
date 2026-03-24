@@ -117,6 +117,7 @@ func migrateItemManagement() {
 	// 	&models.ItemInventory{}, &models.ItemInventoryAt{},
 	// 	&models.Model{}, &models.ModelAt{},
 	// 	&models.PumpCount{}, &models.PumpCountAt{},
+	// 	&models.ItemTradeType{}, &models.ItemTradeTypeAt{},
 	// )
 }
 
@@ -245,7 +246,7 @@ func migrateBpi() {
 	// 	&models.BpiFinance{}, &models.BpiFinanceAt{},
 	// 	&models.BpiAccreditation{}, &models.BpiAccreditationAt{},
 	// 	&models.BpiHistory{}, &models.BpiHistoryAt{},
-	// 	&models.BpiOverpayment{}, &models.BpiOverpaymentAt{},
+	// 	&accounting_models.BpiOverpayment{}, &accounting_models.BpiOverpaymentAt{},
 	// )
 }
 
