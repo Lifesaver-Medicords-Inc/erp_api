@@ -134,10 +134,50 @@ func buildSearchQuery(conditions map[string]interface{}, term string, columns []
 	return query
 }
 
-func DbGetPaginated(model interface{}, conditions map[string]interface{}, cursor int) (hasNext bool, retPageSize int, err error) {
+func DbGetPaginated(model interface{}, conditions map[string]interface{}, cursor int, seekID int) (hasNext bool, retPageSize int, err error) {
 	const pageSize = 2
 
 	ctx := context.Background()
+
+	// --- Seek by ID: fetch a single record and return early ---
+	if seekID > 0 {
+		seekKey := GetKey(model, map[string]interface{}{"__seekID": seekID})
+		fmt.Println("Seek By ID Key:", seekKey)
+
+		cache, seekErr := initializers.RC.Get(ctx, seekKey).Result()
+		if seekErr == redis.Nil {
+			fmt.Println("Getting seek record from DB")
+
+			query := initializers.DB.Model(model)
+			if len(conditions) > 0 {
+				query = query.Where(conditions)
+			}
+
+			slicePtr := makeSlicePtr(model)
+			if err = query.Where("id = ?", seekID).Limit(1).Find(slicePtr).Error; err != nil {
+				return false, 0, err
+			}
+
+			copySlice(model, slicePtr)
+
+			recordsData, marshalErr := json.Marshal(slicePtr)
+			if marshalErr != nil {
+				return false, 0, errors.New("failed marshaling seek record")
+			}
+			if redisErr := initializers.RC.Set(ctx, seekKey, recordsData, time.Hour).Err(); redisErr != nil {
+				return false, 0, errors.New("failed caching seek record")
+			}
+		} else if seekErr != nil {
+			return false, 0, errors.New("failed getting seek record cache")
+		} else {
+			fmt.Println("Getting seek record from Cache")
+			if err = json.Unmarshal([]byte(cache), model); err != nil {
+				return false, 0, errors.New("failed deserializing seek record cache")
+			}
+		}
+
+		return false, 1, nil
+	}
 
 	// --- Cache key for the cursor-paginated slice ---
 	pagedConditions := make(map[string]interface{})

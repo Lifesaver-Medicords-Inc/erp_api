@@ -54,11 +54,10 @@ func (s *BulkInvoiceReceiptService) GetBulkInvoiceReceiptSearch(conditions map[s
 	return response, fiber.StatusOK, pagination, nil
 }
 
-func (s *BulkInvoiceReceiptService) GetBulkInvoiceReceipt(conditions map[string]interface{}, id int) (interface{}, int, utils.PaginationMeta, error) {
+func (s *BulkInvoiceReceiptService) GetBulkInvoiceReceipt(conditions map[string]interface{}, id int, seekID int) (interface{}, int, utils.PaginationMeta, error) {
 	var response accounting_models.BulkInvoiceReceiptGet
 
-	// 👇 Use paginated version
-	hasNext, pageSize, err := services.DbGetPaginated(&response.BulkInvoiceReceipt, conditions, id)
+	hasNext, pageSize, err := services.DbGetPaginated(&response.BulkInvoiceReceipt, conditions, id, seekID)
 	if err != nil {
 		return response, fiber.StatusInternalServerError, utils.PaginationMeta{}, errors.New("failed getting bulk invoice receipt")
 	}

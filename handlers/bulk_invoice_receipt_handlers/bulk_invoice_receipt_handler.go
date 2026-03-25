@@ -20,10 +20,19 @@ func NewBulkInvoiceReceiptHandler(service *bulk_invoice_receipt_services.BulkInv
 
 func (h *BulkInvoiceReceiptHandler) GetBulkInvoiceReceipt(c *fiber.Ctx) error {
 	idStr := c.Query("id")
+	seekIDStr := c.Query("seek_id")
+
+	seekID := 0
+	if seekIDStr != "" {
+		parsed, err := strconv.Atoi(seekIDStr)
+		if err != nil || parsed <= 0 {
+			return utils.RespondError(c, fiber.StatusBadRequest, "invalid seek_id")
+		}
+		seekID = parsed
+	}
 
 	if idStr == "" {
-		// handle "get all" case
-		data, status, pagination, err := h.Service.GetBulkInvoiceReceipt(nil, 0)
+		data, status, pagination, err := h.Service.GetBulkInvoiceReceipt(nil, 0, seekID)
 		if err != nil {
 			return utils.RespondError(c, status, err.Error())
 		}
@@ -35,7 +44,7 @@ func (h *BulkInvoiceReceiptHandler) GetBulkInvoiceReceipt(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusBadRequest, "invalid id")
 	}
 
-	data, status, pagination, err := h.Service.GetBulkInvoiceReceipt(nil, id)
+	data, status, pagination, err := h.Service.GetBulkInvoiceReceipt(nil, id, seekID)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
