@@ -52,28 +52,38 @@ func CreateAdditionalSpec(tx *gorm.DB, basedId uint, additionalSpec models.Addit
 	return nil
 }
 
-func UpdateAdditionalSpec(tx *gorm.DB, additionalspec models.AdditionalSpecsSchema, at models.At, conditions map[string]interface{}) error {
-	if err := services.DbUpdate(tx, &additionalspec.AdditionalSpecs, conditions); err != nil {
+func UpdateAdditionalSpec(tx *gorm.DB, basedId uint, additionalspec models.AdditionalSpecsSchema, at models.At, conditions map[string]interface{}) error {
+	var existing models.AdditionalSpecs
+
+	err := services.DbGet(&existing, conditions)
+
+	// ✅ If no existing record, create it using the real item ID
+	if err != nil || existing.ID == 0 {
+		return CreateAdditionalSpec(tx, basedId, additionalspec, at) // ✅ basedId from caller
+	}
+
+	// ✅ UPDATE: carry over the real ID and BasedId from DB
+	additionalspec.AdditionalSpecs.ID = existing.ID
+	additionalspec.AdditionalSpecs.BasedId = existing.BasedId
+
+	if err := services.DbUpdate(tx, &additionalspec.AdditionalSpecs, map[string]interface{}{"id": existing.ID}); err != nil {
 		return errors.New("failed updating additional specs")
 	}
 
-	if err := UpdateAdditionalSpecsPumpType(tx, additionalspec.AdditionalSpecs.ID, additionalspec.PumpTypeCompatabilityId, at); err != nil {
+	if err := UpdateAdditionalSpecsPumpType(tx, existing.ID, additionalspec.PumpTypeCompatabilityId, at); err != nil {
 		return err
 	}
 
-	additionalspecat := models.AdditionalSpecsAt{
-		RefId:                  additionalspec.AdditionalSpecs.ID,
+	if err := services.DbInsert(tx, &models.AdditionalSpecsAt{
+		RefId:                  existing.ID,
 		AdditionalSpecsContent: additionalspec.AdditionalSpecs.AdditionalSpecsContent,
 		At:                     at,
-	}
-
-	if err := services.DbInsert(tx, &additionalspecat); err != nil {
+	}); err != nil {
 		return errors.New("failed creating additional specs at")
 	}
 
 	return nil
 }
-
 
 func DeleteAdditionalSpecs(tx *gorm.DB, additionalspec models.AdditionalSpecs, at models.At, conditions map[string]interface{}) error {
 	if err := services.DbDelete(tx, &additionalspec, conditions); err != nil {

@@ -218,6 +218,10 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
+	if body.ID == 0 {
+		return body, fiber.StatusBadRequest, errors.New("item id is required for update")
+	}
+
 	if err := services.DbUpdate(tx, &body.Item, conditions); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			err = errors.New("duplicate record error")
@@ -232,12 +236,13 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 	atdata := models.ItemAt{
 		RefId:       body.ID,
 		ItemContent: body.ItemContent,
-		At:          at}
-
+		At:          at,
+	}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed inserting itemat")
 	}
 
+	// ✅ Use body.ID explicitly — don't rely on it being set elsewhere
 	conditions = map[string]interface{}{
 		"based_id": body.ID,
 	}
@@ -250,7 +255,7 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	if err := UpdateAdditionalSpec(tx, body.AdditionalSpecs, at, conditions); err != nil {
+	if err := UpdateAdditionalSpec(tx, body.ID, body.AdditionalSpecs, at, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
@@ -265,7 +270,6 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 	InvalidateItemCaches()
 	return body, 0, nil
 }
-
 func DeleteItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Body, int, error) {
 	var body Body
 	if err := c.BodyParser(&body); err != nil {
