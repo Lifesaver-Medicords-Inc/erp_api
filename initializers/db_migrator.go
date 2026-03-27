@@ -1,6 +1,10 @@
 package initializers
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/pierceperado/smpc/models"
+)
 
 // models "github.com/pierceperado/smpc/models"
 // accounting_models "github.com/pierceperado/smpc/models/accounting_models"
@@ -91,34 +95,36 @@ func migrateAdmin() {
 // SETUP / MASTER DATA
 // ============================================
 func migrateSetup() {
-	// DB.AutoMigrate(
-	// 	&models.Brand{}, &models.BrandAt{},
-	// 	&models.UnitMeasurement{}, &models.UnitMeasurementAt{},
-	// 	&models.PaymentTerms{}, &models.PaymentTermsAt{},
-	// 	&models.Class{}, &models.ClassAt{},
-	// 	&models.Name{}, &models.NameAt{},
-	// 	&models.Type{}, &models.TypeAt{},
-	// 	&models.Material{}, &models.MaterialAt{},
-	// 	&models.ValuationMethod{}, &models.ValuationMethodAt{},
-	// 	&models.TradeType{}, &models.TradeTypeAt{},
-	// )
+	DB.AutoMigrate(
+		&models.Brand{}, &models.BrandAt{},
+		&models.UnitMeasurement{}, &models.UnitMeasurementAt{},
+		&models.PaymentTerms{}, &models.PaymentTermsAt{},
+		&models.Class{}, &models.ClassAt{},
+		&models.Name{}, &models.NameAt{},
+		&models.Type{}, &models.TypeAt{},
+		&models.Material{}, &models.MaterialAt{},
+		&models.ValuationMethod{}, &models.ValuationMethodAt{},
+		&models.TradeType{}, &models.TradeTypeAt{},
+	)
 }
 
 // ============================================
 // ITEM MANAGEMENT
 // ============================================
 func migrateItemManagement() {
-	// DB.AutoMigrate(
-	// 	&models.Item{}, &models.ItemAt{},
-	// 	&models.ItemSpecs{}, &models.ItemSpecsAt{},
-	// 	&models.ItemSpecsTemplate{}, &models.ItemSpecsTemplateAt{},
-	// 	&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{},
-	// 	&models.ItemImage{}, &models.ItemImageAt{},
-	// 	&models.ItemInventory{}, &models.ItemInventoryAt{},
-	// 	&models.Model{}, &models.ModelAt{},
-	// 	&models.PumpCount{}, &models.PumpCountAt{},
-	// 	&models.ItemTradeType{}, &models.ItemTradeTypeAt{},
-	// )
+	DB.AutoMigrate(
+		&models.Item{}, &models.ItemAt{},
+		&models.ItemSpecs{}, &models.ItemSpecsAt{},
+		&models.ItemSpecsTemplate{}, &models.ItemSpecsTemplateAt{},
+		&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{},
+		&models.AdditionalSpecsPumpType{}, &models.AdditionalSpecsPumpTypeAt{},
+		&models.ItemImage{}, &models.ItemImageAt{},
+		&models.ItemInventory{}, &models.ItemInventoryAt{},
+		&models.Model{}, &models.ModelAt{},
+		&models.PumpType{}, &models.PumpTypeAt{},
+		&models.PumpCount{}, &models.PumpCountAt{},
+		&models.ItemTradeType{}, &models.ItemTradeTypeAt{},
+	)
 }
 
 // ============================================
