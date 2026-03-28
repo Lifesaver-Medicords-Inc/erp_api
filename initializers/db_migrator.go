@@ -1,6 +1,8 @@
 package initializers
 
 import (
+	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/pierceperado/smpc/models"
@@ -77,7 +79,9 @@ func MigrateModel(categories ...string) {
 // ADMIN & ORGANIZATION
 // ============================================
 func migrateAdmin() {
-	// DB.AutoMigrate(
+	fmt.Println("=== Migrating BPI Module ===")
+
+	// migrateAndLog(
 	// 	&models.User{}, &models.UserAt{},
 	// 	&models.PositionModel{}, &models.PositionAt{},
 	// 	&models.PositionAccessModel{}, &models.PositionAccessAt{},
@@ -95,10 +99,10 @@ func migrateAdmin() {
 // SETUP / MASTER DATA
 // ============================================
 func migrateSetup() {
-	DB.AutoMigrate(
-		&models.Brand{}, &models.BrandAt{},
-		&models.UnitMeasurement{}, &models.UnitMeasurementAt{},
-		&models.PaymentTerms{}, &models.PaymentTermsAt{},
+
+	fmt.Println("=== Migrating SETUP Module ===")
+
+	// migrateAndLog(
 		&models.Class{}, &models.ClassAt{},
 		&models.Name{}, &models.NameAt{},
 		&models.Type{}, &models.TypeAt{},
@@ -106,15 +110,25 @@ func migrateSetup() {
 		&models.ValuationMethod{}, &models.ValuationMethodAt{},
 		&models.TradeType{}, &models.TradeTypeAt{},
 	)
+	// 	&models.Brand{}, &models.BrandAt{},
+	// 	&models.UnitMeasurement{}, &models.UnitMeasurementAt{},
+	// 	&models.PaymentTerms{}, &models.PaymentTermsAt{},
+	// 	&models.Class{}, &models.ClassAt{},
+	// 	&models.Name{}, &models.NameAt{},
+	// 	&models.Type{}, &models.TypeAt{},
+	// 	&models.Material{}, &models.MaterialAt{},
+	// 	&models.ValuationMethod{}, &models.ValuationMethodAt{},
+	// 	&models.TradeType{}, &models.TradeTypeAt{},
+	// )
 }
 
 // ============================================
 // ITEM MANAGEMENT
 // ============================================
 func migrateItemManagement() {
-	DB.AutoMigrate(
-		&models.Item{}, &models.ItemAt{},
-		&models.ItemSpecs{}, &models.ItemSpecsAt{},
+	fmt.Println("=== Migrating ITEM MANAGEMENT Module ===")
+
+	// migrateAndLog(
 		&models.ItemSpecsTemplate{}, &models.ItemSpecsTemplateAt{},
 		&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{},
 		&models.AdditionalSpecsPumpType{}, &models.AdditionalSpecsPumpTypeAt{},
@@ -131,7 +145,8 @@ func migrateItemManagement() {
 // BOM & BOQ MANAGEMENT
 // ============================================
 func migrateBomBoq() {
-	// DB.AutoMigrate(
+	fmt.Println("=== Migrating BOM & BOQ Module ===")
+	// migrateAndLog(
 	// 	&models.SetupItemBom{}, &models.SetupItemBomAt{},
 	// 	&models.SetupItemBomDetails{}, &models.SetupItemBomDetailsAt{},
 	// 	&models.ItemBoq{}, &models.ItemBoqAt{},
@@ -145,7 +160,8 @@ func migrateBomBoq() {
 // INVENTORY & WAREHOUSE
 // ============================================
 func migrateInventoryWarehouse() {
-	// DB.AutoMigrate(
+	fmt.Println("=== Migrating INVENTORY & WAREHOUSE Module ===")
+	// migrateAndLog(
 	// 	&models.WarehouseUseType{}, &models.WarehouseUseTypeAt{},
 	// 	&models.WarehouseName{}, &models.WarehouseNameAt{},
 	// 	&models.WarehouseAddress{}, &models.WarehouseAddressAt{},
@@ -172,7 +188,8 @@ func migrateInventoryWarehouse() {
 // ITEM REQUEST & PICK ACTIVITY
 // ============================================
 func migrateItemRequestPickActivity() {
-	// DB.AutoMigrate(
+	fmt.Println("=== Migrating ITEM REQUEST & PICK ACTIVITY Module ===")
+	// migrateAndLog(
 	// 	&models.ItemRequest{}, &models.ItemRequestAt{},
 	// 	&models.ItemRequestDetails{}, &models.ItemRequestDetailsAt{},
 	// 	&models.ItemRequestLocation{}, &models.ItemRequestLocationAt{},
@@ -190,7 +207,8 @@ func migrateItemRequestPickActivity() {
 // SALES & CRM
 // ============================================
 func migrateSalesCrm() {
-	// DB.AutoMigrate(
+	fmt.Println("=== Migrating SALES & CRM Module ===")
+	// migrateAndLog(
 	// 	&models.Order{}, &models.OrderAt{},
 	// 	&models.OrderDetails{}, &models.OrderDetailsAt{},
 	// 	&models.CRM{}, &models.CRMAt{},
@@ -209,7 +227,8 @@ func migrateSalesCrm() {
 // SALES PROJECT
 // ============================================
 func migrateSalesProject() {
-	// DB.AutoMigrate(
+	fmt.Println("=== Migrating SALES PROJECT Module ===")
+	// migrateAndLog(
 	// 	&models.SalesProjectTemplate{}, &models.SalesProjectTemplateAt{},
 	// 	&models.SalesProjectTemplateChild{}, &models.SalesProjectTemplateChildAt{},
 	// 	&models.SalesProjectMultiplier{}, &models.SalesProjectMultiplierAt{},
@@ -227,7 +246,8 @@ func migrateSalesProject() {
 // PURCHASING & VENDOR
 // ============================================
 func migratePurchasingVendor() {
-	// DB.AutoMigrate(
+	fmt.Println("=== Migrating PURCHASING & VENDOR Module ===")
+	// migrateAndLog(
 	// 	&models.PurchaseRequisition{}, &models.PurchaseRequisitionAt{},
 	// 	&models.PROrders{}, &models.PROrdersAt{},
 	// 	&models.PurchasingCanvassSheet{}, &models.PurchasingCanvassSheetAt{},
@@ -240,11 +260,13 @@ func migratePurchasingVendor() {
 // BUSINESS PARTNER / BPI
 // ============================================
 func migrateBpi() {
-	// DB.AutoMigrate(
-	// 	&models.Bpi{}, &models.BpiAt{},
-	// 	&models.BpiGeneral{}, &models.BpiGeneralAt{},
-	// 	&models.BpiContacts{}, &models.BpiContactsAt{},
-	// 	&models.BpiIndustries{}, &models.BpiIndustriesAt{},
+	fmt.Println("=== Migrating BPI Module ===")
+	migrateAndLog(
+		// 	&models.Bpi{}, &models.BpiAt{},
+		// 	&models.BpiGeneral{}, &models.BpiGeneralAt{},
+		// 	&models.BpiContacts{}, &models.BpiContactsAt{},
+		&models.BpiIndustries{}, &models.BpiIndustriesAt{},
+		&models.Industries{}, &models.IndustriesAt{},
 	// 	&models.BpiBranchIndustries{}, &models.BpiBranchIndustriesAt{},
 	// 	&models.BpiEntity{}, &models.BpiEntityAt{},
 	// 	&models.BpiAddress{}, &models.BpiAddressAt{},
@@ -253,14 +275,15 @@ func migrateBpi() {
 	// 	&models.BpiAccreditation{}, &models.BpiAccreditationAt{},
 	// 	&models.BpiHistory{}, &models.BpiHistoryAt{},
 	// 	&accounting_models.BpiOverpayment{}, &accounting_models.BpiOverpaymentAt{},
-	// )
+	)
 }
 
 // ============================================
 // ACCOUNTING
 // ============================================
 func migrateAccounting() {
-	// DB.AutoMigrate(
+	fmt.Println("=== Migrating ACCOUNTING Module ===")
+	migrateAndLog(
 	// 	&accounting_models.ChartOfAccounts{}, &accounting_models.ChartOfAccountsAt{},
 	// 	&accounting_models.Tax{}, &accounting_models.TaxAt{},
 	// 	&accounting_models.TaxDetails{}, &accounting_models.TaxDetailsAt{},
@@ -292,37 +315,61 @@ func migrateAccounting() {
 	// DB.AutoMigrate(
 	// 	&accounting_models.PaymentReceipt{}, &accounting_models.PaymentReceiptAt{},
 	// 	&accounting_models.PaymentReceiptDetails{}, &accounting_models.PaymentReceiptDetailsAt{},
-	// )
+	)
 }
 
 // ============================================
 // JOB ORDER
 // ============================================
 func migrateJobOrder() {
-	// DB.AutoMigrate(&models.JobOrder{}, &models.JobOrderAt{})
+	fmt.Println("=== Migrating JOB ORDER Module ===")
+	// migrateAndLog(&models.JobOrder{}, &models.JobOrderAt{})
 }
 
 // ============================================
 // LOGISTICS & DISPATCHING
 // ============================================
 func migrateLogisticsDispatching() {
+	fmt.Println("=== Migrating LOGISTICS & DISPATCHING Module ===")
 	// DB.AutoMigrate(&models.ItemRelease{}, &models.ItemReleaseAt{})
 	// DB.AutoMigrate(&models.ItemReleaseDetails{}, &models.ItemReleaseDetailsAt{})
 	// DB.AutoMigrate(&dispatching_models.CalendarCategoryModel{}, &dispatching_models.CalendarCategoryAt{})
 	// DB.AutoMigrate(&dispatching_models.CalendarCostTypeModel{}, &dispatching_models.CalendarCostTypeAt{})
 	// DB.AutoMigrate(&models.CalendarScheduleModel{}, &models.CalendarScheduleAt{})
-	// DB.AutoMigrate(
+	migrateAndLog(
 	// 	&dispatching_models.DeliveryReceipt{}, &dispatching_models.DeliveryReceiptAt{},
 	// 	&dispatching_models.DeliveryReceiptItems{}, &dispatching_models.DeliveryReceiptItemsAt{},
 	// 	&dispatching_models.DeliveryReceiptCosts{}, &dispatching_models.DeliveryReceiptCostsAt{},
 	// 	&dispatching_models.ReceiptFile{}, &dispatching_models.ReceiptFileAt{},
-	// )
+	)
 }
 
 // ============================================
 // VEHICLE MANAGEMENT
 // ============================================
 func migrateVehicleManagement() {
-	// DB.AutoMigrate(&models.VehicleModel{}, &models.VehicleAt{})
-	// DB.AutoMigrate(&models.VehicleFileModel{}, &models.VehicleFileAt{})
+	fmt.Println("=== Migrating VEHICLE MANAGEMENT Module ===")
+	// migrateAndLog(&models.VehicleModel{}, &models.VehicleAt{})
+	// migrateAndLog(&models.VehicleFileModel{}, &models.VehicleFileAt{})
+}
+
+func migrateAndLog(models ...interface{}) {
+	for _, m := range models {
+		name := getModelName(m)
+
+		err := DB.AutoMigrate(m)
+		if err != nil {
+			fmt.Println("❌ Failed:", name, "| Error:", err)
+		} else {
+			fmt.Println("✅ Migrated:", name)
+		}
+	}
+}
+
+func getModelName(m interface{}) string {
+	t := reflect.TypeOf(m)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return t.Name()
 }

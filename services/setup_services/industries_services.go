@@ -64,8 +64,8 @@ func CreateIndustry(c *fiber.Ctx, tx *gorm.DB) (models.Industries, int, error) {
 	return body, 0, nil
 }
 
-func UpdateIndustry(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.Entity, int, error) {
-	var body models.Entity
+func UpdateIndustry(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.Industries, int, error) {
+	var body models.Industries
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
@@ -88,8 +88,8 @@ func UpdateIndustry(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 	return body, 0, nil
 }
 
-func DeleteIndustry(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.Entity, int, error) {
-	var body models.Entity
+func DeleteIndustry(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.Industries, int, error) {
+	var body models.Industries
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
