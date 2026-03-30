@@ -25,9 +25,9 @@ func (ItemRelease) TableName() string {
 }
 
 type ItemReleaseAt struct {
-	ID    uint   `gorm:"primaryKey" json:"id"`
-	RefId uint   `json:"ref_id"`
-	DocNo string `gorm:"size:50;" json:"doc_no"`
+	ID    uint `gorm:"primaryKey" json:"id"`
+	RefId uint `json:"ref_id"`
+	DocNo int  `gorm:"size:50;" json:"doc_no"`
 	ItemReleaseContent
 	At
 }

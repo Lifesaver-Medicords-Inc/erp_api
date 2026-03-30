@@ -27,8 +27,8 @@ import (
 func init() {
 	initializers.LoadEnv()
 	initializers.ConnectDb()
-	// initializers.MigrateAll()
-	initializers.MigrateModel("bpi")
+	initializers.MigrateAll()
+	//initializers.MigrateModel()
 	initializers.InitRedis()
 	initializers.InitWm()
 	initializers.InitWm2()
