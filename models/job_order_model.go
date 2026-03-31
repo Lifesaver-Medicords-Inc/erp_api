@@ -76,18 +76,6 @@ func (JobOrderSalesDetails) TableName() string {
 	return "vw_get_sales_order_details_engineering"
 }
 
-type EngineerListView struct {
-	Id         int    `json:"id"`
-	FirstName  string `json:"first_name"`
-	LastName   string `json:"last_name"`
-	FullName   string `json:"full_name"`
-	Department string `json:"department"`
-}
-
-func (EngineerListView) TableName() string {
-	return "vw_get_users_engr_list"
-}
-
 type Components struct {
 	Id       uint   `json:"id"`
 	Name     string `json:"name"`
