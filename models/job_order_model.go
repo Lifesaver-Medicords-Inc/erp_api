@@ -1,47 +1,46 @@
 package models
 
 type JobOrderContent struct {
-	Type     string `json:"type"`
-	ItemDesc string `json:"item_desc"`
-}
-
-type JobOrder struct {
-	JobOrderID     uint   `gorm:"primaryKey" json:"job_order_id"`
 	BomId          uint   `json:"bom_id"`
+	SoId           uint   `json:"so_id"`
+	IrId           uint   `json:"ir_id"`
 	OrderDetailsId uint   `json:"order_details_id"`
 	Date           string `json:"date"`
 	SalesOrder     string `json:"sales_order"`
+	GeneralName    string `json:"general_name"`
+	ItemDesc       string `json:"item_desc"`
+	Type           string `json:"type"`
 	Materials      string `json:"materials"`
 	Quantity       uint   `json:"quantity"`
 	Due            string `json:"due"`
-	A_Engr         string `json:"a_engr"`
+	EngrId         uint   `json:"engr_id"`
+	AEngr          string `json:"a_engr"`
 	ItemRqst       string `json:"item_rqst"`
 	Status         string `json:"status"`
-	GeneralName    string `json:"general_name"`
 	SerialNo       string `json:"serial_no"`
 	ReportBase     string `json:"report_base"`
 	Report         string `json:"report"`
+}
+type JobOrder struct {
+	ID uint `gorm:"primarykey" json:"id"`
 	JobOrderContent
 }
 
-type JobOrderView struct {
-	JobOrderID     *uint  `gorm:"column:id" json:"job_order_id"`
-	BomId          uint   `json:"bom_id"`
-	OrderDetailsId uint   `json:"order_details_id"`
-	Date           string `json:"date"`
-	SalesOrder     string `json:"sales_order"`
-	Materials      string `json:"materials"`
-	Quantity       int    `json:"quantity"`
-	Due            string `json:"due"`
-	A_Engr         string `json:"a_engr"`
-	ItemRqst       string `json:"item_rqst"`
-	Status         string `json:"status"`
-	GeneralName    string `json:"general_name"`
-	SerialNo       string `json:"serial_no"`
-	ReportBase     string `json:"report_base"`
-	Report         string `json:"report"`
-	Type           string `json:"type"`
-	ItemDesc       string `json:"item_desc"`
+func (JobOrder) TableName() string {
+	return "tbl_trans_job_order"
+}
+
+type JobOrderAt struct {
+	ID    uint   `gorm:"primarykey" json:"id"`
+	RefId uint   `json:"ref_id"`
+	Code  string `json:"code"`
+	Name  string `json:"name"`
+	JobOrderContent
+	At
+}
+
+func (JobOrderAt) TableName() string {
+	return "z_tbl_trans_job_order_at"
 }
 
 type JobOrderSales struct {
@@ -84,17 +83,7 @@ type Components struct {
 	Stock    int    `json:"stock"`
 }
 
-func (JobOrder) TableName() string {
-	return "tbl_trans_job_order"
-}
-
-type JobOrderAt struct {
-	ID    uint `gorm:"primarykey" json:"id"`
-	RefId uint `json:"ref_id"`
-	JobOrderContent
-	At
-}
-
-func (JobOrderAt) TableName() string {
-	return "z_tbl_trans_job_order_at"
+type SalesOrderViewBody struct {
+	SalesOrderView        []JobOrderSales        `json:"sales_order_view"`
+	SalesOrderDetailsView []JobOrderSalesDetails `json:"sales_order_details_view"`
 }

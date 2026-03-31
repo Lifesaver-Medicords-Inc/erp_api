@@ -9,4 +9,4 @@ SELECT sod.order_details_id AS id,
     sod.delivery_preference AS remark,
     sod.status AS status
 FROM dbo.tbl_trans_sales_order_details AS sod
-    INNER JOIN dbo.tbl_trans_sales_order AS so ON sod.based_id = so.order_id
+    LEFT JOIN dbo.tbl_trans_sales_order AS so ON sod.based_id = so.order_id

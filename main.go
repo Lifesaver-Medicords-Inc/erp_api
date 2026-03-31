@@ -9,7 +9,6 @@ import (
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
 	"github.com/pierceperado/smpc/handlers/engineering_handlers"
 	"github.com/pierceperado/smpc/handlers/item_request_handlers"
-	"github.com/pierceperado/smpc/handlers/job_orders_handlers"
 	"github.com/pierceperado/smpc/handlers/journal_entry_handlers"
 	"github.com/pierceperado/smpc/handlers/pick_activity_handlers"
 	"github.com/pierceperado/smpc/handlers/position_handlers"
@@ -28,6 +27,7 @@ func init() {
 	initializers.LoadEnv()
 	initializers.ConnectDb()
 	initializers.MigrateAll()
+	//initializers.MigrateAll()
 	//initializers.MigrateModel()
 	initializers.InitRedis()
 	initializers.InitWm()
@@ -100,16 +100,6 @@ func SetupApp() *fiber.App {
 			// Setup Endpoints
 			setupApi := api.Group("/setup")
 			{
-
-				jobApi := setupApi.Group("/job")
-				{
-					jobApi.Get("/order/:user_id", job_orders_handlers.GetJobOrder)
-					jobApi.Get("/so_view", job_orders_handlers.GetSalesOrderViewEng)
-					jobApi.Get("/components/:bom_id", job_orders_handlers.GetComponents)
-					jobApi.Post("/order", job_orders_handlers.CreateJobOrder)
-					jobApi.Put("/order", job_orders_handlers.UpdateJobOrder)
-				}
-
 				invApi := setupApi.Group("/inv")
 				{
 					//Inventory Tracker endpoints

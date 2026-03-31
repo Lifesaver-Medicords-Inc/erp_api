@@ -21,7 +21,7 @@ func MigrateAll() {
 	migrateItemManagement()
 	migrateBomBoq()
 	migrateInventoryWarehouse()
-	migrateItemRequestPickActivity()
+	migrateEngineering()
 	migrateSalesCrm()
 	migrateSalesProject()
 	migratePurchasingVendor()
@@ -52,8 +52,8 @@ func MigrateModel(categories ...string) {
 			migrateBomBoq()
 		case "inventory", "warehouse", "inventory_warehouse":
 			migrateInventoryWarehouse()
-		case "item_request", "pick_activity", "item_request_pick":
-			migrateItemRequestPickActivity()
+		case "item_request", "pick_activity":
+			migrateEngineering()
 		case "sales", "crm", "sales_crm":
 			migrateSalesCrm()
 		case "sales_project":
@@ -188,6 +188,7 @@ func migrateInventoryWarehouse() {
 // ============================================
 // ITEM REQUEST & PICK ACTIVITY
 // ============================================
+
 func migrateItemRequestPickActivity() {
 	fmt.Println("=== Migrating ITEM REQUEST & PICK ACTIVITY Module ===")
 	migrateAndLog(
@@ -202,6 +203,21 @@ func migrateItemRequestPickActivity() {
 		&models.PickActivityLocation{}, &models.PickActivityLocationAt{},
 		&models.PickActivityHistory{}, &models.PickActivityHistoryAt{},
 	)
+}
+
+func migrateEngineering() {
+	// DB.AutoMigrate(
+	// 	&models.ItemRequest{}, &models.ItemRequestAt{},
+	// 	&models.ItemRequestDetails{}, &models.ItemRequestDetailsAt{},
+	// 	&models.ItemRequestLocation{}, &models.ItemRequestLocationAt{},
+	// 	&models.ItemRequestHistory{}, &models.ItemRequestHistoryAt{},
+	// )
+	// DB.AutoMigrate(
+	// 	&models.PickActivity{}, &models.PickActivityAt{},
+	// 	&models.PickActivityDetails{}, &models.PickActivityDetailsAt{},
+	// 	&models.PickActivityLocation{}, &models.PickActivityLocationAt{},
+	// 	&models.PickActivityHistory{}, &models.PickActivityHistoryAt{},
+	// )
 }
 
 // ============================================

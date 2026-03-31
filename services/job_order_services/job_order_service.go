@@ -9,21 +9,19 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
-	"gorm.io/gorm"
 )
 
-type SalesOrderViewBody struct {
-	SalesOrderView        []models.JobOrderSales        `json:"sales_order_view"`
-	SalesOrderDetailsView []models.JobOrderSalesDetails `json:"sales_order_details_view"`
+type JobOrderService struct{}
+
+func NewJobOrderService() *JobOrderService {
+	return &JobOrderService{}
 }
 
-func GetJobOrder(userId int64) (interface{}, int, error) {
-	conditions := map[string]interface{}{
-		"UserId": userId,
-	}
-	var response []models.JobOrderView
+func (s *JobOrderService) GetJobOrder(conditions map[string]interface{}) (interface{}, int, error) {
+	var response []models.JobOrder
 
 	if err := services.DbRaw(&response, "sp_GetJobOrders", conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting job order data")
@@ -32,8 +30,8 @@ func GetJobOrder(userId int64) (interface{}, int, error) {
 	return response, 0, nil
 }
 
-func GetSalesOrderViewEng(conditions map[string]interface{}) (interface{}, int, error) {
-	var response SalesOrderViewBody
+func (s *JobOrderService) GetSalesOrderViewEng(conditions map[string]interface{}) (interface{}, int, error) {
+	var response models.SalesOrderViewBody
 
 	if err := services.DbGet(&response.SalesOrderView, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New(" failed getting sales order")
@@ -46,10 +44,17 @@ func GetSalesOrderViewEng(conditions map[string]interface{}) (interface{}, int, 
 	return response, 0, nil
 }
 
-func GetComponents(bomId int64) (interface{}, int, error) {
-	conditions := map[string]interface{}{
-		"BomId": bomId,
+func (s *JobOrderService) GetEngineerList(conditions map[string]interface{}) (interface{}, int, error) {
+	var response []models.EngineerListView
+
+	if err := services.DbGet(&response, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New(" failed getting engineer list")
 	}
+
+	return response, 0, nil
+}
+
+func (s *JobOrderService) GetComponents(conditions map[string]interface{}) (interface{}, int, error) {
 	var response []models.Components
 
 	if err := services.DbRaw(&response, "sp_GetComponents", conditions); err != nil {
@@ -59,111 +64,103 @@ func GetComponents(bomId int64) (interface{}, int, error) {
 	return response, 0, nil
 }
 
-func CreateJobOrder(c *fiber.Ctx, tx *gorm.DB) (models.JobOrder, int, error) {
-	var body models.JobOrder
-
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+func (s *JobOrderService) CreateJobOrder(body *[]models.JobOrder, at models.At) (*[]models.JobOrder, int, error) {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	if err := services.DbInsert(tx, &body); err != nil {
-		if strings.Contains(err.Error(), "duplicate key") {
-			err = errors.New("duplicate record error")
-		} else {
-			err = errors.New("failed creating job order list")
+	// Rollback once, automatically, unless committed
+	defer tx.Rollback()
+
+	for i := range *body {
+		item := &(*body)[i]
+
+		if err := services.DbInsert(tx, item); err != nil {
+			if strings.Contains(err.Error(), "duplicate key") {
+				return body, fiber.StatusInternalServerError, errors.New("duplicate record error")
+			}
+			return body, fiber.StatusInternalServerError, errors.New("failed creating job order")
 		}
 
-		return body, fiber.StatusInternalServerError, err
+		atdata := models.JobOrderAt{
+			RefId:           item.ID,
+			JobOrderContent: item.JobOrderContent,
+			At:              at,
+		}
+
+		if err := services.DbInsert(tx, &atdata); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
 	}
 
-	at, ok := c.Locals("at").(models.At)
-	fmt.Println("at  ok ", at)
-
-	if !ok {
-		at = models.At{}
-		fmt.Println("at not ok ", at)
-
-	}
-
-	atdata := models.JobOrderAt{RefId: body.JobOrderID, JobOrderContent: models.JobOrderContent{ItemDesc: body.ItemDesc, Type: body.Type}, At: at}
-	if err := services.DbInsert(tx, &atdata); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed creating jobOrderListAt")
-	}
-
-	if err := services.InvalidateCacheByModel(models.JobOrderView{}); err != nil {
-		fmt.Println("Failed to invalidate cache:", err)
+	// Commit once
+	if err := tx.Commit().Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
 	}
 
 	return body, 0, nil
 }
 
-func UpdateJobOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.JobOrder, int, error) {
-	var body models.JobOrder
+func (s *JobOrderService) UpdateJobOrder(body *[]models.JobOrder, conditions map[string]interface{}, at models.At) (*[]models.JobOrder, int, error) {
 
-	if err := c.BodyParser(&body); err != nil {
-		fmt.Println("This is the error:", err)
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	//Get the existing job order record
-	var existing models.JobOrder
-	if err := tx.Where(conditions).First(&existing).Error; err != nil {
-		return body, fiber.StatusNotFound, errors.New("job order not found")
-	}
+	defer tx.Rollback()
 
-	//Handle report_base (replace file if new one is uploaded)
-	if body.ReportBase != "" {
-		// Delete old file if it exists
-		if existing.ReportBase != "" {
-			oldPath := fmt.Sprintf("./files/%s", existing.ReportBase)
-			if err := services.DeleteFile(oldPath); err != nil && !os.IsNotExist(err) {
-				fmt.Println("Failed deleting old report file:", err)
+	for i := range *body {
+		item := &(*body)[i]
+
+		itemConditions := map[string]interface{}{"id": item.ID}
+
+		// Get the existing job order record
+		var existing models.JobOrder
+		if err := tx.Where(itemConditions).First(&existing).Error; err != nil {
+			return body, fiber.StatusNotFound, fmt.Errorf("job order not found for id %v", item.ID)
+		}
+
+		// Handle report_base (replace file if new one is uploaded)
+		if item.ReportBase != "" {
+			if existing.ReportBase != "" {
+				oldPath := fmt.Sprintf("./files/%s", existing.ReportBase)
+				if err := services.DeleteFile(oldPath); err != nil && !os.IsNotExist(err) {
+					fmt.Println("Failed deleting old report file:", err)
+				}
 			}
+
+			filename, err := services.UploadFile(item.ReportBase)
+			if err != nil {
+				return body, fiber.StatusInternalServerError, fmt.Errorf("failed saving report file for id %v", item.ID)
+			}
+
+			item.ReportBase = filename
+		} else {
+			item.ReportBase = existing.ReportBase
 		}
 
-		// Save new file
-		filename, err := services.UploadFile(body.ReportBase)
-		if err != nil {
-			return body, fiber.StatusInternalServerError, errors.New("failed saving report file")
+		// Update record in DB
+		if err := services.DbUpdate(tx, item, itemConditions); err != nil {
+			return body, fiber.StatusInternalServerError, fmt.Errorf("failed updating job order for id %v", item.ID)
 		}
 
-		// Store new filename in DB instead of raw base64
-		body.ReportBase = filename
-	} else {
-		// Keep the old filename if no new file is uploaded
-		body.ReportBase = existing.ReportBase
+		// Insert audit record
+		atdata := models.JobOrderAt{
+			RefId:           item.ID,
+			JobOrderContent: item.JobOrderContent,
+			At:              at,
+		}
+
+		if err := services.DbInsert(tx, &atdata); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
 	}
 
-	//Update record in DB
-	if err := services.DbUpdate(tx, &body, conditions); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed updating Job Order List")
+	if err := tx.Commit().Error; err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed committing transaction")
 	}
-
-	//Save audit trail
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
-
-	atdata := models.JobOrderAt{
-		RefId: body.JobOrderID,
-		JobOrderContent: models.JobOrderContent{
-			Type:     body.Type,
-			ItemDesc: body.ItemDesc,
-		},
-		At: at,
-	}
-
-	if err := services.DbInsert(tx, &atdata); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed creating Job Order Listat")
-	}
-
-	//Invalidate cache
-	if err := services.InvalidateCacheByModel(models.JobOrderView{}); err != nil {
-		fmt.Println("Failed to invalidate cache:", err)
-	}
-
-	fmt.Println("JOB ORDER UPDATE: ", body)
 
 	return body, 0, nil
 }
