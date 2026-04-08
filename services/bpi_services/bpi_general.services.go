@@ -15,18 +15,20 @@ type UpdateMainBranchDTO struct {
 	IsMain bool `json:"is_main"`
 }
 
-func BpiGeneral(tx *gorm.DB, parentId uint, child *models.BpiGeneralSchema, at models.At) error {
+func CreateBpiGeneral(tx *gorm.DB, parentId uint, child *models.BpiGeneralSchema, at models.At) error {
 
 	child.BpiGeneralContent.BasedId = parentId
+
+	// Backend owns these — strip whatever frontend sent
+	child.BpiGeneralEmbeddedContent.CustomerCode = ""
+	child.BpiGeneralEmbeddedContent.SupplierCode = ""
+	
+
 	if err := services.DbInsert(tx, &child.BpiGeneral); err != nil {
-
 		if strings.Contains(err.Error(), "duplicate key") {
-			err = errors.New("duplicate branch name")
-		} else {
-			err = errors.New("failed creating brand")
+			return errors.New("duplicate branch name")
 		}
-
-		return err
+		return errors.New("failed creating branch")
 	}
 
 	childAt := models.BpiGeneralAt{
@@ -41,7 +43,6 @@ func BpiGeneral(tx *gorm.DB, parentId uint, child *models.BpiGeneralSchema, at m
 		return errors.New("failed creating bpi_generals_at")
 	}
 
-	// create general history
 	if err := CreateBpiHistory(tx, child.BpiGeneral.ID, "create", "General", child.SalesId, at); err != nil {
 		return err
 	}
@@ -68,6 +69,10 @@ func UpdateBpiGeneral(tx *gorm.DB, child *models.BpiGeneralSchema, at models.At,
 		return err
 	}
 
+	// Preserve existing codes — backend owns these, ignore whatever frontend sent
+	child.BpiGeneralEmbeddedContent.CustomerCode = oldGeneral.CustomerCode
+	child.BpiGeneralEmbeddedContent.SupplierCode = oldGeneral.SupplierCode
+
 	if err := services.DbUpdate(tx, &child.BpiGeneral, conditions); err != nil {
 		return errors.New("failed to update bpi general")
 	}
@@ -89,9 +94,7 @@ func UpdateBpiGeneral(tx *gorm.DB, child *models.BpiGeneralSchema, at models.At,
 		return err
 	}
 
-	generalChanged := utils.HasChanged(oldGeneral, newGeneral)
-
-	if generalChanged {
+	if utils.HasChanged(oldGeneral, newGeneral) {
 		if err := CreateBpiHistory(tx, child.BpiGeneral.ID, "update", "General", child.SalesId, at); err != nil {
 			return err
 		}
@@ -105,23 +108,21 @@ func UpdateBpiGeneral(tx *gorm.DB, child *models.BpiGeneralSchema, at models.At,
 		if err := services.DbDelete(tx, &models.BpiEntity{}, childConditions); err != nil {
 			return errors.New("failed to delete bpi entity")
 		}
+		for _, v := range child.EntityTypeId {
+			if err := CreateBpiEntity(tx, child.BpiGeneral.ID, uint(v), child.SalesId, at); err != nil {
+				return err
+			}
+		}
 	}
 
 	if len(child.BranchIndustryId) != 0 {
 		if err := services.DbDelete(tx, &models.BpiBranchIndustries{}, childConditions); err != nil {
 			return errors.New("failed to delete bpi industries")
 		}
-	}
-
-	for _, v := range child.BranchIndustryId {
-		if err := CreateBpiBranchIndustries(tx, child.BpiGeneral.ID, uint(v), child.SalesId, at); err != nil {
-			return err
-		}
-	}
-
-	for _, v := range child.EntityTypeId {
-		if err := CreateBpiEntity(tx, child.BpiGeneral.ID, uint(v), child.SalesId, at); err != nil {
-			return err
+		for _, v := range child.BranchIndustryId {
+			if err := CreateBpiBranchIndustries(tx, child.BpiGeneral.ID, uint(v), child.SalesId, at); err != nil {
+				return err
+			}
 		}
 	}
 

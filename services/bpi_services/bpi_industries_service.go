@@ -10,6 +10,19 @@ import (
 
 func CreateBpiIndustries(tx *gorm.DB, parentId uint, industryId uint, at models.At) error {
 
+	// Check if already exists
+	var count int64
+	if err := tx.Model(&models.BpiIndustries{}).
+		Where("bpi_id = ? AND industry_id = ?", parentId, industryId).
+		Count(&count).Error; err != nil {
+		return errors.New("failed checking bpi industries")
+	}
+
+	// Skip if already exists
+	if count > 0 {
+		return nil
+	}
+
 	content := models.BpiIndustriesContent{
 		BpiId:      parentId,
 		IndustryId: industryId,
@@ -42,11 +55,6 @@ func UpdateBpiIndustries(tx *gorm.DB, parentId uint, industryId uint, at models.
 	if err := services.DbInsert(tx, &bpiIndustries); err != nil {
 		return errors.New("failed creating bpi industries")
 	}
-
-	if err := services.DbInsert(tx, &bpiIndustries); err != nil {
-		return errors.New("failed creating bpi industries")
-	}
-
 	bpiIndustriesAt := models.BpiIndustriesAt{
 		RefId:                bpiIndustries.ID,
 		BpiIndustriesContent: content,

@@ -35,4 +35,3 @@ FROM tbl_bpi a
             AND a.industry_id = b.id
         GROUP BY b.bpi_id
     ) c ON a.id = c.bpi_id
-WHERE ISNULL(c.industry_names, '') <> '';

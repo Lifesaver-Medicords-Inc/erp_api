@@ -3,21 +3,24 @@ package bpi_services
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
 )
 
+// ─── CreateBpiEntity ──────────────────────────────────────────────────────────
+
 func CreateBpiEntity(tx *gorm.DB, parentId uint, entityId uint, salesId string, at models.At) error {
 
-	fmt.Println("CREATE BPI ENTITTY")
+	fmt.Println("CREATE BPI ENTITY")
+
 	content := models.BpiEntityContent{
 		BpiGeneralId: parentId,
 		EntityId:     entityId,
 	}
 	bpiEntity := models.BpiEntity{BpiEntityContent: content}
-	fmt.Println("CREATE BPI ENTITTYs", bpiEntity.BpiEntityContent)
 
 	if err := services.DbInsert(tx, &bpiEntity); err != nil {
 		return errors.New("failed creating bpi entity")
@@ -28,18 +31,43 @@ func CreateBpiEntity(tx *gorm.DB, parentId uint, entityId uint, salesId string, 
 		BpiEntityContent: content,
 		At:               at,
 	}
-
 	if err := services.DbInsert(tx, &bpiEntityAt); err != nil {
 		return errors.New("failed creating bpi entity_at")
 	}
 
-	// create branch entity history
-	// if err := CreateBpiHistory(tx, parentId, "create", "General Entities", salesId, at); err != nil {
-	// 	return err
-	// }
+	// Fetch entity master to check its code
+	var entity models.Entity // adjust to your actual Entity model
+	if err := tx.First(&entity, entityId).Error; err != nil {
+		return errors.New("failed to find entity")
+	}
+
+	// Fetch current general to check if number already exists
+	var gen models.BpiGeneral
+	if err := tx.First(&gen, parentId).Error; err != nil {
+		return errors.New("failed to find bpi general")
+	}
+
+	switch strings.ToUpper(entity.Code) {
+	case "CUS":
+		// Only generate if not yet assigned — reuse existing number if re-selected
+		if gen.CustomerCode == "" {
+			if err := generateCustomerCode(tx, parentId); err != nil {
+				return err
+			}
+		}
+	case "SUP":
+		// Only generate if not yet assigned — reuse existing number if re-selected
+		if gen.SupplierCode == "" {
+			if err := generateSupplierCode(tx, parentId); err != nil {
+				return err
+			}
+		}
+	}
 
 	return nil
 }
+
+// ─── UpdateBpiEntity ──────────────────────────────────────────────────────────
 
 func UpdateBpiEntity(tx *gorm.DB, parentId uint, entityId uint, salesId string, at models.At) error {
 
@@ -64,15 +92,51 @@ func UpdateBpiEntity(tx *gorm.DB, parentId uint, entityId uint, salesId string, 
 		BpiEntityContent: content,
 		At:               at,
 	}
-
 	if err := services.DbInsert(tx, &bpiEntityAt); err != nil {
 		return errors.New("failed creating bpi_industries_at")
 	}
 
-	// create branch entity history
 	if err := CreateBpiHistory(tx, parentId, "update", "General Entities", salesId, at); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+// ─── Number Generators ────────────────────────────────────────────────────────
+
+func generateCustomerCode(tx *gorm.DB, bpiGeneralId uint) error {
+	var count int64
+	tx.Model(&models.BpiGeneral{}).
+		Where("customer_code != ''").
+		Count(&count)
+
+	customerCode := fmt.Sprintf("C#%04d", count+1)
+
+	if err := tx.Model(&models.BpiGeneral{}).
+		Where("id = ?", bpiGeneralId).
+		Update("customer_code", customerCode).Error; err != nil {
+		return errors.New("failed setting customer_code")
+	}
+
+	fmt.Println("Generated CustomerCode:", customerCode)
+	return nil
+}
+
+func generateSupplierCode(tx *gorm.DB, bpiGeneralId uint) error {
+	var count int64
+	tx.Model(&models.BpiGeneral{}).
+		Where("supplier_code != ''").
+		Count(&count)
+
+	supplierCode := fmt.Sprintf("S#%04d", count+1)
+
+	if err := tx.Model(&models.BpiGeneral{}).
+		Where("id = ?", bpiGeneralId).
+		Update("supplier_code", supplierCode).Error; err != nil {
+		return errors.New("failed setting supplier_code")
+	}
+
+	fmt.Println("Generated SupplierCode:", supplierCode)
 	return nil
 }

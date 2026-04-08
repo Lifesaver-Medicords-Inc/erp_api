@@ -33,3 +33,12 @@ type BpiItemsAt struct {
 func (BpiItemsAt) TableName() string {
 	return "z_tbl_bpi_items_at"
 }
+
+type BpiItemsDetails struct {
+	ID uint `gorm:"primarykey" json:"id"`
+	BpiItemDetailsContent
+}
+
+type BpiItemDetailsContent struct {
+	
+}

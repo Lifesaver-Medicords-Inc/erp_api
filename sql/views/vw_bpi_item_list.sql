@@ -1,7 +1,7 @@
 CREATE
 OR ALTER VIEW [dbo].[vw_bpi_item_list] AS
 SELECT a.id,
-    ISNULL(a.trade_type_names, '') + ',' + ISNULL(a.item_tangibility_type, '') AS item_type,
+    ISNULL(a.item_tangibility_type, '') AS item_type,
     a.item_code,
     a.item_name AS general_name,
     a.item_model AS item_model_name,

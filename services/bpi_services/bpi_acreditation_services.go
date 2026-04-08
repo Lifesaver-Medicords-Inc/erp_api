@@ -74,6 +74,15 @@ func CreateBpiAccreditation(tx *gorm.DB, parentId uint, general_id uint, child m
 
 func UpdateBpiAccreditation(tx *gorm.DB, child models.BpiAccreditation, salesId string, at models.At, parentId uint) error {
 
+	if child.ID == 0 {
+		// New record — insert (reuse CreateBpiAccreditation)
+		if err := CreateBpiAccreditation(tx, parentId, child.BpiAccreditationContent.BranchId, child, salesId, at); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// Existing record — fetch old, update, compare
 	oldAccreditation := models.BpiAccreditation{}
 	if err := tx.First(&oldAccreditation, child.ID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -85,14 +94,17 @@ func UpdateBpiAccreditation(tx *gorm.DB, child models.BpiAccreditation, salesId 
 	conditions := map[string]interface{}{
 		"based_id": parentId,
 	}
+
 	path, err := saveBase64Image(child.BpiAccreditationContent.FilePath)
 	if err != nil {
-		return errors.New("failed to to convert file to base64")
+		return errors.New("failed to convert file to base64")
 	}
 	child.BpiAccreditationContent.FilePath = path
+
 	if err := services.DbUpdate(tx, &child, conditions); err != nil {
 		return errors.New("failed updating bpi accreditations")
 	}
+
 	childAt := models.BpiAccreditationAt{
 		RefId:                   child.ID,
 		BpiAccreditationContent: child.BpiAccreditationContent,
@@ -109,11 +121,10 @@ func UpdateBpiAccreditation(tx *gorm.DB, child models.BpiAccreditation, salesId 
 		}
 		return err
 	}
-	accreditationChanged := utils.HasChanged(oldAccreditation, newAccreditation)
 
-	if accreditationChanged {
-		// create accreditation history
-		if err := CreateBpiHistory(tx, parentId, "update", "Finance", salesId, at); err != nil {
+	if utils.HasChanged(oldAccreditation, newAccreditation) {
+		// fixed: was "Finance", should be "Accreditation"
+		if err := CreateBpiHistory(tx, parentId, "update", "Accreditation", salesId, at); err != nil {
 			return err
 		}
 	}

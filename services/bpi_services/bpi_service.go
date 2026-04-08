@@ -187,14 +187,14 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 
 	//Create Bpi General
 
-	if err := BpiGeneral(tx, body.ID, &body.General, at); err != nil {
+	if err := CreateBpiGeneral(tx, body.ID, &body.General, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
 	// Create  Bpi Contacts
 
 	for i := range body.Contacts {
-		if err := BpiContact(tx, body.ID, body.General.ID, &body.Contacts[i], body.General.SalesId, at); err != nil {
+		if err := CreateBpiContact(tx, body.ID, body.General.ID, &body.Contacts[i], body.General.SalesId, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
@@ -203,7 +203,7 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 
 	for _, v := range body.Address {
 
-		if err := BpiAddress(tx, body.ID, body.General.ID, v, body.General.SalesId, at); err != nil {
+		if err := CreateBpiAddress(tx, body.ID, body.General.ID, v, body.General.SalesId, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
@@ -334,12 +334,12 @@ func UpdateBpi(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bo
 
 	fmt.Println("BODY General REQUEST", body.General)
 	fmt.Println("BODY Contacts  REQUEST", body.Contacts)
-	fmt.Println("BODY  Address  REQUEST", body.Address)
-	fmt.Println("BODY Items  REQUEST", body.Items)
-	fmt.Println("BODY Finance  REQUEST", body.Finance)
+	fmt.Println("BODY Address   REQUEST", body.Address)
+	fmt.Println("BODY Items     REQUEST", body.Items)
+	fmt.Println("BODY Finance   REQUEST", body.Finance)
 
 	if err := services.DbUpdate(tx, &body.Bpi, conditions); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New(("failed updating parent"))
+		return body, fiber.StatusInternalServerError, errors.New("failed updating parent")
 	}
 
 	at, ok := c.Locals("at").(models.At)
@@ -365,82 +365,62 @@ func UpdateBpi(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bo
 		"based_id": body.ID,
 	}
 
-	IndustriesCondition := map[string]interface{}{
-		"bpi_id": body.ID,
-	}
-
-	// Delete the bpi industries data  and Create data  in table
+	// Delete and re-create industries
 	if len(body.IndustriesId) != 0 {
+		IndustriesCondition := map[string]interface{}{"bpi_id": body.ID}
 		if err := services.DbDelete(tx, &models.BpiIndustries{}, IndustriesCondition); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
-	}
 
-	for _, v := range body.IndustriesId {
-		if err := CreateBpiIndustries(tx, body.ID, uint(v), at); err != nil {
-			return body, fiber.StatusInternalServerError, err
+		// Fixed: removed duplicate loop
+		for _, v := range body.IndustriesId {
+			if err := CreateBpiIndustries(tx, body.ID, uint(v), at); err != nil {
+				return body, fiber.StatusInternalServerError, err
+			}
 		}
 	}
 
-	for _, v := range body.IndustriesId {
-		if err := CreateBpiIndustries(tx, body.ID, uint(v), at); err != nil {
-			return body, fiber.StatusInternalServerError, err
-		}
-	}
-
-	//Update Bpi General
-
+	// Update Bpi General
 	if body.General.ID == 0 {
-
-		if err := BpiGeneral(tx, body.ID, &body.General, at); err != nil {
+		if err := CreateBpiGeneral(tx, body.ID, &body.General, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
-
 	} else {
-		err := UpdateBpiGeneral(tx, &body.General, at, conditions)
-		if err != nil {
+		if err := UpdateBpiGeneral(tx, &body.General, at, conditions); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
 
-	// Update  Bpi Contacts
-
+	// Update Bpi Contacts
 	for _, v := range body.Contacts {
 		if err := UpdateBpiContact(tx, body.General.ID, v, body.General.SalesId, at, conditions); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
-
 	}
 
-	//Update Bpi Address
-
+	// Update Bpi Address
 	for _, v := range body.Address {
 		if err := UpdateBpiAddress(tx, body.General.ID, v, body.General.SalesId, at, conditions); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
 
-	//Update Bpi Items
-	//  Add function to add new item in update function
+	// Update Bpi Items
 	if err := UpdateBpiItems(tx, body.ID, body.General.ID, body.Items, body.General.SalesId, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	//Update Bpi Finance
-
+	// Update Bpi Finance
 	if err := UpdateBpiFinance(tx, body.Finance, body.General.SalesId, at, body.ID); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	//Add  Bpi Accreditations not update
-
+	// Update Bpi Accreditations — Fixed: corrected argument order
 	for _, v := range body.Accreditations {
 		fmt.Println("Body Accreditations", v)
-
-		if err := CreateBpiAccreditation(tx, body.ID, body.General.ID, v, body.General.SalesId, at); err != nil {
+		if err := UpdateBpiAccreditation(tx, v, body.General.SalesId, at, body.ID); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
-
 	}
 
 	InvalidateChildKey()

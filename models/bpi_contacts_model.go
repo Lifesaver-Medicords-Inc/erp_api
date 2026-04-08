@@ -8,7 +8,7 @@ type BpiContactContent struct {
 	Email            string `json:"email"`
 	Preferences      string `json:"preferences"`
 	Position         uint   `json:"position"`
-	IsDefaultContact bool   `json:"is_default_contact"`
+	IsDefaultContact *bool   `json:"is_default_contact"`
 	ContactNotes     string `json:"contact_notes"`
 }
 

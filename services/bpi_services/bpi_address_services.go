@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func BpiAddress(tx *gorm.DB, parentId uint, general_id uint, child models.BpiAddress, salesId string, at models.At) error {
+func CreateBpiAddress(tx *gorm.DB, parentId uint, general_id uint, child models.BpiAddress, salesId string, at models.At) error {
 
 	child.BpiAddressContent.BasedId = parentId
 	child.BpiAddressContent.BranchId = general_id
@@ -37,46 +37,44 @@ func BpiAddress(tx *gorm.DB, parentId uint, general_id uint, child models.BpiAdd
 
 func UpdateBpiAddress(tx *gorm.DB, generalId uint, child models.BpiAddress, salesId string, at models.At, conditions map[string]interface{}) error {
 
-	var oldAddress models.BpiAddress
-	if err := tx.First(&oldAddress, child.ID).Error; err != nil {
-		return err
-	}
-
 	if child.ID == 0 {
+		// New record — insert instead of update
 		child.BpiAddressContent.BasedId = conditions["based_id"].(uint)
 		child.BpiAddressContent.BranchId = generalId
 		if err := services.DbInsert(tx, &child); err != nil {
 			return errors.New("failed to create bpi address")
 		}
-
 	} else {
+		// Existing record — fetch old for change detection, then update
+		var oldAddress models.BpiAddress
+		if err := tx.First(&oldAddress, child.ID).Error; err != nil {
+			return errors.New("address record not found")
+		}
 
 		if err := services.DbUpdate(tx, &child, conditions); err != nil {
 			return errors.New("failed updating bpi address")
 		}
+
+		var newAddress models.BpiAddress
+		if err := tx.First(&newAddress, child.ID).Error; err != nil {
+			return errors.New("failed re-fetching updated address")
+		}
+
+		if utils.HasChanged(oldAddress, newAddress) {
+			if err := CreateBpiHistory(tx, generalId, "update", "Address", salesId, at); err != nil {
+				return err
+			}
+		}
 	}
 
-	childfat := models.BpiAddressAt{
+	childAt := models.BpiAddressAt{
 		RefId:             child.ID,
 		BpiAddressContent: child.BpiAddressContent,
 		At:                at,
 	}
-	if err := services.DbInsert(tx, &childfat); err != nil {
-		return errors.New("failed creating bpi address at  in Update Bpi adresss")
+	if err := services.DbInsert(tx, &childAt); err != nil {
+		return errors.New("failed creating bpi address at in UpdateBpiAddress")
 	}
 
-	var newAddress models.BpiAddress
-	if err := tx.First(&newAddress, child.ID).Error; err != nil {
-		return err
-	}
-
-	addressChanged := utils.HasChanged(oldAddress, newAddress)
-	if addressChanged {
-		// create address history
-
-		if err := CreateBpiHistory(tx, generalId, "update", "Address", salesId, at); err != nil {
-			return err
-		}
-	}
 	return nil
 }

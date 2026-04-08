@@ -1,6 +1,7 @@
 package setup_handlers
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -10,14 +11,15 @@ import (
 )
 
 func GetPaymentTerms(c *fiber.Ctx) error {
-	conditions := map[string]interface{}{
-		"is_selected": true,
-	}
-	data, status, err := setup_services.GetPaymentTerms(conditions)
+	// conditions := map[string]interface{}{
+	// 	"is_selected": true,
+	// }
+	data, status, err := setup_services.GetPaymentTerms(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
+	fmt.Println("payment terms:", data)
 	return utils.RespondSuccess(c, data)
 }
 
