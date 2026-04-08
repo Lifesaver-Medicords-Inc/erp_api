@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/pierceperado/smpc/models"
 )
 
 // models "github.com/pierceperado/smpc/models"
@@ -333,8 +335,8 @@ func migrateAccounting() {
 // JOB ORDER
 // ============================================
 func migrateJobOrder() {
-	// fmt.Println("=== Migrating JOB ORDER Module ===")
-	// migrateAndLog(&models.JobOrder{}, &models.JobOrderAt{})
+	fmt.Println("=== Migrating JOB ORDER Module ===")
+	migrateAndLog(&models.JobOrder{}, &models.JobOrderAt{})
 }
 
 // ============================================
