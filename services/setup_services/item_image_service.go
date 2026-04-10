@@ -59,7 +59,7 @@ func CreateItemImageChild(tx *gorm.DB, basedId uint, newImages []models.ItemImag
 	return nil
 }
 
-func UpdateItemImageChild(tx *gorm.DB, itemImageID uint, newImage string, at models.At) error {
+func UpdateItemImageChild(tx *gorm.DB, itemImageID uint, newImage string, filename string, at models.At) error {
 	// Find existing image
 	var body models.ItemImage
 	if err := tx.Where("id = ?", itemImageID).First(&body).Error; err != nil {
@@ -79,16 +79,22 @@ func UpdateItemImageChild(tx *gorm.DB, itemImageID uint, newImage string, at mod
 	}
 
 	// Update database record
-	updateData := map[string]interface{}{"image": filePath}
+	updateData := map[string]interface{}{
+		"image":    filePath,
+		"filename": filename,
+	}
 	if err := tx.Model(&models.ItemImage{}).Where("id = ?", itemImageID).Updates(updateData).Error; err != nil {
 		return errors.New("failed updating item image")
 	}
 
 	// Log change in ItemImageAt
 	itemImageAt := models.ItemImageAt{
-		RefId:            itemImageID,
-		ItemImageContent: models.ItemImageContent{Image: filePath},
-		At:               at,
+		RefId: itemImageID,
+		ItemImageContent: models.ItemImageContent{
+			Image:    filePath,
+			Filename: filename,
+		},
+		At: at,
 	}
 
 	if err := services.DbInsert(tx, &itemImageAt); err != nil {
@@ -132,7 +138,8 @@ func UpdateItemImage(tx *gorm.DB, basedId uint, itemImage ItemImage, at models.A
 
 	// Replace images
 	for _, replaceReq := range itemImage.ReplaceImages {
-		if err := UpdateItemImageChild(tx, replaceReq.ID, replaceReq.Image, at); err != nil {
+		fmt.Println("REPLACE REQ body", replaceReq)
+		if err := UpdateItemImageChild(tx, replaceReq.ID, replaceReq.Image, replaceReq.Filename, at); err != nil {
 			fmt.Println("REPLACE REQ", err)
 			return err
 		}
