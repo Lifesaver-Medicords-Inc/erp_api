@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -118,6 +119,13 @@ func BroadcastMessage(data interface{}) error {
 	}
 
 	return nil
+}
+func SendMessage(c *websocket.Conn, data interface{}) error {
+	bytes, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	return c.WriteMessage(websocket.TextMessage, bytes)
 }
 
 // for deparments redbox

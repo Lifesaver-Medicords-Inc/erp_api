@@ -35,20 +35,31 @@ func BroadcastRedboxList() error {
 }
 
 func WsgetRedboxList(c *websocket.Conn) {
-	data, status, err := purchasing_services.GetSortedPurchasingRedboxList(nil)
+	// Send initial data on connect
+	data, _, err := purchasing_services.GetSortedPurchasingRedboxList(nil)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	if err := services.BroadcastMessage(data); err != nil {
+	if err := services.SendMessage(c, data); err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	fmt.Println("Status:", status)
+	// Keep connection alive, handle ping
+	for {
+		msgType, msg, err := c.ReadMessage()
+		if err != nil {
+			fmt.Println("Client disconnected:", err)
+			return
+		}
 
-	BroadcastRedboxList()
-	fmt.Println("WsgetRedboxList GEEEET")
-
+		if msgType == websocket.TextMessage && string(msg) == "ping" {
+			if err := c.WriteMessage(websocket.TextMessage, []byte("pong")); err != nil {
+				fmt.Println("Pong failed:", err)
+				return
+			}
+		}
+	}
 }
