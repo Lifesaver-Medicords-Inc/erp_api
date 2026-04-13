@@ -1,4 +1,4 @@
-package inventory_model
+package inventory_models
 
 type ItemStockAndLocationView struct {
 	ItemId      uint   `json:"item_id"`

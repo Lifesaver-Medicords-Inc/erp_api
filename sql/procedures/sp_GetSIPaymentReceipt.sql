@@ -1,5 +1,5 @@
 CREATE
-OR ALTER PROCEDURE dbo.sp_GetSIPaymentReceipt @CustomerId INT AS BEGIN
+OR ALTER PROCEDURE [dbo].[sp_GetSIPaymentReceipt] @CustomerId INT AS BEGIN
 SET NOCOUNT ON;
 BEGIN TRY
 SELECT si.id AS sales_invoice_id,
@@ -11,7 +11,7 @@ SELECT si.id AS sales_invoice_id,
         WHEN ABS(ISNULL(SUM(pvd.amount_applied), 0)) < 0.01 THEN 0
         ELSE ISNULL(SUM(pvd.amount_applied), 0)
     END AS open_amount
-FROM dbo.tbl_accounting_sales_invoice2 AS si
+FROM dbo.tbl_accounting_sales_invoice AS si
     INNER JOIN dbo.tbl_accounting_payment_receipt_details pvd ON si.id = pvd.sales_invoice_id
 WHERE si.customer_id = @CustomerId
 GROUP BY si.id,

@@ -3,6 +3,7 @@ package accounting_models
 type InvoiceSOView struct {
 	SalesOrderID uint    `json:"sales_order_id"`
 	SONumber     string  `json:"so_number"`
+	DRNumber     int     `json:"dr_number"`
 	DocDate      string  `json:"doc_date"`
 	CustomerName string  `json:"customer_name"`
 	SalesPerson  string  `json:"sales_person"`

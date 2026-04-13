@@ -28,7 +28,7 @@ func MigrateAll() {
 	migrateJobOrder()
 	migrateLogisticsDispatching()
 	migrateVehicleManagement()
-	migrateItemRequestPickActivity()
+	migrateInventoryTransaction()
 }
 
 // // MigrateModel migrates specific models or categories by name
@@ -170,11 +170,11 @@ func migrateInventoryWarehouse() {
 	// 	&models.InvTracker{}, &models.InvTrackerAt{},
 	// 	&models.InventoryStocks{}, &models.InventoryStocksAt{},
 	// 	&models.InventoryStocksHistory{}, &models.InventoryStocksHistoryAt{},
+	//	&inventory_models.ItemStocks{}, &inventory_models.ItemStocksAt{},
 	// )
 	// migrateAndLog(
-	// 	&models.ReceivingReport{}, &models.ReceivingReportAt{},
-	// 	&models.ReceivingReportDetails{}, &models.ReceivingReportDetailsAt{},
-	// 	&models.ReceivingReportInventory{}, &models.ReceivingReportInventoryAt{},
+	//	&inventory_models.ReceivingReport{}, &inventory_models.ReceivingReportAt{},
+	//	&inventory_models.ReceivingReportDetails{}, &inventory_models.ReceivingReportDetailsAt{},
 	// )
 	// migrateAndLog(
 	// 	&models.ReceivingReport2{}, &models.ReceivingReportAt2{},
@@ -184,11 +184,11 @@ func migrateInventoryWarehouse() {
 }
 
 // ============================================
-// ITEM REQUEST & PICK ACTIVITY
+// INVENTORY TRANSACTIONS
 // ============================================
 
-func migrateItemRequestPickActivity() {
-	// fmt.Println("=== Migrating ITEM REQUEST & PICK ACTIVITY Module ===")
+func migrateInventoryTransaction() {
+	// fmt.Println("=== Migrating INVENTORY TRANSACTIONS Modules ===")
 	// migrateAndLog(
 	// 	&models.ItemRequest{}, &models.ItemRequestAt{},
 	// 	&models.ItemRequestDetails{}, &models.ItemRequestDetailsAt{},
@@ -200,6 +200,11 @@ func migrateItemRequestPickActivity() {
 	// 	&models.PickActivityDetails{}, &models.PickActivityDetailsAt{},
 	// 	&models.PickActivityLocation{}, &models.PickActivityLocationAt{},
 	// 	&models.PickActivityHistory{}, &models.PickActivityHistoryAt{},
+	// )
+
+	// migrateAndLog(
+	// 	&inventory_models.ReceivingReport{}, &inventory_models.ReceivingReportAt{},
+	// 	&inventory_models.ReceivingReportDetails{}, &inventory_models.ReceivingReportDetailsAt{},
 	// )
 }
 

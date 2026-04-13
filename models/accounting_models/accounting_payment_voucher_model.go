@@ -78,15 +78,8 @@ func (PaymentVoucherDetailsAt) TableName() string {
 }
 
 type PaymentVoucherDetailsGet struct {
-	ID                 uint    `json:"id"`
-	PaymentVoucherID   uint    `json:"payment_voucher_id"`
-	ApVoucherDetailsId uint    `json:"ap_voucher_details_id"`
-	DocNo              string  `json:"doc_no"`
-	DueDate            string  `json:"due_date"`
-	TransAmount        float64 `json:"trans_amount"`
-	OpenAmount         float64 `json:"open_amount"`
-	AmountApplied      float64 `json:"amount_applied"`
-	TwasApplied        float64 `json:"twas_applied"`
+	PaymentVoucherDetails
+	OpenAmount float64 `json:"open_amount"`
 }
 
 func (PaymentVoucherDetailsGet) TableName() string {

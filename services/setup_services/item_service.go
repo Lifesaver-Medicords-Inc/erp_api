@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/models/accounting_models"
+	"github.com/pierceperado/smpc/models/inventory_models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
 )
@@ -338,6 +339,11 @@ func InvalidateItemCaches() {
 		accounting_models.TaxDetailsAt{},
 		accounting_models.SupplierTradeView{},
 		accounting_models.PaymentVoucherDetailsGet{},
+		inventory_models.WarehouseReceivingView{},
+		inventory_models.PurchaseOrderDocView{},
+		inventory_models.WarehouseReceivingAreaView{},
+		inventory_models.PurchaseOrderReceivingView{},
+		inventory_models.PurchaseOrderReceivingDetailsView{},
 	}
 	for _, key := range cacheKeys {
 		services.InvalidateCache(services.GetKey(key, nil))

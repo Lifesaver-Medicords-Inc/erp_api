@@ -52,17 +52,13 @@ func (PaymentReceiptAt) TableName() string {
 }
 
 type PaymentReceiptDetailsContent struct {
-	PaymentReceiptID      uint    `json:"payment_receipt_id"`
-	SalesOrderDetailsId   uint    `json:"sales_order_details_id"`
-	SalesInvoiceDetailsId uint    `json:"sales_invoice_details_id"`
-	SalesInvoiceId        uint    `json:"sales_invoice_id"`
-	DocNo                 int     `json:"doc_no"`
-	DocDate               string  `json:"doc_date"`
-	DueDate               string  `json:"due_date"`
-	OpenAmount            float64 `json:"open_amount"`
-	AmountApplied         float64 `json:"amount_applied"`
-	TwasApplied           float64 `json:"twas_applied"`
-	Balance               float64 `json:"balance"`
+	PaymentReceiptID uint    `json:"payment_receipt_id"`
+	SalesInvoiceId   uint    `json:"sales_invoice_id"`
+	DocNo            int     `json:"doc_no"`
+	DocDate          string  `json:"doc_date"`
+	DueDate          string  `json:"due_date"`
+	AmountApplied    float64 `json:"amount_applied"`
+	TwasApplied      float64 `json:"twas_applied"`
 }
 
 type PaymentReceiptDetails struct {
@@ -85,12 +81,21 @@ func (PaymentReceiptDetailsAt) TableName() string {
 	return "z_tbl_accounting_payment_receipt_details_at"
 }
 
+type PaymentReceiptDetailsGet struct {
+	PaymentReceiptDetails
+	OpenAmount float64 `json:"open_amount"`
+}
+
+func (PaymentReceiptDetailsGet) TableName() string {
+	return "vw_get_payment_receipt_details"
+}
+
 type PaymentReceiptBody struct {
 	PaymentReceipt        PaymentReceipt          `json:"payment_receipt"`
 	PaymentReceiptDetails []PaymentReceiptDetails `json:"payment_receipt_details"`
 }
 
 type PaymentReceiptGet struct {
-	PaymentReceipt        []PaymentReceipt        `json:"payment_receipt"`
-	PaymentReceiptDetails []PaymentReceiptDetails `json:"payment_receipt_details"`
+	PaymentReceipt        []PaymentReceipt           `json:"payment_receipt"`
+	PaymentReceiptDetails []PaymentReceiptDetailsGet `json:"payment_receipt_details"`
 }

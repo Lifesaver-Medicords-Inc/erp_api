@@ -21,7 +21,7 @@ type ReceivingReport2 struct {
 }
 
 func (ReceivingReport2) TableName() string {
-	return "tbl_inv_warehouse_receiving_report2"
+	return "tbl_inv_warehouse_receiving_report"
 }
 
 type ReceivingReportAt2 struct {
@@ -33,7 +33,7 @@ type ReceivingReportAt2 struct {
 }
 
 func (ReceivingReportAt2) TableName() string {
-	return "z_tbl_inv_warehouse_receiving_report_at2"
+	return "z_tbl_inv_warehouse_receiving_report_at"
 }
 
 type ReceivingReportDetailsContent2 struct {
@@ -60,7 +60,7 @@ type ReceivingReportDetails2 struct {
 }
 
 func (ReceivingReportDetails2) TableName() string {
-	return "tbl_inv_warehouse_receiving_report_details2"
+	return "tbl_inv_warehouse_receiving_report_details"
 }
 
 type ReceivingReportDetailsAt2 struct {
@@ -72,7 +72,7 @@ type ReceivingReportDetailsAt2 struct {
 }
 
 func (ReceivingReportDetailsAt2) TableName() string {
-	return "z_tbl_inv_warehouse_receiving_report_details_at2"
+	return "z_tbl_inv_warehouse_receiving_report_details_at"
 }
 
 type ReceivingHistoryContent struct {

@@ -13,7 +13,7 @@ import (
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
-	"github.com/pierceperado/smpc/services/journal_entry_services2"
+	"github.com/pierceperado/smpc/services/journal_entry_services"
 	"github.com/pierceperado/smpc/services/overpayment_services"
 	"github.com/pierceperado/smpc/services/setup_services"
 	"github.com/pierceperado/smpc/utils"
@@ -109,7 +109,7 @@ func (s *PaymentVoucherService) CreatePaymentVoucher(body *accounting_models.Pay
 	}
 
 	// Find matching journal entry
-	var journals []accounting_models.JournalEntry2
+	var journals []accounting_models.JournalEntry
 	if err := tx.Find(&journals).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching journal entries")
 	}
@@ -152,9 +152,9 @@ func (s *PaymentVoucherService) CreatePaymentVoucher(body *accounting_models.Pay
 	}
 
 	// Helper to create journal entry
-	createJournalEntry := func(account accounting_models.ChartOfAccounts, amount float64, isCredit bool) accounting_models.JournalEntryDetails2 {
-		entry := accounting_models.JournalEntryDetails2{
-			JournalEntryDetails2Content: accounting_models.JournalEntryDetails2Content{
+	createJournalEntry := func(account accounting_models.ChartOfAccounts, amount float64, isCredit bool) accounting_models.JournalEntryDetails {
+		entry := accounting_models.JournalEntryDetails{
+			JournalEntryDetailsContent: accounting_models.JournalEntryDetailsContent{
 				Origin:         "Payment Voucher",
 				OriginId:       body.PaymentVoucher.ID,
 				LineMemo:       "Auto entry - " + map[bool]string{true: "CREDIT", false: "DEBIT"}[isCredit],
@@ -174,7 +174,7 @@ func (s *PaymentVoucherService) CreatePaymentVoucher(body *accounting_models.Pay
 		return entry
 	}
 
-	jeService := journal_entry_services2.NewJournalEntryService2()
+	jeService := journal_entry_services.NewJournalEntryService2()
 
 	// Compute total applied from details
 	var totalApplied float64
@@ -183,7 +183,7 @@ func (s *PaymentVoucherService) CreatePaymentVoucher(body *accounting_models.Pay
 	}
 
 	// Auto-insert debit and credit
-	for _, e := range []accounting_models.JournalEntryDetails2{
+	for _, e := range []accounting_models.JournalEntryDetails{
 		createJournalEntry(coaCREDIT, body.PaymentVoucher.TransactionAmount, true),
 		createJournalEntry(coaDEBIT, totalApplied, false),
 	} {
@@ -270,8 +270,8 @@ func (s *PaymentVoucherService) InsertDifferenceDebit(tx *gorm.DB, body *account
 		}
 
 		//Create DEBIT journal entry
-		entry := accounting_models.JournalEntryDetails2{
-			JournalEntryDetails2Content: accounting_models.JournalEntryDetails2Content{
+		entry := accounting_models.JournalEntryDetails{
+			JournalEntryDetailsContent: accounting_models.JournalEntryDetailsContent{
 				Origin:         "Payment Voucher",
 				OriginId:       body.PaymentVoucher.ID,
 				LineMemo:       "Auto entry - DEBIT",
@@ -302,7 +302,7 @@ func (s *PaymentVoucherService) InsertDifferenceDebit(tx *gorm.DB, body *account
 			return err
 		}
 
-		jeService := journal_entry_services2.NewJournalEntryService2()
+		jeService := journal_entry_services.NewJournalEntryService2()
 
 		if err := jeService.AutoInsertJournalEntry(&entry, body.PaymentVoucher.DocDate, at); err != nil {
 			return err

@@ -27,19 +27,6 @@ func (s *ChartOfAccountService) GetChartOfAccounts(conditions map[string]interfa
 	return response, fiber.StatusOK, nil
 }
 
-func (s *ChartOfAccountService) GetChartOfAccountsClassifications(code string) ([]accounting_models.ChartOfAccounts, int, error) {
-	conditions := map[string]interface{}{
-		"code": code,
-	}
-
-	var response []accounting_models.ChartOfAccounts
-	if err := services.DbRaw(&response, "sp_chart_of_account_classification", conditions); err != nil {
-		return response, fiber.StatusInternalServerError, errors.New("failed to get chart of account classfications")
-	}
-
-	return response, fiber.StatusOK, nil
-}
-
 func (s *ChartOfAccountService) CreateChartOfAccounts(body *accounting_models.ChartOfAccounts, at models.At) (*accounting_models.ChartOfAccounts, int, error) {
 
 	tx := initializers.DB.Begin()

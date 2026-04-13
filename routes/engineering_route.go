@@ -7,9 +7,9 @@ import (
 )
 
 func EngineeringRoutes(router fiber.Router) {
-	accountingApi := router.Group("/engineering")
+	engineeringApi := router.Group("/engineering")
 
-	setupJobOrderRoutes(accountingApi)
+	setupJobOrderRoutes(engineeringApi)
 }
 
 func setupJobOrderRoutes(api fiber.Router) {

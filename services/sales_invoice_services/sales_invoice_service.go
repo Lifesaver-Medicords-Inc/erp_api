@@ -1,4 +1,4 @@
-package sales_invoice_services2
+package sales_invoice_services
 
 import (
 	// "errors"
@@ -14,7 +14,7 @@ import (
 	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
 	adminservices "github.com/pierceperado/smpc/services/admin_services"
-	"github.com/pierceperado/smpc/services/journal_entry_services2"
+	"github.com/pierceperado/smpc/services/journal_entry_services"
 	"github.com/pierceperado/smpc/services/setup_services"
 	"github.com/pierceperado/smpc/utils"
 	"gorm.io/gorm"
@@ -112,35 +112,35 @@ func (s *SalesInvoiceService) GetCustomerSO(conditions map[string]interface{}) (
 }
 
 func (s *SalesInvoiceService) GetSalesInvoice(conditions map[string]interface{}) (interface{}, int, error) {
-	var response accounting_models.SalesInvoice2Get
+	var response accounting_models.SalesInvoiceGet
 
-	if err := services.DbGet(&response.SalesInvoice2, conditions); err != nil {
+	if err := services.DbGet(&response.SalesInvoice, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New(" failed getting sales invoice")
 	}
 
-	if err := services.DbGet(&response.SalesInvoiceDetails2, conditions); err != nil {
+	if err := services.DbGet(&response.SalesInvoiceDetails, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New(" failed getting sales invoice details")
 	}
 
 	return response, fiber.StatusOK, nil
 }
 
-func (s *SalesInvoiceService) CreateSalesInvoice(body *accounting_models.SalesInvoice2Body, at models.At) (*accounting_models.SalesInvoice2Body, int, error) {
+func (s *SalesInvoiceService) CreateSalesInvoice(body *accounting_models.SalesInvoiceBody, at models.At) (*accounting_models.SalesInvoiceBody, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 	defer tx.Rollback() // rollback unless committed
 
-	nextDocNo, err := utils.NextDocNo(tx, new(accounting_models.SalesInvoice2), "doc_no")
+	nextDocNo, err := utils.NextDocNo(tx, new(accounting_models.SalesInvoice), "doc_no")
 	if err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed getting next doc number")
 	}
 
-	body.SalesInvoice2.DocNo = nextDocNo
+	body.SalesInvoice.DocNo = nextDocNo
 
 	// Insert main Sales Invoice
-	if err := services.DbInsert(tx, &body.SalesInvoice2); err != nil {
+	if err := services.DbInsert(tx, &body.SalesInvoice); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			return body, fiber.StatusConflict, errors.New("duplicate record error")
 		}
@@ -153,12 +153,12 @@ func (s *SalesInvoiceService) CreateSalesInvoice(body *accounting_models.SalesIn
 	}
 
 	// Find matching journal entry
-	var journals []accounting_models.JournalEntry2
+	var journals []accounting_models.JournalEntry
 	if err := tx.Find(&journals).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching journal entries")
 	}
 
-	docDate, err := time.Parse("01/02/2006", strings.ToLower(strings.TrimSpace(body.SalesInvoice2.DocDate)))
+	docDate, err := time.Parse("01/02/2006", strings.ToLower(strings.TrimSpace(body.SalesInvoice.DocDate)))
 	if err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("invalid sales invoice doc date format")
 	}
@@ -193,14 +193,14 @@ func (s *SalesInvoiceService) CreateSalesInvoice(body *accounting_models.SalesIn
 	}
 
 	// Helper to create journal entry
-	createJournalEntry := func(account accounting_models.ChartOfAccounts, amount float64, isCredit bool) accounting_models.JournalEntryDetails2 {
-		entry := accounting_models.JournalEntryDetails2{
-			JournalEntryDetails2Content: accounting_models.JournalEntryDetails2Content{
+	createJournalEntry := func(account accounting_models.ChartOfAccounts, amount float64, isCredit bool) accounting_models.JournalEntryDetails {
+		entry := accounting_models.JournalEntryDetails{
+			JournalEntryDetailsContent: accounting_models.JournalEntryDetailsContent{
 				Origin:         "Sales Invoice",
-				OriginId:       body.SalesInvoice2.ID,
+				OriginId:       body.SalesInvoice.ID,
 				LineMemo:       "Auto entry - " + map[bool]string{true: "CREDIT", false: "DEBIT"}[isCredit],
-				PostingDate:    body.SalesInvoice2.DocDate,
-				CreatedBy:      body.SalesInvoice2.PreparedBy,
+				PostingDate:    body.SalesInvoice.DocDate,
+				CreatedBy:      body.SalesInvoice.PreparedBy,
 				AccountTitle:   account.Name,
 				PostingRef:     account.Code,
 				PostingRefId:   account.ID,
@@ -215,23 +215,23 @@ func (s *SalesInvoiceService) CreateSalesInvoice(body *accounting_models.SalesIn
 		return entry
 	}
 
-	jeService := journal_entry_services2.NewJournalEntryService2()
+	jeService := journal_entry_services.NewJournalEntryService2()
 
 	// Auto-insert debit and credit
-	for _, e := range []accounting_models.JournalEntryDetails2{
-		createJournalEntry(coaCREDIT, body.SalesInvoice2.TotalAmountDue, true),
-		createJournalEntry(coaDEBIT, body.SalesInvoice2.TotalAmountDue, false),
+	for _, e := range []accounting_models.JournalEntryDetails{
+		createJournalEntry(coaCREDIT, body.SalesInvoice.TotalAmountDue, true),
+		createJournalEntry(coaDEBIT, body.SalesInvoice.TotalAmountDue, false),
 	} {
-		if err := jeService.AutoInsertJournalEntry(&e, body.SalesInvoice2.DocDate, at); err != nil {
+		if err := jeService.AutoInsertJournalEntry(&e, body.SalesInvoice.DocDate, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
 
 	// Insert audit record
-	atdata := accounting_models.SalesInvoice2At{
-		RefId:                body.SalesInvoice2.ID,
-		SalesInvoiceContent2: body.SalesInvoice2.SalesInvoiceContent2,
-		At:                   at,
+	atdata := accounting_models.SalesInvoiceAt{
+		RefId:               body.SalesInvoice.ID,
+		SalesInvoiceContent: body.SalesInvoice.SalesInvoiceContent,
+		At:                  at,
 	}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating sales invoice at")
@@ -259,20 +259,20 @@ func (s *SalesInvoiceService) CreateSalesInvoice(body *accounting_models.SalesIn
 	return body, fiber.StatusOK, nil
 }
 
-func (s *SalesInvoiceService) CreateSalesInvoiceDetails(tx *gorm.DB, body *accounting_models.SalesInvoice2Body, at models.At) error {
-	for i := range body.SalesInvoiceDetails2 {
-		detail := &body.SalesInvoiceDetails2[i]
-		detail.SalesInvoiceID = body.SalesInvoice2.ID // assign FK to parent
+func (s *SalesInvoiceService) CreateSalesInvoiceDetails(tx *gorm.DB, body *accounting_models.SalesInvoiceBody, at models.At) error {
+	for i := range body.SalesInvoiceDetails {
+		detail := &body.SalesInvoiceDetails[i]
+		detail.SalesInvoiceID = body.SalesInvoice.ID // assign FK to parent
 
 		if err := services.DbInsert(tx, detail); err != nil {
 			return errors.New("failed creating payment voucher details")
 		}
 
 		// Audit trail for each detail
-		atdataDetail := accounting_models.SalesInvoiceDetails2At{
-			RefId:                       detail.ID,
-			SalesInvoiceDetails2Content: detail.SalesInvoiceDetails2Content,
-			At:                          at,
+		atdataDetail := accounting_models.SalesInvoiceDetailsAt{
+			RefId:                      detail.ID,
+			SalesInvoiceDetailsContent: detail.SalesInvoiceDetailsContent,
+			At:                         at,
 		}
 
 		if err := services.DbInsert(tx, &atdataDetail); err != nil {

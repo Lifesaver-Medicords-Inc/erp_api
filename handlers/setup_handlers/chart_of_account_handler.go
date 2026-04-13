@@ -25,17 +25,6 @@ func (h *ChartOfAccountHandler) GetChartOfAccounts(c *fiber.Ctx) error {
 
 	return utils.RespondSuccess(c, data)
 }
-func (h *ChartOfAccountHandler) GetChartOfAccountClassification(c *fiber.Ctx) error {
-
-	codeParams := c.Params("code")
-
-	data, status, err := h.Service.GetChartOfAccountsClassifications(codeParams)
-	if err != nil {
-		return utils.RespondError(c, status, err.Error())
-	}
-
-	return utils.RespondSuccess(c, data)
-}
 
 func (h *ChartOfAccountHandler) CreateChartOfAccount(c *fiber.Ctx) error {
 	var body accounting_models.ChartOfAccounts

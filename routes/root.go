@@ -45,4 +45,6 @@ func SetupRoutes(app *fiber.App) {
 	AccountingRoutes(api)
 
 	EngineeringRoutes(api)
+
+	InventoryRoutes(api)
 }

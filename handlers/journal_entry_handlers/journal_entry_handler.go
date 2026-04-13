@@ -1,18 +1,18 @@
-package journal_entry_handlers2
+package journal_entry_handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/models/accounting_models"
-	"github.com/pierceperado/smpc/services/journal_entry_services2"
+	"github.com/pierceperado/smpc/services/journal_entry_services"
 	"github.com/pierceperado/smpc/utils"
 )
 
 type JournalEntryHandler2 struct {
-	Service *journal_entry_services2.JournalEntryService2
+	Service *journal_entry_services.JournalEntryService
 }
 
-func NewJournalEntryHandler2(service *journal_entry_services2.JournalEntryService2) *JournalEntryHandler2 {
+func NewJournalEntryHandler2(service *journal_entry_services.JournalEntryService) *JournalEntryHandler2 {
 	return &JournalEntryHandler2{Service: service}
 }
 

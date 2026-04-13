@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
-	"github.com/pierceperado/smpc/models/inventory_model"
+	"github.com/pierceperado/smpc/models/inventory_models"
 	"github.com/pierceperado/smpc/services"
 	"github.com/pierceperado/smpc/utils"
 )
@@ -169,12 +169,12 @@ func (s *ItemReleaseService) GetSalesOrderDetails(conditions map[string]interfac
 	return releases, fiber.StatusOK, nil
 }
 
-func (s *ItemReleaseService) GetItemStockAndLocation(itemId uint) ([]inventory_model.ItemStockAndLocationView, int, error) {
+func (s *ItemReleaseService) GetItemStockAndLocation(itemId uint) ([]inventory_models.ItemStockAndLocationView, int, error) {
 	conditions := map[string]interface{}{
 		"ItemId": itemId,
 	}
 
-	var response []inventory_model.ItemStockAndLocationView
+	var response []inventory_models.ItemStockAndLocationView
 
 	// Call stored procedure
 	if err := services.DbRaw(&response, "sp_GetItemStockAndLocation", conditions); err != nil {

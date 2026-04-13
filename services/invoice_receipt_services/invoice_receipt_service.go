@@ -13,7 +13,7 @@ import (
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
-	"github.com/pierceperado/smpc/services/journal_entry_services2"
+	"github.com/pierceperado/smpc/services/journal_entry_services"
 	"github.com/pierceperado/smpc/utils"
 	"gorm.io/gorm"
 )
@@ -127,7 +127,7 @@ func (s *InvoiceReceiptService) CreateInvoiceReceipt(body *accounting_models.Inv
 	}
 
 	// Find matching journal entry
-	var journals []accounting_models.JournalEntry2
+	var journals []accounting_models.JournalEntry
 	if err := tx.Find(&journals).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching journal entries")
 	}
@@ -167,9 +167,9 @@ func (s *InvoiceReceiptService) CreateInvoiceReceipt(body *accounting_models.Inv
 	}
 
 	// Helper to create journal entry
-	createJournalEntry := func(account accounting_models.ChartOfAccounts, amount float64, isCredit bool) accounting_models.JournalEntryDetails2 {
-		entry := accounting_models.JournalEntryDetails2{
-			JournalEntryDetails2Content: accounting_models.JournalEntryDetails2Content{
+	createJournalEntry := func(account accounting_models.ChartOfAccounts, amount float64, isCredit bool) accounting_models.JournalEntryDetails {
+		entry := accounting_models.JournalEntryDetails{
+			JournalEntryDetailsContent: accounting_models.JournalEntryDetailsContent{
 				Origin:         "Invoice Receipt",
 				OriginId:       body.InvoiceReceipt.ID,
 				LineMemo:       "Auto entry - " + map[bool]string{true: "CREDIT", false: "DEBIT"}[isCredit],
@@ -189,10 +189,10 @@ func (s *InvoiceReceiptService) CreateInvoiceReceipt(body *accounting_models.Inv
 		return entry
 	}
 
-	jeService := journal_entry_services2.NewJournalEntryService2()
+	jeService := journal_entry_services.NewJournalEntryService2()
 
 	// Auto-insert debit and credit
-	for _, e := range []accounting_models.JournalEntryDetails2{
+	for _, e := range []accounting_models.JournalEntryDetails{
 		createJournalEntry(coaCREDIT, body.InvoiceReceipt.NetAmount, true),
 		createJournalEntry(coaDEBIT, body.InvoiceReceipt.NetAmount, false),
 	} {

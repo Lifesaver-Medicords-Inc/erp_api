@@ -9,13 +9,11 @@ import (
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
 	"github.com/pierceperado/smpc/handlers/engineering_handlers"
 	"github.com/pierceperado/smpc/handlers/item_request_handlers"
-	"github.com/pierceperado/smpc/handlers/journal_entry_handlers"
 	"github.com/pierceperado/smpc/handlers/pick_activity_handlers"
 	"github.com/pierceperado/smpc/handlers/position_handlers"
 	"github.com/pierceperado/smpc/handlers/public_handlers"
 	"github.com/pierceperado/smpc/handlers/purchasing_handlers"
 	"github.com/pierceperado/smpc/handlers/sales_handlers"
-	"github.com/pierceperado/smpc/handlers/sales_invoice_handlers"
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
@@ -234,22 +232,6 @@ func SetupApp() *fiber.App {
 					warehouseApi.Delete("/area", setup_handlers.DeleteWarehouseAreaRow)
 				}
 
-				reportsApi := setupApi.Group("/report")
-				{
-					//receiving report
-					reportsApi.Get("/receiving", setup_handlers.GetReceivingReports)
-					reportsApi.Get("/receiving/:id", setup_handlers.GetReceivingReport)
-					reportsApi.Post("/receiving", setup_handlers.CreateReceivingReport)
-					reportsApi.Put("/receiving", setup_handlers.UpdateReceivingReport)
-					reportsApi.Delete("/receiving", setup_handlers.DeleteReceivingReport)
-
-					//receiving report detail
-					reportsApi.Delete("/receiving_details", setup_handlers.DeleteReceivingReportDetailsRow)
-
-					//receiving report inventory
-					reportsApi.Delete("/receiving_inventory", setup_handlers.DeleteReceivingReportInventoryRow)
-				}
-
 				reports2Api := setupApi.Group("/report2")
 				{
 					//receiving report
@@ -355,13 +337,6 @@ func SetupApp() *fiber.App {
 					setupApi.Put("/book", setup_handlers.UpdateChartGroup)
 					setupApi.Delete("/book", setup_handlers.DeleteChartGroup)
 
-					// Chart Group Endpoints
-					setupApi.Get("/chart_group", setup_handlers.GetChartGroups)
-					setupApi.Get("/chart_group:/id", setup_handlers.GetChartGroup)
-					setupApi.Post("/chart_group", setup_handlers.CreateChartGroup)
-					setupApi.Put("/chart_group", setup_handlers.UpdateChartGroup)
-					setupApi.Delete("/chart_group", setup_handlers.DeleteChartGroup)
-
 					// GetGeneralLedgerMappers
 					setupApi.Get("/general_ledger", setup_handlers.GetGeneralLedgerMappers)
 					//	setupApi.Get("/general_ledger:/id", setup_handlers.GetChartOfAccount)
@@ -372,13 +347,6 @@ func SetupApp() *fiber.App {
 					setupApi.Post("/expanded_tax", setup_handlers.CreateExpandedWithholdingTax)
 					setupApi.Put("/expanded_tax", setup_handlers.UpdateExpandedWithholdingTax)
 					setupApi.Delete("/expanded_tax", setup_handlers.DeleteExpandedWithholdingTax)
-
-					// Expanded Withholding Tax Endpoints
-					setupApi.Get("/final_tax", setup_handlers.GetFinalTax)
-					setupApi.Post("/final_tax", setup_handlers.CreateFinalTax)
-					setupApi.Put("/final_tax", setup_handlers.UpdateFinalTax)
-					setupApi.Delete("/final_tax", setup_handlers.DeleteFinalTax)
-
 				}
 				// =========================== END =============================
 
@@ -465,32 +433,6 @@ func SetupApp() *fiber.App {
 
 				salesApi.Get("/order_dr/:id", sales_handlers.GetSalesOrderDR)
 				salesApi.Get("/order_dr", sales_handlers.GetSalesOrdersDr)
-			}
-
-			accountingApi := api.Group("accounting")
-			{
-				accountingApi.Get("/sales_invoice_doc_no", sales_invoice_handlers.GetSalesInvoiceDocNo)
-				accountingApi.Get("/sales_invoice", sales_invoice_handlers.GetSalesInvoices)
-				accountingApi.Post("/sales_invoice", sales_invoice_handlers.CreateSalesInvoice)
-				// accountingApi.Put("/sales_invoice")
-				// accountingApi.Delete("/sales_invoice")
-
-				// Journal Entry Endpoints
-				accountingApi.Get("/journal_entry", journal_entry_handlers.GetJournalEntries)
-			}
-
-			// Engineering Endpoints
-			engineeringApi := api.Group("/engineering")
-			{
-				// Engineering Redbox List
-				redBoxApi := engineeringApi.Group("/redboxlist")
-				{
-					//Quotation
-					redBoxApi.Get("/quotation", engineering_handlers.GetEngineeringRedboxQuotationList)
-
-					//Job Order
-					redBoxApi.Get("/job_order/:userId", engineering_handlers.GetEngineeringRedboxJobOrder)
-				}
 			}
 
 			// Purchasing Endpoints

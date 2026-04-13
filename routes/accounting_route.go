@@ -5,18 +5,18 @@ import (
 	"github.com/pierceperado/smpc/handlers/ap_voucher_handlers"
 	"github.com/pierceperado/smpc/handlers/bulk_invoice_receipt_handlers"
 	"github.com/pierceperado/smpc/handlers/invoice_receipt_handlers"
-	"github.com/pierceperado/smpc/handlers/journal_entry_handlers2"
+	"github.com/pierceperado/smpc/handlers/journal_entry_handlers"
 	"github.com/pierceperado/smpc/handlers/payment_receipt_handlers"
 	"github.com/pierceperado/smpc/handlers/payment_voucher_handlers"
-	"github.com/pierceperado/smpc/handlers/sales_invoice_handlers2"
+	"github.com/pierceperado/smpc/handlers/sales_invoice_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/services/ap_voucher_services"
 	"github.com/pierceperado/smpc/services/bulk_invoice_receipt_services"
 	"github.com/pierceperado/smpc/services/invoice_receipt_services"
-	"github.com/pierceperado/smpc/services/journal_entry_services2"
+	"github.com/pierceperado/smpc/services/journal_entry_services"
 	"github.com/pierceperado/smpc/services/payment_receipt_services"
 	"github.com/pierceperado/smpc/services/payment_voucher_services"
-	"github.com/pierceperado/smpc/services/sales_invoice_services2"
+	"github.com/pierceperado/smpc/services/sales_invoice_services"
 	"github.com/pierceperado/smpc/services/setup_services"
 )
 
@@ -44,34 +44,11 @@ func setupInvoiceReceiptRoutes(api fiber.Router) {
 	api.Post("/invoice_receipt", handler.CreateInvoiceReceipt)
 }
 
-func setupPaymentReceiptRoutes(api fiber.Router) {
-	handler := payment_receipt_handlers.NewPaymentReceiptHandler(payment_receipt_services.NewPaymentReceiptService())
-	api.Get("/payment_receipt", handler.GetPaymentReceipt)
-	api.Post("/payment_receipt", handler.CreatePaymentReceipt)
-	api.Get("/payment_receipt/sales_invoice/:customer_id", handler.GetCustomerSalesInvoice)
-}
-
-func setupSalesInvoiceRoutes(api fiber.Router) {
-	handler := sales_invoice_handlers2.NewSalesInvoiceHandler(sales_invoice_services2.NewSalesInvoiceService())
-	api.Get("/customer", handler.GetCustomer)
-	api.Get("/customer_so/:customer_id", handler.GetCustomerSO)
-	api.Get("/exchange_rate/:base_code", handler.GetExchangeRate)
-	api.Get("/sales_invoice2", handler.GetSalesInvoice)
-	api.Post("/sales_invoice2", handler.CreateSalesInvoice)
-}
-
 func setupBulkInvoiceReceiptRoutes(api fiber.Router) {
 	handler := bulk_invoice_receipt_handlers.NewBulkInvoiceReceiptHandler(bulk_invoice_receipt_services.NewBulkInvoiceReceiptService())
 	api.Post("/bulk_invoice_receipt", handler.CreateBulkInvoiceReceipt)
 	api.Get("/bulk_invoice_receipt/search", handler.GetBulkInvoiceReceiptSearch)
 	api.Get("/bulk_invoice_receipt", handler.GetBulkInvoiceReceipt)
-}
-
-func setupPaymentVoucherRoutes(api fiber.Router) {
-	handler := payment_voucher_handlers.NewPaymentVoucherHandler(payment_voucher_services.NewPaymentVoucherService())
-	api.Get("/payment_voucher", handler.GetPaymentVoucher)
-	api.Post("/payment_voucher", handler.CreatePaymentVoucher)
-	api.Get("/payment_voucher/ap_voucher/:supplier_id", handler.GetSupplierAPVoucher)
 }
 
 func setupAPVoucherRoutes(api fiber.Router) {
@@ -81,14 +58,37 @@ func setupAPVoucherRoutes(api fiber.Router) {
 	api.Post("/ap_voucher", handler.CreateApVoucher)
 }
 
+func setupPaymentVoucherRoutes(api fiber.Router) {
+	handler := payment_voucher_handlers.NewPaymentVoucherHandler(payment_voucher_services.NewPaymentVoucherService())
+	api.Get("/payment_voucher", handler.GetPaymentVoucher)
+	api.Post("/payment_voucher", handler.CreatePaymentVoucher)
+	api.Get("/payment_voucher/ap_voucher/:supplier_id", handler.GetSupplierAPVoucher)
+}
+
+func setupSalesInvoiceRoutes(api fiber.Router) {
+	handler := sales_invoice_handlers.NewSalesInvoiceHandler(sales_invoice_services.NewSalesInvoiceService())
+	api.Get("/customer", handler.GetCustomer)
+	api.Get("/customer_so/:customer_id", handler.GetCustomerSO)
+	api.Get("/exchange_rate/:base_code", handler.GetExchangeRate)
+	api.Get("/sales_invoice", handler.GetSalesInvoice)
+	api.Post("/sales_invoice", handler.CreateSalesInvoice)
+}
+
+func setupPaymentReceiptRoutes(api fiber.Router) {
+	handler := payment_receipt_handlers.NewPaymentReceiptHandler(payment_receipt_services.NewPaymentReceiptService())
+	api.Get("/payment_receipt", handler.GetPaymentReceipt)
+	api.Post("/payment_receipt", handler.CreatePaymentReceipt)
+	api.Get("/payment_receipt/sales_invoice/:customer_id", handler.GetCustomerSalesInvoice)
+}
+
 func setupJournalEntryRoutes(api fiber.Router) {
-	handler := journal_entry_handlers2.NewJournalEntryHandler2(journal_entry_services2.NewJournalEntryService2())
+	handler := journal_entry_handlers.NewJournalEntryHandler2(journal_entry_services.NewJournalEntryService2())
 	api.Get("/company_setup", handler.GetCompanySetup)
 	api.Get("/current_journal", handler.GetCurrentJournal)
-	api.Get("/journal_entry2", handler.GetJournalEntry)
-	api.Post("/journal_entry2", handler.CreateJournalEntry)
-	api.Put("/journal_entry2", handler.UpdateJournalEntry)
-	api.Delete("/journal_entry2", handler.DeleteJournalEntry)
+	api.Get("/journal_entry", handler.GetJournalEntry)
+	api.Post("/journal_entry", handler.CreateJournalEntry)
+	api.Put("/journal_entry", handler.UpdateJournalEntry)
+	api.Delete("/journal_entry", handler.DeleteJournalEntry)
 }
 
 func setupChartClassRoutes(api fiber.Router) {
@@ -105,7 +105,6 @@ func setupChartOfAccountRoutes(api fiber.Router) {
 	api.Post("/chart_of_account", handler.CreateChartOfAccount)
 	api.Put("/chart_of_account", handler.UpdateChartOfAccount)
 	api.Delete("/chart_of_account", handler.DeleteChartOfAccount)
-	api.Get("/chart_of_account_classification/:code", handler.GetChartOfAccountClassification)
 }
 
 func setupTaxSetupRoutes(api fiber.Router) {

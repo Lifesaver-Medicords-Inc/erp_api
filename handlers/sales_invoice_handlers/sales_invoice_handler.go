@@ -1,4 +1,4 @@
-package sales_invoice_handlers2
+package sales_invoice_handlers
 
 import (
 	"strconv"
@@ -6,15 +6,15 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/models/accounting_models"
-	"github.com/pierceperado/smpc/services/sales_invoice_services2"
+	"github.com/pierceperado/smpc/services/sales_invoice_services"
 	"github.com/pierceperado/smpc/utils"
 )
 
 type SalesInvoiceHandler struct {
-	Service *sales_invoice_services2.SalesInvoiceService
+	Service *sales_invoice_services.SalesInvoiceService
 }
 
-func NewSalesInvoiceHandler(service *sales_invoice_services2.SalesInvoiceService) *SalesInvoiceHandler {
+func NewSalesInvoiceHandler(service *sales_invoice_services.SalesInvoiceService) *SalesInvoiceHandler {
 	return &SalesInvoiceHandler{Service: service}
 }
 
@@ -67,7 +67,7 @@ func (h *SalesInvoiceHandler) GetSalesInvoice(c *fiber.Ctx) error {
 }
 
 func (h *SalesInvoiceHandler) CreateSalesInvoice(c *fiber.Ctx) error {
-	var body accounting_models.SalesInvoice2Body
+	var body accounting_models.SalesInvoiceBody
 
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")

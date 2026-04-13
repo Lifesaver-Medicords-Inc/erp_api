@@ -1,4 +1,4 @@
-package journal_entry_services2
+package journal_entry_services
 
 import (
 	// "errors"
@@ -17,13 +17,13 @@ import (
 	"gorm.io/gorm"
 )
 
-type JournalEntryService2 struct{}
+type JournalEntryService struct{}
 
-func NewJournalEntryService2() *JournalEntryService2 {
-	return &JournalEntryService2{}
+func NewJournalEntryService2() *JournalEntryService {
+	return &JournalEntryService{}
 }
 
-func (s *JournalEntryService2) GetCompanySetup(conditions map[string]interface{}) (interface{}, int, error) {
+func (s *JournalEntryService) GetCompanySetup(conditions map[string]interface{}) (interface{}, int, error) {
 	var response models.CompanyCacheModel
 
 	if err := services.DbGet(&response, conditions); err != nil {
@@ -33,7 +33,7 @@ func (s *JournalEntryService2) GetCompanySetup(conditions map[string]interface{}
 	return response, fiber.StatusOK, nil
 }
 
-func (s *JournalEntryService2) GetCurrentJournal(conditions map[string]interface{}) (interface{}, int, error) {
+func (s *JournalEntryService) GetCurrentJournal(conditions map[string]interface{}) (interface{}, int, error) {
 	var response accounting_models.JournalEntryCurrent
 
 	if err := services.DbGet(&response, conditions); err != nil {
@@ -66,7 +66,7 @@ func (s *JournalEntryService2) GetCurrentJournal(conditions map[string]interface
 	return response, fiber.StatusOK, nil
 }
 
-func (s *JournalEntryService2) GetJournalEntry(conditions map[string]interface{}) (interface{}, int, error) {
+func (s *JournalEntryService) GetJournalEntry(conditions map[string]interface{}) (interface{}, int, error) {
 	var response accounting_models.JournalEntryGet
 
 	if err := services.DbGet(&response.JournalEntry, conditions); err != nil {
@@ -80,7 +80,7 @@ func (s *JournalEntryService2) GetJournalEntry(conditions map[string]interface{}
 	return response, fiber.StatusOK, nil
 }
 
-func (s *JournalEntryService2) CreateJournalEntry(body *accounting_models.JournalEntryBody, at models.At) (*accounting_models.JournalEntryBody, int, error) {
+func (s *JournalEntryService) CreateJournalEntry(body *accounting_models.JournalEntryBody, at models.At) (*accounting_models.JournalEntryBody, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
@@ -89,7 +89,7 @@ func (s *JournalEntryService2) CreateJournalEntry(body *accounting_models.Journa
 	// Rollback once, automatically, unless committed
 	defer tx.Rollback()
 
-	nextDocNo, err := utils.NextDocNo(tx, new(accounting_models.JournalEntry2), "doc_no")
+	nextDocNo, err := utils.NextDocNo(tx, new(accounting_models.JournalEntry), "doc_no")
 	if err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed getting next doc number")
 	}
@@ -110,10 +110,10 @@ func (s *JournalEntryService2) CreateJournalEntry(body *accounting_models.Journa
 	}
 
 	//Insert audit record for the main request
-	atdata := accounting_models.JournalEntry2At{
-		RefId:                body.JournalEntry.ID,
-		JournalEntry2Content: body.JournalEntry.JournalEntry2Content,
-		At:                   at,
+	atdata := accounting_models.JournalEntryAt{
+		RefId:               body.JournalEntry.ID,
+		JournalEntryContent: body.JournalEntry.JournalEntryContent,
+		At:                  at,
 	}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
@@ -128,7 +128,7 @@ func (s *JournalEntryService2) CreateJournalEntry(body *accounting_models.Journa
 	return body, fiber.StatusOK, nil
 }
 
-func (s *JournalEntryService2) CreateJournalEntryDetails(tx *gorm.DB, body *accounting_models.JournalEntryBody, at models.At) error {
+func (s *JournalEntryService) CreateJournalEntryDetails(tx *gorm.DB, body *accounting_models.JournalEntryBody, at models.At) error {
 	for i := range body.JournalEntryDetails {
 		detail := &body.JournalEntryDetails[i]
 		detail.JournalEntryId = body.JournalEntry.ID // assign FK to parent
@@ -138,10 +138,10 @@ func (s *JournalEntryService2) CreateJournalEntryDetails(tx *gorm.DB, body *acco
 		}
 
 		// Audit trail for each detail
-		atdataDetail := accounting_models.JournalEntryDetails2At{
-			RefId:                       detail.ID,
-			JournalEntryDetails2Content: detail.JournalEntryDetails2Content,
-			At:                          at,
+		atdataDetail := accounting_models.JournalEntryDetailsAt{
+			RefId:                      detail.ID,
+			JournalEntryDetailsContent: detail.JournalEntryDetailsContent,
+			At:                         at,
 		}
 
 		if err := services.DbInsert(tx, &atdataDetail); err != nil {
@@ -151,7 +151,7 @@ func (s *JournalEntryService2) CreateJournalEntryDetails(tx *gorm.DB, body *acco
 	return nil
 }
 
-func (s *JournalEntryService2) UpdateJournalEntry(body *accounting_models.JournalEntryBody, conditions map[string]interface{}, at models.At) (*accounting_models.JournalEntryBody, int, error) {
+func (s *JournalEntryService) UpdateJournalEntry(body *accounting_models.JournalEntryBody, conditions map[string]interface{}, at models.At) (*accounting_models.JournalEntryBody, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
@@ -171,10 +171,10 @@ func (s *JournalEntryService2) UpdateJournalEntry(body *accounting_models.Journa
 	}
 
 	//Audit record for main request
-	atdata := accounting_models.JournalEntry2At{
-		RefId:                body.JournalEntry.ID,
-		JournalEntry2Content: body.JournalEntry.JournalEntry2Content,
-		At:                   at,
+	atdata := accounting_models.JournalEntryAt{
+		RefId:               body.JournalEntry.ID,
+		JournalEntryContent: body.JournalEntry.JournalEntryContent,
+		At:                  at,
 	}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
@@ -189,7 +189,7 @@ func (s *JournalEntryService2) UpdateJournalEntry(body *accounting_models.Journa
 	return body, fiber.StatusOK, nil
 }
 
-func (s *JournalEntryService2) UpdateJournalEntryDetails(tx *gorm.DB, body *accounting_models.JournalEntryBody, conditions map[string]interface{}, at models.At) error {
+func (s *JournalEntryService) UpdateJournalEntryDetails(tx *gorm.DB, body *accounting_models.JournalEntryBody, conditions map[string]interface{}, at models.At) error {
 	for i := range body.JournalEntryDetails {
 		detail := &body.JournalEntryDetails[i]
 		detail.JournalEntryId = body.JournalEntry.ID // ensure FK is set
@@ -205,10 +205,10 @@ func (s *JournalEntryService2) UpdateJournalEntryDetails(tx *gorm.DB, body *acco
 		}
 
 		// Audit record for each detail
-		atdataDetail := accounting_models.JournalEntryDetails2At{
-			RefId:                       detail.ID,
-			JournalEntryDetails2Content: detail.JournalEntryDetails2Content,
-			At:                          at,
+		atdataDetail := accounting_models.JournalEntryDetailsAt{
+			RefId:                      detail.ID,
+			JournalEntryDetailsContent: detail.JournalEntryDetailsContent,
+			At:                         at,
 		}
 
 		if err := services.DbInsert(tx, &atdataDetail); err != nil {
@@ -218,7 +218,7 @@ func (s *JournalEntryService2) UpdateJournalEntryDetails(tx *gorm.DB, body *acco
 	return nil
 }
 
-func (s *JournalEntryService2) DeleteJournalEntry(body *accounting_models.JournalEntryBody, at models.At) (*accounting_models.JournalEntryBody, int, error) {
+func (s *JournalEntryService) DeleteJournalEntry(body *accounting_models.JournalEntryBody, at models.At) (*accounting_models.JournalEntryBody, int, error) {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
@@ -237,7 +237,7 @@ func (s *JournalEntryService2) DeleteJournalEntry(body *accounting_models.Journa
 	}
 
 	//Audit record for main request
-	atdata := accounting_models.JournalEntry2At{RefId: body.JournalEntry.ID, JournalEntry2Content: body.JournalEntry.JournalEntry2Content, At: at}
+	atdata := accounting_models.JournalEntryAt{RefId: body.JournalEntry.ID, JournalEntryContent: body.JournalEntry.JournalEntryContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating journal entry at")
 	}
@@ -250,20 +250,20 @@ func (s *JournalEntryService2) DeleteJournalEntry(body *accounting_models.Journa
 	return body, fiber.StatusOK, nil
 }
 
-func (s *JournalEntryService2) DeleteJournalEntryDetails(tx *gorm.DB, body *accounting_models.JournalEntryBody, at models.At) error {
+func (s *JournalEntryService) DeleteJournalEntryDetails(tx *gorm.DB, body *accounting_models.JournalEntryBody, at models.At) error {
 	// Delete all details
-	if err := services.DbDelete(tx, &accounting_models.JournalEntryDetails2{}, map[string]interface{}{"journal_entry_id": body.JournalEntry.ID}); err != nil {
+	if err := services.DbDelete(tx, &accounting_models.JournalEntryDetails{}, map[string]interface{}{"journal_entry_id": body.JournalEntry.ID}); err != nil {
 		return errors.New("failed deleting all journal entry details")
 	}
 
 	// Optionally fetch deleted details for audit trail
-	var deletedDetails []accounting_models.JournalEntryDetails2
+	var deletedDetails []accounting_models.JournalEntryDetails
 	if err := tx.Unscoped().Where("journal_entry_id = ?", body.JournalEntry.ID).Find(&deletedDetails).Error; err == nil {
 		for _, detail := range deletedDetails {
-			atdataDetail := accounting_models.JournalEntryDetails2At{
-				RefId:                       detail.ID,
-				JournalEntryDetails2Content: detail.JournalEntryDetails2Content,
-				At:                          at,
+			atdataDetail := accounting_models.JournalEntryDetailsAt{
+				RefId:                      detail.ID,
+				JournalEntryDetailsContent: detail.JournalEntryDetailsContent,
+				At:                         at,
 			}
 			if err := services.DbInsert(tx, &atdataDetail); err != nil {
 				return errors.New("failed creating journal entry details audit record")
@@ -273,7 +273,7 @@ func (s *JournalEntryService2) DeleteJournalEntryDetails(tx *gorm.DB, body *acco
 	return nil
 }
 
-func (s *JournalEntryService2) AutoInsertJournalEntry(body *accounting_models.JournalEntryDetails2, date string, at models.At) error {
+func (s *JournalEntryService) AutoInsertJournalEntry(body *accounting_models.JournalEntryDetails, date string, at models.At) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return errors.New("failed to start DB transaction")
@@ -291,10 +291,10 @@ func (s *JournalEntryService2) AutoInsertJournalEntry(body *accounting_models.Jo
 	}
 
 	//Insert audit record for the main request
-	atdata := accounting_models.JournalEntryDetails2At{
-		RefId:                       body.ID,
-		JournalEntryDetails2Content: body.JournalEntryDetails2Content,
-		At:                          at,
+	atdata := accounting_models.JournalEntryDetailsAt{
+		RefId:                      body.ID,
+		JournalEntryDetailsContent: body.JournalEntryDetailsContent,
+		At:                         at,
 	}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
