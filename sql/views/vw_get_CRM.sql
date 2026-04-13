@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_CRM] AS WITH LatestCRM AS (
+ALTER VIEW [dbo].[vw_get_CRM] AS WITH LatestCRM AS (
     SELECT ISNULL(a.id, 0) AS id,
         a.branch_name,
         b.number,

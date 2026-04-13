@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_CanvasSheet] AS
+ALTER VIEW [dbo].[vw_CanvasSheet] AS
 SELECT id,
     start_date,
     validity AS TotalDays,

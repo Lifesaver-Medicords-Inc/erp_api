@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_purchasing_list_supplier] AS
+ALTER VIEW [dbo].[vw_get_purchasing_list_supplier] AS
 SELECT b.id AS supplier_id,
     MAX(b.branch_tel_no) AS main_tel_no,
     MAX(b.branch_name) AS supplier_name,

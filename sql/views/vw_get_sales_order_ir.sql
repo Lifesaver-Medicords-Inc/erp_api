@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_sales_order_ir] AS WITH sod_with_received AS (
+ALTER VIEW [dbo].[vw_get_sales_order_ir] AS WITH sod_with_received AS (
     SELECT sod.based_id AS sales_order_id,
         sod.order_details_id AS sod_id,
         sod.item_id,

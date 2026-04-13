@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_payment_voucher_details] AS
+ALTER VIEW [dbo].[vw_get_payment_voucher_details] AS
 SELECT pvd.id,
     pvd.payment_voucher_id,
     pvd.ap_voucher_details_id,

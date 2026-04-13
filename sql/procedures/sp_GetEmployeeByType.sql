@@ -1,5 +1,4 @@
-CREATE
-OR ALTER PROCEDURE [dbo].[sp_GetEmployeeByType] -- Add the parameters for the stored procedure here
+ALTER PROCEDURE [dbo].[sp_GetEmployeeByType] -- Add the parameters for the stored procedure here
 @EmployeeId VARCHAR(100) AS BEGIN
 SET NOCOUNT ON;
 -- Insert statements for procedure here

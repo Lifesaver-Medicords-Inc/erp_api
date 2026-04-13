@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_bpi_history] AS
+ALTER VIEW [dbo].[vw_get_bpi_history] AS
 SELECT based_id AS branch_id,
     date,
     actions,

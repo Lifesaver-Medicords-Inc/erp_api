@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_purchasing_closed_po] AS
+ALTER VIEW [dbo].[vw_get_purchasing_closed_po] AS
 SELECT po.id AS id,
     po.doc_no AS doc_no,
     po.supplier_name AS supplier_name,

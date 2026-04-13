@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_items] AS
+ALTER VIEW [dbo].[vw_items] AS
 SELECT a.id,
     a.item_name_id,
     h.long_description,
@@ -25,20 +24,35 @@ FROM tbl_setup_item a
     LEFT JOIN tbl_setup_item_unit_measurement f ON a.unit_of_measure_id = f.id
     LEFT JOIN tbl_setup_item_additional_specs h ON a.id = h.based_id
     LEFT JOIN (
-        SELECT ISNULL(STRING_AGG(b.trade_type_id, ','), '') AS trade_type_id,
-            ISNULL(STRING_AGG(b.name, ','), '') AS trade_type_names,
-            b.item_id
+        SELECT ISNULL(
+                STUFF(
+                    (
+                        SELECT ',' + CAST(bb.id AS NVARCHAR(MAX))
+                        FROM tbl_setup_item_trade_type aa
+                            LEFT JOIN tbl_setup_item_type bb ON aa.trade_type_id = bb.id
+                        WHERE aa.item_id = a.item_id FOR XML PATH('')
+                    ),
+                    1,
+                    1,
+                    ''
+                ),
+                ''
+            ) AS trade_type_id,
+            ISNULL(
+                STUFF(
+                    (
+                        SELECT ',' + bb.name
+                        FROM tbl_setup_item_trade_type aa
+                            LEFT JOIN tbl_setup_item_type bb ON aa.trade_type_id = bb.id
+                        WHERE aa.item_id = a.item_id FOR XML PATH('')
+                    ),
+                    1,
+                    1,
+                    ''
+                ),
+                ''
+            ) AS trade_type_names,
+            a.item_id
         FROM tbl_setup_item_trade_type a
-            LEFT JOIN (
-                SELECT aa.item_id,
-                    bb.id AS trade_type_id,
-                    bb.name
-                FROM tbl_setup_item_trade_type aa
-                    LEFT JOIN tbl_setup_item_type bb ON aa.trade_type_id = bb.id
-                GROUP BY aa.item_id,
-                    bb.id,
-                    bb.name
-            ) b ON a.item_id = b.item_id
-            AND a.trade_type_id = b.trade_type_id
-        GROUP BY b.item_id
+        GROUP BY a.item_id
     ) g ON a.id = g.item_id

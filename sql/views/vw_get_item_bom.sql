@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_item_bom] AS
+ALTER VIEW [dbo].[vw_get_item_bom] AS
 SELECT TOP 2147483647 si.id AS item_id,
     itas.long_description AS short_desc,
     si.item_code,

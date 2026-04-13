@@ -1,5 +1,4 @@
-CREATE
-OR ALTER PROCEDURE [dbo].[sp_tax_setup_classification] -- Add the parameters for the stored procedure here
+ALTER PROCEDURE [dbo].[sp_tax_setup_classification] -- Add the parameters for the stored procedure here
 @code nvarchar(20) = null AS BEGIN
 SET NOCOUNT ON;
 SELECT a.id,

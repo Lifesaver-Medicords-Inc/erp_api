@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_PumpSpecifications] AS
+ALTER VIEW [dbo].[vw_PumpSpecifications] AS
 SELECT tsi.id AS item_id,
     tsi.item_name_id,
     tin.name AS item_name,

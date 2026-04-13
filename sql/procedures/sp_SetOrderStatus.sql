@@ -1,5 +1,4 @@
-CREATE
-OR ALTER procedure [dbo].[sp_SetOrderStatus] @OrderDetailId int,
+ALTER procedure [dbo].[sp_SetOrderStatus] @OrderDetailId int,
 @OrderType nvarchar(5) AS -- Update sales order details if OrderType is 'SO'
 IF @OrderType = 'SO' BEGIN
 UPDATE tbl_trans_sales_order_details

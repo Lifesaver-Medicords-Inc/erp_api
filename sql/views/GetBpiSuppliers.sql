@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[GetBpiSuppliers] AS
+ALTER VIEW [dbo].[GetBpiSuppliers] AS
 SELECT tbl_bpi_general.id,
     tbl_bpi_general.supplier_code,
     tbl_bpi_items.based_id,

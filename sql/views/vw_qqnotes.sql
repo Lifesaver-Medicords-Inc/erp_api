@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_qqnotes] AS
+ALTER VIEW [dbo].[vw_qqnotes] AS
 SELECT a.id as qq_id,
     a.based_id,
     a.components,

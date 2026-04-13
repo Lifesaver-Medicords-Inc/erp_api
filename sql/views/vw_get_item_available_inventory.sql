@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_item_available_inventory] AS
+ALTER VIEW [dbo].[vw_get_item_available_inventory] AS
 SELECT a.warehouse_id,
     c.name AS warehouse_name,
     a.bin_location AS location,

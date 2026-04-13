@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_sales_order_engineering] AS
+ALTER VIEW [dbo].[vw_get_sales_order_engineering] AS
 SELECT so.order_id AS id,
     bpg.branch_name AS customer,
     bpi.tin AS tin,

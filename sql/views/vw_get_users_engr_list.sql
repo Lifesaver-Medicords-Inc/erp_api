@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_users_engr_list] AS
+ALTER VIEW [dbo].[vw_get_users_engr_list] AS
 SELECT u.id,
     u.first_name,
     u.last_name,

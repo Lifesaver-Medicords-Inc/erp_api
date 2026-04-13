@@ -1,5 +1,4 @@
-CREATE
-OR ALTER PROCEDURE [dbo].[sp_GetSalesOrdersFromJobOrders] @SalesOrder VARCHAR(50) AS BEGIN
+ALTER PROCEDURE [dbo].[sp_GetSalesOrdersFromJobOrders] @SalesOrder VARCHAR(50) AS BEGIN
 SET NOCOUNT ON;
 BEGIN TRY
 SELECT so.order_id AS id,

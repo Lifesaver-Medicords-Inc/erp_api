@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_ComputedCanvasView] AS
+ALTER VIEW [dbo].[vw_ComputedCanvasView] AS
 SELECT id,
     net_price,
     discount,

@@ -1,5 +1,4 @@
-CREATE
-OR ALTER PROCEDURE [dbo].[GetBPIInfos] AS BEGIN
+ALTER PROCEDURE [dbo].[GetBPIInfos] AS BEGIN
 SELECT a.id,
     a.sales_id,
     a.name,

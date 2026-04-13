@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_payment_receipt_details] AS
+ALTER VIEW [dbo].[vw_get_payment_receipt_details] AS
 SELECT prd.id,
     prd.payment_receipt_id,
     prd.sales_invoice_id,
@@ -20,4 +19,3 @@ SELECT prd.id,
     ) AS open_amount
 FROM tbl_accounting_payment_receipt_details prd
     INNER JOIN tbl_accounting_sales_invoice si ON prd.sales_invoice_id = si.id;
-GO

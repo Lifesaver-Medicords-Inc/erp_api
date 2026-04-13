@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_item_production_list] AS
+ALTER VIEW [dbo].[vw_item_production_list] AS
 SELECT a.id as item_id,
     b.id as bom_id,
     c.item_id as bom_item_id,

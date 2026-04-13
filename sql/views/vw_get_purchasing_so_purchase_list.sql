@@ -1,44 +1,192 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_purchasing_so_purchase_list] AS
+ALTER VIEW [dbo].[vw_get_purchasing_so_purchase_list] AS
 SELECT a.item_id,
     b.purchaser,
-    STRING_AGG(CAST(a.based_id AS NVARCHAR(MAX)), ',') WITHIN GROUP (
-        ORDER BY a.order_details_id ASC
-    ) AS order_ids,
-    STRING_AGG(CAST(a.order_details_id AS NVARCHAR(MAX)), ',') WITHIN GROUP (
-        ORDER BY a.order_details_id ASC
-    ) AS order_detail_ids,
-    STRING_AGG(CAST(b.doc AS NVARCHAR(MAX)), ',') WITHIN GROUP (
-        ORDER BY a.order_details_id ASC
-    ) AS sales_order_nos,
-    STRING_AGG(CAST(b.project_name AS NVARCHAR(MAX)), ',') WITHIN GROUP (
-        ORDER BY a.order_details_id ASC
-    ) AS project_names,
-    STRING_AGG(CAST(b.sales_executive AS NVARCHAR(MAX)), ',') WITHIN GROUP (
-        ORDER BY a.order_details_id ASC
-    ) AS sales_executives,
-    -- Remaining qty per detail
-    STRING_AGG(
-        CAST(
-            ISNULL(a.qty, 0) - ISNULL(a.allocated_qty, 0) AS NVARCHAR(MAX)
+    ISNULL(
+        STUFF(
+            (
+                SELECT ',' + CAST(a2.based_id AS NVARCHAR(MAX))
+                FROM tbl_trans_sales_order_details a2
+                    LEFT JOIN tbl_trans_sales_order b2 ON a2.based_id = b2.order_id
+                WHERE a2.item_id = a.item_id
+                    AND b2.purchaser = b.purchaser
+                    AND a2.status = 'CANVASS'
+                    AND b2.status = 'ACTIVE'
+                    AND a2.item_id <> 0
+                    AND ISNULL(a2.qty, 0) - ISNULL(a2.allocated_qty, 0) > 0
+                ORDER BY a2.order_details_id ASC FOR XML PATH('')
+            ),
+            1,
+            1,
+            ''
         ),
-        ','
-    ) WITHIN GROUP (
-        ORDER BY a.order_details_id ASC
+        ''
+    ) AS order_ids,
+    ISNULL(
+        STUFF(
+            (
+                SELECT ',' + CAST(a2.order_details_id AS NVARCHAR(MAX))
+                FROM tbl_trans_sales_order_details a2
+                    LEFT JOIN tbl_trans_sales_order b2 ON a2.based_id = b2.order_id
+                WHERE a2.item_id = a.item_id
+                    AND b2.purchaser = b.purchaser
+                    AND a2.status = 'CANVASS'
+                    AND b2.status = 'ACTIVE'
+                    AND a2.item_id <> 0
+                    AND ISNULL(a2.qty, 0) - ISNULL(a2.allocated_qty, 0) > 0
+                ORDER BY a2.order_details_id ASC FOR XML PATH('')
+            ),
+            1,
+            1,
+            ''
+        ),
+        ''
+    ) AS order_detail_ids,
+    ISNULL(
+        STUFF(
+            (
+                SELECT ',' + CAST(b2.doc AS NVARCHAR(MAX))
+                FROM tbl_trans_sales_order_details a2
+                    LEFT JOIN tbl_trans_sales_order b2 ON a2.based_id = b2.order_id
+                WHERE a2.item_id = a.item_id
+                    AND b2.purchaser = b.purchaser
+                    AND a2.status = 'CANVASS'
+                    AND b2.status = 'ACTIVE'
+                    AND a2.item_id <> 0
+                    AND ISNULL(a2.qty, 0) - ISNULL(a2.allocated_qty, 0) > 0
+                ORDER BY a2.order_details_id ASC FOR XML PATH('')
+            ),
+            1,
+            1,
+            ''
+        ),
+        ''
+    ) AS sales_order_nos,
+    ISNULL(
+        STUFF(
+            (
+                SELECT ',' + CAST(b2.project_name AS NVARCHAR(MAX))
+                FROM tbl_trans_sales_order_details a2
+                    LEFT JOIN tbl_trans_sales_order b2 ON a2.based_id = b2.order_id
+                WHERE a2.item_id = a.item_id
+                    AND b2.purchaser = b.purchaser
+                    AND a2.status = 'CANVASS'
+                    AND b2.status = 'ACTIVE'
+                    AND a2.item_id <> 0
+                    AND ISNULL(a2.qty, 0) - ISNULL(a2.allocated_qty, 0) > 0
+                ORDER BY a2.order_details_id ASC FOR XML PATH('')
+            ),
+            1,
+            1,
+            ''
+        ),
+        ''
+    ) AS project_names,
+    ISNULL(
+        STUFF(
+            (
+                SELECT ',' + CAST(b2.sales_executive AS NVARCHAR(MAX))
+                FROM tbl_trans_sales_order_details a2
+                    LEFT JOIN tbl_trans_sales_order b2 ON a2.based_id = b2.order_id
+                WHERE a2.item_id = a.item_id
+                    AND b2.purchaser = b.purchaser
+                    AND a2.status = 'CANVASS'
+                    AND b2.status = 'ACTIVE'
+                    AND a2.item_id <> 0
+                    AND ISNULL(a2.qty, 0) - ISNULL(a2.allocated_qty, 0) > 0
+                ORDER BY a2.order_details_id ASC FOR XML PATH('')
+            ),
+            1,
+            1,
+            ''
+        ),
+        ''
+    ) AS sales_executives,
+    ISNULL(
+        STUFF(
+            (
+                SELECT ',' + CAST(
+                        ISNULL(a2.qty, 0) - ISNULL(a2.allocated_qty, 0) AS NVARCHAR(MAX)
+                    )
+                FROM tbl_trans_sales_order_details a2
+                    LEFT JOIN tbl_trans_sales_order b2 ON a2.based_id = b2.order_id
+                WHERE a2.item_id = a.item_id
+                    AND b2.purchaser = b.purchaser
+                    AND a2.status = 'CANVASS'
+                    AND b2.status = 'ACTIVE'
+                    AND a2.item_id <> 0
+                    AND ISNULL(a2.qty, 0) - ISNULL(a2.allocated_qty, 0) > 0
+                ORDER BY a2.order_details_id ASC FOR XML PATH('')
+            ),
+            1,
+            1,
+            ''
+        ),
+        ''
     ) AS qtys,
-    STRING_AGG(CAST(a.list_price AS NVARCHAR(MAX)), ',') WITHIN GROUP (
-        ORDER BY a.order_details_id ASC
+    ISNULL(
+        STUFF(
+            (
+                SELECT ',' + CAST(a2.list_price AS NVARCHAR(MAX))
+                FROM tbl_trans_sales_order_details a2
+                    LEFT JOIN tbl_trans_sales_order b2 ON a2.based_id = b2.order_id
+                WHERE a2.item_id = a.item_id
+                    AND b2.purchaser = b.purchaser
+                    AND a2.status = 'CANVASS'
+                    AND b2.status = 'ACTIVE'
+                    AND a2.item_id <> 0
+                    AND ISNULL(a2.qty, 0) - ISNULL(a2.allocated_qty, 0) > 0
+                ORDER BY a2.order_details_id ASC FOR XML PATH('')
+            ),
+            1,
+            1,
+            ''
+        ),
+        ''
     ) AS unit_prices,
-    STRING_AGG(CAST(a.percent_discount AS NVARCHAR(MAX)), ',') WITHIN GROUP (
-        ORDER BY a.order_details_id ASC
+    ISNULL(
+        STUFF(
+            (
+                SELECT ',' + CAST(a2.percent_discount AS NVARCHAR(MAX))
+                FROM tbl_trans_sales_order_details a2
+                    LEFT JOIN tbl_trans_sales_order b2 ON a2.based_id = b2.order_id
+                WHERE a2.item_id = a.item_id
+                    AND b2.purchaser = b.purchaser
+                    AND a2.status = 'CANVASS'
+                    AND b2.status = 'ACTIVE'
+                    AND a2.item_id <> 0
+                    AND ISNULL(a2.qty, 0) - ISNULL(a2.allocated_qty, 0) > 0
+                ORDER BY a2.order_details_id ASC FOR XML PATH('')
+            ),
+            1,
+            1,
+            ''
+        ),
+        ''
     ) AS discounts,
+    ISNULL(
+        STUFF(
+            (
+                SELECT ',' + CONVERT(NVARCHAR, b2.delivery_date, 23)
+                FROM tbl_trans_sales_order_details a2
+                    LEFT JOIN tbl_trans_sales_order b2 ON a2.based_id = b2.order_id
+                WHERE a2.item_id = a.item_id
+                    AND b2.purchaser = b.purchaser
+                    AND a2.status = 'CANVASS'
+                    AND b2.status = 'ACTIVE'
+                    AND a2.item_id <> 0
+                    AND ISNULL(a2.qty, 0) - ISNULL(a2.allocated_qty, 0) > 0 FOR XML PATH('')
+            ),
+            1,
+            1,
+            ''
+        ),
+        ''
+    ) AS commitment_dates,
     MIN(a.item_code) AS item_code,
     MIN(a.item_description) AS item_description,
     MIN(d.name) AS unit_of_measure,
     MIN(e.name) AS item_name,
     MIN(f.name) AS item_brand,
-    STRING_AGG(CONVERT(NVARCHAR, b.delivery_date, 23), ',') AS commitment_dates,
-    -- Total remaining qty per item
     SUM(ISNULL(a.qty, 0) - ISNULL(a.allocated_qty, 0)) AS total_qty
 FROM tbl_trans_sales_order_details a
     LEFT JOIN tbl_trans_sales_order b ON a.based_id = b.order_id
@@ -49,6 +197,6 @@ FROM tbl_trans_sales_order_details a
 WHERE a.status = 'CANVASS'
     AND b.status = 'ACTIVE'
     AND a.item_id <> 0
-    AND ISNULL(a.qty, 0) - ISNULL(a.allocated_qty, 0) > 0 -- Filter for remaining qty > 0
+    AND ISNULL(a.qty, 0) - ISNULL(a.allocated_qty, 0) > 0
 GROUP BY a.item_id,
     b.purchaser;

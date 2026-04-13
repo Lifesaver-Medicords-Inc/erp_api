@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_bin_loc_pick_activity] AS
+ALTER VIEW [dbo].[vw_get_bin_loc_pick_activity] AS
 SELECT a.warehouse_name_id,
     a.zone,
     a.area,

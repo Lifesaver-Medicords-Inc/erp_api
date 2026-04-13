@@ -1,5 +1,4 @@
-CREATE
-OR ALTER PROCEDURE [dbo].[sp_GetBinLocationItem] @ItemId INT AS BEGIN
+ALTER PROCEDURE [dbo].[sp_GetBinLocationItem] @ItemId INT AS BEGIN
 SET NOCOUNT ON;
 BEGIN TRY
 SELECT a.bin_location AS location,

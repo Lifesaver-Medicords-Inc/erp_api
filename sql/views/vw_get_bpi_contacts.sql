@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_bpi_contacts] AS
+ALTER VIEW [dbo].[vw_get_bpi_contacts] AS
 SELECT a.id AS contacts_id,
     a.number,
     a.based_id AS contacts_based_id,

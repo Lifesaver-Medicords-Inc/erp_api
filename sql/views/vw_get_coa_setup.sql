@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_coa_setup] AS
+ALTER VIEW [dbo].[vw_get_coa_setup] AS
 SELECT a.id AS id,
     a.name,
     b.type

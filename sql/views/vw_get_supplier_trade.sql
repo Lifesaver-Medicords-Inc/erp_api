@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_supplier_trade] AS
+ALTER VIEW [dbo].[vw_get_supplier_trade] AS
 SELECT a.id AS supplier_id,
     a.branch_name AS supplier,
     a.supplier_code,

@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_bpi_list] AS
+ALTER VIEW [dbo].[vw_get_bpi_list] AS
 SELECT a.id AS id,
     a.sales_id,
     a.name AS name,
@@ -10,28 +9,35 @@ SELECT a.id AS id,
     c.industry_ids
 FROM tbl_bpi a
     LEFT JOIN (
-        SELECT b.bpi_id,
+        SELECT a.bpi_id,
             ISNULL(
-                STRING_AGG(CAST(b.industry_id AS NVARCHAR(MAX)), ','),
+                STUFF(
+                    (
+                        SELECT ',' + CAST(aa.industry_id AS NVARCHAR(MAX))
+                        FROM tbl_bpi_industries aa
+                        WHERE aa.bpi_id = a.bpi_id FOR XML PATH('')
+                    ),
+                    1,
+                    1,
+                    ''
+                ),
                 ''
             ) AS industry_ids,
             ISNULL(
-                STRING_AGG(CAST(b.code AS NVARCHAR(MAX)), ','),
+                STUFF(
+                    (
+                        SELECT ',' + CAST(bb.code AS NVARCHAR(MAX))
+                        FROM tbl_bpi_industries aa
+                            LEFT JOIN tbl_setup_bpi_industries bb ON aa.industry_id = bb.id
+                        WHERE aa.bpi_id = a.bpi_id FOR XML PATH('')
+                    ),
+                    1,
+                    1,
+                    ''
+                ),
                 ''
             ) AS industry_names
         FROM tbl_bpi_industries a
-            LEFT JOIN (
-                SELECT bb.id,
-                    aa.bpi_id,
-                    bb.code,
-                    aa.industry_id
-                FROM tbl_bpi_industries aa
-                    LEFT JOIN tbl_setup_bpi_industries bb ON aa.industry_id = bb.id
-                GROUP BY bb.id,
-                    aa.bpi_id,
-                    bb.code,
-                    aa.industry_id
-            ) b ON a.bpi_id = b.bpi_id
-            AND a.industry_id = b.id
-        GROUP BY b.bpi_id
+        GROUP BY a.bpi_id
     ) c ON a.id = c.bpi_id
+WHERE ISNULL(c.industry_names, '') <> '';

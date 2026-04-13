@@ -1,5 +1,4 @@
-CREATE
-OR ALTER PROCEDURE [dbo].[sp_GetSalesOrderDetailsInvoice] @SalesId INT AS BEGIN
+ALTER PROCEDURE [dbo].[sp_GetSalesOrderDetailsInvoice] @SalesId INT AS BEGIN
 SET NOCOUNT ON;
 BEGIN TRY
 SELECT sod.order_details_id AS sales_order_details_id,

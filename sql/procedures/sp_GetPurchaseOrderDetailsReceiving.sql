@@ -1,5 +1,4 @@
-CREATE
-OR ALTER PROCEDURE [dbo].[sp_GetPurchaseOrderDetailsReceiving] @PurchaseId INT AS BEGIN
+ALTER PROCEDURE [dbo].[sp_GetPurchaseOrderDetailsReceiving] @PurchaseId INT AS BEGIN
 SET NOCOUNT ON;
 BEGIN TRY
 SELECT pod.id AS purchase_order_details_id,

@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_purchasing_canvass_sheet_so] AS
+ALTER VIEW [dbo].[vw_get_purchasing_canvass_sheet_so] AS
 SELECT id,
     supplier_id,
     supplier_name,

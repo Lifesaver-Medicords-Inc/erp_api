@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_bpi_finance_pending] AS
+ALTER VIEW [dbo].[vw_get_bpi_finance_pending] AS
 SELECT a.date,
     b.document_no as qoute_ref,
     a.gross_sales as total_price,

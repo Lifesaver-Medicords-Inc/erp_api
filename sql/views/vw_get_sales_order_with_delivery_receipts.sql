@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_sales_order_with_delivery_receipts] AS
+ALTER VIEW [dbo].[vw_get_sales_order_with_delivery_receipts] AS
 SELECT a.order_id,
     a.customer_id,
     c.branch_name AS customer_name,

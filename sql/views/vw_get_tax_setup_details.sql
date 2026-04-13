@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_tax_setup_details] AS
+ALTER VIEW [dbo].[vw_get_tax_setup_details] AS
 SELECT a.id,
     a.tax_code_id,
     a.valid_from,

@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_purchase_order] AS WITH pod_with_received AS (
+ALTER VIEW [dbo].[vw_get_purchase_order] AS WITH pod_with_received AS (
     SELECT pod.based_id AS purchase_order_id,
         pod.id AS pod_id,
         -- cast order quantity to INT

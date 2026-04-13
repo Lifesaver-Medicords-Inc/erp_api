@@ -1,5 +1,4 @@
-CREATE
-OR ALTER PROCEDURE [dbo].[sp_GetAPVoucherPaymentDetails] @VoucherId INT AS BEGIN
+ALTER PROCEDURE [dbo].[sp_GetAPVoucherPaymentDetails] @VoucherId INT AS BEGIN
 SET NOCOUNT ON;
 BEGIN TRY
 SELECT apd.id AS ap_voucher_details_id,

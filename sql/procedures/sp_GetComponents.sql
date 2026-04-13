@@ -1,5 +1,4 @@
-CREATE
-OR ALTER PROCEDURE [dbo].[sp_GetComponents] @BomId int AS BEGIN
+ALTER PROCEDURE [dbo].[sp_GetComponents] @BomId int AS BEGIN
 SET NOCOUNT ON;
 BEGIN TRY
 SELECT bod.id AS id,

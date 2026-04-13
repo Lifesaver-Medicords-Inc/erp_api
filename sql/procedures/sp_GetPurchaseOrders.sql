@@ -1,5 +1,4 @@
-CREATE
-OR ALTER PROCEDURE [dbo].[sp_GetPurchaseOrders] @PoId INT AS BEGIN
+ALTER PROCEDURE [dbo].[sp_GetPurchaseOrders] @PoId INT AS BEGIN
 SET NOCOUNT ON;
 BEGIN TRY
 SELECT po.id AS purchase_order_id,

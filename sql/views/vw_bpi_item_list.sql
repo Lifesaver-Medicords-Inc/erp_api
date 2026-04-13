@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_bpi_item_list] AS
+ALTER VIEW [dbo].[vw_bpi_item_list] AS
 SELECT a.id,
     ISNULL(a.item_tangibility_type, '') AS item_type,
     a.item_code,

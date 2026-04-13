@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_bpi_items] AS
+ALTER VIEW [dbo].[vw_bpi_items] AS
 SELECT a.id AS bpi_item_id,
     a.based_id AS bpi_item_based_id,
     a.payment_terms_id,
@@ -19,19 +18,20 @@ FROM tbl_bpi_items a
     LEFT JOIN tbl_setup_item b ON a.item_id = b.id
     LEFT JOIN tbl_setup_item_additional_specs d ON a.id = d.based_id
     LEFT JOIN (
-        SELECT ISNULL(STRING_AGG(b.value, ','), '') AS trade_value,
-            b.based_id
+        SELECT ISNULL(
+                STUFF(
+                    (
+                        SELECT ',' + aa.value
+                        FROM tbl_item_trade_type aa
+                        WHERE aa.based_id = a.based_id FOR XML PATH('')
+                    ),
+                    1,
+                    1,
+                    ''
+                ),
+                ''
+            ) AS trade_value,
+            a.based_id
         FROM tbl_item_trade_type a
-            LEFT JOIN (
-                SELECT bb.id,
-                    aa.based_id,
-                    aa.value
-                FROM tbl_item_trade_type aa
-                    LEFT JOIN tbl_setup_item bb ON aa.based_id = bb.id
-                GROUP BY bb.id,
-                    aa.based_id,
-                    aa.value
-            ) b ON a.based_id = b.based_id
-            AND a.value = b.value
-        GROUP by b.based_id
+        GROUP BY a.based_id
     ) c ON a.item_id = c.based_id

@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_latest_sales_quotation] AS WITH LatestQuotes AS (
+ALTER VIEW [dbo].[vw_latest_sales_quotation] AS WITH LatestQuotes AS (
     SELECT *,
         ROW_NUMBER() OVER (
             PARTITION BY document_no

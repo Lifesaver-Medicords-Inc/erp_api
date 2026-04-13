@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_bpi_adddress] AS
+ALTER VIEW [dbo].[vw_get_bpi_adddress] AS
 SELECT a.id AS address_ids,
     a.based_id as address_based_id,
     a.location,

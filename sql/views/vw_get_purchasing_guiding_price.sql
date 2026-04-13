@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_purchasing_guiding_price] AS WITH Prices AS (
+ALTER VIEW [dbo].[vw_get_purchasing_guiding_price] AS WITH Prices AS (
     SELECT b.item_id,
         b.discounted_price,
         a.date,

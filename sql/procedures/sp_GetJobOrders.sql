@@ -1,5 +1,4 @@
-CREATE
-OR ALTER PROCEDURE [dbo].[sp_GetJobOrders] @UserId INT AS BEGIN
+ALTER PROCEDURE [dbo].[sp_GetJobOrders] @UserId INT AS BEGIN
 SET NOCOUNT ON;
 BEGIN TRY
 SELECT ISNULL(jo.id, 0) AS id,

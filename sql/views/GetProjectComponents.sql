@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[GetProjectComponents] AS
+ALTER VIEW [dbo].[GetProjectComponents] AS
 SELECT tbl_trans_sales_quotation.id AS quotation_id,
     tbl_trans_sales_quotation.project_name,
     tbl_trans_sales_quotation.customer_id,

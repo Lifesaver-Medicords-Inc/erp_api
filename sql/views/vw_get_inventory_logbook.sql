@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_inventory_logbook] AS
+ALTER VIEW [dbo].[vw_get_inventory_logbook] AS
 SELECT a1.id,
     CASE
         WHEN a1.receiving_report_id IS NULL
@@ -46,8 +45,8 @@ SELECT a1.id,
     a1.date_received AS date,
     h.remarks
 FROM tbl_inv_stocks_location a1
-    LEFT JOIN tbl_inv_warehouse_receiving_report_details2 a ON a1.receiving_report_details_id = a.id
-    LEFT JOIN tbl_inv_warehouse_receiving_report2 a2 ON a1.receiving_report_id = a2.id
+    LEFT JOIN tbl_inv_warehouse_receiving_report_details a ON a1.receiving_report_details_id = a.id
+    LEFT JOIN tbl_inv_warehouse_receiving_report a2 ON a1.receiving_report_id = a2.id
     LEFT JOIN tbl_inv_pick_activity a3 ON a1.pick_activity_id = a3.id
     LEFT JOIN tbl_inv_pick_activity_details a4 ON a1.pick_activity_details_id = a4.id
     LEFT JOIN tbl_setup_item b ON a.item_id = b.id

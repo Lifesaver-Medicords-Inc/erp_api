@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_engineering_redbox_quotation_list] AS
+ALTER VIEW [dbo].[vw_get_engineering_redbox_quotation_list] AS
 SELECT sq.id AS id,
     bpi.name AS client_name,
     sq.document_no AS sales_quotation,

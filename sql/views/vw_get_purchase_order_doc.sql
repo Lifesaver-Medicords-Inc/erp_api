@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_purchase_order_doc] AS
+ALTER VIEW [dbo].[vw_get_purchase_order_doc] AS
 SELECT po.id AS purchase_order_id,
     po.doc_no AS po_doc_no
 FROM tbl_purchasing_purchase_order po
@@ -14,4 +13,3 @@ FROM tbl_purchasing_purchase_order po
 WHERE (
         pod.order_qty - ISNULL(agg_rrd.total_received_qty, 0)
     ) > 0
-GO

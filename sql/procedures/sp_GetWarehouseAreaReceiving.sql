@@ -1,5 +1,4 @@
-CREATE
-OR ALTER PROCEDURE [dbo].[sp_GetWarehouseAreaReceiving] @WarehouseId INT AS BEGIN
+ALTER PROCEDURE [dbo].[sp_GetWarehouseAreaReceiving] @WarehouseId INT AS BEGIN
 SET NOCOUNT ON;
 BEGIN TRY
 SELECT wa.id AS warehouse_area_id,

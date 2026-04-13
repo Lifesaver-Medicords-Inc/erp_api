@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_bpi_customers] AS
+ALTER VIEW [dbo].[vw_get_bpi_customers] AS
 SELECT a.id AS bpi_id,
     b.branch_name,
     b.customer_code

@@ -1,19 +1,12 @@
-CREATE
-OR ALTER VIEW [dbo].[get_customer] AS
+ALTER VIEW [dbo].[get_customer] AS
 SELECT *
 FROM (
         SELECT a.id AS based_id,
             a.id AS branch_id,
             a.AT_DATE AS at_date,
             a.AT_ACTION AS actions,
-            CONCAT_WS(',', b.first_name, b.last_name) AS edit_by,
-            CONCAT_WS(
-                ',',
-                a.name,
-                a.main_tel_no,
-                a.main_website,
-                a.tin
-            ) AS edit_history
+            ISNULL(b.first_name, '') + ',' + ISNULL(b.last_name, '') AS edit_by,
+            ISNULL(a.name, '') + ',' + ISNULL(a.main_tel_no, '') + ',' + ISNULL(a.main_website, '') + ',' + ISNULL(a.tin, '') AS edit_history
         FROM z_tbl_bpi_at a
             LEFT JOIN tbl_setup_users b ON a.AT_USER_ID = b.id
         UNION ALL
@@ -21,20 +14,8 @@ FROM (
             '' AS branch_id,
             a.AT_DATE AS at_date,
             a.AT_ACTION AS actions,
-            CONCAT_WS(',', b.first_name, b.last_name) AS edit_by,
-            CONCAT_WS(
-                ', ',
-                a.branch_name,
-                a.transaction_type,
-                a.class_name,
-                a.branch_tel_no,
-                a.branch_website,
-                a.customer_code,
-                c.code,
-                a.supplier_code,
-                a.fax_no,
-                a.notes
-            ) AS edit_history
+            ISNULL(b.first_name, '') + ',' + ISNULL(b.last_name, '') AS edit_by,
+            ISNULL(a.branch_name, '') + ', ' + ISNULL(a.transaction_type, '') + ', ' + ISNULL(a.class_name, '') + ', ' + ISNULL(a.branch_tel_no, '') + ', ' + ISNULL(a.branch_website, '') + ', ' + ISNULL(a.customer_code, '') + ', ' + ISNULL(c.code, '') + ', ' + ISNULL(a.supplier_code, '') + ', ' + ISNULL(a.fax_no, '') + ', ' + ISNULL(a.notes, '') AS edit_history
         FROM z_tbl_bpi_general_at a
             LEFT JOIN tbl_setup_users b ON a.AT_USER_ID = b.id
             LEFT JOIN tbl_setup_social c ON a.social = c.id
@@ -43,16 +24,8 @@ FROM (
             a.branch_id,
             a.AT_DATE AS at_date,
             a.AT_ACTION AS actions,
-            CONCAT_WS(',', b.first_name, b.last_name) AS edit_by,
-            CONCAT_WS(
-                ', ',
-                a.name,
-                a.number,
-                a.name,
-                a.email,
-                a.preferences,
-                c.code
-            ) AS edit_history
+            ISNULL(b.first_name, '') + ',' + ISNULL(b.last_name, '') AS edit_by,
+            ISNULL(a.name, '') + ', ' + ISNULL(a.number, '') + ', ' + ISNULL(a.name, '') + ', ' + ISNULL(a.email, '') + ', ' + ISNULL(a.preferences, '') + ', ' + ISNULL(c.code, '') AS edit_history
         FROM z_tbl_bpi_contacts_at a
             LEFT JOIN tbl_setup_users b ON a.AT_USER_ID = b.id
             LEFT JOIN tbl_setup_social c ON a.position = c.id
@@ -61,8 +34,8 @@ FROM (
             a.branch_id,
             a.AT_DATE AS at_date,
             a.AT_ACTION AS actions,
-            CONCAT_WS(',', b.first_name, b.last_name) AS edit_by,
-            CONCAT_WS('', a.location, ' ') AS edit_history
+            ISNULL(b.first_name, '') + ',' + ISNULL(b.last_name, '') AS edit_by,
+            ISNULL(a.location, '') + ' ' AS edit_history
         FROM z_tbl_bpi_address_at a
             LEFT JOIN tbl_setup_users b ON a.AT_USER_ID = b.id
         UNION ALL
@@ -70,8 +43,8 @@ FROM (
             a.finance_branch_id AS branch_id,
             a.AT_DATE AS at_date,
             a.AT_ACTION AS actions,
-            CONCAT_WS(',', b.first_name, b.last_name) AS edit_by,
-            CONCAT_WS(', ', a.finance_account_id, c.code) AS edit_history
+            ISNULL(b.first_name, '') + ',' + ISNULL(b.last_name, '') AS edit_by,
+            ISNULL(CAST(a.finance_account_id AS NVARCHAR), '') + ', ' + ISNULL(c.code, '') AS edit_history
         FROM z_tbl_bpi_finance_at a
             LEFT JOIN tbl_setup_users b ON a.AT_USER_ID = b.id
             LEFT JOIN tbl_setup_payment_terms c ON a.finance_payment_terms_id = c.id
@@ -80,16 +53,8 @@ FROM (
             a.branch_id,
             a.AT_DATE AS at_date,
             a.AT_ACTION AS actions,
-            CONCAT_WS(',', b.first_name, b.last_name) AS edit_by,
-            CONCAT_WS(
-                ', ',
-                a.tax_code,
-                a.item_tax_code,
-                c.code,
-                a.price,
-                a.notes,
-                e.long_description
-            ) AS edit_history
+            ISNULL(b.first_name, '') + ',' + ISNULL(b.last_name, '') AS edit_by,
+            ISNULL(a.tax_code, '') + ', ' + ISNULL(a.item_tax_code, '') + ', ' + ISNULL(c.code, '') + ', ' + ISNULL(CAST(a.price AS NVARCHAR), '') + ', ' + ISNULL(a.notes, '') + ', ' + ISNULL(e.long_description, '') AS edit_history
         FROM z_tbl_bpi_items_at a
             LEFT JOIN tbl_setup_users b ON a.AT_USER_ID = b.id
             LEFT JOIN tbl_setup_payment_terms c ON a.payment_terms_id = c.id
@@ -100,13 +65,8 @@ FROM (
             a.branch_id,
             a.AT_DATE AS at_date,
             a.AT_ACTION AS actions,
-            CONCAT_WS(',', b.first_name, b.last_name) AS edit_by,
-            CONCAT_WS(
-                ', ',
-                a.date_added,
-                a.file_name,
-                a.accreditation_added_by
-            ) AS edit_history
+            ISNULL(b.first_name, '') + ',' + ISNULL(b.last_name, '') AS edit_by,
+            ISNULL(CAST(a.date_added AS NVARCHAR), '') + ', ' + ISNULL(a.file_name, '') + ', ' + ISNULL(a.accreditation_added_by, '') AS edit_history
         FROM z_tbl_bpi_accreditation_at a
             LEFT JOIN tbl_setup_users b ON a.AT_USER_ID = b.id
     ) a

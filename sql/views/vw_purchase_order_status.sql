@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_purchase_order_status] AS
+ALTER VIEW [dbo].[vw_purchase_order_status] AS
 SELECT po.id AS purchase_order_id,
     po.supplier_id,
     po.supplier_name,

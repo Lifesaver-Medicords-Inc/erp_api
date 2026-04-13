@@ -1,5 +1,4 @@
-CREATE
-OR ALTER PROCEDURE [dbo].[sp_GetInvoiceAPVoucher] @SupplierId INT AS BEGIN
+ALTER PROCEDURE [dbo].[sp_GetInvoiceAPVoucher] @SupplierId INT AS BEGIN
 SET NOCOUNT ON;
 BEGIN TRY -- Invoice Receipt
 SELECT a.id AS invoice_receipt_id,

@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[GetWiringNotes] AS
+ALTER VIEW [dbo].[GetWiringNotes] AS
 SELECT a.id as wiring_id,
     a.based_id,
     a.materials,

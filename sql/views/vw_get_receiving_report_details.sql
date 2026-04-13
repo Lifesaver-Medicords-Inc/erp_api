@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_receiving_report_details] AS
+ALTER VIEW [dbo].[vw_get_receiving_report_details] AS
 SELECT rrd.*,
     -- Total received qty per Purchase Order detail
     ISNULL(
@@ -14,4 +13,3 @@ SELECT rrd.*,
     pod.unit_of_measure AS remaining_uom
 FROM tbl_inv_receiving_report_details rrd
     INNER JOIN tbl_purchasing_purchase_order_details pod ON rrd.purchase_order_details_id = pod.id;
-GO

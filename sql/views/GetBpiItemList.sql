@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[GetBpiItemList] AS
+ALTER VIEW [dbo].[GetBpiItemList] AS
 SELECT a.id,
     c.long_description AS short_desc,
     a.item_code,

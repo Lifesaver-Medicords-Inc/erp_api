@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[GetBpiGeneralList] AS
+ALTER VIEW [dbo].[GetBpiGeneralList] AS
 SELECT a.id AS general_id,
     a.based_id AS general_based_id,
     a.social,
@@ -20,42 +19,58 @@ SELECT a.id AS general_id,
     d.entity_names
 FROM tbl_bpi_general a
     LEFT JOIN (
-        SELECT ISNULL(STRING_AGG(b.industry_id, ','), '') AS industry_ids,
-            ISNULL(STRING_AGG(b.code, ','), '') AS industry_names,
-            b.bpi_general_id
-        FROM tbl_bpi_branch_industries a
-            LEFT JOIN (
-                SELECT bb.id,
-                    aa.bpi_general_id,
-                    bb.code,
-                    aa.industry_id
-                FROM tbl_bpi_branch_industries aa
-                    LEFT JOIN tbl_setup_bpi_industries bb ON aa.industry_id = bb.id
-                GROUP BY bb.id,
-                    aa.bpi_general_id,
-                    bb.code,
-                    aa.industry_id
-            ) b ON a.bpi_general_id = b.bpi_general_id
-            AND a.industry_id = b.id
-        GROUP by b.bpi_general_id
+        SELECT bpi_general_id,
+            STUFF(
+                (
+                    SELECT ',' + CAST(industry_id AS VARCHAR)
+                    FROM tbl_bpi_branch_industries t2
+                    WHERE t2.bpi_general_id = t1.bpi_general_id FOR XML PATH(''),
+                        TYPE
+                ).value('.', 'NVARCHAR(MAX)'),
+                1,
+                1,
+                ''
+            ) AS industry_ids,
+            STUFF(
+                (
+                    SELECT ',' + bb.code
+                    FROM tbl_bpi_branch_industries t2
+                        LEFT JOIN tbl_setup_bpi_industries bb ON t2.industry_id = bb.id
+                    WHERE t2.bpi_general_id = t1.bpi_general_id FOR XML PATH(''),
+                        TYPE
+                ).value('.', 'NVARCHAR(MAX)'),
+                1,
+                1,
+                ''
+            ) AS industry_names
+        FROM tbl_bpi_branch_industries t1
+        GROUP BY bpi_general_id
     ) c ON a.id = c.bpi_general_id
     LEFT JOIN (
-        SELECT ISNULL(STRING_AGG(b.entity_id, ','), '') AS entity_ids,
-            ISNULL(STRING_AGG(b.code, ','), '') AS entity_names,
-            b.bpi_general_id
-        FROM tbl_bpi_entity a
-            LEFT JOIN (
-                SELECT bb.id,
-                    aa.bpi_general_id,
-                    bb.code,
-                    aa.entity_id
-                FROM tbl_bpi_entity aa
-                    LEFT JOIN tbl_setup_bpi_entity bb ON aa.entity_id = bb.id
-                GROUP BY bb.id,
-                    aa.bpi_general_id,
-                    bb.code,
-                    aa.entity_id
-            ) b ON a.bpi_general_id = b.bpi_general_id
-            AND a.entity_id = b.id
-        GROUP by b.bpi_general_id
+        SELECT bpi_general_id,
+            STUFF(
+                (
+                    SELECT ',' + CAST(entity_id AS VARCHAR)
+                    FROM tbl_bpi_entity t2
+                    WHERE t2.bpi_general_id = t1.bpi_general_id FOR XML PATH(''),
+                        TYPE
+                ).value('.', 'NVARCHAR(MAX)'),
+                1,
+                1,
+                ''
+            ) AS entity_ids,
+            STUFF(
+                (
+                    SELECT ',' + bb.code
+                    FROM tbl_bpi_entity t2
+                        LEFT JOIN tbl_setup_bpi_entity bb ON t2.entity_id = bb.id
+                    WHERE t2.bpi_general_id = t1.bpi_general_id FOR XML PATH(''),
+                        TYPE
+                ).value('.', 'NVARCHAR(MAX)'),
+                1,
+                1,
+                ''
+            ) AS entity_names
+        FROM tbl_bpi_entity t1
+        GROUP BY bpi_general_id
     ) d ON a.id = d.bpi_general_id

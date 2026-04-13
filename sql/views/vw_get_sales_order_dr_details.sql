@@ -1,5 +1,4 @@
-CREATE
-OR ALTER VIEW [dbo].[vw_get_sales_order_dr_details] AS
+ALTER VIEW [dbo].[vw_get_sales_order_dr_details] AS
 SELECT a.order_details_id,
     a.based_id,
     a.item_id,
