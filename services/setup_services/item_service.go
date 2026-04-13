@@ -35,16 +35,7 @@ type ItemSpecsWithTemplate struct {
 type ItemImage struct {
 	NewImages     []models.ItemImage `json:"newimages"`
 	ReplaceImages []models.ItemImage `json:"replaceimages"`
-	DeleteImages  []DeleteImages     `json:"deleteimages"`
-}
-
-type ReplaceImages struct {
-	ImageID uint   `json:"imageid"`
-	Image   string `json:"newimage"`
-}
-
-type DeleteImages struct {
-	ImageID uint `json:"imageid"`
+	DeleteImages  []models.ItemImage `json:"deleteimages"`
 }
 
 type ItemSpecs struct {

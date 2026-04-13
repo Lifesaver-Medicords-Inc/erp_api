@@ -147,7 +147,7 @@ func UpdateItemImage(tx *gorm.DB, basedId uint, itemImage ItemImage, at models.A
 
 	// Delete images
 	for _, deleteReq := range itemImage.DeleteImages {
-		if err := DeleteItemImageChild(tx, deleteReq.ImageID); err != nil {
+		if err := DeleteItemImageChild(tx, deleteReq.ID); err != nil {
 			fmt.Println("DELETE REQ", deleteReq)
 			return err
 		}
