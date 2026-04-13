@@ -3,7 +3,7 @@ SELECT a1.id,
     CASE
         WHEN a1.receiving_report_id IS NULL
         AND a1.pick_activity_id IS NOT NULL THEN a4.sod_id
-        ELSE a.pod_id
+        ELSE a.purchase_order_details_id
     END AS pod_id,
     a1.item_id,
     c.name AS general_name,
@@ -33,7 +33,7 @@ SELECT a1.id,
     CASE
         WHEN a1.receiving_report_id IS NULL
         AND a1.pick_activity_id IS NOT NULL THEN a3.doc_no
-        ELSE a2.doc
+        ELSE a2.doc_no
     END AS rr_no,
     -- po_no logic
     CASE
@@ -45,8 +45,8 @@ SELECT a1.id,
     a1.date_received AS date,
     h.remarks
 FROM tbl_inv_stocks_location a1
-    LEFT JOIN tbl_inv_warehouse_receiving_report_details a ON a1.receiving_report_details_id = a.id
-    LEFT JOIN tbl_inv_warehouse_receiving_report a2 ON a1.receiving_report_id = a2.id
+    LEFT JOIN tbl_inv_receiving_report_details a ON a1.receiving_report_details_id = a.id
+    LEFT JOIN tbl_inv_receiving_report a2 ON a1.receiving_report_id = a2.id
     LEFT JOIN tbl_inv_pick_activity a3 ON a1.pick_activity_id = a3.id
     LEFT JOIN tbl_inv_pick_activity_details a4 ON a1.pick_activity_details_id = a4.id
     LEFT JOIN tbl_setup_item b ON a.item_id = b.id
