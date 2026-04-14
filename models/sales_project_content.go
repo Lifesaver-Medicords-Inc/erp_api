@@ -16,6 +16,8 @@ type SalesProjectContentContent struct {
 	NoOfPumpSet        string `json:"no_of_pump_set"`
 	ItemSetDescription string `json:"item_set_description"`
 	ItemSetNotes       string `json:"item_set_notes"`
+	TemplateProjectId  uint   `json:"template_project_id"`
+	IsWiring           *bool  `json:"is_wiring"`
 }
 
 type SalesProjectContent struct {

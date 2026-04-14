@@ -6,7 +6,7 @@ type SalesProjectItemSetContent struct {
 }
 
 type SalesProjectItemSet struct {
-	ItemSetID uint `gorm:"primarykey" json:"itemset_id"`
+	ItemSetID uint `gorm:"primaryKey;column:itemset_id" json:"itemset_id"`
 	SalesProjectItemSetContent
 }
 
