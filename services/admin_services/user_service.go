@@ -31,7 +31,6 @@ func (u *UserService) GetUsersService(conditions map[string]interface{}) (*[]mod
 
 	for i := range *users {
 		(*users)[i].Password = ""
-
 	}
 
 	return users, fiber.StatusOK, nil
@@ -56,7 +55,6 @@ func (u *UserService) GetUserService(conditions map[string]interface{}) (*models
 }
 
 func (u *UserService) UpdateUserService(user *models.User, conditions map[string]interface{}, at models.At) (*models.User, int, error) {
-
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
@@ -89,7 +87,6 @@ func (u *UserService) UpdateUserService(user *models.User, conditions map[string
 }
 
 func (u *UserService) DeleteUserService(conditions map[string]interface{}, at models.At) (*models.User, int, error) {
-
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {

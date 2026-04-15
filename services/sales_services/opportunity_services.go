@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	//fmt"
+	// fmt"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,7 +15,6 @@ import (
 
 // test
 func GetOpportunities(conditions map[string]interface{}) ([]models.OpportunityView, int, error) {
-
 	var opportunities []models.OpportunityView
 
 	if err := services.DbGet(&opportunities, conditions); err != nil {

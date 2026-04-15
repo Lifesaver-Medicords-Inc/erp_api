@@ -47,7 +47,6 @@ func GetItemRequest(conditions map[string]interface{}) (interface{}, int, error)
 }
 
 func GetAllItemList(conditions map[string]interface{}) (interface{}, int, error) {
-
 	var response []models.AllItemView
 
 	if err := services.DbGet(&response, conditions); err != nil {
@@ -58,7 +57,6 @@ func GetAllItemList(conditions map[string]interface{}) (interface{}, int, error)
 }
 
 func GetAllBinLocation(itemId int64) (interface{}, int, error) {
-
 	conditions := map[string]interface{}{
 		"ItemId": itemId,
 	}
@@ -73,7 +71,6 @@ func GetAllBinLocation(itemId int64) (interface{}, int, error) {
 }
 
 func GetUserList(conditions map[string]interface{}) (interface{}, int, error) {
-
 	var response []models.UserListView
 
 	if err := services.DbGet(&response, conditions); err != nil {
@@ -84,7 +81,6 @@ func GetUserList(conditions map[string]interface{}) (interface{}, int, error) {
 }
 
 func GetSalesOrderIR(conditions map[string]interface{}) (interface{}, int, error) {
-
 	var response []models.SalesOrderViewIR
 
 	if err := services.DbGet(&response, conditions); err != nil {
@@ -97,12 +93,12 @@ func GetSalesOrderIR(conditions map[string]interface{}) (interface{}, int, error
 func CreateItemRequest(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 	var body ItemRequestBody
 
-	//Parse the full request body (main + details)
+	// Parse the full request body (main + details)
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	//Insert main Item Request record
+	// Insert main Item Request record
 	if err := services.DbInsert(tx, &body.ItemRequest); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating item request")
 	}
@@ -114,7 +110,7 @@ func CreateItemRequest(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating item request doc")
 	}
 
-	//Prepare the "at" data
+	// Prepare the "at" data
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
 		at = models.At{}
@@ -129,7 +125,7 @@ func CreateItemRequest(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 		return body.ItemRequest, fiber.StatusInternalServerError, err
 	}
 
-	//Insert audit record for the main request
+	// Insert audit record for the main request
 	atdata := models.ItemRequestAt{
 		RefId:              body.ItemRequest.ID,
 		ItemRequestContent: body.ItemRequest.ItemRequestContent,
@@ -211,17 +207,17 @@ func CreateItemRequestHistory(tx *gorm.DB, body *ItemRequestBody, at models.At) 
 func UpdateItemRequest(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (interface{}, int, error) {
 	var body ItemRequestBody
 
-	//Parse full request
+	// Parse full request
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	//Update main Item Request
+	// Update main Item Request
 	if err := services.DbUpdate(tx, &body.ItemRequest, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating item request")
 	}
 
-	//Get audit info
+	// Get audit info
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
 		at = models.At{}
@@ -242,7 +238,7 @@ func UpdateItemRequest(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfac
 		return body.ItemRequest, fiber.StatusInternalServerError, err
 	}
 
-	//Audit record for main request
+	// Audit record for main request
 	atdata := models.ItemRequestAt{
 		RefId:              body.ItemRequest.ID,
 		ItemRequestContent: body.ItemRequest.ItemRequestContent,
@@ -340,7 +336,7 @@ func UpdateItemRequestHistory(tx *gorm.DB, body *ItemRequestBody, conditions map
 	for i := range body.ItemRequestDetails {
 		detail := &body.ItemRequestDetails[i]
 
-		//Skip if SOId or SODId are empty (zero)
+		// Skip if SOId or SODId are empty (zero)
 		if detail.SOId == 0 || detail.SODId == 0 {
 			continue
 		}
@@ -392,18 +388,18 @@ func UpdateItemRequestHistory(tx *gorm.DB, body *ItemRequestBody, conditions map
 func DeleteItemRequest(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (interface{}, int, error) {
 	var body ItemRequestBody
 
-	//Parse full request
+	// Parse full request
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	//Get audit info
+	// Get audit info
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
 		at = models.At{}
 	}
 
-	//Delete main Item Request
+	// Delete main Item Request
 	if err := services.DbDelete(tx, &body.ItemRequest, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed deleting item request")
 	}
@@ -420,7 +416,7 @@ func DeleteItemRequest(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfac
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	//Audit record for main request
+	// Audit record for main request
 	atdata := models.ItemRequestAt{RefId: body.ItemRequest.ID, ItemRequestContent: body.ItemRequest.ItemRequestContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating item request at")

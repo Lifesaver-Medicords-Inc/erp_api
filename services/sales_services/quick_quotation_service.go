@@ -38,7 +38,6 @@ func CreateSalesQuotationQuick(tx *gorm.DB, parentId uint, QuickQuote models.Sal
 
 // Create Quick Quotation
 func CreateSalesQuotationQuickWithSelectedImage(tx *gorm.DB, parentId uint, QuickQuote models.SalesQuotationQuick, at models.At) error {
-
 	QuickQuote.BasedId = parentId
 
 	if err := services.DbInsert(tx, &QuickQuote); err != nil {
@@ -89,7 +88,6 @@ func GetSalesQuotationQuicks(quickquotes *[]models.SalesQuotationQuick, conditio
 
 // update quick quotes
 func UpdateSalesQuotationQuick(tx *gorm.DB, quickquotes models.SalesQuotationQuick, at models.At, conditions map[string]interface{}) error {
-
 	if err := services.DbUpdate(tx, &quickquotes, conditions); err != nil {
 		return errors.New("failed updating quickquotations")
 	}

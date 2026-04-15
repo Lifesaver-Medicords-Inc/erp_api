@@ -21,7 +21,6 @@ func GetPurchasingCanvassSheetSO(c *fiber.Ctx) error {
 func CreatePurchasingCanvassSheet(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
-
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 

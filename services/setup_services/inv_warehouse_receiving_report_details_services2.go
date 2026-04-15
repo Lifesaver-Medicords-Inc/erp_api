@@ -62,7 +62,6 @@ func CreateReceivingReportDetails2(tx *gorm.DB, parentId uint, parentDate string
 }
 
 func UpdateReceivingReportDetails2(tx *gorm.DB, ReceivingReportDetails models.ReceivingReportDetails2, at models.At, conditions map[string]interface{}, parentId uint, parentDate string, parentPoId uint, body *ReceivingReportBody2) error {
-
 	if err := services.DbUpdate(tx, &ReceivingReportDetails, conditions); err != nil {
 		return errors.New("failed updating receiving report details")
 	}
@@ -86,7 +85,6 @@ func UpdateReceivingReportDetails2(tx *gorm.DB, ReceivingReportDetails models.Re
 }
 
 func DeleteReceivingReportDetails2(tx *gorm.DB, ReceivingReportDetails models.ReceivingReportDetails2, at models.At, conditions map[string]interface{}) error {
-
 	if err := services.DbDelete(tx, &ReceivingReportDetails, conditions); err != nil {
 		return errors.New("failed deleting receiving report details")
 	}

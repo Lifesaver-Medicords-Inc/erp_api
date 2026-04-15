@@ -37,7 +37,6 @@ func GetPumpType(id int) (models.PumpType, int, error) {
 func CreatePumpType(c *fiber.Ctx, tx *gorm.DB) (models.PumpType, int, error) {
 	var body models.PumpType
 	if err := c.BodyParser(&body); err != nil {
-
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 

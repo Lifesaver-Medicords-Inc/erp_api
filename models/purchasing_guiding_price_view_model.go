@@ -12,8 +12,8 @@ type PurchasingGuidingPriceView struct {
 	Lowest1yrSupplierName     float64 `json:"lowest_1yr_supplier_name"`
 	Lowest3yr                 float64 `json:"lowest_3yr"`
 	Lowest3yrSupplierName     float64 `json:"lowest_3yr_supplier_name"`
-	LowestAlltime             string  `json:"lowest_alltime"`
-	LowestAlltimeSupplierName string  `json:"lowest_alltime_supplier_name"`
+	LowestAlltime             string  `json:"lowest_all-time"`
+	LowestAlltimeSupplierName string  `json:"lowest_all-time_supplier_name"`
 }
 
 func (PurchasingGuidingPriceView) TableName() string {

@@ -13,13 +13,11 @@ import (
 )
 
 func GetChartGroups(conditions map[string]interface{}) ([]accounting_models.ChartGroup, int, error) {
-
 	var based_service = services.NewInMemoryRepository(nil, nil, accounting_models.ChartGroup{}, accounting_models.ChartGroupAt{})
 
 	return based_service.FetchAll()
 }
 func GetChartGroup(id int) (accounting_models.ChartGroup, int, error) {
-
 	conditions := map[string]interface{}{
 		"id": id,
 	}
@@ -34,12 +32,10 @@ func GetChartGroup(id int) (accounting_models.ChartGroup, int, error) {
 }
 
 func CreateChartGroup(c *fiber.Ctx, tx *gorm.DB) (accounting_models.ChartGroup, int, error) {
-
 	var based_service = services.NewInMemoryRepository(c, tx, accounting_models.ChartGroup{}, accounting_models.ChartGroupAt{})
 
 	var body accounting_models.ChartGroup
 	if err := c.BodyParser(&body); err != nil {
-
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
@@ -54,7 +50,6 @@ func CreateChartGroup(c *fiber.Ctx, tx *gorm.DB) (accounting_models.ChartGroup, 
 }
 
 func UpdateChartGroup(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (accounting_models.ChartGroup, int, error) {
-
 	var based_service = services.NewInMemoryRepository(c, tx, accounting_models.ChartGroup{}, accounting_models.ChartGroupAt{})
 
 	var body accounting_models.ChartGroup
@@ -73,7 +68,6 @@ func UpdateChartGroup(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface
 }
 
 func DeleteChartGroup(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (accounting_models.ChartGroup, int, error) {
-
 	var body accounting_models.ChartGroup
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")

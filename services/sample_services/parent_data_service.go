@@ -51,7 +51,7 @@ func GetParent(id int) (Body, int, error) {
 	}
 
 	conditions = map[string]interface{}{
-		"parent_id": record.Parent.ID,
+		"parent_id": record.ID,
 	}
 
 	if err := GetChildf(&record.Childf, conditions); err != nil {

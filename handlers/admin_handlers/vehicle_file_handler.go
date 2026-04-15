@@ -59,11 +59,9 @@ func (h *VehicleFileHandler) DownloadFileHandler(c *fiber.Ctx) error {
 	c.Set("Content-Type", "application/octet-stream")
 
 	return c.SendFile(fullPath)
-
 }
 
 func (h *VehicleFileHandler) UploadVehicleFileHandler(c *fiber.Ctx) error {
-
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
 		fmt.Println("FormFile error:", err)
@@ -161,7 +159,6 @@ func (h *VehicleFileHandler) GetVehicleFilesHandler(c *fiber.Ctx) error {
 }
 
 func (h *VehicleFileHandler) DeleteVehicleFileHandler(c *fiber.Ctx) error {
-
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {

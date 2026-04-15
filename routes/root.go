@@ -3,35 +3,34 @@ package routes
 import "github.com/gofiber/fiber/v2"
 
 func SetupRoutes(app *fiber.App) {
-
 	// Root API group
 	api := app.Group("/api")
 
-	//User routes
+	// User routes
 	UserRoutes(app)
 
-	//Position Routes
+	// Position Routes
 	PositionRoutes(app)
 
-	//Position access routes
+	// Position access routes
 	PositionAccessRoutes(app)
 
-	//Permission routes
+	// Permission routes
 	PermissionRoutes(app)
 
-	//Vehicle routes
+	// Vehicle routes
 	VehicleRoutes(app)
 
-	//warehouse routes
+	// warehouse routes
 	WarehouseRoutes(app)
 
-	//File routes
+	// File routes
 	VehicleFileRoutes(app)
 
-	//Company Routes
+	// Company Routes
 	CompanyRoutes(app)
 
-	//Currency Routes
+	// Currency Routes
 	CurrencyRoutes(app)
 
 	CalendarScheduleRoutes(app)

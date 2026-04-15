@@ -28,7 +28,6 @@ func NewVehicleFileService(uploadDir string) *VehicleFileService {
 }
 
 func (fs *VehicleFileService) SaveUploadedFileService(file multipart.File, header *multipart.FileHeader, vehicleId int) (*models.VehicleFileModel, int, error) {
-
 	ext := filepath.Ext(header.Filename)
 	newFileName := fmt.Sprintf("%s%s", uuid.New().String(), ext)
 	savePath := filepath.Join(fs.UploadDir, newFileName)
@@ -70,7 +69,6 @@ func (fs *VehicleFileService) SaveUploadedFileService(file multipart.File, heade
 }
 
 func (fs *VehicleFileService) SaveVehicleFileService(file *models.VehicleFileModel, at models.At) (*models.VehicleFileModel, int, error) {
-
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
@@ -78,17 +76,14 @@ func (fs *VehicleFileService) SaveVehicleFileService(file *models.VehicleFileMod
 	}
 
 	if err := services.DbInsert(tx, &file); err != nil {
-
-		//Remove file on failed
+		// Remove file on failed
 		if file.FilePath != "" {
 			os.Remove(file.FilePath)
 		}
 
 		if strings.Contains(err.Error(), "duplicate key") {
-
 			err = errors.New("duplicate record error")
 		} else {
-
 			err = errors.New("failed saving file")
 		}
 		tx.Rollback()
@@ -126,7 +121,6 @@ func (v *VehicleFileService) GetVehicleFileService(conditions map[string]interfa
 }
 
 func (v *VehicleFileService) GetVehicleFilesService(conditions map[string]interface{}) (*[]models.VehicleModel, int, error) {
-
 	tx := initializers.DB.Begin()
 
 	var vehicles = &[]models.VehicleModel{}

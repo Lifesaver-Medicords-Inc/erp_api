@@ -10,7 +10,6 @@ import (
 )
 
 func GetValuationMethods(c *fiber.Ctx) error {
-
 	data, status, err := setup_services.GetValuationMethods(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())

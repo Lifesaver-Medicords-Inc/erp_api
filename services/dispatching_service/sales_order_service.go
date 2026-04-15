@@ -83,10 +83,8 @@ func (s *SalesOrderService) CreateSalesOrderService(order *models.Order, at mode
 
 	if err := services.DbInsert(tx, &order); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-
 			err = errors.New("duplicate record error")
 		} else {
-
 			err = errors.New("failed creating order")
 		}
 		tx.Rollback()
@@ -108,7 +106,6 @@ func (s *SalesOrderService) CreateSalesOrderService(order *models.Order, at mode
 }
 
 func (s *SalesOrderService) UpdateSalesOrderService(order *models.Order, conditions map[string]interface{}, at models.At) (*models.Order, int, error) {
-
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {

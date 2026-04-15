@@ -166,7 +166,7 @@ func (s *PaymentReceiptService) CreatePaymentReceipt(body *accounting_models.Pay
 		}
 	}
 
-	//Insert difference credit if needed
+	// Insert difference credit if needed
 	if err := s.InsertDifferenceCredit(tx, body, matchedJournalID, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
@@ -219,8 +219,7 @@ func (s *PaymentReceiptService) CreatePaymentReceiptDetails(tx *gorm.DB, body *a
 }
 
 func (s *PaymentReceiptService) InsertDifferenceCredit(tx *gorm.DB, body *accounting_models.PaymentReceiptBody, matchedJournalID uint, at models.At) error {
-
-	//Compute total applied from details
+	// Compute total applied from details
 	var totalApplied float64
 	for _, d := range body.PaymentReceiptDetails {
 		totalApplied += d.AmountApplied
@@ -228,18 +227,17 @@ func (s *PaymentReceiptService) InsertDifferenceCredit(tx *gorm.DB, body *accoun
 
 	transactionAmount := body.PaymentReceipt.TransactionAmount
 
-	//If transaction amount is greater than applied
+	// If transaction amount is greater than applied
 	if transactionAmount > totalApplied {
-
 		difference := transactionAmount - totalApplied
 
-		//Fetch COA 70038
+		// Fetch COA 70038
 		var coaDifference accounting_models.ChartOfAccounts
 		if err := tx.First(&coaDifference, 70038).Error; err != nil {
 			return errors.New("failed fetching difference chart of account (70038)")
 		}
 
-		//Create CREDIT journal entry
+		// Create CREDIT journal entry
 		entry := accounting_models.JournalEntryDetails{
 			JournalEntryDetailsContent: accounting_models.JournalEntryDetailsContent{
 				Origin:         "Payment Receipt",
@@ -255,7 +253,7 @@ func (s *PaymentReceiptService) InsertDifferenceCredit(tx *gorm.DB, body *accoun
 			},
 		}
 
-		//Create overpayment record
+		// Create overpayment record
 		overpayment := accounting_models.BpiOverpayment{
 			BpiOverpaymentContent: accounting_models.BpiOverpaymentContent{
 				BpiId:                body.PaymentReceipt.CustomerId,
@@ -283,7 +281,6 @@ func (s *PaymentReceiptService) InsertDifferenceCredit(tx *gorm.DB, body *accoun
 }
 
 func (s *PaymentReceiptService) getDebitCOAId(body *accounting_models.PaymentReceiptBody) uint {
-
 	// If CashAmount is greater than 0 (and not zero)
 	if body.PaymentReceipt.CashAmount > 0 {
 		return 70034

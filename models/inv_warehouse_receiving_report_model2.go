@@ -6,10 +6,10 @@ type ReceivingReportContent2 struct {
 	DateReceived    string `json:"date_received"`
 	Address         string `json:"address"`
 	SupplierID      uint   `json:"supplier_id"`
-	DOC             string `json:"doc"` //autogen
+	DOC             string `json:"doc"` // autogen
 	RefDOC          string `json:"ref_doc"`
 	PreparedBy      string `json:"prepared_by"`
-	PurchaseOrderID uint   `json:"purchase_order_id"` //this is where the PO's will base
+	PurchaseOrderID uint   `json:"purchase_order_id"` // this is where the PO's will base
 	WarehouseName   string `json:"warehouse_name"`
 	WarehouseId     uint   `json:"warehouse_id"`
 }
@@ -37,7 +37,7 @@ func (ReceivingReportAt2) TableName() string {
 }
 
 type ReceivingReportDetailsContent2 struct {
-	ReceivingReportId  uint   `json:"receiving_report_id"` //parent id
+	ReceivingReportId  uint   `json:"receiving_report_id"` // parent id
 	PodId              uint   `json:"pod_id"`
 	ItemID             uint   `json:"item_id"`
 	ItemCode           string `json:"item_code"`
@@ -51,7 +51,7 @@ type ReceivingReportDetailsContent2 struct {
 	ReasonForRejection string `json:"reason_for_rejection"`
 	SerialNumber       string `json:"serial_number"`
 	BinLocation        string `json:"bin_location"`
-	RefId              uint   `json:"ref_id"` //PO id
+	RefId              uint   `json:"ref_id"` // PO id
 }
 
 type ReceivingReportDetails2 struct {

@@ -27,7 +27,7 @@ func UploadFile(filestr string) (string, error) {
 	extension := mime.Extension()
 
 	filename = fmt.Sprintf("%d%v", name, extension)
-	path := fmt.Sprintf("./files/%s", filename)
+	path := "./files/" + filename
 
 	if err := os.WriteFile(path, file, 0644); err != nil {
 		return filename, errors.New("failed saving file")

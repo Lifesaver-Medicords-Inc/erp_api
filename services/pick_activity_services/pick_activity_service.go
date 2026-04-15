@@ -46,7 +46,6 @@ func GetPickActivity(conditions map[string]interface{}) (interface{}, int, error
 }
 
 func GetBinLocation(conditions map[string]interface{}) (interface{}, int, error) {
-
 	var response []models.WarehouseAreaView
 
 	if err := services.DbGet(&response, conditions); err != nil {
@@ -57,7 +56,6 @@ func GetBinLocation(conditions map[string]interface{}) (interface{}, int, error)
 }
 
 func GetSalesOrderPA(conditions map[string]interface{}) (interface{}, int, error) {
-
 	var response []models.SalesOrderViewPA
 
 	if err := services.DbGet(&response, conditions); err != nil {
@@ -70,7 +68,7 @@ func GetSalesOrderPA(conditions map[string]interface{}) (interface{}, int, error
 func CreatePickActivity(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 	var body PickActivityBody
 
-	//Parse the full request body (main + details)
+	// Parse the full request body (main + details)
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
@@ -78,7 +76,7 @@ func CreatePickActivity(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 	// Set current date in MM/dd/yyyy format
 	body.PickActivity.TransactionDate = time.Now().Format("01/02/2006")
 
-	//Insert main Pick Activity record
+	// Insert main Pick Activity record
 	if err := services.DbInsert(tx, &body.PickActivity); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating pick activity")
 	}
@@ -90,7 +88,7 @@ func CreatePickActivity(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating pick activity doc")
 	}
 
-	//Prepare the "at" data
+	// Prepare the "at" data
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
 		at = models.At{}
@@ -101,14 +99,14 @@ func CreatePickActivity(c *fiber.Ctx, tx *gorm.DB) (interface{}, int, error) {
 		return body.PickActivity, fiber.StatusInternalServerError, err
 	}
 
-	//Only create Pick Activity History if RefDoc is not empty
+	// Only create Pick Activity History if RefDoc is not empty
 	if body.PickActivity.ReferenceSo != "" {
 		if err := CreatePickActivityHistory(tx, &body, at); err != nil {
 			return body.PickActivity, fiber.StatusInternalServerError, err
 		}
 	}
 
-	//Insert audit record for the main request
+	// Insert audit record for the main request
 	atdata := models.PickActivityAt{
 		RefId:               body.PickActivity.ID,
 		PickActivityContent: body.PickActivity.PickActivityContent,
@@ -189,7 +187,7 @@ func CreatePickActivityHistory(tx *gorm.DB, body *PickActivityBody, at models.At
 func UpdatePickActivity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (interface{}, int, error) {
 	var body PickActivityBody
 
-	//Parse full request
+	// Parse full request
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
@@ -197,12 +195,12 @@ func UpdatePickActivity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfa
 	// Set current date in MM/dd/yyyy format
 	body.PickActivity.TransactionDate = time.Now().Format("01/02/2006")
 
-	//Update main Pick Activity
+	// Update main Pick Activity
 	if err := services.DbUpdate(tx, &body.PickActivity, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating pick activity")
 	}
 
-	//Get audit info
+	// Get audit info
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
 		at = models.At{}
@@ -223,7 +221,7 @@ func UpdatePickActivity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfa
 		return body.PickActivity, fiber.StatusInternalServerError, err
 	}
 
-	//Audit record for main request
+	// Audit record for main request
 	atdata := models.PickActivityAt{
 		RefId:               body.PickActivity.ID,
 		PickActivityContent: body.PickActivity.PickActivityContent,
@@ -398,18 +396,18 @@ func UpdatePickActivityHistory(tx *gorm.DB, body *PickActivityBody, conditions m
 func DeletePickActivity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (interface{}, int, error) {
 	var body PickActivityBody
 
-	//Parse full request
+	// Parse full request
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	//Get audit info
+	// Get audit info
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
 		at = models.At{}
 	}
 
-	//Delete main Pick Activity
+	// Delete main Pick Activity
 	if err := services.DbDelete(tx, &body.PickActivity, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed deleting pick activity")
 	}
@@ -426,7 +424,7 @@ func DeletePickActivity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfa
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	//Audit record for main request
+	// Audit record for main request
 	atdata := models.PickActivityAt{RefId: body.PickActivity.ID, PickActivityContent: body.PickActivity.PickActivityContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating pick activity at")

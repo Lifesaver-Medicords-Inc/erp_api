@@ -41,12 +41,11 @@ type TestBody struct {
 	Contacts     []models.BpiContacts    `json:"contacts"`
 	//	Address      []models.BpiAddress     `json:"address"`
 	// Items        []models.BpiItems       `json:"items"`
-	//Finance models.BpiFinance `json:"finance"`
+	// Finance models.BpiFinance `json:"finance"`
 	// Accreditations []models.BpiAccreditation `json:"accreditations"`
 }
 
 func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
-
 	type Response struct {
 		Bpi            []models.BpiView               `json:"bpi"`
 		General        []models.BpiGeneralView        `json:"general"`
@@ -96,24 +95,21 @@ func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting history")
 	}
 
-	//fmt.Print("bpi response", response.Bpi)
+	// fmt.Print("bpi response", response.Bpi)
 	return response, 0, nil
 }
 
 func GetBpiUsers(employeeId string) (interface{}, int, error) {
-
 	conditions := map[string]interface{}{
 		"EmployeeId": employeeId,
 	}
 	var response []models.User
 
 	if err := services.DbRaw(&response, "sp_GetEmployeeByType", conditions); err != nil {
-
 		return response, fiber.StatusInternalServerError, errors.New("failed getting user data")
 	}
 
 	return response, 0, nil
-
 }
 
 func GetBpiEntityRecords(conditions map[string]interface{}) (interface{}, int, error) {
@@ -129,7 +125,6 @@ func GetBpiItemList(conditions map[string]interface{}) (interface{}, int, error)
 	var response []models.BpiItemList
 
 	if err := services.DbGet(&response, conditions); err != nil {
-
 		return response, fiber.StatusInternalServerError, errors.New("failed getting bpi item list")
 	}
 
@@ -146,7 +141,6 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 
 	if err := tx.Model(&body.Bpi).Where("id =?", body.ID).Count(&count).Error; err != nil {
 		return body, fiber.StatusBadRequest, errors.New("failed to find data in Bpi Table")
-
 	}
 
 	at, ok := c.Locals("at").(models.At)
@@ -159,7 +153,6 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 
 	// if record is not existing insert
 	if count == 0 {
-
 		if err := services.DbInsert(tx, &body.Bpi); err != nil {
 			return body, fiber.StatusInternalServerError, errors.New(("failed creating parent"))
 		}
@@ -185,7 +178,7 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 	}
 	// invalidate all child keys
 
-	//Create Bpi General
+	// Create Bpi General
 
 	if err := CreateBpiGeneral(tx, body.ID, &body.General, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
@@ -199,27 +192,25 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 		}
 	}
 
-	//Create Bpi Address
+	// Create Bpi Address
 
 	for _, v := range body.Address {
-
 		if err := CreateBpiAddress(tx, body.ID, body.General.ID, v, body.General.SalesId, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
 
-	//Create Bpi Items
+	// Create Bpi Items
 	if err := CreateBpiItems(tx, body.ID, body.General.ID, body.Items, body.General.SalesId, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
-	//Create Bpi Finance
+	// Create Bpi Finance
 	if err := CreateBpiFinance(tx, body.ID, body.General.ID, body.Finance, body.General.SalesId, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
-	//Create Bpi Accreditations
+	// Create Bpi Accreditations
 
 	for _, v := range body.Accreditations {
-
 		if err := CreateBpiAccreditation(tx, body.ID, body.General.ID, v, body.General.SalesId, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
@@ -257,7 +248,7 @@ func CreateBpiParentFromBranch(c *fiber.Ctx, tx *gorm.DB) (models.Bpi, int, erro
 		at = models.At{}
 	}
 
-	newBpiID := req.Bpi.ID // ID of newly created parent
+	newBpiID := req.ID // ID of newly created parent
 	originalGeneralID := req.GeneralId
 	originalGeneralBasedID := req.GeneralBasedId
 
@@ -325,7 +316,6 @@ func CreateBpiParentFromBranch(c *fiber.Ctx, tx *gorm.DB) (models.Bpi, int, erro
 }
 
 func UpdateBpi(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Body, int, error) {
-
 	var body Body
 
 	if err := c.BodyParser(&body); err != nil {
@@ -453,7 +443,6 @@ func UpdateBpiMainBranch(c *fiber.Ctx, tx *gorm.DB) ([]models.BpiGeneral, int, e
 		updatedRecords = append(updatedRecords, record)
 
 		if u.IsMain {
-
 			newmainat := models.BpiGeneralAt{
 				RefId:                     record.ID,
 				BranchName:                record.BranchName,
@@ -471,7 +460,6 @@ func UpdateBpiMainBranch(c *fiber.Ctx, tx *gorm.DB) ([]models.BpiGeneral, int, e
 				return updatedRecords, fiber.StatusInternalServerError, err
 			}
 		}
-
 	}
 
 	InvalidateChildKey()
@@ -480,7 +468,6 @@ func UpdateBpiMainBranch(c *fiber.Ctx, tx *gorm.DB) ([]models.BpiGeneral, int, e
 }
 
 func InvalidateChildKey() {
-
 	generalKey := services.GetKey(models.BpiGeneralView{}, nil)
 	services.InvalidateCache(generalKey)
 

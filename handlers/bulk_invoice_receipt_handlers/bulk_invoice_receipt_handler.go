@@ -52,7 +52,6 @@ func (h *BulkInvoiceReceiptHandler) GetBulkInvoiceReceipt(c *fiber.Ctx) error {
 }
 
 func (h *BulkInvoiceReceiptHandler) GetBulkInvoiceReceiptSearch(c *fiber.Ctx) error {
-
 	search := c.Query("search")
 
 	var id int

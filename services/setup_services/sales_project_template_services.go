@@ -70,7 +70,6 @@ func CreateSalesProjectTemplate(c *fiber.Ctx, tx *gorm.DB) (CreateTemplateBody, 
 }
 
 func CreateSalesProjectTemplateChild(tx *gorm.DB, parentID uint, TemplateChild models.SalesProjectTemplateChild, at models.At) error {
-
 	TemplateChild.ParentID = parentID
 
 	if err := services.DbInsert(tx, &TemplateChild); err != nil {

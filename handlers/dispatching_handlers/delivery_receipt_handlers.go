@@ -58,7 +58,6 @@ func (h *DeliveryReceiptHandler) GetDeliveryReceiptHandler(c *fiber.Ctx) error {
 func (h *DeliveryReceiptHandler) CreateDeliveryReceiptHandler(c *fiber.Ctx) error {
 	var body dispatching_models.DeliveryReceipt
 
-
 	if err := c.BodyParser(&body); err != nil {
 		fmt.Println("Error parsing body:", err)
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
@@ -129,7 +128,6 @@ func (h *DeliveryReceiptHandler) DeleteDeliveryReceiptHandler(c *fiber.Ctx) erro
 }
 
 func (h *DeliveryReceiptHandler) GetSOWithApprovedIRHandler(c *fiber.Ctx) error {
-
 	data, code, err := h.Service.GetSOWithApprovedIRService(nil)
 	if err != nil {
 		return utils.RespondError(c, code, err.Error())
@@ -138,7 +136,6 @@ func (h *DeliveryReceiptHandler) GetSOWithApprovedIRHandler(c *fiber.Ctx) error 
 	return utils.RespondSuccess(c, data)
 }
 func (h *DeliveryReceiptHandler) GetSOWithApprovedIRDetailsHandler(c *fiber.Ctx) error {
-
 	idParam := c.Params("item_release_id")
 
 	itemReleaseID, err := strconv.ParseInt(idParam, 10, 64)

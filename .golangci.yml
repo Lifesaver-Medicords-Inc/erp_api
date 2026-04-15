@@ -1,0 +1,106 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    # --- Default (keep) ---
+    - errcheck
+    - govet
+    - staticcheck      # includes gosimple + stylecheck
+    - unused
+
+    # --- Error handling ---
+    - errorlint        # catches pre-Go1.13 error comparison bugs
+    - wrapcheck        # ensures external errors are wrapped
+    - nilerr           # catches "check err != nil but return nil"
+    - nilnil           # catches simultaneous nil error + invalid value return
+
+    # --- Security (critical for ERP) ---
+    - gosec            # SQL injection, hardcoded creds, weak crypto
+
+    # --- Context discipline ---
+    - noctx            # HTTP requests must carry context
+    - contextcheck     # functions must propagate context correctly
+    - fatcontext       # detects context stored in loops (memory leak)
+
+    # --- SQL / HTTP resource leaks ---
+    - bodyclose        # HTTP response body must be closed
+    - sqlclosecheck    # sql.Rows/Stmt must be closed
+    - rowserrcheck     # Rows.Err() must be checked
+
+    # --- Code quality ---
+    - nestif           # flags deeply nested if blocks
+    - cyclop           # cyclomatic complexity per function
+    - funlen           # flags overly long functions
+
+    # --- Style & consistency ---
+    - revive
+    - gocritic
+    - misspell
+    - whitespace
+    - unconvert        # removes unnecessary type conversions
+    - prealloc         # slice pre-allocation hints
+    - perfsprint       # replaces fmt.Sprintf with faster alternatives
+
+  disable:
+    - exhaustruct
+
+linters-settings:
+  govet:
+    enable-all: true
+
+  errcheck:
+    check-blank: true
+
+  gosec:
+    excludes:
+      - G104  # suppress "unhandled errors" — already caught by errcheck
+
+  cyclop:
+    max-complexity: 15     # raise from default 10; ERP logic is inherently complex
+    skip-tests: true
+
+  funlen:
+    lines: 80
+    statements: 50
+
+  nestif:
+    min-complexity: 5      # default 5; tune up if too noisy
+
+  wrapcheck:
+    ignorePackageGlobs:
+      - "github.com/yourorg/erp_api/*"   # don't require wrapping your own packages
+
+  revive:
+    ignore-generated-header: true
+    severity: warning
+    rules:
+      - name: exported
+        disabled: true
+      - name: package-comments
+        disabled: true
+      - name: blank-imports
+      - name: context-as-first-argument
+      - name: error-return
+      - name: error-strings
+      - name: var-naming
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+    disabled-checks:
+      - ifElseChain
+
+issues:
+  exclude-rules:
+    # Relax some rules in test files
+    - path: "_test\\.go"
+      linters:
+        - funlen
+        - cyclop
+        - wrapcheck
+        - gosec

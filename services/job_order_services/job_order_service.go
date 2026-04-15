@@ -103,7 +103,6 @@ func (s *JobOrderService) CreateJobOrder(body *[]models.JobOrder, at models.At) 
 }
 
 func (s *JobOrderService) UpdateJobOrder(body *[]models.JobOrder, conditions map[string]interface{}, at models.At) (*[]models.JobOrder, int, error) {
-
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
@@ -125,7 +124,7 @@ func (s *JobOrderService) UpdateJobOrder(body *[]models.JobOrder, conditions map
 		// Handle report_base (replace file if new one is uploaded)
 		if item.ReportBase != "" {
 			if existing.ReportBase != "" {
-				oldPath := fmt.Sprintf("./files/%s", existing.ReportBase)
+				oldPath := "./files/" + existing.ReportBase
 				if err := services.DeleteFile(oldPath); err != nil && !os.IsNotExist(err) {
 					fmt.Println("Failed deleting old report file:", err)
 				}

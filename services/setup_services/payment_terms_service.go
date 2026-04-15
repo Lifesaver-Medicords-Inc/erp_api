@@ -68,7 +68,6 @@ func CreatePaymentTerms(c *fiber.Ctx, tx *gorm.DB) (models.PaymentTerms, int, er
 }
 
 func UpdatePaymentTerms(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.PaymentTerms, int, error) {
-
 	var body models.PaymentTerms
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")

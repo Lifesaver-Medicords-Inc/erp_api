@@ -17,7 +17,6 @@ func NewChartOfAccountHandler(service *setup_services.ChartOfAccountService) *Ch
 }
 
 func (h *ChartOfAccountHandler) GetChartOfAccounts(c *fiber.Ctx) error {
-
 	data, status, err := h.Service.GetChartOfAccounts(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())

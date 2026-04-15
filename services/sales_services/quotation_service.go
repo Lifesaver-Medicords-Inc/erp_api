@@ -23,13 +23,13 @@ type FinalizeBody struct {
 
 type Body struct {
 	models.SalesQuotation
-	//Child 1
+	// Child 1
 	SalesQuotationQuick models.SalesQuotationQuick `json:"sales_quotation_quick"`
 }
 
 type CreateBody struct {
 	models.SalesQuotation
-	//Child 1
+	// Child 1
 	SalesQuotationQuickWithImages []SalesQuotationQuickWithImages `json:"sales_quotation_quick"`
 }
 
@@ -75,7 +75,6 @@ func GetLatestQuotations(conditions map[string]interface{}) (interface{}, int, e
 }
 
 func GetSalesQuotations(conditions map[string]interface{}) (interface{}, int, error) {
-
 	type Response struct {
 		SalesQuotation               []models.SalesQuotation
 		SalesQuotationQuick          []models.SalesQuotationQuick
@@ -109,7 +108,6 @@ func GetSalesQuotations(conditions map[string]interface{}) (interface{}, int, er
 }
 
 func GetSalesQuotation(id int) (Body, int, error) {
-
 	conditions := map[string]interface{}{
 		"id": id,
 	}
@@ -122,10 +120,10 @@ func GetSalesQuotation(id int) (Body, int, error) {
 
 	conditions = map[string]interface{}{
 		// based on parent ID
-		"based_id": record.SalesQuotation.ID,
+		"based_id": record.ID,
 	}
 
-	//Child 1
+	// Child 1
 	if err := GetSalesQuotationQuick(&record.SalesQuotationQuick, conditions); err != nil {
 		return record, fiber.StatusInternalServerError, err
 	}
@@ -195,7 +193,6 @@ func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
 }
 
 func GetBpi(id int) (CustomerBody, int, error) {
-
 	conditions := map[string]interface{}{
 		"id": id,
 	}
@@ -207,7 +204,7 @@ func GetBpi(id int) (CustomerBody, int, error) {
 	}
 
 	conditions = map[string]interface{}{
-		"based_id": record.Bpi.ID,
+		"based_id": record.ID,
 	}
 
 	if err := services.DbGet(&record.General, conditions); err != nil {
@@ -243,7 +240,6 @@ func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 }
 
 func GetItem(id int) (ItemBody, int, error) {
-
 	conditions := map[string]interface{}{
 		"item_name_id": id,
 	}
@@ -287,7 +283,6 @@ func UpdateFinalizeQuote(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 
 // for finalizing the quotation
 func UpdateQuotationQuick(tx *gorm.DB, Quotation models.SalesQuotation, at models.At, conditions map[string]interface{}) error {
-
 	if err := services.DbUpdate(tx, &Quotation, conditions); err != nil {
 		return errors.New("failed updating quotation")
 	}

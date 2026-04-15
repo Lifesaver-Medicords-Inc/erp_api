@@ -16,7 +16,6 @@ func NewOverpaymentService() *OverpaymentService {
 }
 
 func (s *OverpaymentService) CreateBpiOverpayment(tx *gorm.DB, body *accounting_models.BpiOverpayment, at models.At) error {
-
 	if err := services.DbInsert(tx, body); err != nil {
 		return errors.New("failed creating overpayment")
 	}

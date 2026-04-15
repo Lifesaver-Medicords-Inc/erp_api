@@ -27,21 +27,21 @@ func GetAdditionalSpec(additionalspecs *models.AdditionalSpecs, conditions map[s
 }
 
 func CreateAdditionalSpec(tx *gorm.DB, basedId uint, additionalSpec models.AdditionalSpecsSchema, at models.At) error {
-	additionalSpec.AdditionalSpecs.BasedId = basedId
+	additionalSpec.BasedId = basedId
 
 	if err := services.DbInsert(tx, &additionalSpec.AdditionalSpecs); err != nil {
 		return errors.New("failed creating additional specs")
 	}
 
 	for _, v := range additionalSpec.PumpTypeCompatabilityId {
-		if err := CreateAdditionalSpecsPumpType(tx, additionalSpec.AdditionalSpecs.ID, uint(v), at); err != nil {
+		if err := CreateAdditionalSpecsPumpType(tx, additionalSpec.ID, uint(v), at); err != nil {
 			return err
 		}
 	}
 
 	additionalSpecsAt := models.AdditionalSpecsAt{
-		RefId:                  additionalSpec.AdditionalSpecs.ID,
-		AdditionalSpecsContent: additionalSpec.AdditionalSpecs.AdditionalSpecsContent, // Snapshot of content
+		RefId:                  additionalSpec.ID,
+		AdditionalSpecsContent: additionalSpec.AdditionalSpecsContent, // Snapshot of content
 		At:                     at,
 	}
 
@@ -63,8 +63,8 @@ func UpdateAdditionalSpec(tx *gorm.DB, basedId uint, additionalspec models.Addit
 	}
 
 	// ✅ UPDATE: carry over the real ID and BasedId from DB
-	additionalspec.AdditionalSpecs.ID = existing.ID
-	additionalspec.AdditionalSpecs.BasedId = existing.BasedId
+	additionalspec.ID = existing.ID
+	additionalspec.BasedId = existing.BasedId
 
 	if err := services.DbUpdate(tx, &additionalspec.AdditionalSpecs, map[string]interface{}{"id": existing.ID}); err != nil {
 		return errors.New("failed updating additional specs")
@@ -76,7 +76,7 @@ func UpdateAdditionalSpec(tx *gorm.DB, basedId uint, additionalspec models.Addit
 
 	if err := services.DbInsert(tx, &models.AdditionalSpecsAt{
 		RefId:                  existing.ID,
-		AdditionalSpecsContent: additionalspec.AdditionalSpecs.AdditionalSpecsContent,
+		AdditionalSpecsContent: additionalspec.AdditionalSpecsContent,
 		At:                     at,
 	}); err != nil {
 		return errors.New("failed creating additional specs at")

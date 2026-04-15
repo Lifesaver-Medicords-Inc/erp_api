@@ -38,7 +38,6 @@ func GetOrderDetail(orderdetails *models.OrderDetails, conditions map[string]int
 }
 
 func CreateOrderDetail(tx *gorm.DB, parentId uint, OrderDetails models.OrderDetails, at models.At) error {
-
 	// parentId = 10015
 	OrderDetails.Based_ID = parentId
 
@@ -84,7 +83,6 @@ func UpdateOrderDetail(tx *gorm.DB, orderdetails models.OrderDetails, at models.
 }
 
 func UpdateSalesOrderDetails(tx *gorm.DB, orderdetails models.OrderDetails, at models.At, conditions map[string]interface{}, orderType string, status string, mode string) error {
-
 	fmt.Println("UPDATE SO SERVICE ORDER DETAILS", orderdetails)
 	if len(conditions) == 0 {
 		conditions = map[string]interface{}{
@@ -124,7 +122,6 @@ func UpdateSalesOrderDetails(tx *gorm.DB, orderdetails models.OrderDetails, at m
 		fmt.Println("PO CANCELLED, DEDUCT ALLOC QTY")
 
 		*orderdetails.AllocatedQty = result
-
 	} else if mode == "create" {
 		fmt.Println("CREATE MODE")
 

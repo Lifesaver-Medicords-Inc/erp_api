@@ -17,5 +17,4 @@ func PermissionRoutes(app *fiber.App) {
 	api.Post("/", permissionHandler.CreatePermissionHandler)
 	api.Put("/:id", permissionHandler.UpdatePermissionHandler)
 	api.Delete("/:id", permissionHandler.DeletePermissionHandler)
-
 }

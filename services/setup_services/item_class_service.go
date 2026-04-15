@@ -38,7 +38,6 @@ func GetClass(id int) (models.Class, int, error) {
 func CreateClass(c *fiber.Ctx, tx *gorm.DB) (models.Class, int, error) {
 	var body models.Class
 	if err := c.BodyParser(&body); err != nil {
-
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 

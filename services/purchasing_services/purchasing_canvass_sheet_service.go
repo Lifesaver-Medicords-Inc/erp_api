@@ -104,7 +104,6 @@ func UpdatePurchasingCanvassSheet(c *fiber.Ctx, tx *gorm.DB, conditions map[stri
 	InvalidateItemCaches()
 
 	return body, 0, nil
-
 }
 
 func DeletePurchasingCanvassSheetSupplier(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Body, int, error) {

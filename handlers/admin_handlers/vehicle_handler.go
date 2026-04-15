@@ -103,7 +103,6 @@ func (v *VehicleHandler) GetVehiclesHandler(c *fiber.Ctx) error {
 }
 
 func (v *VehicleHandler) UpdateVehicleHandler(c *fiber.Ctx) error {
-
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -126,7 +125,6 @@ func (v *VehicleHandler) UpdateVehicleHandler(c *fiber.Ctx) error {
 
 	data, status, err := v.VehicleService.UpdateVehicleService(&body, conditions, at)
 	if err != nil {
-
 		return utils.RespondError(c, status, err.Error())
 	}
 
@@ -134,7 +132,6 @@ func (v *VehicleHandler) UpdateVehicleHandler(c *fiber.Ctx) error {
 }
 
 func (v *VehicleHandler) DeleteVehicleHandler(c *fiber.Ctx) error {
-
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {

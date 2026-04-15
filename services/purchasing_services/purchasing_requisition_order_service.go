@@ -37,7 +37,6 @@ func GetPROrder(prorders *models.PROrders, conditions map[string]interface{}) er
 }
 
 func CreatePROrder(tx *gorm.DB, parentId uint, PROrder models.PROrders, at models.At) error {
-
 	// parentId = 10015
 	PROrder.Based_ID = parentId
 
@@ -120,7 +119,6 @@ func UpdateRequisitionDetails(tx *gorm.DB, orderdetails models.PROrders, at mode
 		fmt.Println("PO CANCELLED, DEDUCT ALLOC QTY")
 
 		*orderdetails.AllocatedQty = result
-
 	} else if mode == "create" {
 		fmt.Println("CREATE MODE")
 

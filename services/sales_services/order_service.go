@@ -18,7 +18,7 @@ type BodyOrder struct {
 
 type BodyOrderDetails struct {
 	models.Order
-	//Child 1
+	// Child 1
 	OrderDetails []models.OrderDetails `json:"sales_order_details"`
 }
 
@@ -59,10 +59,10 @@ func GetOrder(Order_ID int) (BodyOrder, int, error) {
 
 	conditions = map[string]interface{}{
 		// based on parent ID
-		"based_id": orderrecord.Order.Order_ID,
+		"based_id": orderrecord.Order_ID,
 	}
 
-	//Child 1
+	// Child 1
 	if err := GetOrderDetail(&orderrecord.OrderDetails, conditions); err != nil {
 		return orderrecord, fiber.StatusInternalServerError, err
 	}
@@ -101,7 +101,6 @@ func GetSalesOrderDR(id int) (interface{}, int, error) {
 }
 
 func GetSalesOrdersDr(conditions map[string]interface{}) (interface{}, int, error) {
-
 	var response []models.SalesOrderDrView
 
 	if err := services.DbGet(&response, conditions); err != nil {

@@ -58,7 +58,6 @@ func CreateValuationMethod(c *fiber.Ctx, tx *gorm.DB) (models.ValuationMethod, i
 	if !ok {
 		at = models.At{}
 		fmt.Println("at not ok ", at)
-
 	}
 
 	atdata := models.ValuationMethodAt{RefId: body.ID, Code: body.Code, ValuationMethodContent: models.ValuationMethodContent{Name: body.Name}, At: at}

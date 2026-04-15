@@ -59,9 +59,7 @@ func (r *InMemoryRepository[T1, T2]) FetchWithFilter(conditions map[string]inter
 }
 
 func (r *InMemoryRepository[T1, T2]) Create(body T1, atbody T2) (T1, int, error) {
-
 	if err := r.context.BodyParser(&body); err != nil {
-
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
@@ -85,7 +83,6 @@ func (r *InMemoryRepository[T1, T2]) Create(body T1, atbody T2) (T1, int, error)
 }
 
 func (r *InMemoryRepository[T1, T2]) Update(body T1, atbody T2, conditions map[string]interface{}) (T1, int, error) {
-
 	if err := r.context.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
@@ -173,7 +170,6 @@ func (t *Transaction) SaveChanges() error {
 }
 
 func Create[T1 any, T2 any](body T1, bodyModel T1, atbody T2, atbodyModel T2, tx *gorm.DB) error {
-
 	if err := DbInsert(tx, &body); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			err = errors.New("duplicate record error")
@@ -194,7 +190,6 @@ func Create[T1 any, T2 any](body T1, bodyModel T1, atbody T2, atbodyModel T2, tx
 }
 
 func Update[T1 any, T2 any](body T1, bodyModel T1, atbody T2, atbodyModel T2, tx *gorm.DB, conditions map[string]interface{}) error {
-
 	if err := DbUpdate(tx, &body, conditions); err != nil {
 		return errors.New("failed updating main record")
 	}

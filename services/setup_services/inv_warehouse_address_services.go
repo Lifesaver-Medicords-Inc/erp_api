@@ -56,7 +56,6 @@ func CreateWarehouseAddress(tx *gorm.DB, parentId uint, child models.WarehouseAd
 }
 
 func UpdateWarehouseAddress(tx *gorm.DB, WarehouseAddress models.WarehouseAddress, at models.At, conditions map[string]interface{}) error {
-
 	if err := services.DbUpdate(tx, &WarehouseAddress, conditions); err != nil {
 		return errors.New("failed updating warehouse address")
 	}

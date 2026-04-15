@@ -140,7 +140,6 @@ func (h *ItemReleaseHandler) DeleteItemReleaseHandler(c *fiber.Ctx) error {
 }
 
 func (h *ItemReleaseHandler) GetSalesOrderItemReleaseDetailsHandler(c *fiber.Ctx) error {
-
 	data, code, err := h.Service.GetSalesOrderDetails(nil)
 	if err != nil {
 		return utils.RespondError(c, code, err.Error())

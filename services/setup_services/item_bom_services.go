@@ -17,7 +17,7 @@ type BodyParse struct {
 }
 
 func GetSetupItemBoms(conditions map[string]interface{}) (interface{}, int, error) {
-	//var setupItemBoms []models.SetupItemBom
+	// var setupItemBoms []models.SetupItemBom
 
 	type Response struct {
 		ItemBom     []models.BomViewList     `json:"bom_head"`
@@ -56,7 +56,6 @@ func GetSetupItemBomss(conditions map[string]interface{}) (interface{}, int, err
 }
 
 func GetBomItemList(conditions map[string]interface{}) (interface{}, int, error) {
-
 	var response []models.BomView
 
 	if err := services.DbGet(&response, conditions); err != nil {
@@ -67,7 +66,6 @@ func GetBomItemList(conditions map[string]interface{}) (interface{}, int, error)
 }
 
 func GetAllBomItemList(conditions map[string]interface{}) (interface{}, int, error) {
-
 	var response []models.AllBomView
 
 	if err := services.DbGet(&response, conditions); err != nil {
@@ -138,7 +136,7 @@ func CreateSetupItemBom(c *fiber.Ctx, tx *gorm.DB) (BodyParse, int, error) {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating SetupItemBomAt")
 	}
 
-	//Create Bom Details
+	// Create Bom Details
 	for _, v := range body.BomDetails {
 		if err := BomDetails(tx, body.ID, v, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
@@ -188,11 +186,9 @@ func UpdateSetupItemBom(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interfa
 	}
 
 	for _, v := range body.BomDetails {
-
 		if err := UpdateChild(tx, v, at, body.ID); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
-
 	}
 
 	// Invalidate cache after update

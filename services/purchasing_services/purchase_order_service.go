@@ -19,7 +19,6 @@ type PurchaseOrderBody struct {
 }
 
 func GetPurchaseOrder(conditions map[string]interface{}) (interface{}, int, error) {
-
 	type Response struct {
 		PurchaseOrder        []models.PurchaseOrder        `json:"purchaseorder"`
 		PurchaseOrderDetails []models.PurchaseOrderDetails `json:"purchaseorderdetails"`
@@ -56,7 +55,7 @@ func CreatePurchaseOrder(c *fiber.Ctx, tx *gorm.DB) (PurchaseOrderBody, int, err
 	}
 
 	purchaseorderat := models.PurchaseOrderAt{
-		RefId:                body.PurchaseOrder.ID,
+		RefId:                body.ID,
 		PurchaseOrderContent: body.PurchaseOrderContent,
 		At:                   at,
 	}
@@ -70,7 +69,8 @@ func CreatePurchaseOrder(c *fiber.Ctx, tx *gorm.DB) (PurchaseOrderBody, int, err
 		}
 	}
 
-	if body.OrderType == "SO" {
+	switch body.OrderType {
+	case "SO":
 		for _, detail := range body.SalesOrderDetails {
 			conditions := map[string]interface{}{
 				"order_details_id": detail.OrderDetailsID,
@@ -80,7 +80,7 @@ func CreatePurchaseOrder(c *fiber.Ctx, tx *gorm.DB) (PurchaseOrderBody, int, err
 				return body, fiber.StatusInternalServerError, err
 			}
 		}
-	} else if body.OrderType == "PR" {
+	case "PR":
 		for _, detail := range body.PurchaseRequisitionDetails {
 			conditions := map[string]interface{}{
 				"pr_order_id": detail.PR_Order_ID,
@@ -89,7 +89,7 @@ func CreatePurchaseOrder(c *fiber.Ctx, tx *gorm.DB) (PurchaseOrderBody, int, err
 				return body, fiber.StatusInternalServerError, err
 			}
 		}
-	} else {
+	default:
 		return body, fiber.StatusBadRequest, errors.New("invalid order type")
 	}
 
@@ -102,7 +102,6 @@ func UpdatePurchaseOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 	var body PurchaseOrderBody
 
 	if err := c.BodyParser(&body); err != nil {
-
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
@@ -134,7 +133,8 @@ func UpdatePurchaseOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 		}
 	}
 
-	if body.OrderType == "SO" {
+	switch body.OrderType {
+	case "SO":
 		fmt.Println("ORDER TYPE: SO UPDATEEEEEEEEEEEEEEEEEEEEEEE")
 		for _, detail := range body.SalesOrderDetails {
 			conditions := map[string]interface{}{
@@ -145,7 +145,7 @@ func UpdatePurchaseOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 				return body, fiber.StatusInternalServerError, err
 			}
 		}
-	} else if body.OrderType == "PR" {
+	case "PR":
 		fmt.Println("ORDER TYPE: PR")
 		for _, detail := range body.PurchaseRequisitionDetails {
 			conditions := map[string]interface{}{
@@ -155,7 +155,7 @@ func UpdatePurchaseOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 				return body, fiber.StatusInternalServerError, err
 			}
 		}
-	} else {
+	default:
 		return body, fiber.StatusBadRequest, errors.New("invalid order type")
 	}
 

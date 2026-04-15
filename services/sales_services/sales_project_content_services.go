@@ -11,7 +11,6 @@ import (
 )
 
 func CreateProjectContent(tx *gorm.DB, parentId uint, ProjectContent models.SalesProjectContent, at models.At) error {
-
 	ProjectContent.BasedId = parentId
 
 	if err := services.DbInsert(tx, &ProjectContent); err != nil {

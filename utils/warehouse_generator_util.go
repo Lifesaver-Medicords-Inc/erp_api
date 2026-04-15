@@ -11,7 +11,6 @@ func WarehouseCodeGenerator(id uint) string {
 }
 
 func AreaCodeGenerator(zone string, area string, rack string, level string, bins string) string {
-
 	if area != "" && zone != "" {
 		area = "-" + area
 	}
@@ -34,5 +33,4 @@ func AreaCodeGenerator(zone string, area string, rack string, level string, bins
 	// Concatenate all parts
 	areasCode := zone + area + rack + level + binsCode
 	return areasCode
-
 }

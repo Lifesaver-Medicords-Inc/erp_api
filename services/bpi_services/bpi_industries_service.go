@@ -9,7 +9,6 @@ import (
 )
 
 func CreateBpiIndustries(tx *gorm.DB, parentId uint, industryId uint, at models.At) error {
-
 	// Check if already exists
 	var count int64
 	if err := tx.Model(&models.BpiIndustries{}).
@@ -46,7 +45,6 @@ func CreateBpiIndustries(tx *gorm.DB, parentId uint, industryId uint, at models.
 }
 
 func UpdateBpiIndustries(tx *gorm.DB, parentId uint, industryId uint, at models.At) error {
-
 	content := models.BpiIndustriesContent{
 		BpiId:      parentId,
 		IndustryId: industryId,
@@ -69,7 +67,6 @@ func UpdateBpiIndustries(tx *gorm.DB, parentId uint, industryId uint, at models.
 }
 
 func CreateBpiBranchIndustries(tx *gorm.DB, parentId uint, branchIndustryId uint, salesId string, at models.At) error {
-
 	content := models.BpiBranchIndustriesContent{
 		BpiGeneralId: parentId,
 		IndustryId:   branchIndustryId,
@@ -98,7 +95,6 @@ func CreateBpiBranchIndustries(tx *gorm.DB, parentId uint, branchIndustryId uint
 }
 
 func UpdateBpiBranchIndustries(tx *gorm.DB, parentId uint, branchIndustryId uint, salesId string, at models.At) error {
-
 	conditions := map[string]interface{}{
 		"bpi_general_id": parentId,
 		"industry_id":    branchIndustryId,

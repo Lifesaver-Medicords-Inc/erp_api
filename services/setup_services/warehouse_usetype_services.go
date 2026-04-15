@@ -35,7 +35,6 @@ func GetUseType(id int) (models.WarehouseUseType, int, error) {
 }
 
 func CreateUseType(tx *gorm.DB, usetype *models.WarehouseUseType) (int, error) {
-
 	if err := services.DbInsert(tx, usetype); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			err = errors.New("duplicate record error")

@@ -17,7 +17,7 @@ type BodyPR struct {
 
 type BodyPROrder struct {
 	models.PurchaseRequisition
-	//Child 1
+	// Child 1
 	PROrder []models.PROrders `json:"purchasing_purchase_requisition_orders"`
 }
 type UpdateBodyOrderDetails struct {
@@ -57,10 +57,10 @@ func GetPR(PR_ID int) (BodyPR, int, error) {
 
 	conditions = map[string]interface{}{
 		// based on parent ID
-		"based_id": PRrecord.PurchaseRequisition.PR_ID,
+		"based_id": PRrecord.PR_ID,
 	}
 
-	//Child 1
+	// Child 1
 	if err := GetPROrder(&PRrecord.PROrder, conditions); err != nil {
 		return PRrecord, fiber.StatusInternalServerError, err
 	}
@@ -152,12 +152,12 @@ func UpdatePR(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bod
 		}
 
 		if err := services.DbGet(&existingOrderDetail, proOrderConditions); err != nil {
-			PRorder.Based_ID = bodyPR.PurchaseRequisition.PR_ID
-			if err := CreatePROrder(tx, bodyPR.PurchaseRequisition.PR_ID, PRorder, at); err != nil {
+			PRorder.Based_ID = bodyPR.PR_ID
+			if err := CreatePROrder(tx, bodyPR.PR_ID, PRorder, at); err != nil {
 				return bodyPR, fiber.StatusInternalServerError, err
 			}
 		} else {
-			PRorder.Based_ID = bodyPR.PurchaseRequisition.PR_ID
+			PRorder.Based_ID = bodyPR.PR_ID
 			if err := UpdatePROrder(tx, PRorder, at, proOrderConditions); err != nil {
 				return bodyPR, fiber.StatusInternalServerError, err
 			}
@@ -170,7 +170,6 @@ func UpdatePR(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bod
 
 	return bodyPR, 0, nil
 }
-
 
 func DeletePR(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (BodyPR, int, error) {
 	var bodyPR BodyPR

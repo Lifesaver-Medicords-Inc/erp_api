@@ -19,7 +19,6 @@ func GetBrands(c *fiber.Ctx) error {
 }
 
 func GetBrand(c *fiber.Ctx) error {
-
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 
@@ -36,7 +35,6 @@ func GetBrand(c *fiber.Ctx) error {
 }
 
 func CreateBrand(c *fiber.Ctx) error {
-
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")

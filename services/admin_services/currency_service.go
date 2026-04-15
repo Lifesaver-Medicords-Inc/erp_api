@@ -14,7 +14,6 @@ func NewCurrencyService() *CurrencyService {
 }
 
 func (c *CurrencyService) GetCurrencyAPI(baseCode string) (currencyBody string) {
-
 	url := "https://api.fxratesapi.com/latest?base=PHP"
 
 	if baseCode != "" {

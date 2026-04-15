@@ -39,7 +39,6 @@ func (h *ChartClassHandler) GetChartClasses(c *fiber.Ctx) error {
 }
 
 func (h *ChartClassHandler) GetChartClass(c *fiber.Ctx) error {
-
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {

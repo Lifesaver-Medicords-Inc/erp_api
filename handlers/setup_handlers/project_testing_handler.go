@@ -98,7 +98,6 @@ func WsgetProjects(c *websocket.Conn) {
 }
 
 func WsGetIdk(c *websocket.Conn, branch string, ProjectId string) {
-
 	fmt.Println("WSGETIDK TO", branch)
 	fmt.Println("WSGETIDK TO", ProjectId)
 

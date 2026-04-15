@@ -12,11 +12,10 @@ import (
 
 type BoqNoteBody struct {
 	models.BoqNotes `json:"boq_notes"`
-	//BoqNotes []models.BoqNotes `json:"boq_notes"`
+	// BoqNotes []models.BoqNotes `json:"boq_notes"`
 }
 
 func GetBoqNotes(conditions map[string]interface{}) ([]models.BoqNotes, int, error) {
-
 	var boqnote []models.BoqNotes
 
 	if err := services.DbGet(&boqnote, conditions); err != nil {
@@ -81,7 +80,7 @@ func UpdateBoqNote(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{})
 	}
 
 	atdata := models.BoqNotesAt{
-		RefId: body.BoqNotes.ID,
+		RefId: body.ID,
 		At:    at,
 	}
 	if err := services.DbInsert(tx, &atdata); err != nil {

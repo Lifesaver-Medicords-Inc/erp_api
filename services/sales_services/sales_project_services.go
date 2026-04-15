@@ -207,7 +207,6 @@ func GetSalesProjects(conditions map[string]interface{}) (interface{}, int, erro
 	}
 
 	return response, 0, nil
-
 }
 
 func CreateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, error) {
@@ -262,14 +261,12 @@ func CreateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, erro
 
 	for _, v := range body.SalesProjectItems {
 		if err := CreateProjectItems(tx, body.SalesProjectItemSet.ItemSetID, v, at); err != nil {
-
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
 
 	for _, v := range body.SalesProjectWirings {
 		if err := CreateProjectWiring(tx, body.SalesProjectItemSet.ItemSetID, v, at); err != nil {
-
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
@@ -1236,14 +1233,12 @@ func CreateNewItems(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, error) {
 
 	for _, v := range body.SalesProjectItems {
 		if err := CreateProjectItems(tx, body.SalesProjectItemSet.ItemSetID, v, at); err != nil {
-
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
 
 	for _, v := range body.SalesProjectWirings {
 		if err := CreateProjectWiring(tx, body.SalesProjectItemSet.ItemSetID, v, at); err != nil {
-
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
@@ -1257,7 +1252,7 @@ func UpdateProjectMultiplier(c *fiber.Ctx, tx *gorm.DB, conditions map[string]in
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	//services.BroadcastToProject()
+	// services.BroadcastToProject()
 
 	at, ok := c.Locals("at").(models.At)
 	if !ok {

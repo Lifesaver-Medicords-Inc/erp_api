@@ -239,7 +239,6 @@ func UpdateProjectCondition(c *fiber.Ctx) error {
 }
 
 func UpdateProjectContent(c *fiber.Ctx) error {
-
 	var body models.SalesProjectContent
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "cannot bind request")
@@ -322,7 +321,7 @@ func WsProjects(c *websocket.Conn, userid string, branch string, projectid strin
 	// 	return
 	// }
 
-	//fmt.Println("Status:", status)
+	// fmt.Println("Status:", status)
 
 	for {
 		_, msgBytes, err := c.ReadMessage()
@@ -340,7 +339,7 @@ func WsProjects(c *websocket.Conn, userid string, branch string, projectid strin
 			continue
 		}
 
-		var broadcastMsg interface{} = message
+		var broadcastMsg = message
 
 		if msgMap, ok := message.(map[string]interface{}); ok {
 			// Remove "projectid" and "branch" keys if present
@@ -353,6 +352,5 @@ func WsProjects(c *websocket.Conn, userid string, branch string, projectid strin
 			fmt.Println("Error broadcasting initial data:", err)
 			return
 		}
-
 	}
 }

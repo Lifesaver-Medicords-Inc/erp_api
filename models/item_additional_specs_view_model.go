@@ -2,10 +2,10 @@ package models
 
 type AdditionalSpecsView struct {
 	AdditionalSpecs
-	VolumeUnitOfMeasure string `json:"volume_unit_of_measure"`
-	WeightUnitOfMeasure string `json:"weight_unit_of_measure"`
-	PumpTypeCompatabilityId    string `json:"pump_type_compatability_id"`
-	PumpTypeCompatabilityNames string `json:"pump_type_compatability_names"`
+	VolumeUnitOfMeasure        string `json:"volume_unit_of_measure"`
+	WeightUnitOfMeasure        string `json:"weight_unit_of_measure"`
+	PumpTypeCompatabilityId    string `json:"pump_type_compatibility_id"`
+	PumpTypeCompatabilityNames string `json:"pump_type_compatibility_names"`
 }
 
 func (AdditionalSpecsView) TableName() string {

@@ -2,7 +2,7 @@ package models
 
 type AdditionalSpecsPumpTypeContent struct {
 	AdditionalSpecsId       uint `json:"additional_specs_id"`
-	PumpTypeCompatabilityId uint `json:"pump_type_compatability_id"`
+	PumpTypeCompatabilityId uint `json:"pump_type_compatibility_id"`
 }
 
 type AdditionalSpecsPumpType struct {

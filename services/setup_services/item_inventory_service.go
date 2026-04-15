@@ -25,7 +25,6 @@ func CreateItemInventory(tx *gorm.DB, basedId uint, itemInventory models.ItemInv
 }
 
 func UpdateItemInventory(tx *gorm.DB, basedId uint, itemInventory models.ItemInventory, at models.At, conditions map[string]interface{}) error {
-
 	itemInventory.BasedId = basedId
 
 	if itemInventory.ID == 0 {

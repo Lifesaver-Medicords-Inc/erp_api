@@ -16,5 +16,4 @@ func PositionRoutes(app *fiber.App) {
 	api.Post("/", positionHandler.CreatePositionHandler)
 	api.Put("/:id", positionHandler.UpdatePositionHandler)
 	api.Delete("/:id", positionHandler.DeletePositionHandler)
-
 }

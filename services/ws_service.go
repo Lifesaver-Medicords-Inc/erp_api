@@ -128,7 +128,7 @@ func SendMessage(c *websocket.Conn, data interface{}) error {
 	return c.WriteMessage(websocket.TextMessage, bytes)
 }
 
-// for deparments redbox
+// for departments redbox
 func HandleWs2(client *websocket.Conn, handler func(*websocket.Conn, string)) {
 	department := client.Query("department")
 	initializers.WM2.AddClient2(client, department)

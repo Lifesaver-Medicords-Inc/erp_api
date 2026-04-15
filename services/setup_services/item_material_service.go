@@ -36,7 +36,6 @@ func GetMaterial(id int) (models.Material, int, error) {
 func CreateMaterial(c *fiber.Ctx, tx *gorm.DB) (models.Material, int, error) {
 	var body models.Material
 	if err := c.BodyParser(&body); err != nil {
-
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 

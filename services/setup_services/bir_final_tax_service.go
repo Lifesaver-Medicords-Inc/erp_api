@@ -10,19 +10,16 @@ import (
 )
 
 func GetFinalTax(conditions map[string]interface{}) ([]models.ExpandedWithholdingTax, int, error) {
-
 	var based_service = services.NewInMemoryRepository(nil, nil, models.ExpandedWithholdingTax{}, models.ExpandedWithholdingTaxAt{})
 
 	return based_service.FetchAll()
 }
 
 func CreateFinalTax(c *fiber.Ctx, tx *gorm.DB) (models.ExpandedWithholdingTax, int, error) {
-
 	var based_service = services.NewInMemoryRepository(c, tx, models.ExpandedWithholdingTax{}, models.ExpandedWithholdingTaxAt{})
 
 	var body models.ExpandedWithholdingTax
 	if err := c.BodyParser(&body); err != nil {
-
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
@@ -37,7 +34,6 @@ func CreateFinalTax(c *fiber.Ctx, tx *gorm.DB) (models.ExpandedWithholdingTax, i
 }
 
 func UpdateFinalTax(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.ExpandedWithholdingTax, int, error) {
-
 	var based_service = services.NewInMemoryRepository(c, tx, models.ExpandedWithholdingTax{}, models.ExpandedWithholdingTaxAt{})
 
 	var body models.ExpandedWithholdingTax
@@ -56,7 +52,6 @@ func UpdateFinalTax(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 }
 
 func DeleteFinalTax(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.ExpandedWithholdingTax, int, error) {
-
 	var body models.ExpandedWithholdingTax
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")

@@ -1,7 +1,7 @@
 package models
 
 type WarehouseAreaContent struct {
-	WarehouseNameId uint   `json:"warehouse_name_id"` //parent id
+	WarehouseNameId uint   `json:"warehouse_name_id"` // parent id
 	UseType         string `json:"use_type"`
 	Zone            string `json:"zone"`
 	Area            string `json:"area"`
@@ -34,7 +34,7 @@ func (WarehouseAreaAt) TableName() string {
 }
 
 type WarehouseAreaView struct {
-	WarehouseNameId uint   `json:"warehouse_name_id"` //parent id
+	WarehouseNameId uint   `json:"warehouse_name_id"` // parent id
 	Zone            string `json:"zone"`
 	Area            string `json:"area"`
 	Rack            string `json:"rack"`

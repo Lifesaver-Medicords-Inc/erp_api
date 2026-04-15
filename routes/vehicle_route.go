@@ -16,5 +16,4 @@ func VehicleRoutes(app *fiber.App) {
 	api.Get("/", vehicleHandler.GetVehiclesHandler)
 	api.Put("/:id", vehicleHandler.UpdateVehicleHandler)
 	api.Delete("/:id", vehicleHandler.DeleteVehicleHandler)
-
 }

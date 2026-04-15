@@ -13,7 +13,6 @@ import (
 )
 
 func CreateInventoryStock(tx *gorm.DB, body *models.InventoryStocks, at models.At) error {
-
 	// Create a Inventory for each detail entry
 	inventory := models.InventoryStocks{
 		InventoryStocksContent: body.InventoryStocksContent,
@@ -43,7 +42,6 @@ func CreateInventoryStock(tx *gorm.DB, body *models.InventoryStocks, at models.A
 }
 
 func UpdateInventoryStock(tx *gorm.DB, body *models.InventoryStocks, at models.At) error {
-
 	// Build or update the inventory record
 	inventory := models.InventoryStocks{
 		InventoryStocksContent: body.InventoryStocksContent,
@@ -80,7 +78,6 @@ func UpdateInventoryStock(tx *gorm.DB, body *models.InventoryStocks, at models.A
 }
 
 func UpdateInventoryStockPickActivity(tx *gorm.DB, body *models.InventoryStocks, at models.At) error {
-
 	// Build or update the inventory record
 	inventory := models.InventoryStocks{
 		InventoryStocksContent: body.InventoryStocksContent,
@@ -116,7 +113,6 @@ func UpdateInventoryStockPickActivity(tx *gorm.DB, body *models.InventoryStocks,
 }
 
 func UpdateInventoryStocksHistory(tx *gorm.DB, body *models.InventoryStocksHistory, at models.At) error {
-
 	// Build or update the inventory record
 	inventory := models.InventoryStocksHistory{
 		InventoryStocksHistoryContent: body.InventoryStocksHistoryContent,
@@ -134,7 +130,6 @@ func UpdateInventoryStocksHistory(tx *gorm.DB, body *models.InventoryStocksHisto
 			AND item_request_id = ? AND item_request_details_id = ?`,
 			body.ItemId, body.BinLocation, body.WarehouseId, body.ItemRequestId, body.ItemRequestDetailsId).
 			First(&existingHistory).Error
-
 	} else {
 		// Else → DO SOMETHING ELSE (replace with your logic)
 		errh = tx.Where(`item_id = ? AND bin_location = ? AND warehouse_id = ?
@@ -196,7 +191,6 @@ func UpdateInventoryStocksHistory(tx *gorm.DB, body *models.InventoryStocksHisto
 }
 
 func DeleteInventoryStock(tx *gorm.DB, pickActivityId uint, receivingId uint, at models.At) error {
-
 	// Determine filter field
 	var filter map[string]interface{}
 	if pickActivityId != 0 {

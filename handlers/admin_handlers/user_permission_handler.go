@@ -39,7 +39,6 @@ func (p *PermissionHandler) GetPermissionHandler(c *fiber.Ctx) error {
 }
 
 func (p *PermissionHandler) GetPermissionsHandler(c *fiber.Ctx) error {
-
 	data, status, err := p.PermissionService.GetPermissionsService(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -122,7 +121,6 @@ func (p *PermissionHandler) UpdatePermissionHandler(c *fiber.Ctx) error {
 }
 
 func (p *PermissionHandler) DeletePermissionHandler(c *fiber.Ctx) error {
-
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {

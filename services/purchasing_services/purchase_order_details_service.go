@@ -36,8 +36,6 @@ func CreatePurchaseOrderDetails(tx *gorm.DB, basedId uint, PurchaseOrderDetails 
 }
 
 func UpdatePurchaseOrderDetails(tx *gorm.DB, basedId uint, purchaserderdetails models.PurchaseOrderDetails, at models.At, conditions map[string]interface{}) error {
-
-	
 	if err := services.DbUpdate(tx, &purchaserderdetails, conditions); err != nil {
 		return errors.New("failed updating purchaseorderdetails")
 	}

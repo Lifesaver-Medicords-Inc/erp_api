@@ -13,7 +13,6 @@ import (
 // ─── CreateBpiEntity ──────────────────────────────────────────────────────────
 
 func CreateBpiEntity(tx *gorm.DB, parentId uint, entityId uint, salesId string, at models.At) error {
-
 	fmt.Println("CREATE BPI ENTITY")
 
 	content := models.BpiEntityContent{
@@ -70,7 +69,6 @@ func CreateBpiEntity(tx *gorm.DB, parentId uint, entityId uint, salesId string, 
 // ─── UpdateBpiEntity ──────────────────────────────────────────────────────────
 
 func UpdateBpiEntity(tx *gorm.DB, parentId uint, entityId uint, salesId string, at models.At) error {
-
 	conditions := map[string]interface{}{
 		"bpi_general_id": parentId,
 		"entity_id":      entityId,

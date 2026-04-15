@@ -52,7 +52,6 @@ func (s *ItemReleaseService) GetItemReleaseService(conditions map[string]interfa
 
 // Create a new item release
 func (s *ItemReleaseService) CreateItemReleaseService(release *models.ItemRelease, at models.At) (*models.ItemRelease, int, error) {
-
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return release, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
@@ -92,7 +91,6 @@ func (s *ItemReleaseService) CreateItemReleaseService(release *models.ItemReleas
 }
 
 func (s *ItemReleaseService) UpdateItemReleaseService(release *models.ItemRelease, conditions map[string]interface{}, at models.At) (*models.ItemRelease, int, error) {
-
 	// Start transaction
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
@@ -128,7 +126,6 @@ func (s *ItemReleaseService) UpdateItemReleaseService(release *models.ItemReleas
 
 // Delete an item release
 func (s *ItemReleaseService) DeleteItemReleaseService(conditions map[string]interface{}, at models.At) (*models.ItemRelease, int, error) {
-
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return &models.ItemRelease{}, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")

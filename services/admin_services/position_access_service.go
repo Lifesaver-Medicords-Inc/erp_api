@@ -18,7 +18,6 @@ func NewPositionAccessService() *PositionAccessService {
 }
 
 func (p *PositionAccessService) GetPositionAllAccessService(conditions map[string]interface{}) (*[]models.PositionAccessModel, int, error) {
-
 	var access = &[]models.PositionAccessModel{}
 
 	tx := initializers.DB.Begin()
@@ -35,7 +34,6 @@ func (p *PositionAccessService) GetPositionAllAccessService(conditions map[strin
 }
 
 func (p *PositionAccessService) GetPositionAccessService(conditions map[string]interface{}) (*models.PositionAccessModel, int, error) {
-
 	var access = &models.PositionAccessModel{}
 	tx := initializers.DB.Begin()
 
@@ -85,7 +83,6 @@ func (p *PositionAccessService) CreatePositionAccessService(access *models.Posit
 }
 
 func (p *PositionAccessService) UpdatePositionAccessService(access *models.PositionAccessModel, conditions map[string]interface{}, at models.At) (*models.PositionAccessModel, int, error) {
-
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
@@ -115,7 +112,6 @@ func (p *PositionAccessService) UpdatePositionAccessService(access *models.Posit
 }
 
 func (p *PositionAccessService) DeletePositionAccessService(conditions map[string]interface{}, at models.At) (*models.PositionAccessModel, int, error) {
-
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {

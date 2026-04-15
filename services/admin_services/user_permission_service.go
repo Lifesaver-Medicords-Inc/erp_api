@@ -18,7 +18,6 @@ func NewPermissionService() *PermissionService {
 }
 
 func (p *PermissionService) GetPermissionService(conditions map[string]interface{}) (*models.UserPermissionModel, int, error) {
-
 	var permissions = &models.UserPermissionModel{}
 
 	if err := services.DbGetNoCache(&permissions, conditions); err != nil {
@@ -29,7 +28,6 @@ func (p *PermissionService) GetPermissionService(conditions map[string]interface
 }
 
 func (p *PermissionService) GetPermissionsService(conditions map[string]interface{}) (*[]models.UserPermissionModel, int, error) {
-
 	var permissions = &[]models.UserPermissionModel{}
 
 	if err := services.DbGetNoCache(&permissions, conditions); err != nil {
@@ -81,7 +79,6 @@ func (p *PermissionService) CreatePermissionService(permission *models.UserPermi
 }
 
 func (p *PermissionService) UpdatePermissionService(permission *models.UserPermissionModel, conditions map[string]interface{}, at models.At) (*models.UserPermissionModel, int, error) {
-
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
@@ -95,7 +92,6 @@ func (p *PermissionService) UpdatePermissionService(permission *models.UserPermi
 			"can_update": permission.CanUpdate,
 			"can_delete": permission.CanDelete,
 		}).Error; err != nil {
-
 		return permission, fiber.StatusInternalServerError, errors.New("failed updating user permission")
 	}
 
@@ -124,7 +120,6 @@ func (p *PermissionService) UpdatePermissionService(permission *models.UserPermi
 }
 
 func (p *PermissionService) DeletePermissionService(conditions map[string]interface{}, at models.At) (*models.UserPermissionModel, int, error) {
-
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {

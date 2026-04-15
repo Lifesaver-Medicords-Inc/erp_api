@@ -126,7 +126,6 @@ func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 }
 
 func GetItem(id int) (Body, int, error) {
-
 	conditions := map[string]interface{}{
 		"id": id,
 	}
@@ -137,7 +136,7 @@ func GetItem(id int) (Body, int, error) {
 	}
 
 	itemSpecsConditions := map[string]interface{}{
-		"based_id": record.Item.ID,
+		"based_id": record.ID,
 	}
 
 	if err := GetItemSpec(&record.ItemSpecs, itemSpecsConditions); err != nil {
@@ -160,7 +159,7 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 
 	if err := services.DbInsert(tx, &savebody.Item); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-			err = errors.New("duplicate record error") //to be added: validation of duplicate fields
+			err = errors.New("duplicate record error") // to be added: validation of duplicate fields
 		} else {
 			err = errors.New("failed creating item")
 		}

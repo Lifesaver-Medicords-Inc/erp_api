@@ -11,7 +11,6 @@ import (
 )
 
 func GetPositions(conditions map[string]interface{}) ([]models.PositionModel, int, error) {
-
 	var positions []models.PositionModel
 
 	if err := services.DbGet(&positions, conditions); err != nil {

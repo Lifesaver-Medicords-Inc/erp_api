@@ -31,7 +31,6 @@ func GetBpiUsers(c *fiber.Ctx) error {
 }
 
 func GetBpiEntityRecords(c *fiber.Ctx) error {
-
 	data, status, err := bpi_services.GetBpiEntityRecords(nil)
 
 	if err != nil {
@@ -68,7 +67,6 @@ func CreateBpi(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transactions")
 	}
 	return utils.RespondSuccess(c, data)
-
 }
 
 func CreateBpiParentFromBranch(c *fiber.Ctx) error {
@@ -92,7 +90,6 @@ func CreateBpiParentFromBranch(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transactions")
 	}
 	return utils.RespondSuccess(c, data)
-
 }
 
 func UpdateBpi(c *fiber.Ctx) error {

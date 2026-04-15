@@ -11,7 +11,6 @@ import (
 )
 
 func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDateReceived string, parentPoId uint, detail models.ReceivingReportDetails2, parentPodId uint, body *ReceivingReportBody2, at models.At) error {
-
 	orderedQty := detail.OrderedQty
 	receivedQty := detail.ReceivedQty
 	rejectedQty := detail.RejectedQty
@@ -69,7 +68,7 @@ func CreateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		return errors.New("failed creating receiving history at")
 	}
 
-	//Invalidate cache
+	// Invalidate cache
 	if err := services.InvalidateCacheByModel(models.PurchaseOrderDetailsView{}); err != nil {
 		fmt.Println("Failed to invalidate cache:", err)
 	}
@@ -143,7 +142,7 @@ func UpdateReceivingReportHistory(tx *gorm.DB, receivingReportId uint, parentDat
 		return errors.New("failed creating receiving history at")
 	}
 
-	//Invalidate cache
+	// Invalidate cache
 	if err := services.InvalidateCacheByModel(models.PurchaseOrderDetailsView{}); err != nil {
 		fmt.Println("Failed to invalidate cache:", err)
 	}
@@ -183,7 +182,7 @@ func DeleteReceivingReportHistory(tx *gorm.DB, receivingReportID uint, body *Del
 		return errors.New("failed creating receiving report details audit trail")
 	}
 
-	//Invalidate cache
+	// Invalidate cache
 	if err := services.InvalidateCacheByModel(models.PurchaseOrderDetailsView{}); err != nil {
 		fmt.Println("Failed to invalidate cache:", err)
 	}

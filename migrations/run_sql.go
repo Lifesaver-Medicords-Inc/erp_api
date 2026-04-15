@@ -10,14 +10,12 @@ import (
 )
 
 func runSQLFolder(path string) {
-
 	files, err := filepath.Glob(path + "/*.sql")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for _, file := range files {
-
 		sqlBytes, err := os.ReadFile(file)
 		if err != nil {
 			log.Fatal("Failed reading:", file)
@@ -33,8 +31,6 @@ func runSQLFolder(path string) {
 }
 
 func RunSQLMigrations() {
-
 	runSQLFolder("sql/views")
 	runSQLFolder("sql/procedures")
-
 }

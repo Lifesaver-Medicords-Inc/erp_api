@@ -17,7 +17,6 @@ func NewTaxSetupHandler(service *setup_services.TaxSetupService) *TaxSetupHandle
 }
 
 func (h *TaxSetupHandler) GetTaxSetup(c *fiber.Ctx) error {
-
 	data, status, err := h.Service.GetTaxSetup(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -27,7 +26,6 @@ func (h *TaxSetupHandler) GetTaxSetup(c *fiber.Ctx) error {
 }
 
 func (h *TaxSetupHandler) GetChartOfAccountSetup(c *fiber.Ctx) error {
-
 	data, status, err := h.Service.GetChartOfAccountSetup(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -37,7 +35,6 @@ func (h *TaxSetupHandler) GetChartOfAccountSetup(c *fiber.Ctx) error {
 }
 
 func (h *TaxSetupHandler) GetTaxClassificationSetup(c *fiber.Ctx) error {
-
 	codeParams := c.Params("code")
 
 	data, status, err := h.Service.GetTaxClassificationSetup(codeParams)

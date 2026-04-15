@@ -27,10 +27,8 @@ func (w *WarehouseService) CreateWarehouseService(warehouse *models.WarehouseNam
 
 	if err := services.DbInsert(tx, &warehouse); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-
 			err = errors.New("duplicate record error")
 		} else {
-
 			err = errors.New("failed creating warehouse")
 		}
 		tx.Rollback()
@@ -52,7 +50,6 @@ func (w *WarehouseService) CreateWarehouseService(warehouse *models.WarehouseNam
 }
 
 func (w *WarehouseService) GetWarehousesService(conditions map[string]interface{}) (*[]models.WarehouseName, int, error) {
-
 	tx := initializers.DB.Begin()
 
 	var warehouse = &[]models.WarehouseName{}

@@ -10,7 +10,6 @@ import (
 )
 
 func CreateBpiItems(tx *gorm.DB, parentId uint, generalId uint, childItems []models.BpiItems, salesId string, at models.At) error {
-
 	for _, v := range childItems {
 		if err := CreateBpiItem(tx, parentId, generalId, v, salesId, at); err != nil {
 			return err
@@ -20,9 +19,8 @@ func CreateBpiItems(tx *gorm.DB, parentId uint, generalId uint, childItems []mod
 }
 
 func CreateBpiItem(tx *gorm.DB, parentId uint, generalId uint, child models.BpiItems, salesId string, at models.At) error {
-
-	child.BpiItemContent.BasedId = parentId
-	child.BpiItemContent.BranchId = generalId
+	child.BasedId = parentId
+	child.BranchId = generalId
 
 	if err := services.DbInsert(tx, &child); err != nil {
 		return errors.New("failed to create bpi items")
@@ -46,7 +44,6 @@ func CreateBpiItem(tx *gorm.DB, parentId uint, generalId uint, child models.BpiI
 }
 
 func UpdateBpiItems(tx *gorm.DB, parentId uint, generalId uint, childItems []models.BpiItems, salesId string, at models.At) error {
-
 	var existingIDs []uint
 	if err := tx.
 		Model(&models.BpiItems{}).
@@ -96,7 +93,6 @@ func UpdateBpiItems(tx *gorm.DB, parentId uint, generalId uint, childItems []mod
 }
 
 func UpdateBpiItem(tx *gorm.DB, parentId uint, generalId uint, child models.BpiItems, salesId string, at models.At) error {
-
 	oldItem := models.BpiItems{}
 	if err := tx.First(&oldItem, child.ID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -110,13 +106,12 @@ func UpdateBpiItem(tx *gorm.DB, parentId uint, generalId uint, child models.BpiI
 	}
 
 	if child.ID == 0 {
-		child.BpiItemContent.BasedId = parentId
-		child.BpiItemContent.BranchId = generalId
+		child.BasedId = parentId
+		child.BranchId = generalId
 
 		if err := services.DbInsert(tx, &child); err != nil {
 			return errors.New("failed to create bpi items")
 		}
-
 	} else {
 		if err := services.DbUpdate(tx, &child, conditions); err != nil {
 			return errors.New("failed updating bpi items")
@@ -152,7 +147,6 @@ func UpdateBpiItem(tx *gorm.DB, parentId uint, generalId uint, child models.BpiI
 }
 
 func UpdateBpiItemCanvass(tx *gorm.DB, canvassId uint, price float64, conditions map[string]interface{}, at models.At) error {
-
 	var body models.BpiItems
 
 	// First clause to call for specific record, for the mean time use find to get all that checks the condition
@@ -179,9 +173,7 @@ func UpdateBpiItemCanvass(tx *gorm.DB, canvassId uint, price float64, conditions
 
 	return nil
 }
-func DeleteBpiItem( tx *gorm.DB, parentId uint, itemId uint, salesId string, at models.At,) error {
-
-	
+func DeleteBpiItem(tx *gorm.DB, parentId uint, itemId uint, salesId string, at models.At) error {
 	if err := tx.
 		Where("ref_id = ?", itemId).
 		Delete(&models.BpiItemsAt{}).Error; err != nil {

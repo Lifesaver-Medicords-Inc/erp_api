@@ -16,7 +16,6 @@ func GetQuotationQuickSelectedImages(quotationquickselectedimage *[]models.Sales
 	return nil
 }
 
-
 // func CreateQuotationQuickSelectedImage(tx *gorm.DB, basedId int, SalesQuotationSelectedImage models.SalesQuotationSelectedImage, at models.At) error {
 // 	SalesQuotationSelectedImage.QuotationQuickId = basedId
 
@@ -38,7 +37,6 @@ func GetQuotationQuickSelectedImages(quotationquickselectedimage *[]models.Sales
 // }
 
 func CreateSalesQuotationSelectedImages(tx *gorm.DB, parentQuickId uint, images []models.SalesQuotationSelectedImage, at models.At) error {
-
 	for _, img := range images {
 		img.QuotationQuickId = parentQuickId // link to the parent quick quotation
 		if err := services.DbInsert(tx, &img); err != nil {
@@ -62,7 +60,6 @@ func CreateSalesQuotationSelectedImages(tx *gorm.DB, parentQuickId uint, images 
 }
 
 func UpdateQuotationQuickSelectedImage(tx *gorm.DB, basedId uint, SalesQuotationSelectedImage models.SalesQuotationSelectedImage, at models.At, condtions map[string]interface{}) error {
-
 	if err := services.DbUpdate(tx, &SalesQuotationSelectedImage, condtions); err != nil {
 		return errors.New("failed updating quotationquickselectedimageat")
 	}

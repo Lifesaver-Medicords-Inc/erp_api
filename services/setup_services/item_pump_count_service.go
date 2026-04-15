@@ -36,7 +36,6 @@ func GetPumpCount(id int) (models.PumpCount, int, error) {
 func CreatePumpCount(c *fiber.Ctx, tx *gorm.DB) (models.PumpCount, int, error) {
 	var body models.PumpCount
 	if err := c.BodyParser(&body); err != nil {
-
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 

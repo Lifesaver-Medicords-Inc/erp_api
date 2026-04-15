@@ -10,7 +10,6 @@ import (
 )
 
 func GetPumpTypes(c *fiber.Ctx) error {
-
 	data, status, err := setup_services.GetPumpTypes(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())

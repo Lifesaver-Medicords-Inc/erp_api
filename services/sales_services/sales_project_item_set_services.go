@@ -11,7 +11,6 @@ import (
 )
 
 func CreateProjectItemSet(tx *gorm.DB, parentID uint, ItemSet *models.SalesProjectItemSet, at models.At) error {
-
 	ItemSet.BasedId = parentID
 
 	fmt.Println("LLLLLLLLLLL")
@@ -36,7 +35,6 @@ func CreateProjectItemSet(tx *gorm.DB, parentID uint, ItemSet *models.SalesProje
 }
 
 func CreateSeparateProjectItemSet(tx *gorm.DB, ItemSet *models.SalesProjectItemSet, at models.At) error {
-
 	if err := services.DbInsert(tx, &ItemSet); err != nil {
 		return errors.New("failed creating item set")
 	}
@@ -93,5 +91,4 @@ func UpdateProjectItemSet(tx *gorm.DB, itemset models.SalesProjectItemSet, at mo
 	}
 
 	return nil
-
 }

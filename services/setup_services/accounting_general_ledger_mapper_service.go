@@ -14,13 +14,11 @@ import (
 )
 
 func GetGeneralLedgerMappers(conditions map[string]interface{}) ([]accounting_models.GeneralLedgerMapper, int, error) {
-
 	var based_service = services.NewInMemoryRepository(nil, nil, accounting_models.GeneralLedgerMapper{}, accounting_models.GeneralLedgerMapperAt{})
 
 	return based_service.FetchAll()
 }
 func GetGeneralLedgerMapper(id int) (accounting_models.GeneralLedgerMapper, int, error) {
-
 	conditions := map[string]interface{}{
 		"id": id,
 	}
@@ -35,7 +33,6 @@ func GetGeneralLedgerMapper(id int) (accounting_models.GeneralLedgerMapper, int,
 }
 
 func UpdateGeneralLedgerMapper(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (int, error) {
-
 	var based_service = services.NewInMemoryRepository(c, tx, accounting_models.GeneralLedgerMapper{}, accounting_models.GeneralLedgerMapperAt{})
 
 	var payload accounting_models.GeneralLedgerMapperPayload

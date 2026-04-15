@@ -109,7 +109,7 @@ func (s *JournalEntryService) CreateJournalEntry(body *accounting_models.Journal
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	//Insert audit record for the main request
+	// Insert audit record for the main request
 	atdata := accounting_models.JournalEntryAt{
 		RefId:               body.JournalEntry.ID,
 		JournalEntryContent: body.JournalEntry.JournalEntryContent,
@@ -160,7 +160,7 @@ func (s *JournalEntryService) UpdateJournalEntry(body *accounting_models.Journal
 	// Rollback once, automatically, unless committed
 	defer tx.Rollback()
 
-	//Update main Journal Entry
+	// Update main Journal Entry
 	if err := services.DbUpdate(tx, &body.JournalEntry, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating journal entry")
 	}
@@ -170,7 +170,7 @@ func (s *JournalEntryService) UpdateJournalEntry(body *accounting_models.Journal
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	//Audit record for main request
+	// Audit record for main request
 	atdata := accounting_models.JournalEntryAt{
 		RefId:               body.JournalEntry.ID,
 		JournalEntryContent: body.JournalEntry.JournalEntryContent,
@@ -227,7 +227,7 @@ func (s *JournalEntryService) DeleteJournalEntry(body *accounting_models.Journal
 	// Rollback once, automatically, unless committed
 	defer tx.Rollback()
 
-	//Delete main Journal Entry
+	// Delete main Journal Entry
 	if err := services.DbDelete(tx, &body.JournalEntry, nil); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed deleting journal entry")
 	}
@@ -236,7 +236,7 @@ func (s *JournalEntryService) DeleteJournalEntry(body *accounting_models.Journal
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	//Audit record for main request
+	// Audit record for main request
 	atdata := accounting_models.JournalEntryAt{RefId: body.JournalEntry.ID, JournalEntryContent: body.JournalEntry.JournalEntryContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating journal entry at")
@@ -290,7 +290,7 @@ func (s *JournalEntryService) AutoInsertJournalEntry(body *accounting_models.Jou
 		return errors.New("failed creating journal entry details auto insert")
 	}
 
-	//Insert audit record for the main request
+	// Insert audit record for the main request
 	atdata := accounting_models.JournalEntryDetailsAt{
 		RefId:                      body.ID,
 		JournalEntryDetailsContent: body.JournalEntryDetailsContent,

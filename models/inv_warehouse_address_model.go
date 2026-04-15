@@ -1,7 +1,7 @@
 package models
 
 type WarehouseAddressContent struct {
-	WarehouseNameId uint   `json:"warehouse_name_id"` //parent id
+	WarehouseNameId uint   `json:"warehouse_name_id"` // parent id
 	BuildingNo      string `json:"building_no"`
 	Street          string `json:"street"`
 	BarangayNo      string `json:"barangay_no"`

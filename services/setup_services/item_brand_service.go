@@ -19,7 +19,7 @@ func GetBrands(conditions map[string]interface{}) ([]models.Brand, int, error) {
 	}
 
 	return brands, 0, nil
-} 
+}
 
 func GetBrand(id int) (models.Brand, int, error) {
 	conditions := map[string]interface{}{
@@ -58,7 +58,6 @@ func CreateBrand(c *fiber.Ctx, tx *gorm.DB) (models.Brand, int, error) {
 	if !ok {
 		at = models.At{}
 		fmt.Println("at not ok ", at)
-
 	}
 	// at := utils.GetAtData(c, models.At{})
 	// at.MachineName =

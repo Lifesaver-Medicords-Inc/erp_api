@@ -11,13 +11,13 @@ import (
 	"gorm.io/gorm"
 )
 
-//trash old code, too laze to update
+// trash old code, too laze to update
 
 func GetWarehouseManagers(conditions map[string]interface{}) ([]models.User, int, error) {
 	var users []models.User
 
 	if err := services.DbGet(&users, conditions); err != nil {
-		return users, fiber.StatusInternalServerError, errors.New("failed to get users") //warehouse manager
+		return users, fiber.StatusInternalServerError, errors.New("failed to get users") // warehouse manager
 	}
 
 	return users, 0, nil
@@ -77,7 +77,7 @@ func GetWarehouseName(id int) (GetSpecificWarehouseBody, int, error) {
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	areas, _, err := GetWarehouseAreasRow(conditions) //get list of children (grid)
+	areas, _, err := GetWarehouseAreasRow(conditions) // get list of children (grid)
 	if err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
@@ -149,7 +149,7 @@ func UpdateWarehouseName(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	//front end na ung code generation (for backend testing purpose)
+	// front end na ung code generation (for backend testing purpose)
 	generatedAreaCode := utils.AreaCodeGenerator(
 		body.WarehouseArea.Zone,
 		body.WarehouseArea.Area,

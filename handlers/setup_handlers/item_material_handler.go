@@ -10,7 +10,6 @@ import (
 )
 
 func GetMaterials(c *fiber.Ctx) error {
-
 	data, status, err := setup_services.GetMaterials(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())

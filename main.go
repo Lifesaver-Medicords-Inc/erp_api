@@ -44,7 +44,6 @@ func main() {
 }
 
 func SetupApp() *fiber.App {
-
 	// Fiber App
 	app := fiber.New(fiber.Config{
 		BodyLimit: 50 * 1024 * 1024,
@@ -224,7 +223,7 @@ func SetupApp() *fiber.App {
 					// warehouseApi.Put("/address", setup_handlers.UpdateWarehouseAddress)
 					// warehouseApi.Delete("/address", setup_handlers.DeleteWarehouseAddress)
 
-					//Warehouse Areas (used for seperate saving, pagsamantagal)
+					//Warehouse Areas (used for separate saving, pagsamantagal)
 					warehouseApi.Get("/area", setup_handlers.GetWarehouseAreasRow)
 					warehouseApi.Get("/area/:id", setup_handlers.GetWarehouseAreaRow)
 					warehouseApi.Post("/area", setup_handlers.CreateWarehouseAreaRow)
@@ -357,7 +356,6 @@ func SetupApp() *fiber.App {
 				setupApi.Get("/wiringnotes", setup_handlers.GetWiringNotes)
 				setupApi.Post("/wiringnotes", setup_handlers.CreateWiringNote)
 				setupApi.Put("/wiringnotes", setup_handlers.UpdateWiringNote)
-
 			}
 
 			// Sales Endpoints
@@ -532,7 +530,6 @@ func SetupApp() *fiber.App {
 								engineering_handlers.WsgetRedboxJobOrder(conn, userId)
 							})
 						}))
-
 					}
 				}
 			}

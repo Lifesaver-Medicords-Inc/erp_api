@@ -56,10 +56,8 @@ func (s *CalendarScheduleService) CreateCalendarScheduleService(schedule *models
 
 	if err := services.DbInsert(tx, &schedule); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-
 			err = errors.New("duplicate record error")
 		} else {
-
 			err = errors.New("failed creating schedule")
 		}
 		tx.Rollback()

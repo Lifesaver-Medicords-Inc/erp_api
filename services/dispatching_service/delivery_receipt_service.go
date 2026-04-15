@@ -57,7 +57,7 @@ func (s *DeliveryReceiptService) GetDeliveryReceiptService(conditions map[string
 
 	// ✅ Already a pointer, so this is fine
 	if err := query.First(receipt).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fiber.StatusNotFound, err
 		}
 		return nil, fiber.StatusInternalServerError, err
@@ -68,7 +68,6 @@ func (s *DeliveryReceiptService) GetDeliveryReceiptService(conditions map[string
 
 // Create a new delivery receipt
 func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *dispatching_models.DeliveryReceipt, at models.At) (*dispatching_models.DeliveryReceipt, int, error) {
-
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return data, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")

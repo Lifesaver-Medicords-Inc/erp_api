@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	//fmt"
+	// fmt"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,26 +15,24 @@ import (
 
 // test//test
 func GetCRMs(conditions map[string]interface{}) ([]models.CRMView, int, error) {
-
 	var CRMs []models.CRMView
 
 	if err := services.DbGet(&CRMs, conditions); err != nil {
 		fmt.Println("ERROR:", err.Error())
 		return CRMs, fiber.StatusInternalServerError, errors.New("failed getting CRMs")
 	}
-	//fmt.Println("DATA: ", CRMs)
+	// fmt.Println("DATA: ", CRMs)
 	return CRMs, 0, nil
 }
 
 func GetCRMTable(conditions map[string]interface{}) ([]models.CRM, int, error) {
-
 	var CRMs []models.CRM
 
 	if err := services.DbGet(&CRMs, conditions); err != nil {
 		fmt.Println("ERROR:", err.Error())
 		return CRMs, fiber.StatusInternalServerError, errors.New("failed getting CRMs")
 	}
-	//fmt.Println("DATA: ", CRMs)
+	// fmt.Println("DATA: ", CRMs)
 	return CRMs, 0, nil
 }
 
@@ -58,7 +56,6 @@ func CreateCRM(c *fiber.Ctx, tx *gorm.DB) (models.CRM, int, error) {
 	if err := c.BodyParser(&body); err != nil {
 		fmt.Println("ERROR:", err.Error())
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
-
 	}
 
 	if err := services.DbInsert(tx, &body); err != nil {

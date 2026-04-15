@@ -50,17 +50,17 @@ func DbSearch(model interface{}, conditions map[string]interface{}, term string,
 	}
 
 	cache, dataErr := initializers.RC.Get(ctx, dataKey).Result()
-	if dataErr == redis.Nil {
+	if errors.Is(dataErr, redis.Nil) {
 		fmt.Println("Getting search cursor data from DB")
 
 		// Fetch pageSize+1 to determine if there's a next page
 		query := buildSearchQuery(conditions, term, columns, numericColumns)
 		if cursor > 0 {
-			query = query.Where(fmt.Sprintf("%s < ?", idCol), cursor)
+			query = query.Where(idCol+" < ?", cursor)
 		}
 
 		slicePtr := makeSlicePtr(model)
-		if err = query.Order(fmt.Sprintf("%s DESC", idCol)).Limit(pageSize + 1).Find(slicePtr).Error; err != nil {
+		if err = query.Order(idCol + " DESC").Limit(pageSize + 1).Find(slicePtr).Error; err != nil {
 			return false, 0, err
 		}
 
@@ -124,7 +124,7 @@ func buildSearchQuery(conditions map[string]interface{}, term string, columns []
 			if numericSet[col] {
 				orClause += fmt.Sprintf("CAST(CAST(%s AS DECIMAL(18,2)) AS VARCHAR(50)) LIKE ?", col)
 			} else {
-				orClause += fmt.Sprintf("%s LIKE ?", col)
+				orClause += col + " LIKE ?"
 			}
 			args = append(args, fmt.Sprintf("%%%s%%", term))
 		}
@@ -145,7 +145,7 @@ func DbGetPaginated(model interface{}, conditions map[string]interface{}, cursor
 		fmt.Println("Seek By ID Key:", seekKey)
 
 		cache, seekErr := initializers.RC.Get(ctx, seekKey).Result()
-		if seekErr == redis.Nil {
+		if errors.Is(seekErr, redis.Nil) {
 			fmt.Println("Getting seek record from DB")
 
 			query := initializers.DB.Model(model)
@@ -197,7 +197,7 @@ func DbGetPaginated(model interface{}, conditions map[string]interface{}, cursor
 
 	// --- Try to get paginated records from cache ---
 	cache, dataErr := initializers.RC.Get(ctx, dataKey).Result()
-	if dataErr == redis.Nil {
+	if errors.Is(dataErr, redis.Nil) {
 		fmt.Println("Getting cursor paginated data from DB")
 
 		query := initializers.DB.Model(model)
@@ -281,7 +281,7 @@ func DbRaw(model interface{}, procName string, conditions map[string]interface{}
 	fmt.Println("Keeey", key)
 
 	cache, err := initializers.RC.Get(ctx, key).Result()
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		if err := fetchRaw(model, procName, conditions); err != nil {
 			return err
 		}
@@ -313,9 +313,8 @@ func fetchRaw(model interface{}, procName string, conditions map[string]interfac
 }
 
 func buildQuery(procName string, conditions map[string]interface{}) string {
-
 	if len(conditions) == 0 {
-		return fmt.Sprintf("EXEC %s", procName)
+		return "EXEC " + procName
 	}
 
 	conditionStr := ""
@@ -346,7 +345,7 @@ func DbGet(model interface{}, conditions map[string]interface{}) error {
 
 	cache, err := initializers.RC.Get(ctx, key).Result()
 
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		if err := fetchDB(model, conditions); err != nil {
 			return err
 		}
@@ -356,9 +355,7 @@ func DbGet(model interface{}, conditions map[string]interface{}) error {
 		}
 	} else if err != nil {
 		return errors.New("failed getting cache")
-
 	} else {
-
 		fmt.Println("Getting from Cache")
 		fmt.Println("MODEL", model)
 
@@ -417,7 +414,7 @@ func DbGetRel(model interface{}, conditions map[string]interface{}, preloads ...
 
 	cache, err := initializers.RC.Get(ctx, key).Result()
 
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		if err := fetchRelDB(model, conditions, preloads); err != nil {
 			return err
 		}
@@ -427,9 +424,7 @@ func DbGetRel(model interface{}, conditions map[string]interface{}, preloads ...
 		}
 	} else if err != nil {
 		return errors.New("failed getting cache")
-
 	} else {
-
 		fmt.Println("Getting from Cache")
 		fmt.Println("MODEL", model)
 
@@ -442,7 +437,6 @@ func DbGetRel(model interface{}, conditions map[string]interface{}, preloads ...
 }
 
 func fetchDB(model interface{}, conditions map[string]interface{}) error {
-
 	query := initializers.DB.Model(model)
 
 	if len(conditions) > 0 {
@@ -456,7 +450,6 @@ func fetchDB(model interface{}, conditions map[string]interface{}) error {
 	return nil
 }
 func fetchRelDB(model interface{}, conditions map[string]interface{}, preloads []string) error {
-
 	query := initializers.DB
 
 	for _, p := range preloads {
@@ -545,7 +538,7 @@ func DbUpdatePointer(tx *gorm.DB, model interface{}, conditions map[string]inter
 }
 
 func DbDelete(tx *gorm.DB, model interface{}, conditions map[string]interface{}) error {
-	//query := initializers.DB.Model(model)
+	// query := initializers.DB.Model(model)
 	query := tx.Model(model)
 
 	if len(conditions) > 0 {

@@ -91,5 +91,4 @@ func WsgetSOPurchasingList(c *websocket.Conn) {
 
 	BroadcastRedboxList()
 	fmt.Println("WsgetSOPurchasingList GEEEET")
-
 }

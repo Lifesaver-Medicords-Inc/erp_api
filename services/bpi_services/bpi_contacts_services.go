@@ -10,9 +10,8 @@ import (
 )
 
 func CreateBpiContact(tx *gorm.DB, parentId uint, generalId uint, child *models.BpiContacts, salesId string, at models.At) error {
-
-	child.BpiContactContent.BasedId = parentId
-	child.BpiContactContent.BranchId = generalId
+	child.BasedId = parentId
+	child.BranchId = generalId
 
 	if err := services.DbInsert(tx, child); err != nil {
 		return errors.New("failed to create bpi contacts")
@@ -36,11 +35,10 @@ func CreateBpiContact(tx *gorm.DB, parentId uint, generalId uint, child *models.
 }
 
 func UpdateBpiContact(tx *gorm.DB, generalId uint, child models.BpiContacts, salesId string, at models.At, conditions map[string]interface{}) error {
-
 	if child.ID == 0 {
 		// New record — insert
-		child.BpiContactContent.BasedId = conditions["based_id"].(uint)
-		child.BpiContactContent.BranchId = generalId
+		child.BasedId = conditions["based_id"].(uint)
+		child.BranchId = generalId
 		if err := services.DbInsert(tx, &child); err != nil {
 			return errors.New("failed to create bpi contacts")
 		}

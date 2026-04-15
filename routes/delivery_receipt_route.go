@@ -19,5 +19,4 @@ func DeliveryReceiptRoutes(app *fiber.App) {
 	api.Post("/", deliveryReceiptHandler.CreateDeliveryReceiptHandler)
 	api.Put("/:id", deliveryReceiptHandler.UpdateDeliveryReceiptHandler)
 	api.Delete("/:id", deliveryReceiptHandler.DeleteDeliveryReceiptHandler)
-
 }

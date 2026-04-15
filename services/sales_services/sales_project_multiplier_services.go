@@ -11,7 +11,6 @@ import (
 
 // CREATE MULTIPLIERS
 func CreateSalesProjectMultiplier(tx *gorm.DB, parentId uint, multiplier models.SalesProjectMultiplier, at models.At) error {
-
 	multiplier.BasedId = parentId
 
 	if err := services.DbInsert(tx, &multiplier); err != nil {

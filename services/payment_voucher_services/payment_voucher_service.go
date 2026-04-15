@@ -192,7 +192,7 @@ func (s *PaymentVoucherService) CreatePaymentVoucher(body *accounting_models.Pay
 		}
 	}
 
-	//Insert difference debit if needed
+	// Insert difference debit if needed
 	if err := s.InsertDifferenceDebit(tx, body, matchedJournalID, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
@@ -249,8 +249,7 @@ func (s *PaymentVoucherService) CreatePaymentVoucherDetails(tx *gorm.DB, body *a
 }
 
 func (s *PaymentVoucherService) InsertDifferenceDebit(tx *gorm.DB, body *accounting_models.PaymentVoucherBody, matchedJournalID uint, at models.At) error {
-
-	//Compute total applied from details
+	// Compute total applied from details
 	var totalApplied float64
 	for _, d := range body.PaymentVoucherDetails {
 		totalApplied += d.AmountApplied
@@ -258,18 +257,17 @@ func (s *PaymentVoucherService) InsertDifferenceDebit(tx *gorm.DB, body *account
 
 	transactionAmount := body.PaymentVoucher.TransactionAmount
 
-	//If transaction amount is greater than applied
+	// If transaction amount is greater than applied
 	if transactionAmount > totalApplied {
-
 		difference := transactionAmount - totalApplied
 
-		//Fetch COA 70038
+		// Fetch COA 70038
 		var coaDifference accounting_models.ChartOfAccounts
 		if err := tx.First(&coaDifference, 70038).Error; err != nil {
 			return errors.New("failed fetching difference chart of account (70038)")
 		}
 
-		//Create DEBIT journal entry
+		// Create DEBIT journal entry
 		entry := accounting_models.JournalEntryDetails{
 			JournalEntryDetailsContent: accounting_models.JournalEntryDetailsContent{
 				Origin:         "Payment Voucher",
@@ -285,7 +283,7 @@ func (s *PaymentVoucherService) InsertDifferenceDebit(tx *gorm.DB, body *account
 			},
 		}
 
-		//Create overpayment record
+		// Create overpayment record
 		overpayment := accounting_models.BpiOverpayment{
 			BpiOverpaymentContent: accounting_models.BpiOverpaymentContent{
 				BpiId:                    body.PaymentVoucher.SupplierId,
@@ -313,7 +311,6 @@ func (s *PaymentVoucherService) InsertDifferenceDebit(tx *gorm.DB, body *account
 }
 
 func (s *PaymentVoucherService) getCrebitCOAId(body *accounting_models.PaymentVoucherBody) uint {
-
 	// If CashAmount is greater than 0 (and not zero)
 	if body.PaymentVoucher.CashAmount > 0 {
 		return 70034

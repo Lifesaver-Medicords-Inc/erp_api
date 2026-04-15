@@ -17,5 +17,4 @@ func PositionAccessRoutes(app *fiber.App) {
 	api.Put("/:id", positionAccessHandler.UpdatePositionAccessHandler)
 	api.Delete("/:id", positionAccessHandler.DeletePositionAccessHandler)
 	api.Post("/update-all-access/:id", positionAccessHandler.UpdatePositionAllAccessHandler)
-
 }

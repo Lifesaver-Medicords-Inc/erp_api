@@ -18,11 +18,9 @@ func NewCompanyHandler(service *adminservices.CompanyService) *CompanyHandler {
 	return &CompanyHandler{
 		CompanyService: service,
 	}
-
 }
 
 func (co *CompanyHandler) CreateCompanyHandler(c *fiber.Ctx) error {
-
 	var body models.CompanyModel
 
 	if err := c.BodyParser(&body); err != nil {
@@ -51,7 +49,6 @@ func (co *CompanyHandler) CreateCompanyHandler(c *fiber.Ctx) error {
 	}
 
 	for _, contact := range contacts {
-
 		contact.CompanyId = data.ID
 		con, _, err := co.CompanyService.CreateCompanyContactService(&contact, at)
 
@@ -61,11 +58,9 @@ func (co *CompanyHandler) CreateCompanyHandler(c *fiber.Ctx) error {
 	}
 
 	return utils.RespondSuccess(c, data)
-
 }
 
 func (co *CompanyHandler) GetCompanyHandler(c *fiber.Ctx) error {
-
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -137,7 +132,6 @@ func (co *CompanyHandler) UpdateCompanyHandler(c *fiber.Ctx) error {
 
 	data, status, err := co.CompanyService.UpdateCompanyService(&body, conditions, at)
 	if err != nil {
-
 		return utils.RespondError(c, status, err.Error())
 	}
 

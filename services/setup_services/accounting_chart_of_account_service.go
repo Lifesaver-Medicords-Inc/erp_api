@@ -28,7 +28,6 @@ func (s *ChartOfAccountService) GetChartOfAccounts(conditions map[string]interfa
 }
 
 func (s *ChartOfAccountService) CreateChartOfAccounts(body *accounting_models.ChartOfAccounts, at models.At) (*accounting_models.ChartOfAccounts, int, error) {
-
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
@@ -46,7 +45,7 @@ func (s *ChartOfAccountService) CreateChartOfAccounts(body *accounting_models.Ch
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	//Insert audit record for the main request
+	// Insert audit record for the main request
 	atdata := accounting_models.ChartOfAccountsAt{
 		RefId:                 body.ID,
 		ChartOfAccountContent: body.ChartOfAccountContent,
@@ -68,7 +67,6 @@ func (s *ChartOfAccountService) CreateChartOfAccounts(body *accounting_models.Ch
 }
 
 func (s *ChartOfAccountService) UpdateChartOfAccount(body *accounting_models.ChartOfAccounts, conditions map[string]interface{}, at models.At) (*accounting_models.ChartOfAccounts, int, error) {
-
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
@@ -78,11 +76,10 @@ func (s *ChartOfAccountService) UpdateChartOfAccount(body *accounting_models.Cha
 	defer tx.Rollback()
 
 	if err := services.DbUpdate(tx, &body, conditions); err != nil {
-
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	//Insert audit record for the main request
+	// Insert audit record for the main request
 	atdata := accounting_models.ChartOfAccountsAt{
 		RefId:                 body.ID,
 		ChartOfAccountContent: body.ChartOfAccountContent,
@@ -104,7 +101,6 @@ func (s *ChartOfAccountService) UpdateChartOfAccount(body *accounting_models.Cha
 }
 
 func (s *ChartOfAccountService) DeleteChartOfAccount(body *accounting_models.ChartOfAccounts, at models.At) (*accounting_models.ChartOfAccounts, int, error) {
-
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
@@ -114,11 +110,10 @@ func (s *ChartOfAccountService) DeleteChartOfAccount(body *accounting_models.Cha
 	defer tx.Rollback()
 
 	if err := services.DbDelete(tx, &body, nil); err != nil {
-
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	//Insert audit record for the main request
+	// Insert audit record for the main request
 	atdata := accounting_models.ChartOfAccountsAt{
 		RefId:                 body.ID,
 		ChartOfAccountContent: body.ChartOfAccountContent,

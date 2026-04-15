@@ -12,21 +12,19 @@ import (
 )
 
 func GetInvTracker(conditions map[string]interface{}) (interface{}, int, error) {
-
 	var response []models.InvTrackerView
 
 	if err := services.DbGet(&response, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting item inventory tracker")
 	}
 
-	//Invalidate cache
+	// Invalidate cache
 	InvalidateItemCaches()
 
 	return response, 0, nil
 }
 
 func GetInvWarehouseName(conditions map[string]interface{}) (interface{}, int, error) {
-
 	var response []models.WarehouseNameView
 
 	if err := services.DbGet(&response, conditions); err != nil {
@@ -59,7 +57,6 @@ func CreateInvTracker(c *fiber.Ctx, tx *gorm.DB) (models.InvTracker, int, error)
 	if !ok {
 		at = models.At{}
 		fmt.Println("at not ok ", at)
-
 	}
 
 	atdata := models.InvTrackerAt{RefId: body.ID, InvTrackerContent: body.InvTrackerContent, At: at}
@@ -75,7 +72,6 @@ func CreateInvTracker(c *fiber.Ctx, tx *gorm.DB) (models.InvTracker, int, error)
 }
 
 func UpdateInvTracker(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (models.InvTracker, int, error) {
-
 	var body models.InvTracker
 
 	if err := c.BodyParser(&body); err != nil {
@@ -83,12 +79,12 @@ func UpdateInvTracker(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	//Update record in DB
+	// Update record in DB
 	if err := services.DbUpdate(tx, &body, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating Inventory Tracker")
 	}
 
-	//Save audit trail
+	// Save audit trail
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
 		at = models.At{}

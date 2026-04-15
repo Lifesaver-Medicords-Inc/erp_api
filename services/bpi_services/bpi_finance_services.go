@@ -11,9 +11,8 @@ import (
 )
 
 func CreateBpiFinance(tx *gorm.DB, parentId uint, generalId uint, child models.BpiFinance, salesId string, at models.At) error {
-
-	child.BpiFinanceContent.FinanceBasedId = parentId
-	child.BpiFinanceContent.FinanceBranchId = generalId
+	child.FinanceBasedId = parentId
+	child.FinanceBranchId = generalId
 
 	if err := services.DbInsert(tx, &child); err != nil {
 		return errors.New("failed to create bpi finance")
@@ -40,7 +39,7 @@ func UpdateBpiFinance(tx *gorm.DB, child models.BpiFinance, salesId string, at m
 
 	if child.FinanceID == 0 {
 		// New record — insert
-		child.BpiFinanceContent.FinanceBasedId = parentId
+		child.FinanceBasedId = parentId
 		if err := services.DbInsert(tx, &child); err != nil {
 			return errors.New("failed to create bpi finance")
 		}

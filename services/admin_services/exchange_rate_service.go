@@ -2,6 +2,7 @@ package adminservices
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,11 +19,11 @@ func NewExchangeRateService() *ExchangeRateService {
 // GetCurrencyAPI calls the external FX rates API with a base currency
 func (c *ExchangeRateService) GetCurrencyAPI(baseCode string) (interface{}, error) {
 	if baseCode == "" {
-		return nil, fmt.Errorf("base currency code cannot be empty")
+		return nil, errors.New("base currency code cannot be empty")
 	}
 
 	// Construct the API URL
-	url := fmt.Sprintf("https://api.fxratesapi.com/latest?base=%s", baseCode)
+	url := "https://api.fxratesapi.com/latest?base=" + baseCode
 
 	// Make the HTTP GET request
 	resp, err := http.Get(url)

@@ -17,7 +17,6 @@ func NewJournalEntryHandler2(service *journal_entry_services.JournalEntryService
 }
 
 func (h *JournalEntryHandler2) GetCompanySetup(c *fiber.Ctx) error {
-
 	conditions := map[string]interface{}{
 		"id": 1,
 	}

@@ -57,7 +57,6 @@ func (s *ChartClassService) GetChartClass(id int) (accounting_models.ChartClass,
 }
 
 func (s *ChartClassService) CreateChartClass(body *accounting_models.ChartClass, at models.At) (*accounting_models.ChartClass, int, error) {
-
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
@@ -91,7 +90,6 @@ func (s *ChartClassService) CreateChartClass(body *accounting_models.ChartClass,
 }
 
 func (s *ChartClassService) UpdateChartClass(body *accounting_models.ChartClass, conditions map[string]interface{}, at models.At) (*accounting_models.ChartClass, int, error) {
-
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
@@ -120,7 +118,6 @@ func (s *ChartClassService) UpdateChartClass(body *accounting_models.ChartClass,
 }
 
 func (s *ChartClassService) DeleteChartClass(body *accounting_models.ChartClass, at models.At) (*accounting_models.ChartClass, int, error) {
-
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")

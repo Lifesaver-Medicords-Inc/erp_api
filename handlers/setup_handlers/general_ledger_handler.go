@@ -20,7 +20,6 @@ func GetGeneralLedgerMappers(c *fiber.Ctx) error {
 }
 
 func GetGeneralLedgerMapper(c *fiber.Ctx) error {
-
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {

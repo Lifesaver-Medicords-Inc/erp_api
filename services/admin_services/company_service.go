@@ -26,10 +26,8 @@ func (c *CompanyService) CreateCompanyService(company *models.CompanyModel, at m
 
 	if err := services.DbInsert(tx, &company); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-
 			err = errors.New("duplicate record error")
 		} else {
-
 			err = errors.New("failed creating company")
 		}
 		tx.Rollback()
@@ -108,7 +106,6 @@ func (c *CompanyService) UpdateCompanyService(company *models.CompanyModel, cond
 }
 
 func (c *CompanyService) DeleteCompanyService(conditions map[string]interface{}, at models.At) (*models.CompanyModel, int, error) {
-
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
@@ -149,10 +146,8 @@ func (c *CompanyService) CreateCompanyAddressService(address *models.CompanyAddr
 
 	if err := services.DbInsert(tx, &address); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-
 			err = errors.New("duplicate record error")
 		} else {
-
 			err = errors.New("failed creating address")
 		}
 		tx.Rollback()
@@ -181,10 +176,8 @@ func (c *CompanyService) CreateCompanyContactService(contact *models.CompanyCont
 
 	if err := services.DbInsert(tx, &contact); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-
 			err = errors.New("duplicate record error")
 		} else {
-
 			err = errors.New("failed creating contact")
 		}
 		tx.Rollback()

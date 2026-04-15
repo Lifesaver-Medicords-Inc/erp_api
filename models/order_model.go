@@ -35,7 +35,7 @@ type OrderContent struct {
 	// ApprovedByID   uint   `json:"approved_by_id"`
 	Tin   string         `json:"tin"`
 	Items []OrderDetails `gorm:"foreignKey:Based_ID;references:Order_ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"items,omitempty"`
-	//DeliveryReceipts []dispatching_models.DeliveryReceiptModel `gorm:"foreignKey:OrderID;references:Order_ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"delivery_receipts,omitempty"`
+	// DeliveryReceipts []dispatching_models.DeliveryReceiptModel `gorm:"foreignKey:OrderID;references:Order_ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"delivery_receipts,omitempty"`
 }
 
 type Order struct {

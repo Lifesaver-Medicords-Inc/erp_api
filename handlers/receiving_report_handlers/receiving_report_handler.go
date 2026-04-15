@@ -19,7 +19,6 @@ func NewReceivingReportHandler(service *receiving_report_services.ReceivingRepor
 }
 
 func (h *ReceivingReportHandler) GetReceivingReport(c *fiber.Ctx) error {
-
 	data, status, err := h.Service.GetReceivingReport(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())

@@ -176,7 +176,6 @@ func (h *CalendarScheduleHandler) CreateCalendarScheduleHandler(c *fiber.Ctx) er
 
 	// 🔹 Step 2: switch by department
 	switch department {
-
 	case "SALES":
 		var body dispatching_models.SalesCalendarScheduleModel
 		if err := json.Unmarshal(c.Body(), &body); err != nil {
@@ -237,7 +236,6 @@ func (h *CalendarScheduleHandler) UpdateCalendarScheduleHandler(c *fiber.Ctx) er
 	}
 
 	switch department {
-
 	case "SALES":
 		var body dispatching_models.SalesCalendarScheduleModel
 		if err := json.Unmarshal(c.Body(), &body); err != nil {

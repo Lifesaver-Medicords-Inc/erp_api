@@ -40,17 +40,16 @@ func saveBase64Image(base64Str string) (string, error) {
 }
 
 func CreateBpiAccreditation(tx *gorm.DB, parentId uint, general_id uint, child models.BpiAccreditation, salesId string, at models.At) error {
-
-	child.BpiAccreditationContent.BasedId = parentId
-	child.BpiAccreditationContent.BranchId = general_id
+	child.BasedId = parentId
+	child.BranchId = general_id
 
 	if !strings.HasPrefix(child.FilePath, "./") {
-		path, err := saveBase64Image(child.BpiAccreditationContent.FilePath)
+		path, err := saveBase64Image(child.FilePath)
 
 		if err != nil {
 			return errors.New("failed to to convert file to base64")
 		}
-		child.BpiAccreditationContent.FilePath = path
+		child.FilePath = path
 		if err := services.DbInsert(tx, &child); err != nil {
 			return errors.New("failed to create bpi accreditation")
 		}
@@ -73,10 +72,9 @@ func CreateBpiAccreditation(tx *gorm.DB, parentId uint, general_id uint, child m
 }
 
 func UpdateBpiAccreditation(tx *gorm.DB, child models.BpiAccreditation, salesId string, at models.At, parentId uint) error {
-
 	if child.ID == 0 {
 		// New record — insert (reuse CreateBpiAccreditation)
-		if err := CreateBpiAccreditation(tx, parentId, child.BpiAccreditationContent.BranchId, child, salesId, at); err != nil {
+		if err := CreateBpiAccreditation(tx, parentId, child.BranchId, child, salesId, at); err != nil {
 			return err
 		}
 		return nil
@@ -95,11 +93,11 @@ func UpdateBpiAccreditation(tx *gorm.DB, child models.BpiAccreditation, salesId 
 		"based_id": parentId,
 	}
 
-	path, err := saveBase64Image(child.BpiAccreditationContent.FilePath)
+	path, err := saveBase64Image(child.FilePath)
 	if err != nil {
 		return errors.New("failed to convert file to base64")
 	}
-	child.BpiAccreditationContent.FilePath = path
+	child.FilePath = path
 
 	if err := services.DbUpdate(tx, &child, conditions); err != nil {
 		return errors.New("failed updating bpi accreditations")

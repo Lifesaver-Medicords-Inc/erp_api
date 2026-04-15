@@ -54,7 +54,7 @@ func CreateItem(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
-	//go broadcastItems() -- if used invalidate cache?
+	// go broadcastItems() -- if used invalidate cache?
 	//purchasing_handlers.BroadcastRedboxList()
 
 	return utils.RespondSuccess(c, data)
@@ -109,7 +109,7 @@ func WsgetItems(c *websocket.Conn) {
 
 	fmt.Println("Client Connected:", c.IP())
 
-	//broadcastItems()
+	// broadcastItems()
 
 	// Read messages from the client
 	for {
@@ -123,7 +123,7 @@ func WsgetItems(c *websocket.Conn) {
 		fmt.Println("Raw Message:", string(msg))
 		broadcastMessage(msg)
 		// Print the received message
-		//fmt.Printf("Received message: %s\n", msg)
+		// fmt.Printf("Received message: %s\n", msg)
 
 		// Send the message back to the client
 		if err := c.WriteMessage(msgType, msg); err != nil {
@@ -138,7 +138,6 @@ func WsgetItems(c *websocket.Conn) {
 }
 
 func broadcastMessage(msg []byte) error {
-
 	initializers.WM.RLock()
 	defer initializers.WM.RUnlock()
 
@@ -152,7 +151,6 @@ func broadcastMessage(msg []byte) error {
 }
 
 func CreateItemByMigration(c *fiber.Ctx) error {
-
 	// 1️⃣ Get Excel file
 	fileHeader, err := c.FormFile("excel")
 	if err != nil || fileHeader == nil {
@@ -194,7 +192,6 @@ func CreateItemByMigration(c *fiber.Ctx) error {
 
 	// 4️⃣ Process each row
 	for i, row := range rows {
-
 		if i == 0 {
 			continue // skip header
 		}

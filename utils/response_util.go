@@ -11,7 +11,6 @@ type PaginationMeta struct {
 }
 
 func RespondError(c *fiber.Ctx, status int, message string) error {
-
 	log.Error("Exception Message", message)
 
 	return c.Status(status).JSON(fiber.Map{
@@ -21,7 +20,6 @@ func RespondError(c *fiber.Ctx, status int, message string) error {
 }
 
 func RespondSuccess(c *fiber.Ctx, data interface{}, pagination ...PaginationMeta) error {
-
 	response := fiber.Map{
 		"success": true,
 		"data":    data,

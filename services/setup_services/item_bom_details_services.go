@@ -9,8 +9,7 @@ import (
 )
 
 func BomDetails(tx *gorm.DB, parentId uint, child models.SetupItemBomDetails, at models.At) error {
-
-	child.SetupItemBomDetailsContent.ItemBomID = parentId
+	child.ItemBomID = parentId
 
 	if err := services.DbInsert(tx, &child); err != nil {
 		return errors.New("failed to create bom details")
@@ -30,7 +29,7 @@ func BomDetails(tx *gorm.DB, parentId uint, child models.SetupItemBomDetails, at
 
 func UpdateChild(tx *gorm.DB, setupItemBomDetails models.SetupItemBomDetails, at models.At, bomId uint) error {
 	if setupItemBomDetails.ID == 0 {
-		setupItemBomDetails.SetupItemBomDetailsContent.ItemBomID = bomId
+		setupItemBomDetails.ItemBomID = bomId
 		if err := services.DbInsert(tx, &setupItemBomDetails); err != nil {
 			return errors.New("failed to create bom details")
 		}

@@ -13,26 +13,22 @@ import (
 )
 
 func GetBooks(conditions map[string]interface{}) ([]accounting_models.Book, int, error) {
-
 	var based_service = services.NewInMemoryRepository(nil, nil, accounting_models.Book{}, accounting_models.BookAt{})
 
 	return based_service.FetchAll()
 }
 
 func GetBook(conditions map[string]interface{}) ([]accounting_models.Book, int, error) {
-
 	var based_service = services.NewInMemoryRepository(nil, nil, accounting_models.Book{}, accounting_models.BookAt{})
 
 	return based_service.FetchWithFilter(conditions)
 }
 
 func CreateBook(c *fiber.Ctx, tx *gorm.DB) (accounting_models.Book, int, error) {
-
 	var service = services.NewInMemoryRepository(c, tx, accounting_models.Book{}, accounting_models.BookAt{})
 
 	var body accounting_models.Book
 	if err := c.BodyParser(&body); err != nil {
-
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
@@ -47,7 +43,6 @@ func CreateBook(c *fiber.Ctx, tx *gorm.DB) (accounting_models.Book, int, error) 
 }
 
 func UpdateBook(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (accounting_models.Book, int, error) {
-
 	var service = services.NewInMemoryRepository(c, tx, accounting_models.Book{}, accounting_models.BookAt{})
 
 	var body accounting_models.Book
@@ -66,7 +61,6 @@ func UpdateBook(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (a
 }
 
 func DeleteBook(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (accounting_models.Book, int, error) {
-
 	var body accounting_models.Book
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")

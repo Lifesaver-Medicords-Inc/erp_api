@@ -21,7 +21,6 @@ func GetChartGroups(c *fiber.Ctx) error {
 }
 
 func GetChartGroup(c *fiber.Ctx) error {
-
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {

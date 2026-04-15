@@ -51,7 +51,6 @@ func GetSalesOrderDR(c *fiber.Ctx) error {
 }
 
 func GetSalesOrdersDr(c *fiber.Ctx) error {
-
 	data, status, err := sales_services.GetSalesOrdersDr(nil)
 
 	if err != nil {

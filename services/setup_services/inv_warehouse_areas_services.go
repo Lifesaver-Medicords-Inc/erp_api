@@ -58,7 +58,6 @@ func CreateWarehouseArea(tx *gorm.DB, parentId uint, child models.WarehouseArea,
 }
 
 func UpdateWarehouseArea(tx *gorm.DB, WarehouseArea models.WarehouseArea, at models.At, conditions map[string]interface{}) error {
-
 	if err := services.DbUpdate(tx, &WarehouseArea, conditions); err != nil {
 		return errors.New("failed updating warehouse area")
 	}
@@ -94,7 +93,7 @@ func DeleteWarehouseArea(tx *gorm.DB, WarehouseArea models.WarehouseArea, at mod
 }
 
 /// WORKING / THE USED METHODS ///
-//pls dont code review :}  //note(sumabog -> nag bandaid -> pinabayaan)
+// pls dont code review :}  //note(sumabog -> nag bandaid -> pinabayaan)
 //per row crud
 
 func GetWarehouseAreasRow(conditions map[string]interface{}) ([]models.WarehouseArea, int, error) {
@@ -122,7 +121,6 @@ func GetWarehouseAreaRow(id int) (models.WarehouseArea, int, error) {
 }
 
 func CreateWarehouseAreaRow(tx *gorm.DB, warehouseArea *models.WarehouseArea) (int, error) {
-
 	if err := services.DbInsert(tx, warehouseArea); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			err = errors.New("duplicate record error")

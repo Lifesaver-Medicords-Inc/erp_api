@@ -7,7 +7,6 @@ import (
 )
 
 func UserRoutes(app *fiber.App) {
-
 	api := app.Group("/api/users")
 
 	userService := adminservices.NewUserService()
@@ -20,5 +19,4 @@ func UserRoutes(app *fiber.App) {
 	api.Get("/", userHandler.GetAllUsersHandler)
 	api.Get("/with-position/:id", userHandler.GetPositionUsersHandler)
 	api.Put("/position/:id", userHandler.UpdateUserPositionHandler)
-
 }

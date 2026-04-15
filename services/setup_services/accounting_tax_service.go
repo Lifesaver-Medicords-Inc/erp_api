@@ -18,7 +18,6 @@ func NewTaxSetupService() *TaxSetupService {
 }
 
 func (s *TaxSetupService) GetTaxSetup(conditions map[string]interface{}) (interface{}, int, error) {
-
 	var response accounting_models.TaxSetupGet
 
 	if err := services.DbGet(&response.TaxSetup, conditions); err != nil {
@@ -50,7 +49,6 @@ func (s *TaxSetupService) GetTaxClassificationSetup(code string) (interface{}, i
 }
 
 func (s *TaxSetupService) GetChartOfAccountSetup(conditions map[string]interface{}) (interface{}, int, error) {
-
 	var response []accounting_models.CoaView
 
 	if err := services.DbGet(&response, conditions); err != nil {
@@ -69,7 +67,7 @@ func (s *TaxSetupService) CreateTaxSetup(body *accounting_models.TaxSetupBody, a
 	// Rollback once, automatically, unless committed
 	defer tx.Rollback()
 
-	//Insert main Tax Setup record
+	// Insert main Tax Setup record
 	if err := services.DbInsert(tx, &body.TaxSetup); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating tax setup")
 	}
@@ -79,7 +77,7 @@ func (s *TaxSetupService) CreateTaxSetup(body *accounting_models.TaxSetupBody, a
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	//Insert audit record for the main request
+	// Insert audit record for the main request
 	atdata := accounting_models.TaxAt{
 		RefId:      body.TaxSetup.ID,
 		TaxContent: body.TaxSetup.TaxContent,
@@ -133,7 +131,7 @@ func (s *TaxSetupService) UpdateTaxSetup(body *accounting_models.TaxSetupBody, c
 	// Rollback once, automatically, unless committed
 	defer tx.Rollback()
 
-	//Update main Tax Setup
+	// Update main Tax Setup
 	if err := services.DbUpdate(tx, &body.TaxSetup, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating tax setup")
 	}
@@ -143,7 +141,7 @@ func (s *TaxSetupService) UpdateTaxSetup(body *accounting_models.TaxSetupBody, c
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	//Audit record for main request
+	// Audit record for main request
 	atdata := accounting_models.TaxAt{
 		RefId:      body.TaxSetup.ID,
 		TaxContent: body.TaxSetup.TaxContent,
@@ -202,7 +200,7 @@ func (s *TaxSetupService) DeleteTaxSetup(body *accounting_models.TaxSetupBody, a
 	// Rollback once, automatically, unless committed
 	defer tx.Rollback()
 
-	//Delete main Tax Setup
+	// Delete main Tax Setup
 	if err := services.DbDelete(tx, &body.TaxSetup, nil); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed deleting tax setup")
 	}
@@ -211,7 +209,7 @@ func (s *TaxSetupService) DeleteTaxSetup(body *accounting_models.TaxSetupBody, a
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	//Audit record for main request
+	// Audit record for main request
 	atdata := accounting_models.TaxAt{RefId: body.TaxSetup.ID, TaxContent: body.TaxSetup.TaxContent, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating tax setup at")

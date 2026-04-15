@@ -19,7 +19,6 @@ func NewPositionService() *PositionService {
 }
 
 func (p *PositionService) GetPositionsService(conditions map[string]interface{}) (*[]models.PositionModel, int, error) {
-
 	tx := initializers.DB.Begin()
 
 	var positions = &[]models.PositionModel{}
@@ -51,7 +50,6 @@ func (p *PositionService) GetPositionService(conditions map[string]interface{}) 
 }
 
 func (p *PositionService) CreatePositionService(position *models.PositionModel, at models.At) (*models.PositionModel, int, error) {
-
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {
@@ -60,10 +58,8 @@ func (p *PositionService) CreatePositionService(position *models.PositionModel, 
 
 	if err := services.DbInsert(tx, &position); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-
 			err = errors.New("duplicate record error")
 		} else {
-
 			err = errors.New("failed creating position")
 		}
 		tx.Rollback()
@@ -111,7 +107,6 @@ func (p *PositionService) UpdatePositionService(position *models.PositionModel, 
 }
 
 func (p *PositionService) DeletePositionService(conditions map[string]interface{}, at models.At) (*models.PositionModel, int, error) {
-
 	tx := initializers.DB.Begin()
 
 	if tx.Error != nil {

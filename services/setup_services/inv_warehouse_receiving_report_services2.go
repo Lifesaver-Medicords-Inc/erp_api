@@ -13,19 +13,19 @@ import (
 
 type DeleteReceivingReportBody2 struct {
 	ReceivingReport        models.ReceivingReport2        `json:"receiving_report"`
-	ReceivingReportDetails models.ReceivingReportDetails2 `json:"receiving_report_details"` //child1
-	ReceivingReportHistory models.ReceivingHistory        `json:"receiving_report_history"` //child1
+	ReceivingReportDetails models.ReceivingReportDetails2 `json:"receiving_report_details"` // child1
+	ReceivingReportHistory models.ReceivingHistory        `json:"receiving_report_history"` // child1
 }
 
 type ReceivingReportBody2 struct {
 	ReceivingReport        models.ReceivingReport2          `json:"receiving_report"`
-	ReceivingReportDetails []models.ReceivingReportDetails2 `json:"receiving_report_details"` //child1
+	ReceivingReportDetails []models.ReceivingReportDetails2 `json:"receiving_report_details"` // child1
 }
 
 func GetReceivingReports2(conditions map[string]interface{}) (interface{}, int, error) {
 	type Response struct {
 		ReceivingReport        []models.ReceivingReport2        `json:"receiving_report"`
-		ReceivingReportDetails []models.ReceivingReportDetails2 `json:"receiving_report_details"` //child1
+		ReceivingReportDetails []models.ReceivingReportDetails2 `json:"receiving_report_details"` // child1
 	}
 
 	var response Response
@@ -44,7 +44,6 @@ func GetReceivingReports2(conditions map[string]interface{}) (interface{}, int, 
 }
 
 func GetPurchaseOrderView(conditions map[string]interface{}) (interface{}, int, error) {
-
 	var response []models.PurchaseOrderView
 
 	if err := services.DbGet(&response, conditions); err != nil {
@@ -56,7 +55,7 @@ func GetPurchaseOrderView(conditions map[string]interface{}) (interface{}, int, 
 		return response[i].Id < response[j].Id
 	})
 
-	//Invalidate cache
+	// Invalidate cache
 	InvalidateItemCaches()
 
 	return response, 0, nil
@@ -85,12 +84,12 @@ func GetReceivingReport2(id int) (ReceivingReportBody2, int, error) {
 		return body, fiber.StatusInternalServerError, errors.New("failed getting receiving report")
 	}
 
-	//children condition
+	// children condition
 	conditions = map[string]interface{}{
-		"receiving_report_id": body.ReceivingReport.ID, //id,
+		"receiving_report_id": body.ReceivingReport.ID, // id,
 	}
 
-	receivingReportDetails, _, err := GetReceivingReportDetails2(conditions) //get list of children
+	receivingReportDetails, _, err := GetReceivingReportDetails2(conditions) // get list of children
 	if err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
@@ -100,7 +99,6 @@ func GetReceivingReport2(id int) (ReceivingReportBody2, int, error) {
 }
 
 func CreateReceivingReport2(c *fiber.Ctx, tx *gorm.DB) (ReceivingReportBody2, int, error) {
-
 	var body ReceivingReportBody2
 
 	if err := c.BodyParser(&body); err != nil {
@@ -134,7 +132,7 @@ func CreateReceivingReport2(c *fiber.Ctx, tx *gorm.DB) (ReceivingReportBody2, in
 		return body, fiber.StatusInternalServerError, errors.New("failed creating receiving report at")
 	}
 
-	//child1
+	// child1
 	for _, detail := range body.ReceivingReportDetails {
 		detail.ReceivingReportId = body.ReceivingReport.ID
 		if err := CreateReceivingReportDetails2(tx, body.ReceivingReport.ID, body.ReceivingReport.DateReceived, body.ReceivingReport.PurchaseOrderID, detail, &body, at); err != nil {
@@ -216,7 +214,7 @@ func DeleteReceivingReport2(c *fiber.Ctx, tx *gorm.DB, conditions map[string]int
 	}
 
 	conditions = map[string]interface{}{
-		"receiving_report_id": body.ReceivingReport.ID, //id,
+		"receiving_report_id": body.ReceivingReport.ID, // id,
 	}
 
 	if err := DeleteReceivingReportHistory(tx, body.ReceivingReport.ID, &body, at); err != nil {

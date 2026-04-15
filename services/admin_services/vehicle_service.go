@@ -27,10 +27,8 @@ func (v *VehicleService) CreateVehicleService(vehicle *models.VehicleModel, at m
 
 	if err := services.DbInsert(tx, &vehicle); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-
 			err = errors.New("duplicate record error")
 		} else {
-
 			err = errors.New("failed creating vehicle")
 		}
 		tx.Rollback()

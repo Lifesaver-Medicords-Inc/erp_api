@@ -14,5 +14,4 @@ func WarehouseRoutes(app *fiber.App) {
 	api.Post("/", warehouseHandler.CreateWarehouseHandler)
 	api.Get("/", warehouseHandler.GetWarehousesHandler)
 	api.Get("/:id", warehouseHandler.GetWarehouseHandler)
-
 }

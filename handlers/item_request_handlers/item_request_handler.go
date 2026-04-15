@@ -28,7 +28,6 @@ func GetAllItemList(c *fiber.Ctx) error {
 }
 
 func GetAllBinLocation(c *fiber.Ctx) error {
-
 	idParam := c.Params("itemId")
 
 	userId, err := strconv.ParseInt(idParam, 10, 64)

@@ -24,7 +24,6 @@ func NewPositionAccessHandler(service *adminservices.PositionAccessService) *Pos
 }
 
 func (p *PositionAccessHandler) GetAllPositionAccessHandler(c *fiber.Ctx) error {
-
 	data, status, err := p.PositionAccessService.GetPositionAllAccessService(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
@@ -52,7 +51,6 @@ func (p *PositionAccessHandler) GetPositionAccessHandler(c *fiber.Ctx) error {
 }
 
 func (p *PositionAccessHandler) CreatePositionAccessHandler(c *fiber.Ctx) error {
-
 	var body models.PositionAccessModel
 
 	if err := c.BodyParser(&body); err != nil {
@@ -73,7 +71,6 @@ func (p *PositionAccessHandler) CreatePositionAccessHandler(c *fiber.Ctx) error 
 }
 
 func (p *PositionAccessHandler) UpdatePositionAccessHandler(c *fiber.Ctx) error {
-
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -97,7 +94,6 @@ func (p *PositionAccessHandler) UpdatePositionAccessHandler(c *fiber.Ctx) error 
 
 	data, status, err := p.PositionAccessService.UpdatePositionAccessService(&body, conditions, at)
 	if err != nil {
-
 		return utils.RespondError(c, status, err.Error())
 	}
 	return utils.RespondSuccess(c, data)
@@ -138,12 +134,10 @@ func (p *PositionAccessHandler) UpdatePositionAllAccessHandler(c *fiber.Ctx) err
 
 	if err := c.BodyParser(&accessList); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
-
 	}
 
 	if len(accessList) == 0 {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Access list is empty")
-
 	}
 
 	tx := initializers.DB.Begin()
@@ -155,7 +149,6 @@ func (p *PositionAccessHandler) UpdatePositionAllAccessHandler(c *fiber.Ctx) err
 	}
 
 	for _, a := range accessList {
-
 		if err := services.DbInsert(tx, &a); err != nil {
 			if strings.Contains(err.Error(), "duplicate key") {
 				tx.Rollback()

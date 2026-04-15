@@ -81,7 +81,7 @@ func LoginAccount(c *fiber.Ctx) (models.User, int, error) {
 	// }
 	fmt.Println("LOGIN ACCOUNT555")
 
-	body.At.AtUserId = strconv.Itoa(int(user.ID))
+	body.AtUserId = strconv.Itoa(int(user.ID))
 	if err := utils.CreateAuthToken(c, body.At, user.ID); err != nil {
 		return user, fiber.StatusUnauthorized, err
 	}
