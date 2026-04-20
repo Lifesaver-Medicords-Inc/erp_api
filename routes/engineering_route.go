@@ -5,9 +5,11 @@ import (
 	"github.com/pierceperado/smpc/handlers/bin_location_handlers"
 	item_request_handlers "github.com/pierceperado/smpc/handlers/item_request_handlers2"
 	"github.com/pierceperado/smpc/handlers/job_order_handlers"
+	pick_activity_handlers "github.com/pierceperado/smpc/handlers/pick_activity_handlers2"
 	"github.com/pierceperado/smpc/services/bin_location_services"
 	item_request_services "github.com/pierceperado/smpc/services/item_request_services2"
 	"github.com/pierceperado/smpc/services/job_order_services"
+	pick_activity_services "github.com/pierceperado/smpc/services/pick_activity_services2"
 )
 
 func EngineeringRoutes(router fiber.Router) {
@@ -16,6 +18,7 @@ func EngineeringRoutes(router fiber.Router) {
 	setupJobOrderRoutes(engineeringApi)
 	setupItemRequestRoutes(engineeringApi)
 	setupBinLocationRoutes(engineeringApi)
+	setupPickActivityRoutes(engineeringApi)
 }
 
 func setupJobOrderRoutes(api fiber.Router) {
@@ -38,6 +41,18 @@ func setupItemRequestRoutes(api fiber.Router) {
 	api.Post("/item_request", handler.CreateItemRequest)
 	api.Put("/item_request", handler.UpdateItemRequest)
 	api.Delete("/item_request", handler.DeleteItemRequest)
+}
+
+func setupPickActivityRoutes(api fiber.Router) {
+	handler := pick_activity_handlers.NewPickActivityHandler(pick_activity_services.NewPickActivityService())
+	api.Get("/pick_activity", handler.GetPickActivity)
+	api.Get("/pick_activity/warehouse", handler.GetWarehousePickAct)
+	api.Get("/pick_activity/warehouse_area/:warehouse_id", handler.GetWarehouseAreaPickAct)
+	api.Get("/pick_activity/sales_order_doc", handler.GetPickActSODoc)
+	api.Get("/pick_activity/sales_order/:sales_id", handler.GetPickActSO)
+	api.Post("/pick_activity", handler.CreatePickActivity)
+	api.Put("/pick_activity", handler.UpdatePickActivity)
+	api.Delete("/pick_activity", handler.DeletePickActivity)
 }
 
 func setupBinLocationRoutes(api fiber.Router) {

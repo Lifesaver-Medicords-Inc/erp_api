@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pierceperado/smpc/models"
+	dispatching_models "github.com/pierceperado/smpc/models/dispatching_model"
 	"github.com/pierceperado/smpc/models/inventory_models"
 )
 
@@ -360,18 +361,18 @@ func migrateJobOrder() {
 // LOGISTICS & DISPATCHING
 // ============================================
 func migrateLogisticsDispatching() {
-	// fmt.Println("=== Migrating LOGISTICS & DISPATCHING Module ===")
-	// migrateAndLog(&models.ItemRelease{}, &models.ItemReleaseAt{})
-	// migrateAndLog(&models.ItemReleaseDetails{}, &models.ItemReleaseDetailsAt{})
-	// migrateAndLog(&dispatching_models.CalendarCategoryModel{}, &dispatching_models.CalendarCategoryAt{})
-	// migrateAndLog(&dispatching_models.CalendarCostTypeModel{}, &dispatching_models.CalendarCostTypeAt{})
-	// migrateAndLog(&models.CalendarScheduleModel{}, &models.CalendarScheduleAt{})
-	// migrateAndLog(
-	// 	&dispatching_models.DeliveryReceipt{}, &dispatching_models.DeliveryReceiptAt{},
-	// 	&dispatching_models.DeliveryReceiptItems{}, &dispatching_models.DeliveryReceiptItemsAt{},
-	// 	&dispatching_models.DeliveryReceiptCosts{}, &dispatching_models.DeliveryReceiptCostsAt{},
-	// 	&dispatching_models.ReceiptFile{}, &dispatching_models.ReceiptFileAt{},
-	// )
+	fmt.Println("=== Migrating LOGISTICS & DISPATCHING Module ===")
+	migrateAndLog(&models.ItemRelease{}, &models.ItemReleaseAt{})
+	migrateAndLog(&models.ItemReleaseDetails{}, &models.ItemReleaseDetailsAt{})
+	migrateAndLog(&dispatching_models.CalendarCategoryModel{}, &dispatching_models.CalendarCategoryAt{})
+	migrateAndLog(&dispatching_models.CalendarCostTypeModel{}, &dispatching_models.CalendarCostTypeAt{})
+	migrateAndLog(&models.CalendarScheduleModel{}, &models.CalendarScheduleAt{})
+	migrateAndLog(
+		&dispatching_models.DeliveryReceipt{}, &dispatching_models.DeliveryReceiptAt{},
+		&dispatching_models.DeliveryReceiptItems{}, &dispatching_models.DeliveryReceiptItemsAt{},
+		&dispatching_models.DeliveryReceiptCosts{}, &dispatching_models.DeliveryReceiptCostsAt{},
+		&dispatching_models.ReceiptFile{}, &dispatching_models.ReceiptFileAt{},
+	)
 }
 
 // ============================================

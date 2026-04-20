@@ -65,7 +65,7 @@ func (s *PickActivityService) GetWarehouseAreaPickAct(conditions map[string]inte
 }
 
 func (s *PickActivityService) GetPickActSODoc(conditions map[string]interface{}) (interface{}, int, error) {
-	var response []inventory_models.SalesOrderItemReqDocView
+	var response []inventory_models.SalesOrderPickActDocView
 
 	if err := services.DbGet(&response, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New(" failed getting sales order doc")
@@ -75,9 +75,9 @@ func (s *PickActivityService) GetPickActSODoc(conditions map[string]interface{})
 }
 
 func (s *PickActivityService) GetPickActSO(conditions map[string]interface{}) (interface{}, int, error) {
-	var response []inventory_models.SalesOrderItemReqDetailsView
+	var response []inventory_models.SalesOrderPickActDetailsView
 
-	if err := services.DbRaw(&response, "sp_GetSalesOrderDetailsItemReq", conditions); err != nil {
+	if err := services.DbRaw(&response, "sp_GetSalesOrderDetailsPickAct", conditions); err != nil {
 		return nil, fiber.StatusInternalServerError, errors.New("failed getting sales order details")
 	}
 
@@ -145,6 +145,26 @@ func (s *PickActivityService) CreatePickActivityDetails(tx *gorm.DB, body *inven
 		if err := services.DbInsert(tx, &atdataDetail); err != nil {
 			return errors.New("failed creating pick activity details at")
 		}
+
+		// Build the stock body from the detail fields and call UpsertStockWithTx directly
+		stockBody := &inventory_models.ItemStocks{
+			ItemStocksContent: inventory_models.ItemStocksContent{
+				ItemId:      detail.ItemId,
+				StockQty:    &detail.ActualQty,
+				StockUom:    detail.ActualUom,
+				WarehouseId: detail.WarehouseId,
+				BinLocation: detail.BinLocation,
+			},
+		}
+
+		stockAtBody := &inventory_models.ItemStocksAt{
+			SourceId:   detail.ID,
+			SourceType: "pick_activity",
+		}
+
+		if _, err := s.stockService.UpsertStockWithTx(tx, stockBody, stockAtBody, at); err != nil {
+			return fmt.Errorf("failed upserting inventory stock for item %d: %w", detail.ItemId, err)
+		}
 	}
 	return nil
 }
@@ -176,6 +196,23 @@ func (s *PickActivityService) CreatePickActivityLocations(tx *gorm.DB, detail *i
 		}
 		if err := services.DbInsert(tx, &atdata); err != nil {
 			return fmt.Errorf("failed creating pick activity location audit for detail %d: %w", detail.ID, err)
+		}
+
+		// Build the stock body from the detail fields and call UpsertStockWithTx directly
+		stockBody := &inventory_models.ItemStocks{
+			ID: loc.BinId,
+			ItemStocksContent: inventory_models.ItemStocksContent{
+				StockQty: &loc.SelectedQty,
+			},
+		}
+
+		stockAtBody := &inventory_models.ItemStocksAt{
+			SourceId:   detail.ID,
+			SourceType: "pick_activity",
+		}
+
+		if _, err := s.stockService.DeductStockWithTx(tx, stockBody, stockAtBody, at); err != nil {
+			return fmt.Errorf("failed deduct inventory stock for item %d: %w", detail.ItemId, err)
 		}
 	}
 

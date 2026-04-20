@@ -188,7 +188,7 @@ func (s *ItemRequestService) CreateItemRequestLocations(tx *gorm.DB, detail *inv
 
 		stockAtBody := &inventory_models.ItemStocksAt{
 			SourceId:   detail.ID,
-			SourceType: "receiving_report",
+			SourceType: "item_request",
 		}
 
 		if _, err := s.stockService.DeductStockWithTx(tx, stockBody, stockAtBody, at); err != nil {

@@ -19,3 +19,21 @@ type SalesOrderItemReqDocView struct {
 func (SalesOrderItemReqDocView) TableName() string {
 	return "vw_get_sales_order_item_req_doc"
 }
+
+type SalesOrderPickActDetailsView struct {
+	SalesOrderDetailsId int    `json:"sales_order_details_id"`
+	SalesOrderId        int    `json:"sales_order_id"`
+	ItemId              int    `json:"item_id"`
+	ItemDesc            string `json:"item_description"`
+	LeftQty             int    `json:"left_qty"`
+	LeftUom             string `json:"left_uom"`
+}
+
+type SalesOrderPickActDocView struct {
+	SalesOrderId uint   `json:"sales_order_id"`
+	SoDocNo      string `json:"so_doc_no"`
+}
+
+func (SalesOrderPickActDocView) TableName() string {
+	return "vw_get_sales_order_pick_act_doc"
+}
