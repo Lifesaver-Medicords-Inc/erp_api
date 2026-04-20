@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/models/inventory_models"
 )
 
 // models "github.com/pierceperado/smpc/models"
@@ -195,6 +196,17 @@ func migrateInventoryTransaction() {
 	// 	&models.ItemRequestLocation{}, &models.ItemRequestLocationAt{},
 	// 	&models.ItemRequestHistory{}, &models.ItemRequestHistoryAt{},
 	// )
+	migrateAndLog(
+		&inventory_models.ItemRequest{}, &inventory_models.ItemRequestAt{},
+		&inventory_models.ItemRequestDetails{}, &inventory_models.ItemRequestDetailsAt{},
+		&inventory_models.ItemRequestLocations{}, &inventory_models.ItemRequestLocationsAt{},
+	)
+
+	migrateAndLog(
+		&inventory_models.PickActivity{}, &inventory_models.PickActivityAt{},
+		&inventory_models.PickActivityDetails{}, &inventory_models.PickActivityDetailsAt{},
+		&inventory_models.PickActivityLocations{}, &inventory_models.PickActivityLocationsAt{},
+	)
 	// migrateAndLog(
 	// 	&models.PickActivity{}, &models.PickActivityAt{},
 	// 	&models.PickActivityDetails{}, &models.PickActivityDetailsAt{},

@@ -96,10 +96,10 @@ func (s *ItemStockService) UpdateItemStock(body *inventory_models.ItemStocks, at
 }
 
 // UpsertStockWithTx is the shared core upsert logic that runs inside an existing transaction.
-// Call this from other services (e.g. receiving report) instead of InsertInventoryStock
-// to avoid opening a nested transaction.
 func (s *ItemStockService) UpsertStockWithTx(tx *gorm.DB, body *inventory_models.ItemStocks, atBody *inventory_models.ItemStocksAt, at models.At) (*inventory_models.ItemStocks, error) {
+
 	var existing inventory_models.ItemStocks
+
 	err := tx.Where(
 		"item_id = ? AND warehouse_id = ? AND bin_location = ?",
 		body.ItemId, body.WarehouseId, body.BinLocation,
@@ -158,6 +158,98 @@ func (s *ItemStockService) UpsertStockWithTx(tx *gorm.DB, body *inventory_models
 	}
 
 	return body, nil
+}
+
+// DeductStockWithTx is the shared core upsert logic that runs inside an existing transaction.
+func (s *ItemStockService) DeductStockWithTx(tx *gorm.DB, body *inventory_models.ItemStocks, atBody *inventory_models.ItemStocksAt, at models.At) (*inventory_models.ItemStocks, error) {
+
+	var existing inventory_models.ItemStocks
+
+	err := tx.Where("id = ?", body.ID).First(&existing).Error
+
+	//If no record exists → cannot deduct
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("no stock record found for deduction")
+		}
+		return nil, errors.New("failed fetching item stock")
+	}
+
+	//Prevent nil pointer issues
+	if existing.StockQty == nil || body.StockQty == nil {
+		return nil, errors.New("invalid stock quantity")
+	}
+
+	//Check for insufficient stock
+	if *existing.StockQty < *body.StockQty {
+		return nil, fmt.Errorf(
+			"insufficient stock: requested %d but only %d available in bin %s",
+			*body.StockQty, *existing.StockQty, existing.BinLocation,
+		)
+	}
+
+	//Deduct stock
+	*existing.StockQty -= *body.StockQty
+	s.SetActiveStatus(&existing)
+
+	//Update DB
+	if err := services.DbUpdate(tx, &existing, map[string]interface{}{"id": existing.ID}); err != nil {
+		return nil, errors.New("failed updating item stocks")
+	}
+
+	//Audit trail (same as your pattern)
+	atdata := inventory_models.ItemStocksAt{
+		RefId:             existing.ID,
+		SourceId:          atBody.SourceId,
+		SourceType:        atBody.SourceType,
+		ItemStocksContent: existing.ItemStocksContent,
+		At:                at,
+	}
+
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return nil, errors.New("failed creating item stocks at")
+	}
+
+	return &existing, nil
+}
+
+// RestoreStockWithTx reverses a prior deduction — adds qty back to the bin
+// identified by body.ID and writes an audit trail entry.
+func (s *ItemStockService) RestoreStockWithTx(tx *gorm.DB, body *inventory_models.ItemStocks, atBody *inventory_models.ItemStocksAt, at models.At) (*inventory_models.ItemStocks, error) {
+
+	var existing inventory_models.ItemStocks
+
+	if err := tx.Where("id = ?", body.ID).First(&existing).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("no stock record found for restoration")
+		}
+		return nil, errors.New("failed fetching item stock for restoration")
+	}
+
+	if existing.StockQty == nil || body.StockQty == nil {
+		return nil, errors.New("invalid stock quantity for restoration")
+	}
+
+	*existing.StockQty += *body.StockQty
+	s.SetActiveStatus(&existing)
+
+	if err := services.DbUpdate(tx, &existing, map[string]interface{}{"id": existing.ID}); err != nil {
+		return nil, errors.New("failed restoring item stock")
+	}
+
+	atdata := inventory_models.ItemStocksAt{
+		RefId:             existing.ID,
+		SourceId:          atBody.SourceId,
+		SourceType:        atBody.SourceType,
+		ItemStocksContent: existing.ItemStocksContent,
+		At:                at,
+	}
+
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return nil, errors.New("failed creating item stocks at for restoration")
+	}
+
+	return &existing, nil
 }
 
 // setActiveStatus sets IsActive to true when StockQty > 0, false when zero.

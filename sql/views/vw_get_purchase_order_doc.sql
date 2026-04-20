@@ -1,5 +1,5 @@
 ALTER VIEW [dbo].[vw_get_purchase_order_doc] AS
-SELECT po.id AS purchase_order_id,
+SELECT DISTINCT po.id AS purchase_order_id,
     po.doc_no AS po_doc_no
 FROM tbl_purchasing_purchase_order po
     INNER JOIN tbl_purchasing_purchase_order_details pod ON po.id = pod.based_id
