@@ -1,16 +1,13 @@
 package models
 
 type SalesProjectItemsContent struct {
-	TemplateID uint `json:"template_id"`
-	BasedId    uint `json:"based_id"`
-	BomID      uint `json:"bom_id"`
-	ItemID     uint `json:"item_id"`
-
-	ReferenceCode string `json:"reference_code"`
-
-	ManDays   uint    `json:"man_days"`
-	LaborRate float64 `json:"labor_rate"`
-
+	TemplateID       uint    `json:"template_id"`
+	BasedId          uint    `json:"based_id"`
+	BomID            uint    `json:"bom_id"`
+	ItemID           uint    `json:"item_id"`
+	ReferenceCode    string  `json:"reference_code"`
+	ManDays          uint    `json:"man_days"`
+	LaborRate        float64 `json:"labor_rate"`
 	Components       string  `json:"components"`
 	Model            string  `json:"model"`
 	ItemInvType      string  `json:"item_inv_type"`
@@ -25,6 +22,7 @@ type SalesProjectItemsContent struct {
 type SalesProjectItems struct {
 	ItemsID uint `gorm:"primarykey" json:"items_id"`
 	SalesProjectItemsContent
+	SalesQuotationSelectedImage []SalesQuotationSelectedImage `json:"sales_quotation_selected_images" gorm:"foreignKey:QuotationQuickId;references:ItemsID"`
 }
 
 func (SalesProjectItems) TableName() string {
