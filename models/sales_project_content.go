@@ -2,22 +2,23 @@ package models
 
 type SalesProjectContentContent struct {
 	// SHOULD BE THE TAB # / SET #
-	BasedId            uint   `json:"based_id"`
-	ItemDesignation    string `json:"item_designation"`
-	Application        string `json:"application"`
-	Additional         string `json:"additional"`
-	Flow               string `json:"flow"`
-	Head               string `json:"head"`
-	Voltage            string `json:"voltage"`
-	RPM                string `json:"rpm"`
-	HP                 string `json:"hp"`
-	Phase              string `json:"phase"`
-	NoOfSets           string `json:"no_of_sets"`
-	NoOfPumpSet        string `json:"no_of_pump_set"`
-	ItemSetDescription string `json:"item_set_description"`
-	ItemSetNotes       string `json:"item_set_notes"`
-	TemplateProjectId  uint   `json:"template_project_id"`
-	IsWiring           *bool  `json:"is_wiring"`
+	BasedId              uint   `json:"based_id"`
+	ItemDesignation      string `json:"item_designation"`
+	Application          string `json:"application"`
+	Additional           string `json:"additional"`
+	Flow                 string `json:"flow"`
+	Head                 string `json:"head"`
+	Voltage              string `json:"voltage"`
+	RPM                  string `json:"rpm"`
+	HP                   string `json:"hp"`
+	Phase                string `json:"phase"`
+	NoOfSets             string `json:"no_of_sets"`
+	NoOfPumpSet          string `json:"no_of_pump_set"`
+	ItemSetDescription   string `json:"item_set_description"`
+	ItemSetNotes         string `json:"item_set_notes"`
+	AssignEngineerUserId uint   `json:"assign_engineer_user_id"`
+	TemplateProjectId    uint   `json:"template_project_id"`
+	IsWiring             *bool  `json:"is_wiring"`
 }
 
 type SalesProjectContent struct {

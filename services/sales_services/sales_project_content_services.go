@@ -19,11 +19,12 @@ func CreateProjectContent(tx *gorm.DB, parentId uint, ProjectContent models.Sale
 		return errors.New("failed creating project content")
 	}
 
-	for _, v := range ProjectContent.SalesProjectContentFinal {
-		if err := CreateProjectContentFinal(tx, ProjectContent.ContentID, v, at); err != nil {
-			return errors.New("failed creating project content finals")
-		}
-	}
+	// Because of the foreign key I remove the manually added
+	// for _, v := range ProjectContent.SalesProjectContentFinal {
+	// 	if err := CreateProjectContentFinal(tx, v.ID, v, at); err != nil {
+	// 		return errors.New("failed creating project content finals")
+	// 	}
+	// }
 
 	projectcontentat := models.SalesProjectContentAt{
 		RefID:                      ProjectContent.ContentID,
@@ -38,8 +39,8 @@ func CreateProjectContent(tx *gorm.DB, parentId uint, ProjectContent models.Sale
 }
 
 func GetSalesProjectContent(ProjectContent *[]models.SalesProjectContent, conditions map[string]interface{}) error {
-	if err := services.DbGet(ProjectContent, conditions); err != nil {
-		return errors.New("failed getting multipliers")
+	if err := services.DbGetRel(ProjectContent, conditions, "SalesProjectContentFinal"); err != nil {
+		return errors.New("failed getting project content")
 	}
 	return nil
 }
