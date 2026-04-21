@@ -39,7 +39,7 @@ func CreateProjectContent(tx *gorm.DB, parentId uint, ProjectContent models.Sale
 }
 
 func GetSalesProjectContent(ProjectContent *[]models.SalesProjectContent, conditions map[string]interface{}) error {
-	if err := services.DbGetRel(ProjectContent, conditions, "SalesProjectContentFinal"); err != nil {
+	if err := services.DbGetWithPreloads(ProjectContent, conditions, "SalesProjectContentFinal"); err != nil {
 		return errors.New("failed getting project content")
 	}
 	return nil

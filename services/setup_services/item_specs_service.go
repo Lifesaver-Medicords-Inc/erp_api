@@ -20,14 +20,14 @@ type ItemSpecsContent struct {
 }
 
 func GetItemSpecs(itemspecs *[]models.ItemSpecs, conditions map[string]interface{}) error {
-	if err := services.DbGetRel(itemspecs, conditions, "ItemSpecsTemplate"); err != nil {
+	if err := services.DbGetWithPreloads(itemspecs, conditions, "ItemSpecsTemplate"); err != nil {
 		return errors.New("failed getting itemspecs")
 	}
 	return nil
 }
 
 func GetItemSpec(itemspec *models.ItemSpecs, conditions map[string]interface{}) error {
-	if err := services.DbGetRel(itemspec, conditions, "ItemSpecsTemplate"); err != nil {
+	if err := services.DbGetWithPreloads(itemspec, conditions, "ItemSpecsTemplate"); err != nil {
 		return errors.New("failed getting itemspec")
 	}
 

@@ -27,7 +27,7 @@ func (s *ItemReleaseService) GetItemReleasesService(conditions map[string]interf
 		return releases, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	if err := services.DbGetRel(&releases, conditions, "ItemReleaseDetails"); err != nil {
+	if err := services.DbGetWithPreloads(&releases, conditions, "ItemReleaseDetails"); err != nil {
 		return releases, fiber.StatusInternalServerError, err
 	}
 
@@ -44,7 +44,7 @@ func (s *ItemReleaseService) GetItemReleaseService(conditions map[string]interfa
 		return release, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
 
-	if err := services.DbGetRel(release, conditions, "ItemReleaseDetails"); err != nil {
+	if err := services.DbGetWithPreloads(release, conditions, "ItemReleaseDetails"); err != nil {
 		return release, fiber.StatusNotFound, err
 	}
 	return release, fiber.StatusOK, nil

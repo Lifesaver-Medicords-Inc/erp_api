@@ -77,7 +77,9 @@ func GetItems(conditions map[string]interface{}) (interface{}, int, error) {
 		fn   func() error
 	}{
 		{"items", func() error { return services.DbGet(&response.Items, conditions) }},
-		{"itemspecs", func() error { return services.DbGetRel(&response.ItemSpecs, conditions, "ItemSpecsTemplate") }},
+		{"itemspecs", func() error {
+			return services.DbGetWithPreloads(&response.ItemSpecs, conditions, "ItemSpecsTemplate")
+		}},
 		{"additionalspecs", func() error { return services.DbGet(&response.AdditionalSpecs, conditions) }},
 		{"itemimage", func() error { return services.DbGet(&response.ItemImage, conditions) }},
 		{"itempurchasing", func() error { return services.DbGet(&response.ItemPurchasing, conditions) }},

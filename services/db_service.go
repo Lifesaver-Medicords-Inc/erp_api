@@ -404,7 +404,7 @@ func GetKey(model interface{}, conditions map[string]interface{}) string {
 
 	return fmt.Sprintf("model:%s:conditions:%s", modelName, conditionsStr)
 }
-func DbGetRel(model interface{}, conditions map[string]interface{}, preloads ...string) error {
+func DbGetWithPreloads(model interface{}, conditions map[string]interface{}, preloads ...string) error {
 	fmt.Println("CONDITION GET SERVICES", conditions)
 
 	ctx := context.Background()

@@ -32,7 +32,7 @@ func (s *DeliveryReceiptService) GetDeliveryReceiptsService(conditions map[strin
 	// key := services.GetKey(&receipts, conditions)
 	// services.InvalidateCache(key)
 
-	if err := services.DbGetRel(&receipts, conditions, "DeliveryReceiptItems", "DeliveryReceiptCosts", "DeliveryReceiptCosts.ReceiptFiles"); err != nil {
+	if err := services.DbGetWithPreloads(&receipts, conditions, "DeliveryReceiptItems", "DeliveryReceiptCosts", "DeliveryReceiptCosts.ReceiptFiles"); err != nil {
 		return receipts, fiber.StatusInternalServerError, err
 	}
 
