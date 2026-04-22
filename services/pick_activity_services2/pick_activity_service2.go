@@ -75,10 +75,41 @@ func (s *PickActivityService) GetPickActSODoc(conditions map[string]interface{})
 }
 
 func (s *PickActivityService) GetPickActSO(conditions map[string]interface{}) (interface{}, int, error) {
-	var response []inventory_models.SalesOrderPickActDetailsView
+	var poParent []inventory_models.SalesOrderPickActView
 
-	if err := services.DbRaw(&response, "sp_GetSalesOrderDetailsPickAct", conditions); err != nil {
-		return nil, fiber.StatusInternalServerError, errors.New("failed getting sales order details")
+	// Get Sales Order (Parent)
+	if err := services.DbRaw(&poParent, "sp_GetSalesOrderPickAct", conditions); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed getting sales order data")
+	}
+
+	if len(poParent) == 0 {
+		return nil, fiber.StatusNotFound, errors.New("no sales order found")
+	}
+
+	var allChildren []inventory_models.SalesOrderPickActDetailsView
+
+	for _, so := range poParent {
+		var poChild []inventory_models.SalesOrderPickActDetailsView
+
+		childConditions := map[string]interface{}{
+			"SalesId": so.SalesOrderId,
+		}
+
+		if err := services.DbRaw(&poChild, "sp_GetSalesOrderDetailsPickAct", childConditions); err != nil {
+			return nil, fiber.StatusInternalServerError, errors.New("failed getting sales order details data")
+		}
+
+		// Append children to one slice
+		allChildren = append(allChildren, poChild...)
+	}
+
+	// Response structure
+	response := struct {
+		SalesOrderView        []inventory_models.SalesOrderPickActView        `json:"sales_order_view"`
+		SalesOrderDetailsView []inventory_models.SalesOrderPickActDetailsView `json:"sales_order_details_view"`
+	}{
+		SalesOrderView:        poParent,
+		SalesOrderDetailsView: allChildren,
 	}
 
 	return response, fiber.StatusOK, nil
@@ -144,26 +175,6 @@ func (s *PickActivityService) CreatePickActivityDetails(tx *gorm.DB, body *inven
 
 		if err := services.DbInsert(tx, &atdataDetail); err != nil {
 			return errors.New("failed creating pick activity details at")
-		}
-
-		// Build the stock body from the detail fields and call UpsertStockWithTx directly
-		stockBody := &inventory_models.ItemStocks{
-			ItemStocksContent: inventory_models.ItemStocksContent{
-				ItemId:      detail.ItemId,
-				StockQty:    &detail.ActualQty,
-				StockUom:    detail.ActualUom,
-				WarehouseId: detail.WarehouseId,
-				BinLocation: detail.BinLocation,
-			},
-		}
-
-		stockAtBody := &inventory_models.ItemStocksAt{
-			SourceId:   detail.ID,
-			SourceType: "pick_activity",
-		}
-
-		if _, err := s.stockService.UpsertStockWithTx(tx, stockBody, stockAtBody, at); err != nil {
-			return fmt.Errorf("failed upserting inventory stock for item %d: %w", detail.ItemId, err)
 		}
 	}
 	return nil
@@ -277,6 +288,27 @@ func (s *PickActivityService) UpdatePickActivityDetails(tx *gorm.DB, body *inven
 			return errors.New("failed creating pick activity details at")
 		}
 
+		if detail.ActualQty > 0 {
+			stockBody := &inventory_models.ItemStocks{
+				ItemStocksContent: inventory_models.ItemStocksContent{
+					ItemId:      detail.ItemId,
+					StockQty:    &detail.ActualQty,
+					StockUom:    detail.ActualUom,
+					WarehouseId: detail.WarehouseId,
+					BinLocation: detail.BinLocation,
+				},
+			}
+
+			stockAtBody := &inventory_models.ItemStocksAt{
+				SourceId:   detail.ID,
+				SourceType: "pick_activity",
+			}
+
+			if _, err := s.stockService.UpsertStockWithTx(tx, stockBody, stockAtBody, at); err != nil {
+				return fmt.Errorf("failed upserting inventory stock for item %d: %w", detail.ItemId, err)
+			}
+		}
+
 		// Filter locations belonging to this detail line only
 		var detailLocations []inventory_models.PickActivityLocations
 		for _, loc := range body.PickActivityLocations {
@@ -327,48 +359,96 @@ func (s *PickActivityService) DeletePickActivity(body *inventory_models.PickActi
 func (s *PickActivityService) DeletePickActivityDetails(tx *gorm.DB, body *inventory_models.PickActivityBody, at models.At) error {
 	pickActivityId := body.PickActivity.ID
 
-	// --- 1. Audit then delete locations ---
+	// --- 1. Fetch locations BEFORE deleting (need data for audit + stock restore) ---
 	var deletedLocations []inventory_models.PickActivityLocations
 	if err := tx.Unscoped().
 		Where("pick_activity_id = ?", pickActivityId).
-		Find(&deletedLocations).Error; err == nil {
-		for _, loc := range deletedLocations {
-			atLoc := inventory_models.PickActivityLocationsAt{
-				RefId:                        loc.ID,
-				PickActivityLocationsContent: loc.PickActivityLocationsContent,
-				At:                           at,
-			}
-			if err := services.DbInsert(tx, &atLoc); err != nil {
-				return errors.New("failed creating pick activity location audit record")
-			}
+		Find(&deletedLocations).Error; err != nil {
+		return errors.New("failed fetching pick activity locations for deletion")
+	}
+
+	for _, loc := range deletedLocations {
+		atLoc := inventory_models.PickActivityLocationsAt{
+			RefId:                        loc.ID,
+			PickActivityLocationsContent: loc.PickActivityLocationsContent,
+			At:                           at,
+		}
+		if err := services.DbInsert(tx, &atLoc); err != nil {
+			return errors.New("failed creating pick activity location audit record")
+		}
+
+		stockBody := &inventory_models.ItemStocks{
+			ID: loc.BinId,
+			ItemStocksContent: inventory_models.ItemStocksContent{
+				StockQty: &loc.SelectedQty,
+			},
+		}
+		stockAtBody := &inventory_models.ItemStocksAt{
+			SourceId:   loc.PickActivityDetailsId,
+			SourceType: "pick_activity_deletion",
+		}
+		if _, err := s.stockService.RestoreStockWithTx(tx, stockBody, stockAtBody, at); err != nil {
+			return fmt.Errorf("failed restoring stock for location %d (bin %d): %w", loc.ID, loc.BinId, err)
 		}
 	}
 
+	// --- 2. Delete locations (before details, FK order) ---
 	if err := services.DbDelete(tx, &inventory_models.PickActivityLocations{},
 		map[string]interface{}{"pick_activity_id": pickActivityId}); err != nil {
 		return errors.New("failed deleting pick activity locations")
 	}
 
-	// --- 2. Audit then delete details ---
-	if err := services.DbDelete(tx, &inventory_models.PickActivityDetails{},
-		map[string]interface{}{"pick_activity_id": pickActivityId}); err != nil {
-		return errors.New("failed deleting all pick activity details")
-	}
-
+	// --- 3. Fetch details BEFORE deleting ---
 	var deletedDetails []inventory_models.PickActivityDetails
 	if err := tx.Unscoped().
 		Where("pick_activity_id = ?", pickActivityId).
-		Find(&deletedDetails).Error; err == nil {
-		for _, detail := range deletedDetails {
-			atdataDetail := inventory_models.PickActivityDetailsAt{
-				RefId:                      detail.ID,
-				PickActivityDetailsContent: detail.PickActivityDetailsContent,
-				At:                         at,
+		Find(&deletedDetails).Error; err != nil {
+		return errors.New("failed fetching pick activity details for deletion")
+	}
+
+	for _, detail := range deletedDetails {
+		// Reverse the stock that was added when this detail was created
+		var stock inventory_models.ItemStocks
+		err := tx.Where(
+			"item_id = ? AND warehouse_id = ? AND bin_location = ?",
+			detail.ItemId, detail.WarehouseId, detail.BinLocation,
+		).First(&stock).Error
+
+		if err == nil {
+			*stock.StockQty -= detail.ActualQty
+			s.stockService.SetActiveStatus(&stock) // flips IsActive to false if qty hits zero
+
+			if err := services.DbUpdate(tx, &stock, map[string]interface{}{"id": stock.ID}); err != nil {
+				return errors.New("failed reversing inventory stock for deleted detail")
 			}
-			if err := services.DbInsert(tx, &atdataDetail); err != nil {
-				return errors.New("failed creating pick activity details audit record")
+
+			// Audit the reversal
+			atStock := inventory_models.ItemStocksAt{
+				RefId:             stock.ID,
+				SourceId:          detail.ID,
+				SourceType:        "pick_activity_delete",
+				ItemStocksContent: stock.ItemStocksContent,
+				At:                at,
+			}
+			if err := services.DbInsert(tx, &atStock); err != nil {
+				return errors.New("failed creating stock reversal audit record")
 			}
 		}
+
+		atdataDetail := inventory_models.PickActivityDetailsAt{
+			RefId:                      detail.ID,
+			PickActivityDetailsContent: detail.PickActivityDetailsContent,
+			At:                         at,
+		}
+		if err := services.DbInsert(tx, &atdataDetail); err != nil {
+			return errors.New("failed creating pick activity details audit record")
+		}
+	}
+
+	// --- 4. Delete details ---
+	if err := services.DbDelete(tx, &inventory_models.PickActivityDetails{},
+		map[string]interface{}{"pick_activity_id": pickActivityId}); err != nil {
+		return errors.New("failed deleting pick activity details")
 	}
 
 	return nil
@@ -386,6 +466,10 @@ func invalidatePickActivityCaches() {
 	}
 
 	if err := services.InvalidateCacheByModel(inventory_models.PickActivityDetailsGet{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
+
+	if err := services.InvalidateCacheByModel(inventory_models.ItemLocationView{}); err != nil {
 		fmt.Println("Failed to invalidate cache:", err)
 	}
 }

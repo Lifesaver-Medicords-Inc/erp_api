@@ -45,7 +45,9 @@ type PickActivityDetailsContent struct {
 	ActualQty           int    `json:"actual_qty"`
 	ActualUom           string `json:"actual_uom"`
 	BinLocation         string `json:"bin_location"`
+	Warehouse           string `json:"warehouse"`
 	WarehouseId         uint   `json:"warehouse_id"`
+	HasActual           *bool  `json:"has_actual"`
 }
 
 type PickActivityDetails struct {

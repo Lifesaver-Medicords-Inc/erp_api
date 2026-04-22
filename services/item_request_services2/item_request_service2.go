@@ -384,4 +384,8 @@ func invalidateItemRequestCaches() {
 	if err := services.InvalidateCacheByModel(inventory_models.ItemRequestDetailsGet{}); err != nil {
 		fmt.Println("Failed to invalidate cache:", err)
 	}
+
+	if err := services.InvalidateCacheByModel(inventory_models.ItemLocationView{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
 }

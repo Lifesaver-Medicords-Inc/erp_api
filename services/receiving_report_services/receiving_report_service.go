@@ -356,4 +356,8 @@ func invalidateReceivingCaches() {
 	if err := services.InvalidateCacheByModel(inventory_models.ReceivingReportDetailsGet{}); err != nil {
 		fmt.Println("Failed to invalidate cache:", err)
 	}
+
+	if err := services.InvalidateCacheByModel(inventory_models.ItemLocationView{}); err != nil {
+		fmt.Println("Failed to invalidate cache:", err)
+	}
 }
