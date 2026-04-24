@@ -12,4 +12,4 @@ SELECT ird.*,
     ) AS remaining_qty,
     ird.required_uom AS remaining_uom
 FROM tbl_inv_item_request_details2 ird
-    INNER JOIN tbl_trans_sales_order_details sod ON ird.sales_order_details_id = sod.order_details_id;
+    LEFT JOIN tbl_trans_sales_order_details sod ON ird.sales_order_details_id = sod.order_details_id;

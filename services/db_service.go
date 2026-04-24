@@ -346,6 +346,7 @@ func DbGet(model interface{}, conditions map[string]interface{}) error {
 	cache, err := initializers.RC.Get(ctx, key).Result()
 
 	if errors.Is(err, redis.Nil) {
+		fmt.Println("Getting from DB", key)
 		if err := fetchDB(model, conditions); err != nil {
 			return err
 		}
