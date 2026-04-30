@@ -167,7 +167,7 @@ func UpdateOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 	var bodyorder BodyOrderDetails
 	if err := c.BodyParser(&bodyorder); err != nil {
 		fmt.Println(err)
-		return bodyorder, fiber.StatusBadRequest, errors.New("cannot bind request")
+		return bodyorder, fiber.StatusBadRequest, errors.New("cannot bind request hihi")
 	}
 
 	// Update the parent order (already done in your existing code)

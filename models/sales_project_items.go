@@ -14,6 +14,7 @@ type SalesProjectItemsContent struct {
 	Qty              uint    `json:"qty"`
 	Multiplier       string  `json:"multiplier"`
 	DiscountPrice    float64 `json:"discount_price"`
+	UnitPrice        float64 `json:"unit_price"`
 	ListPricePerUnit float64 `json:"list_price_per_unit"`
 	ComponentTotal   float64 `json:"component_total"`
 	Notes            string  `json:"notes"`

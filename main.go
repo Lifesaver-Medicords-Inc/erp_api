@@ -402,7 +402,7 @@ func SetupApp() *fiber.App {
 				//salesApi.Post("/project_item", sales_handlers.CreateNewProjectItem)
 
 				// project update
-				salesApi.Put("/project_sales_project", sales_handlers.UpdateSalesProject)
+				salesApi.Put("/projects", sales_handlers.UpdateSalesProject)
 				salesApi.Put("/project_conditions", sales_handlers.UpdateProjectCondition)
 				salesApi.Put("/project_contents", sales_handlers.UpdateProjectContent)
 
