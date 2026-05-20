@@ -69,28 +69,74 @@ type CreateProjectBody2 struct {
 }
 
 type UpdateProjectBody struct {
-	models.SalesQuotation
-	SalesProjectMultiplier models.SalesProjectMultiplier `json:"sales_project_multiplier"`
-	SalesProjectAllTabs    []SalesProjectAllTabs         `json:"sales_project_all_tabs"`
+	ID     uint       `json:"id"`
+	Header HeaderDiff `json:"Header"`
+	Tabs   []TabDiff  `json:"Tabs"`
 }
 
-type PartialUpdateProjectBody struct {
-	ID                   uint     `json:"id"`
-	ProjectName          *string  `json:"project_name,omitempty"`
-	CustomerID           *uint    `json:"customer_id,omitempty"`
-	PercentDiscount      *float64 `json:"percent_discount,omitempty"`
-	GrossSales           *float64 `json:"gross_sales,omitempty"`
-	VatAmount            *float64 `json:"vat_amount,omitempty"`
-	NetSales             *float64 `json:"net_sales,omitempty"`
-	DiscountedAmount     *float64 `json:"discounted_amount,omitempty"`
-	AdditionalDiscounted *float64 `json:"additional_discounted,omitempty"`
-	CashDiscount         *float64 `json:"cash_discount,omitempty"`
-	NetAmountDue         *float64 `json:"net_amount_due,omitempty"`
-	TotalAmountDue       *float64 `json:"total_amount_due,omitempty"`
-	// add any other SalesQuotation scalar fields you want to allow changing
+type HeaderDiff struct {
+	QuotationFields QuotationFieldChanges                         `json:"QuotationFields"`
+	Multipliers     CollectionDiff[models.SalesProjectMultiplier] `json:"Multipliers"`
+}
 
-	SalesProjectMultiplier *[]models.SalesProjectMultiplier `json:"sales_project_multiplier,omitempty"`
-	SalesProjectAllTabs    *[]SalesProjectAllTabs           `json:"sales_project_all_tabs,omitempty"`
+type TabDiff struct {
+	SalesProjectHistory                  CollectionDiff[models.SalesProjectHistory]            `json:"SalesProjectHistory"`
+	SalesProjectItemSet                  CollectionDiff[models.SalesProjectItemSet]            `json:"SalesProjectItemSet"`
+	SalesProjectContent                  CollectionDiff[models.SalesProjectContent]            `json:"SalesProjectContent"`
+	SalesProjectContentAdvancedCondition CollectionDiff[models.SalesProjectAdvancedConditions] `json:"SalesProjectContentAdvancedCondition"`
+	SalesProjectItems                    CollectionDiff[models.SalesProjectItems]              `json:"SalesProjectItems"`
+	SalesProjectWirings                  CollectionDiff[models.SalesProjectWiring]             `json:"SalesProjectWirings"`
+}
+
+type CollectionDiff[T any] struct {
+	Added   []T              `json:"Added"`
+	Removed []T              `json:"Removed"`
+	Updated []UpdatedItem[T] `json:"Updated"`
+}
+
+type UpdatedItem[T any] struct {
+	Item    T                           `json:"Item"`
+	Changes map[string]FieldChange[any] `json:"Changes"`
+}
+
+type FieldChange[T any] struct {
+	OldValue T `json:"OldValue"`
+	NewValue T `json:"NewValue"`
+}
+
+type QuotationFieldChanges struct {
+	ProjectName          *FieldChange[any] `json:"project_name,omitempty"`
+	CustomerID           *FieldChange[any] `json:"customer_id,omitempty"`
+	ApplicationID        *FieldChange[any] `json:"application_id,omitempty"`
+	PaymentTermsID       *FieldChange[any] `json:"payment_terms_id,omitempty"`
+	ShipToID             *FieldChange[any] `json:"ship_to_id,omitempty"`
+	BillToID             *FieldChange[any] `json:"bill_to_id,omitempty"`
+	ShipTypeID           *FieldChange[any] `json:"ship_type_id,omitempty"`
+	Purpose              *FieldChange[any] `json:"purpose,omitempty"`
+	Date                 *FieldChange[any] `json:"date,omitempty"`
+	ValidityDays         *FieldChange[any] `json:"validity_days,omitempty"`
+	ValidUntil           *FieldChange[any] `json:"valid_until,omitempty"`
+	Warranty             *FieldChange[any] `json:"warranty,omitempty"`
+	AddressTo            *FieldChange[any] `json:"address_to,omitempty"`
+	Thru                 *FieldChange[any] `json:"thru,omitempty"`
+	GrossSales           *FieldChange[any] `json:"gross_sales,omitempty"`
+	VatAmount            *FieldChange[any] `json:"vat_amount,omitempty"`
+	NetSales             *FieldChange[any] `json:"net_sales,omitempty"`
+	PercentDiscount      *FieldChange[any] `json:"percent_discount,omitempty"`
+	DiscountedAmount     *FieldChange[any] `json:"discounted_amount,omitempty"`
+	AdditionalDiscounted *FieldChange[any] `json:"additional_discounted,omitempty"`
+	CashDiscount         *FieldChange[any] `json:"cash_discount,omitempty"`
+	NetAmountDue         *FieldChange[any] `json:"net_amount_due,omitempty"`
+	TotalAmountDue       *FieldChange[any] `json:"total_amount_due,omitempty"`
+	Contact1             *FieldChange[any] `json:"contact_1,omitempty"`
+	Contact2             *FieldChange[any] `json:"contact_2,omitempty"`
+	DocumentNo           *FieldChange[any] `json:"document_no,omitempty"`
+	VersionNo            *FieldChange[any] `json:"version_no,omitempty"`
+	SubVersionNo         *FieldChange[any] `json:"sub_version_no,omitempty"`
+	CreatedBy            *FieldChange[any] `json:"created_by,omitempty"`
+	FinalRefNo           *FieldChange[any] `json:"final_ref_no,omitempty"`
+	IsFinalized          *FieldChange[any] `json:"is_finalized,omitempty"`
+	IsProject            *FieldChange[any] `json:"is_project,omitempty"`
 }
 
 func GetBpiSuppliers(conditions map[string]interface{}) (interface{}, int, error) {
@@ -298,8 +344,8 @@ func CreateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, erro
 	return body, 0, nil
 }
 
-func UpdateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, error) {
-	var body CreateProjectBody
+func UpdateSalesProject(c *fiber.Ctx, tx *gorm.DB) (UpdateProjectBody, int, error) {
+	var body UpdateProjectBody
 
 	if err := c.BodyParser(&body); err != nil {
 		return body, fiber.StatusBadRequest, fmt.Errorf("cannot bind request: %w", err)
@@ -309,70 +355,59 @@ func UpdateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, erro
 		return body, fiber.StatusBadRequest, errors.New("invalid sales project id")
 	}
 
-	// ---- UPDATE SALES QUOTATION ----
-	if err := services.DbUpdate(tx, &body.SalesQuotation, map[string]interface{}{
-		"id": body.ID,
-	}); err != nil {
-		return body, fiber.StatusInternalServerError, fmt.Errorf("update sales quotation: %w", err)
-	}
-
-	// ---- AT CONTEXT ----
 	at, _ := c.Locals("at").(models.At)
+
+	// ---- UPDATE SALES QUOTATION FIELDS ----
+	if err := applyQuotationFieldChanges(tx, body.ID, body.Header.QuotationFields); err != nil {
+		return body, fiber.StatusInternalServerError, fmt.Errorf("update sales quotation fields: %w", err)
+	}
 
 	// ---- UPDATE SALES QUOTATION AT ----
 	atData := models.SalesQuotationAt{
-		RefId:                 body.ID,
-		SalesQuotationContent: body.SalesQuotationContent,
-		At:                    at,
+		RefId: body.ID,
+		At:    at,
 	}
-
 	if err := services.DbUpdate(tx, &atData, map[string]interface{}{
 		"ref_id": body.ID,
 	}); err != nil {
 		return body, fiber.StatusInternalServerError, fmt.Errorf("update quotation at: %w", err)
 	}
 
-	// ---- SYNC MULTIPLIERS ----
-	if err := SyncSalesProjectMultipliers(tx, body.ID, body.SalesProjectMultiplier, at); err != nil {
+	// ---- MULTIPLIERS ----
+	if err := applyMultiplierDiff(tx, body.ID, body.Header.Multipliers, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
-	for _, x := range body.SalesProjectAllTabs {
+	// ---- TABS ----
+	for _, tab := range body.Tabs {
 
-		// ---- SYNC HISTORY ----
-		if err := SyncSalesProjectHistory(tx, body.ID, x.SalesProjectHistory, at); err != nil {
+		// ---- HISTORY ----
+		if err := applyHistoryDiff(tx, body.ID, tab.SalesProjectHistory, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 
 		// ---- ITEM SET ----
-		x.SalesProjectItemSet.BasedId = body.ID
-		if err := UpdateProjectItemSet(tx, x.SalesProjectItemSet, at, map[string]interface{}{
-			"itemset_id": x.SalesProjectItemSet.ItemSetID,
-		}); err != nil {
+		if err := applyItemSetDiff(tx, body.ID, tab.SalesProjectItemSet, at); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
+		println("Gids", tab.SalesProjectContent.Updated)
+		// ---- CONTENT ----
+		if err := applyContentDiff(tx, body.ID, tab.SalesProjectContent, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 
-		Id := body.ID
-
-		// ---- SYNC CONTENT ----
-		if err := SyncProjectContent(tx, Id, x.SalesProjectContent, at); err != nil {
+		// ---- ADVANCED CONDITIONS ----
+		if err := applyAdvancedConditionDiff(tx, body.ID, tab.SalesProjectContentAdvancedCondition, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 
-		// ---- SYNC ADVANCED CONDITIONS ----
-		if err := SyncProjectAdvancedConditions(tx, Id, x.SalesProjectContentAdvancedCondition, at); err != nil {
+		// ---- ITEMS ----
+		if err := applyItemsDiff(tx, body.ID, tab.SalesProjectItems, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 
-		// ---- SYNC ITEMS ----
-		if err := SyncProjectItems(tx, Id, x.SalesProjectItems, at); err != nil {
-			return body, fiber.StatusInternalServerError, err
-		}
-
-		fmt.Print("wiring")
-		fmt.Println(Id)
-		// ---- SYNC WIRINGS ----
-		if err := SyncProjectWirings(tx, Id, x.SalesProjectWirings, at); err != nil {
+		// ---- WIRINGS ----
+		if err := applyWiringsDiff(tx, body.ID, tab.SalesProjectWirings, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
@@ -380,732 +415,287 @@ func UpdateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, erro
 	return body, fiber.StatusOK, nil
 }
 
-func SyncSalesProjectMultipliers(
-	tx *gorm.DB,
-	projectID uint,
-	incoming []models.SalesProjectMultiplier,
-	at models.At,
-) error {
+func applyQuotationFieldChanges(tx *gorm.DB, id uint, fields QuotationFieldChanges) error {
+	updates := map[string]interface{}{}
 
-	var existing []models.SalesProjectMultiplier
-	if err := tx.
-		Where("based_id = ?", projectID).
-		Find(&existing).Error; err != nil {
-		return err
+	if fields.ProjectName != nil {
+		updates["project_name"] = fields.ProjectName.NewValue
+	}
+	if fields.CustomerID != nil {
+		updates["customer_id"] = fields.CustomerID.NewValue
+	}
+	if fields.ApplicationID != nil {
+		updates["application_id"] = fields.ApplicationID.NewValue
+	}
+	if fields.PaymentTermsID != nil {
+		updates["payment_terms_id"] = fields.PaymentTermsID.NewValue
+	}
+	if fields.ShipToID != nil {
+		updates["ship_to_id"] = fields.ShipToID.NewValue
+	}
+	if fields.BillToID != nil {
+		updates["bill_to_id"] = fields.BillToID.NewValue
+	}
+	if fields.ShipTypeID != nil {
+		updates["ship_type_id"] = fields.ShipTypeID.NewValue
+	}
+	if fields.Purpose != nil {
+		updates["purpose"] = fields.Purpose.NewValue
+	}
+	if fields.Date != nil {
+		updates["date"] = fields.Date.NewValue
+	}
+	if fields.ValidityDays != nil {
+		updates["validity_days"] = fields.ValidityDays.NewValue
+	}
+	if fields.ValidUntil != nil {
+		updates["valid_until"] = fields.ValidUntil.NewValue
+	}
+	if fields.Warranty != nil {
+		updates["warranty"] = fields.Warranty.NewValue
+	}
+	if fields.AddressTo != nil {
+		updates["address_to"] = fields.AddressTo.NewValue
+	}
+	if fields.Thru != nil {
+		updates["thru"] = fields.Thru.NewValue
+	}
+	if fields.GrossSales != nil {
+		updates["gross_sales"] = fields.GrossSales.NewValue
+	}
+	if fields.VatAmount != nil {
+		updates["vat_amount"] = fields.VatAmount.NewValue
+	}
+	if fields.NetSales != nil {
+		updates["net_sales"] = fields.NetSales.NewValue
+	}
+	if fields.PercentDiscount != nil {
+		updates["percent_discount"] = fields.PercentDiscount.NewValue
+	}
+	if fields.DiscountedAmount != nil {
+		updates["discounted_amount"] = fields.DiscountedAmount.NewValue
+	}
+	if fields.AdditionalDiscounted != nil {
+		updates["additional_discounted"] = fields.AdditionalDiscounted.NewValue
+	}
+	if fields.CashDiscount != nil {
+		updates["cash_discount"] = fields.CashDiscount.NewValue
+	}
+	if fields.NetAmountDue != nil {
+		updates["net_amount_due"] = fields.NetAmountDue.NewValue
+	}
+	if fields.TotalAmountDue != nil {
+		updates["total_amount_due"] = fields.TotalAmountDue.NewValue
+	}
+	if fields.Contact1 != nil {
+		updates["contact_1"] = fields.Contact1.NewValue
+	}
+	if fields.Contact2 != nil {
+		updates["contact_2"] = fields.Contact2.NewValue
+	}
+	if fields.DocumentNo != nil {
+		updates["document_no"] = fields.DocumentNo.NewValue
+	}
+	if fields.VersionNo != nil {
+		updates["version_no"] = fields.VersionNo.NewValue
+	}
+	if fields.SubVersionNo != nil {
+		updates["sub_version_no"] = fields.SubVersionNo.NewValue
+	}
+	if fields.CreatedBy != nil {
+		updates["created_by"] = fields.CreatedBy.NewValue
+	}
+	if fields.FinalRefNo != nil {
+		updates["final_ref_no"] = fields.FinalRefNo.NewValue
+	}
+	if fields.IsFinalized != nil {
+		updates["is_finalized"] = fields.IsFinalized.NewValue
+	}
+	if fields.IsProject != nil {
+		updates["is_project"] = fields.IsProject.NewValue
 	}
 
-	// Map existing by MultiplierID
-	existingMap := make(map[uint]models.SalesProjectMultiplier)
-	for _, e := range existing {
-		existingMap[e.MultiplierID] = e
-	}
-
-	keepIDs := make(map[uint]bool)
-
-	for _, v := range incoming {
-		v.BasedId = projectID
-
-		if v.MultiplierID != 0 {
-			if _, ok := existingMap[v.MultiplierID]; ok {
-				// ---- UPDATE (matched on both multiplier_id AND based_id) ----
-				if err := tx.Model(&models.SalesProjectMultiplier{}).
-					Where("multiplier_id = ? AND based_id = ?", v.MultiplierID, projectID).
-					Updates(map[string]interface{}{
-						"brand":       v.Brand,
-						"component":   v.Component,
-						"description": v.Description,
-						"multiplier":  v.Multiplier,
-					}).Error; err != nil {
-					return err
-				}
-
-				// ---- UPSERT AT ----
-				atData := models.SalesProjectMultiplierAt{
-					RefId:                         v.MultiplierID,
-					SalesProjectMultiplierContent: v.SalesProjectMultiplierContent,
-					At:                            at,
-				}
-				if err := tx.
-					Where("ref_id = ?", v.MultiplierID).
-					Assign(atData).
-					FirstOrCreate(&atData).Error; err != nil {
-					return err
-				}
-
-				keepIDs[v.MultiplierID] = true
-				continue
-			}
-		}
-
-		// ---- CREATE (multiplier_id is 0 OR not found in existing) ----
-		v.MultiplierID = 0
-		if err := tx.Create(&v).Error; err != nil {
-			return err
-		}
-		// v.MultiplierID is now populated by GORM after Create
-
-		// ---- CREATE AT ----
-		atData := models.SalesProjectMultiplierAt{
-			RefId:                         v.MultiplierID,
-			SalesProjectMultiplierContent: v.SalesProjectMultiplierContent,
-			At:                            at,
-		}
-		if err := tx.Create(&atData).Error; err != nil {
-			return err
-		}
-
-		keepIDs[v.MultiplierID] = true
-	}
-
-	// ---- DELETE REMOVED ----
-	for _, e := range existing {
-		if !keepIDs[e.MultiplierID] {
-			if err := tx.Delete(&models.SalesProjectMultiplier{}, e.MultiplierID).Error; err != nil {
-				return err
-			}
-			if err := tx.
-				Where("ref_id = ?", e.MultiplierID).
-				Delete(&models.SalesProjectMultiplierAt{}).Error; err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func SyncSalesProjectHistory(
-	tx *gorm.DB,
-	projectID uint,
-	incoming []models.SalesProjectHistory,
-	at models.At,
-) error {
-
-	var existing []models.SalesProjectHistory
-	if err := tx.
-		Where("based_id = ?", projectID).
-		Find(&existing).Error; err != nil {
-		return err
-	}
-
-	// Map existing by HistoryID
-	existingMap := make(map[uint]models.SalesProjectHistory)
-	for _, e := range existing {
-		existingMap[e.HistoryID] = e
-	}
-
-	keepIDs := make(map[uint]bool)
-
-	for _, v := range incoming {
-		v.BasedId = projectID
-
-		if v.HistoryID != 0 {
-			// ---- UPDATE ----
-			if _, ok := existingMap[v.HistoryID]; ok {
-
-				if err := tx.Model(&models.SalesProjectHistory{}).
-					Where("history_id = ?", v.HistoryID).
-					Updates(map[string]interface{}{
-						"user":     v.User,
-						"date":     v.Date,
-						"time":     v.Time,
-						"old_data": v.OldData,
-						"new_data": v.NewData,
-					}).Error; err != nil {
-					return err
-				}
-
-				// ---- UPSERT AT ----
-				atData := models.SalesProjectHistoryAt{
-					RefId: v.HistoryID,
-					SalesProjectHistoryContent: models.SalesProjectHistoryContent{
-						BasedId: projectID,
-						User:    v.User,
-						Date:    v.Date,
-						Time:    v.Time,
-						OldData: v.OldData,
-						NewData: v.NewData,
-					},
-					At: at,
-				}
-
-				if err := tx.
-					Where("ref_id = ?", v.HistoryID).
-					Assign(atData).
-					FirstOrCreate(&atData).Error; err != nil {
-					return err
-				}
-
-				keepIDs[v.HistoryID] = true
-				continue
-			}
-		}
-
-		// ---- CREATE ----
-		v.HistoryID = 0
-
-		if err := tx.Create(&v).Error; err != nil {
-			return err
-		}
-
-		// ---- CREATE AT ----
-		atData := models.SalesProjectHistoryAt{
-			RefId: v.HistoryID,
-			SalesProjectHistoryContent: models.SalesProjectHistoryContent{
-				BasedId: projectID,
-				User:    v.User,
-				Date:    v.Date,
-				Time:    v.Time,
-				OldData: v.OldData,
-				NewData: v.NewData,
-			},
-			At: at,
-		}
-
-		if err := tx.Create(&atData).Error; err != nil {
-			return err
-		}
-
-		keepIDs[v.HistoryID] = true
-	}
-
-	// ---- DELETE REMOVED ----
-	for _, e := range existing {
-		if !keepIDs[e.HistoryID] {
-			if err := tx.
-				Delete(&models.SalesProjectHistory{}, e.HistoryID).Error; err != nil {
-				return err
-			}
-
-			// optional: also delete AT
-			if err := tx.
-				Where("ref_id = ?", e.HistoryID).
-				Delete(&models.SalesProjectHistoryAt{}).Error; err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func SyncProjectContent(
-	tx *gorm.DB,
-	itemSetID uint,
-	incoming models.SalesProjectContent,
-	at models.At,
-) error {
-
-	var existing []models.SalesProjectContent
-	if err := tx.
-		Preload("SalesProjectContentFinal").
-		Where("based_id = ?", itemSetID).
-		Find(&existing).Error; err != nil {
-		return err
-	}
-
-	// Map existing content by ContentID
-	existingMap := make(map[uint]models.SalesProjectContent)
-	for _, e := range existing {
-		existingMap[e.ContentID] = e
-	}
-
-	keepIDs := make(map[uint]bool)
-
-	v := incoming
-	v.BasedId = itemSetID
-
-	if v.ContentID != 0 {
-		if old, ok := existingMap[v.ContentID]; ok {
-			// ---- UPDATE (matched on both content_id AND based_id) ----
-			if err := tx.Model(&models.SalesProjectContent{}).
-				Where("content_id = ? AND based_id = ?", v.ContentID, itemSetID).
-				Updates(map[string]interface{}{
-					"item_designation":     v.ItemDesignation,
-					"application":          v.Application,
-					"additional":           v.Additional,
-					"flow":                 v.Flow,
-					"head":                 v.Head,
-					"voltage":              v.Voltage,
-					"rpm":                  v.RPM,
-					"hp":                   v.HP,
-					"phase":                v.Phase,
-					"no_of_sets":           v.NoOfSets,
-					"no_of_pump_set":       v.NoOfPumpSet,
-					"item_set_description": v.ItemSetDescription,
-					"item_set_notes":       v.ItemSetNotes,
-					"template_project_id":  v.TemplateProjectId,
-					"is_wiring":            v.IsWiring,
-				}).Error; err != nil {
-				return err
-			}
-
-			// ---- UPSERT AT ----
-			atData := models.SalesProjectContentAt{
-				RefID:                      v.ContentID,
-				SalesProjectContentContent: v.SalesProjectContentContent,
-				At:                         at,
-			}
-			if err := tx.
-				Where("ref_id = ?", v.ContentID).
-				Assign(atData).
-				FirstOrCreate(&atData).Error; err != nil {
-				return err
-			}
-
-			// ---- SYNC CHILDREN ----
-			if err := SyncProjectContentFinals(
-				tx,
-				v.ContentID,
-				old.SalesProjectContentFinal,
-				v.SalesProjectContentFinal,
-			); err != nil {
-				return err
-			}
-
-			keepIDs[v.ContentID] = true
-		} else {
-			// ---- content_id provided but not found under this based_id → CREATE fresh ----
-			v.ContentID = 0
-			if err := createContent(tx, &v, at); err != nil {
-				return err
-			}
-			keepIDs[v.ContentID] = true
-		}
-	} else {
-		// ---- content_id is 0 → CREATE ----
-		if err := createContent(tx, &v, at); err != nil {
-			return err
-		}
-		keepIDs[v.ContentID] = true
-	}
-
-	// ---- DELETE REMOVED CONTENT ----
-	for _, e := range existing {
-		if !keepIDs[e.ContentID] {
-			// delete children first (FK safety)
-			if err := tx.
-				Where("sales_project_content_id = ?", e.ContentID).
-				Delete(&models.SalesProjectContentFinal{}).Error; err != nil {
-				return err
-			}
-			// delete AT records
-			if err := tx.
-				Where("ref_id = ?", e.ContentID).
-				Delete(&models.SalesProjectContentAt{}).Error; err != nil {
-				return err
-			}
-			if err := tx.Delete(&models.SalesProjectContent{}, e.ContentID).Error; err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-// createContent handles INSERT for content + AT + children
-func createContent(tx *gorm.DB, v *models.SalesProjectContent, at models.At) error {
-	v.ContentID = 0
-	if err := tx.Create(v).Error; err != nil {
-		return err
-	}
-	// v.ContentID is now populated by GORM after Create
-
-	// ---- CREATE AT ----
-	atData := models.SalesProjectContentAt{
-		RefID:                      v.ContentID,
-		SalesProjectContentContent: v.SalesProjectContentContent,
-		At:                         at,
-	}
-	if err := tx.Create(&atData).Error; err != nil {
-		return err
-	}
-
-	// ---- CREATE CHILDREN ----
-	for i := range v.SalesProjectContentFinal {
-		v.SalesProjectContentFinal[i].SalesProjectContentID = v.ContentID
-	}
-	if len(v.SalesProjectContentFinal) > 0 {
-		if err := tx.Create(&v.SalesProjectContentFinal).Error; err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func SyncProjectContentFinals(
-	tx *gorm.DB,
-	contentID uint,
-	existing []models.SalesProjectContentFinal,
-	incoming []models.SalesProjectContentFinal,
-) error {
-
-	// Map existing by ID
-	existingMap := make(map[uint]models.SalesProjectContentFinal)
-	for _, e := range existing {
-		existingMap[e.ID] = e
-	}
-
-	keepIDs := make(map[uint]bool)
-
-	for _, v := range incoming {
-		v.SalesProjectContentID = contentID
-
-		if v.ID != 0 {
-			// ---- UPDATE ----
-			if _, ok := existingMap[v.ID]; ok {
-
-				if err := tx.Model(&models.SalesProjectContentFinal{}).
-					Where("id = ?", v.ID).
-					Updates(map[string]interface{}{
-						"final":   v.Final,
-						"fla":     v.Fla,
-						"voltage": v.Voltage,
-					}).Error; err != nil {
-					return err
-				}
-
-				keepIDs[v.ID] = true
-				continue
-			}
-		}
-
-		// ---- CREATE ----
-		v.ID = 0
-
-		if err := tx.Create(&v).Error; err != nil {
-			return err
-		}
-
-		keepIDs[v.ID] = true
-	}
-
-	// ---- DELETE REMOVED ----
-	for _, e := range existing {
-		if !keepIDs[e.ID] {
-			if err := tx.Delete(&models.SalesProjectContentFinal{}, e.ID).Error; err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func SyncProjectAdvancedConditions(
-	tx *gorm.DB,
-	itemSetID uint,
-	incoming models.SalesProjectAdvancedConditions,
-	at models.At,
-) error {
-
-	var existing models.SalesProjectAdvancedConditions
-
-	// Try to find existing record
-	found := tx.
-		Where("based_id = ?", itemSetID).
-		First(&existing).Error
-
-	if found != nil && found != gorm.ErrRecordNotFound {
-		return found
-	}
-
-	// If no existing record, create it
-	if found == gorm.ErrRecordNotFound {
-		incoming.ConditionsID = 0
-		incoming.BasedId = itemSetID
-
-		if err := tx.Create(&incoming).Error; err != nil {
-			return err
-		}
-
-		// ---- CREATE AT ----
-		atData := models.SalesProjectAdvancedConditionsAt{
-			RefID:                                 incoming.ConditionsID,
-			SalesProjectAdvancedConditionsContent: incoming.SalesProjectAdvancedConditionsContent,
-			At:                                    at,
-		}
-
-		if err := tx.Create(&atData).Error; err != nil {
-			return err
-		}
-
+	if len(updates) == 0 {
 		return nil
 	}
 
-	// ---- UPDATE ----
-	if err := tx.Model(&models.SalesProjectAdvancedConditions{}).
-		Where("conditions_id = ?", existing.ConditionsID).
-		Updates(map[string]interface{}{
-			"pump_brand":              incoming.PumpBrand,
-			"driver_type":             incoming.DriverType,
-			"pressure":                incoming.Pressure,
-			"motor_enclosure":         incoming.MotorEnclosure,
-			"motor_manufacturer":      incoming.MotorManufacturer,
-			"liquid_type":             incoming.LiquidType,
-			"controller_manufacturer": incoming.ControllerManufacturer,
-			"starting_method":         incoming.StartingMethod,
-			"suction_size":            incoming.SuctionSize,
-			"discharge_size":          incoming.DischargeSize,
-		}).Error; err != nil {
-		return err
-	}
+	return tx.Model(&models.SalesQuotation{}).
+		Where("id = ?", id).
+		Updates(updates).Error
+}
 
-	// ---- UPSERT AT ----
-	atData := models.SalesProjectAdvancedConditionsAt{
-		RefID:                                 existing.ConditionsID,
-		SalesProjectAdvancedConditionsContent: incoming.SalesProjectAdvancedConditionsContent,
-		At:                                    at,
+func applyHistoryDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.SalesProjectHistory], at models.At) error {
+	for _, item := range diff.Added {
+		item.BasedId = BasedId
+		if err := services.DbInsert(tx, &item); err != nil {
+			return fmt.Errorf("history add: %w", err)
+		}
 	}
-
-	if err := tx.
-		Where("ref_id = ?", existing.ConditionsID).
-		Assign(atData).
-		FirstOrCreate(&atData).Error; err != nil {
-		return err
+	for _, item := range diff.Removed {
+		if err := services.DbDelete(tx, &models.SalesProjectHistory{}, map[string]interface{}{
+			"history_id": item.HistoryID,
+		}); err != nil {
+			return fmt.Errorf("history remove: %w", err)
+		}
 	}
-
+	for _, entry := range diff.Updated {
+		if err := services.DbUpdate(tx, &entry.Item, map[string]interface{}{
+			"history_id": entry.Item.HistoryID,
+		}); err != nil {
+			return fmt.Errorf("history update: %w", err)
+		}
+	}
 	return nil
 }
 
-// composite key type
-type itemKey struct {
-	ItemID        uint
-	ReferenceCode string
+func applyItemSetDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.SalesProjectItemSet], at models.At) error {
+	for _, item := range diff.Added {
+		item.BasedId = projectID
+		if err := services.DbInsert(tx, &item); err != nil {
+			return fmt.Errorf("item set add: %w", err)
+		}
+	}
+	for _, item := range diff.Removed {
+		if err := services.DbDelete(tx, &models.SalesProjectItemSet{}, map[string]interface{}{
+			"itemset_id": item.ItemSetID,
+		}); err != nil {
+			return fmt.Errorf("item set remove: %w", err)
+		}
+	}
+	for _, entry := range diff.Updated {
+		entry.Item.BasedId = projectID
+		if err := services.DbUpdate(tx, &entry.Item, map[string]interface{}{
+			"itemset_id": entry.Item.ItemSetID,
+		}); err != nil {
+			return fmt.Errorf("item set update: %w", err)
+		}
+	}
+	return nil
 }
 
-func SyncProjectItems(
-	tx *gorm.DB,
-	itemSetID uint,
-	incoming []models.SalesProjectItems,
-	at models.At,
-) error {
-
-	var existing []models.SalesProjectItems
-	if err := tx.
-		Where("based_id = ?", itemSetID).
-		Find(&existing).Error; err != nil {
-		return err
+func applyContentDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.SalesProjectContent], at models.At) error {
+	if diff.Added == nil && diff.Removed == nil && diff.Updated == nil {
+		return nil
 	}
 
-	// Map by ItemsID for direct lookup
-	existingMap := make(map[uint]models.SalesProjectItems)
-	for _, e := range existing {
-		existingMap[e.ItemsID] = e
+	// ---- ADDED ----
+	for _, item := range diff.Added {
+		item.BasedId = BasedId
+		if err := services.DbInsert(tx, &item); err != nil {
+			return fmt.Errorf("content add: %w", err)
+		}
+
+		atRecord := models.SalesProjectContentAt{
+			RefID:                      item.ContentID,
+			SalesProjectContentContent: item.SalesProjectContentContent,
+			At:                         at,
+		}
+		if err := services.DbInsert(tx, &atRecord); err != nil {
+			return fmt.Errorf("content add at: %w", err)
+		}
 	}
 
-	keepIDs := make(map[uint]bool)
-
-	for _, v := range incoming {
-		v.BasedId = itemSetID
-
-		if v.ItemsID != 0 {
-			existingRow, found := existingMap[v.ItemsID]
-
-			if found {
-				// ---- UPDATE (matched on both items_id AND based_id) ----
-				if hasChanges(existingRow, v) {
-					if err := tx.Model(&models.SalesProjectItems{}).
-						Where("items_id = ? AND based_id = ?", existingRow.ItemsID, itemSetID).
-						Updates(map[string]interface{}{
-							"template_id":         v.TemplateID,
-							"bom_id":              v.BomID,
-							"man_days":            v.ManDays,
-							"labor_rate":          v.LaborRate,
-							"components":          v.Components,
-							"model":               v.Model,
-							"item_inv_type":       v.ItemInvType,
-							"qty":                 v.Qty,
-							"multiplier":          v.Multiplier,
-							"discount_price":      v.DiscountPrice,
-							"list_price_per_unit": v.ListPricePerUnit,
-							"component_total":     v.ComponentTotal,
-							"notes":               v.Notes,
-						}).Error; err != nil {
-						return err
-					}
-				}
-
-				// ---- UPSERT AT ----
-				atData := models.SalesProjectItemsAt{
-					RefID:                    existingRow.ItemsID,
-					SalesProjectItemsContent: v.SalesProjectItemsContent,
-					At:                       at,
-				}
-				if err := tx.
-					Where("ref_id = ?", existingRow.ItemsID).
-					Assign(atData).
-					FirstOrCreate(&atData).Error; err != nil {
-					return err
-				}
-
-				keepIDs[existingRow.ItemsID] = true
-				continue
-			}
+	// ---- REMOVED ----
+	for _, item := range diff.Removed {
+		if err := services.DbDelete(tx, &models.SalesProjectContent{}, map[string]interface{}{
+			"content_id": item.ContentID,
+		}); err != nil {
+			return fmt.Errorf("content remove: %w", err)
 		}
-
-		// ---- CREATE (items_id is 0 OR not found in existing) ----
-		v.ItemsID = 0
-		if err := tx.Create(&v).Error; err != nil {
-			return err
-		}
-		// v.ItemsID is now populated by GORM after Create
-
-		// ---- CREATE AT ----
-		atData := models.SalesProjectItemsAt{
-			RefID:                    v.ItemsID,
-			SalesProjectItemsContent: v.SalesProjectItemsContent,
-			At:                       at,
-		}
-		if err := tx.Create(&atData).Error; err != nil {
-			return err
-		}
-
-		keepIDs[v.ItemsID] = true
 	}
 
-	// ---- DELETE REMOVED ----
-	for _, e := range existing {
-		if !keepIDs[e.ItemsID] {
-			if err := tx.Delete(&models.SalesProjectItems{}, e.ItemsID).Error; err != nil {
-				return err
-			}
-			if err := tx.
-				Where("ref_id = ?", e.ItemsID).
-				Delete(&models.SalesProjectItemsAt{}).Error; err != nil {
-				return err
-			}
+	// ---- UPDATED ----
+	for _, entry := range diff.Updated {
+
+		println(entry.Item.ItemDesignation, " ID=", entry.Item.ContentID)
+
+		if err := services.DbUpdate(tx, &entry.Item, map[string]interface{}{
+			"content_id": entry.Item.ContentID,
+		}); err != nil {
+			return fmt.Errorf("content update: %w", err)
+		}
+
+		atRecord := models.SalesProjectContentAt{
+			RefID:                      entry.Item.ContentID,
+			SalesProjectContentContent: entry.Item.SalesProjectContentContent,
+			At:                         at,
+		}
+		if err := services.DbUpdate(tx, &atRecord, map[string]interface{}{
+			"ref_id": entry.Item.ContentID,
+		}); err != nil {
+			return fmt.Errorf("content update at: %w", err)
 		}
 	}
 
 	return nil
 }
 
-// hasChanges returns true if any tracked field differs
-func hasChanges(old, new models.SalesProjectItems) bool {
-	return old.TemplateID != new.TemplateID ||
-		old.BomID != new.BomID ||
-		old.ReferenceCode != new.ReferenceCode ||
-		old.ManDays != new.ManDays ||
-		old.LaborRate != new.LaborRate ||
-		old.Components != new.Components ||
-		old.Model != new.Model ||
-		old.ItemInvType != new.ItemInvType ||
-		old.Qty != new.Qty ||
-		old.Multiplier != new.Multiplier ||
-		old.DiscountPrice != new.DiscountPrice ||
-		old.ListPricePerUnit != new.ListPricePerUnit ||
-		old.ComponentTotal != new.ComponentTotal ||
-		old.Notes != new.Notes
+func applyAdvancedConditionDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.SalesProjectAdvancedConditions], at models.At) error {
+	for _, item := range diff.Added {
+		if err := services.DbInsert(tx, &item); err != nil {
+			return fmt.Errorf("advanced condition add: %w", err)
+		}
+	}
+	for _, item := range diff.Removed {
+		if err := services.DbDelete(tx, &models.SalesProjectAdvancedConditions{}, map[string]interface{}{
+			"conditions_id": item.ConditionsID,
+		}); err != nil {
+			return fmt.Errorf("advanced condition remove: %w", err)
+		}
+	}
+	for _, entry := range diff.Updated {
+		if err := services.DbUpdate(tx, &entry.Item, map[string]interface{}{
+			"conditions_id": entry.Item.ConditionsID,
+		}); err != nil {
+			return fmt.Errorf("advanced condition update: %w", err)
+		}
+	}
+	return nil
 }
 
-func SyncProjectWirings(
-	tx *gorm.DB,
-	itemSetID uint,
-	incoming []models.SalesProjectWiring,
-	at models.At,
-) error {
-
-	var existing []models.SalesProjectWiring
-	if err := tx.
-		Where("based_id = ?", itemSetID).
-		Find(&existing).Error; err != nil {
-		return err
-	}
-
-	// Map existing by ID
-	existingMap := make(map[uint]models.SalesProjectWiring)
-	for _, e := range existing {
-		existingMap[e.ID] = e
-	}
-
-	keepIDs := make(map[uint]bool)
-
-	for _, v := range incoming {
-		v.BasedId = itemSetID
-
-		if v.ID != 0 {
-			// ---- UPDATE ----
-			if _, ok := existingMap[v.ID]; ok {
-
-				if err := tx.Model(&models.SalesProjectWiring{}).
-					Where("id = ?", v.ID).
-					Updates(map[string]interface{}{
-						"materials":              v.Materials,
-						"amp_req":                v.AmpReq,
-						"wire_req":               v.WireReq,
-						"description":            v.Description,
-						"num_of_wires_set":       v.NumOfWiresSet,
-						"num_of_qty_set":         v.NumOfQtySet,
-						"distance_travelled_set": v.DistanceTravelledSet,
-						"allowance_wire_set":     v.AllowanceWireSet,
-						"qty":                    v.Qty,
-						"num_of_sets":            v.NumOfSets,
-						"total_qty":              v.TotalQty,
-						"cost":                   v.Cost,
-						"total_cost":             v.TotalCost,
-					}).Error; err != nil {
-					return err
-				}
-
-				// ---- UPSERT AT ----
-				atData := models.SalesProjectWiringAt{
-					RefId:                     v.ID,
-					SalesProjectWiringContent: v.SalesProjectWiringContent,
-					At:                        at,
-				}
-
-				if err := tx.
-					Where("ref_id = ?", v.ID).
-					Assign(atData).
-					FirstOrCreate(&atData).Error; err != nil {
-					return err
-				}
-
-				keepIDs[v.ID] = true
-				continue
-			}
-		}
-
-		// ---- CREATE ----
-		v.ID = 0
-
-		if err := tx.Create(&v).Error; err != nil {
-			return err
-		}
-
-		// ---- CREATE AT ----
-		atData := models.SalesProjectWiringAt{
-			RefId:                     v.ID,
-			SalesProjectWiringContent: v.SalesProjectWiringContent,
-			At:                        at,
-		}
-
-		if err := tx.Create(&atData).Error; err != nil {
-			return err
-		}
-
-		keepIDs[v.ID] = true
-	}
-
-	// ---- DELETE REMOVED ----
-	for _, e := range existing {
-		if !keepIDs[e.ID] {
-			if err := tx.Delete(&models.SalesProjectWiring{}, e.ID).Error; err != nil {
-				return err
-			}
-
-			// optional: also delete AT
-			if err := tx.
-				Where("ref_id = ?", e.ID).
-				Delete(&models.SalesProjectWiringAt{}).Error; err != nil {
-				return err
-			}
+func applyItemsDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.SalesProjectItems], at models.At) error {
+	for _, item := range diff.Added {
+		if err := services.DbInsert(tx, &item); err != nil {
+			return fmt.Errorf("item add: %w", err)
 		}
 	}
+	for _, item := range diff.Removed {
+		if err := services.DbDelete(tx, &models.SalesProjectItems{}, map[string]interface{}{
+			"item_id": item.ItemID,
+		}); err != nil {
+			return fmt.Errorf("item remove: %w", err)
+		}
+	}
+	for _, entry := range diff.Updated {
+		if err := services.DbUpdate(tx, &entry.Item, map[string]interface{}{
+			"item_id": entry.Item.ItemID,
+		}); err != nil {
+			return fmt.Errorf("item update: %w", err)
+		}
+	}
+	return nil
+}
 
+func applyWiringsDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.SalesProjectWiring], at models.At) error {
+	for _, item := range diff.Added {
+		if err := services.DbInsert(tx, &item); err != nil {
+			return fmt.Errorf("wiring add: %w", err)
+		}
+	}
+	for _, item := range diff.Removed {
+		if err := services.DbDelete(tx, &models.SalesProjectWiring{}, map[string]interface{}{
+			"wiring_id": item.ID,
+		}); err != nil {
+			return fmt.Errorf("wiring remove: %w", err)
+		}
+	}
+	for _, entry := range diff.Updated {
+		if err := services.DbUpdate(tx, &entry.Item, map[string]interface{}{
+			"wiring_id": entry.Item.ID,
+		}); err != nil {
+			return fmt.Errorf("wiring update: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -1170,26 +760,6 @@ func CreateNewItems(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, error) {
 				return body, fiber.StatusInternalServerError, err
 			}
 		}
-	}
-
-	return body, 0, nil
-}
-
-func UpdateProjectMultiplier(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (UpdateProjectBody, int, error) {
-	var body UpdateProjectBody
-	if err := c.BodyParser(&body); err != nil {
-		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
-	}
-
-	// services.BroadcastToProject()
-
-	at, ok := c.Locals("at").(models.At)
-	if !ok {
-		at = models.At{}
-	}
-
-	if err := UpdateSalesProjectMultiplier(tx, body.SalesProjectMultiplier, at, conditions); err != nil {
-		return body, fiber.StatusInternalServerError, err
 	}
 
 	return body, 0, nil
