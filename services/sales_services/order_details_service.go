@@ -60,9 +60,8 @@ func CreateOrderDetail(tx *gorm.DB, parentId uint, OrderDetails models.OrderDeta
 
 func UpdateOrderDetail(tx *gorm.DB, orderdetails models.OrderDetails, at models.At, conditions map[string]interface{}) error {
 	conditions = map[string]interface{}{
-		"based_id":  orderdetails.Based_ID,
-		"item_id":   orderdetails.Item_ID,
-		"numbering": orderdetails.Numbering,
+		"order_details_id": orderdetails.OrderDetailsID,
+		"based_id":         orderdetails.Based_ID,
 	}
 
 	if err := services.DbUpdate(tx, &orderdetails, conditions); err != nil {

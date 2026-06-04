@@ -172,7 +172,7 @@ func UpdateOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 
 	// Update the parent order (already done in your existing code)
 	conditions = map[string]interface{}{
-		"doc": bodyorder.Doc,
+		"order_id": bodyorder.Order_ID,
 	}
 
 	if err := services.DbUpdate(tx, &bodyorder.Order, conditions); err != nil {
