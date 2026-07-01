@@ -7,7 +7,6 @@ import (
 
 	"github.com/pierceperado/smpc/models"
 	dispatching_models "github.com/pierceperado/smpc/models/dispatching_model"
-	"github.com/pierceperado/smpc/models/inventory_models"
 )
 
 // models "github.com/pierceperado/smpc/models"
@@ -16,21 +15,21 @@ import (
 
 // // MigrateAll runs all database migrations - Use for deployment
 func MigrateAll() {
-	migrateAdmin()
-	migrateSetup()
-	migrateItemManagement()
-	migrateBomBoq()
-	migrateInventoryWarehouse()
-	migrateEngineering()
-	migrateSalesCrm()
-	migrateSalesProject()
-	migratePurchasingVendor()
-	migrateBpi()
-	migrateAccounting()
-	migrateJobOrder()
-	migrateLogisticsDispatching()
-	migrateVehicleManagement()
-	migrateInventoryTransaction()
+	// migrateAdmin()
+	// migrateSetup()
+	// migrateItemManagement()
+	// migrateBomBoq()
+	// migrateInventoryWarehouse()
+	//migrateEngineering()
+	// migrateSalesCrm()
+	// migrateSalesProject()
+	// migratePurchasingVendor()
+	// migrateBpi()
+	// migrateAccounting()
+	// migrateJobOrder()
+	//migrateLogisticsDispatching()
+	// migrateVehicleManagement()
+	// migrateInventoryTransaction()
 }
 
 // // MigrateModel migrates specific models or categories by name
@@ -198,15 +197,15 @@ func migrateInventoryTransaction() {
 	// 	&models.ItemRequestHistory{}, &models.ItemRequestHistoryAt{},
 	// )
 	migrateAndLog(
-		&inventory_models.ItemRequest{}, &inventory_models.ItemRequestAt{},
-		&inventory_models.ItemRequestDetails{}, &inventory_models.ItemRequestDetailsAt{},
-		&inventory_models.ItemRequestLocations{}, &inventory_models.ItemRequestLocationsAt{},
+	// &inventory_models.ItemRequest{}, &inventory_models.ItemRequestAt{},
+	// &inventory_models.ItemRequestDetails{}, &inventory_models.ItemRequestDetailsAt{},
+	// &inventory_models.ItemRequestLocations{}, &inventory_models.ItemRequestLocationsAt{},
 	)
 
 	migrateAndLog(
-		&inventory_models.PickActivity{}, &inventory_models.PickActivityAt{},
-		&inventory_models.PickActivityDetails{}, &inventory_models.PickActivityDetailsAt{},
-		&inventory_models.PickActivityLocations{}, &inventory_models.PickActivityLocationsAt{},
+	// &inventory_models.PickActivity{}, &inventory_models.PickActivityAt{},
+	// &inventory_models.PickActivityDetails{}, &inventory_models.PickActivityDetailsAt{},
+	// &inventory_models.PickActivityLocations{}, &inventory_models.PickActivityLocationsAt{},
 	)
 	// migrateAndLog(
 	// 	&models.PickActivity{}, &models.PickActivityAt{},
@@ -372,6 +371,8 @@ func migrateLogisticsDispatching() {
 		&dispatching_models.DeliveryReceiptItems{}, &dispatching_models.DeliveryReceiptItemsAt{},
 		&dispatching_models.DeliveryReceiptCosts{}, &dispatching_models.DeliveryReceiptCostsAt{},
 		&dispatching_models.ReceiptFile{}, &dispatching_models.ReceiptFileAt{},
+		&dispatching_models.SalesCalendarScheduleModel{}, &dispatching_models.SalesCalendarScheduleModelAt{},
+		&dispatching_models.EngineeringCalendarScheduleModel{}, &dispatching_models.EngineeringCalendarScheduleModelAt{},
 	)
 }
 

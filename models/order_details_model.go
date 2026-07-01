@@ -17,8 +17,8 @@ type OrderDetailsContent struct {
 	AllocatedQty       *int    `json:"allocated_qty"`
 	OrderType          string  `json:"order_type"`
 	BomId              uint    `json:"bom_id"`
-	Order              *Order  `gorm:"foreignKey:Based_ID;references:Order_ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"order,omitempty"`
 	Item               *Item   `json:"item"`
+	Order              *Order  `gorm:"foreignKey:Based_ID;references:Order_ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"order,omitempty"`
 }
 
 type OrderDetails struct {

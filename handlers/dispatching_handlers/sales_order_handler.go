@@ -17,45 +17,45 @@ func NewSalesOrderHandler(service *dispatching_services.SalesOrderService) *Sale
 	return &SalesOrderHandler{Service: service}
 }
 
-// func (h *SalesOrderHandler) GetSalesOrdersHandler(c *fiber.Ctx) error {
-// 	id := c.Query("id")
-// 	customer := c.Query("customerName")
-// 	status := c.Query("status")
+func (h *SalesOrderHandler) GetSalesOrdersHandler(c *fiber.Ctx) error {
+	id := c.Query("id")
+	customer := c.Query("customerName")
+	status := c.Query("status")
 
-// 	conditions := make(map[string]interface{})
+	conditions := make(map[string]interface{})
 
-// 	if idNum, _ := strconv.Atoi(id); idNum != 0 {
-// 		conditions["order_id"] = idNum
-// 	}
-// 	if customer != "" {
-// 		conditions["customer_name"] = customer
-// 	}
-// 	if status != "" {
-// 		conditions["status"] = status
-// 	}
+	if idNum, _ := strconv.Atoi(id); idNum != 0 {
+		conditions["order_id"] = idNum
+	}
+	if customer != "" {
+		conditions["customer_name"] = customer
+	}
+	if status != "" {
+		conditions["status"] = status
+	}
 
-// 	data, code, err := h.Service.GetSalesOrdersService(conditions)
-// 	if err != nil {
-// 		return utils.RespondError(c, code, err.Error())
-// 	}
-// 	return utils.RespondSuccess(c, data)
-// }
+	data, code, err := h.Service.GetSalesOrdersService(conditions)
+	if err != nil {
+		return utils.RespondError(c, code, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
 
-// func (h *SalesOrderHandler) GetSalesOrderHandler(c *fiber.Ctx) error {
-// 	idParam := c.Params("id")
-// 	idNum, err := strconv.Atoi(idParam)
-// 	if err != nil {
-// 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid ID")
-// 	}
+func (h *SalesOrderHandler) GetSalesOrderHandler(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	idNum, err := strconv.Atoi(idParam)
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid ID")
+	}
 
-// 	conditions := map[string]interface{}{"order_id": idNum}
+	conditions := map[string]interface{}{"order_id": idNum}
 
-// 	order, code, err := h.Service.GetSalesOrderService(conditions)
-// 	if err != nil {
-// 		return utils.RespondError(c, code, err.Error())
-// 	}
-// 	return utils.RespondSuccess(c, order)
-// }
+	order, code, err := h.Service.GetSalesOrderService(conditions)
+	if err != nil {
+		return utils.RespondError(c, code, err.Error())
+	}
+	return utils.RespondSuccess(c, order)
+}
 
 func (h *SalesOrderHandler) CreateSalesOrderHandler(c *fiber.Ctx) error {
 	var body models.Order

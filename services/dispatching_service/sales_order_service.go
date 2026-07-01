@@ -16,67 +16,67 @@ func NewSalesOrderService() *SalesOrderService {
 	return &SalesOrderService{}
 }
 
-// func (s *SalesOrderService) GetSalesOrdersService(conditions map[string]interface{}) ([]models.Order, int, error) {
-// 	var orders = []models.Order{}
-// 	tx := initializers.DB.Begin()
+func (s *SalesOrderService) GetSalesOrdersService(conditions map[string]interface{}) ([]models.Order, int, error) {
+	var orders = []models.Order{}
+	tx := initializers.DB.Begin()
 
-// 	if tx.Error != nil {
-// 		return orders, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
-// 	}
+	if tx.Error != nil {
+		return orders, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+	}
 
-// 	query := tx.Preload("Items").Omit("Order").
-// 		Preload("Items.Item").
-// 		Preload("Items.Releases").Omit("Order").Omit("Item").Omit("Releases").
-// 		Preload("Items.Releases.Vehicle").
-// 		Preload("Items.Releases.DeliveryReceipt.TripCost").
-// 		Preload("DeliveryReceipts").Omit("Order").Omit("ItemReleases").
-// 		Preload("DeliveryReceipts.TripCost").Omit("DeliveryReceipt").
-// 		Preload("DeliveryReceipts.AttachedFile").Omit("DeliveryReceipt").
-// 		Where(conditions).Find(&orders)
-// 	if query.Error != nil {
-// 		return nil, fiber.StatusNotFound, tx.Error
-// 	}
+	query := tx.Preload("Items").Omit("Order").
+		Preload("Items.Item").
+		// Preload("Items.Releases").Omit("Order").Omit("Item").Omit("Releases").
+		// Preload("Items.Releases.Vehicle").
+		// Preload("Items.Releases.DeliveryReceipt.TripCost").
+		// Preload("DeliveryReceipts").Omit("Order").Omit("ItemReleases").
+		// Preload("DeliveryReceipts.TripCost").Omit("DeliveryReceipt").
+		// Preload("DeliveryReceipts.AttachedFile").Omit("DeliveryReceipt").
+		Where(conditions).Find(&orders)
+	if query.Error != nil {
+		return nil, fiber.StatusNotFound, tx.Error
+	}
 
-// 	for i := range orders {
-// 		for j := range orders[i].Items {
-// 			for k := range orders[i].Items[j].Releases {
-// 				orders[i].Items[j].Releases[k].Order = nil
-// 			}
-// 		}
-// 	}
-// 	return orders, fiber.StatusOK, nil
-// }
+	// for i := range orders {
+	// 	for j := range orders[i].Items {
+	// 		for k := range orders[i].Items[j].Releases {
+	// 			orders[i].Items[j].Releases[k].Order = nil
+	// 		}
+	// 	}
+	// }
+	return orders, fiber.StatusOK, nil
+}
 
-// func (s *SalesOrderService) GetSalesOrderService(conditions map[string]interface{}) (*models.Order, int, error) {
-// 	var order = &models.Order{}
-// 	tx := initializers.DB.Begin()
+func (s *SalesOrderService) GetSalesOrderService(conditions map[string]interface{}) (*models.Order, int, error) {
+	var order = &models.Order{}
+	tx := initializers.DB.Begin()
 
-// 	if tx.Error != nil {
-// 		return order, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
-// 	}
+	if tx.Error != nil {
+		return order, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+	}
 
-// 	query := tx.Preload("Items").Omit("Order").
-// 		Preload("Items.Item").
-// 		Preload("Items.Releases").Omit("Order").Omit("Item").Omit("Releases").
-// 		Preload("Items.Releases.Vehicle").
-// 		Preload("Items.Releases.DeliveryReceipt.TripCost").
-// 		Preload("DeliveryReceipts").Omit("Order").Omit("ItemReleases").
-// 		Preload("DeliveryReceipts.TripCost").Omit("DeliveryReceipt").
-// 		Preload("DeliveryReceipts.AttachedFile").Omit("DeliveryReceipt").
-// 		Where(conditions).First(&order)
+	query := tx.Preload("Items").Omit("Order").
+		Preload("Items.Item").
+		// Preload("Items.Releases").Omit("Order").Omit("Item").Omit("Releases").
+		// Preload("Items.Releases.Vehicle").
+		// Preload("Items.Releases.DeliveryReceipt.TripCost").
+		// Preload("DeliveryReceipts").Omit("Order").Omit("ItemReleases").
+		// Preload("DeliveryReceipts.TripCost").Omit("DeliveryReceipt").
+		// Preload("DeliveryReceipts.AttachedFile").Omit("DeliveryReceipt").
+		Where(conditions).First(&order)
 
-// 	if query.Error != nil {
-// 		return nil, fiber.StatusNotFound, tx.Error
-// 	}
+	if query.Error != nil {
+		return nil, fiber.StatusNotFound, tx.Error
+	}
 
-// 	for i := range order.Items {
-// 		for k := range order.Items[i].Releases {
-// 			order.Items[i].Releases[k].Order = nil
-// 		}
-// 	}
+	// for i := range order.Items {
+	// 	for k := range order.Items[i].Releases {
+	// 		order.Items[i].Releases[k].Order = nil
+	// 	}
+	// }
 
-// 	return order, fiber.StatusOK, nil
-// }
+	return order, fiber.StatusOK, nil
+}
 
 func (s *SalesOrderService) CreateSalesOrderService(order *models.Order, at models.At) (*models.Order, int, error) {
 	tx := initializers.DB.Begin()

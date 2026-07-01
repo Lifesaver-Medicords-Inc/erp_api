@@ -94,7 +94,6 @@ func (h *ItemReleaseHandler) UpdateItemReleaseHandler(c *fiber.Ctx) error {
 	if err := c.BodyParser(&body); err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
-	fmt.Println("Release Body: ", body)
 
 	conditions := map[string]interface{}{
 		"id": idNum,

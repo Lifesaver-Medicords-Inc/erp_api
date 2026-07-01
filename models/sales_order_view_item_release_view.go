@@ -11,6 +11,9 @@ type SalesOrderItemReleaseView struct {
 	RequiredUomID       uint   `json:"required_uom_id"`
 	RequiredUom         string `json:"required_uom"`
 	DeliveryPreference  string `json:"delivery_preference"`
+	ReleasedQty         *uint  `json:"released_qty"`
+	ReleaseUom          string `json:"release_uom"`
+	SerialNo            string `json:"serial_no"`
 }
 
 func (SalesOrderItemReleaseView) TableName() string {

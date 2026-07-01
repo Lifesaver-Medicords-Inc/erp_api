@@ -44,5 +44,5 @@ FROM tbl_bpi a
                 ''
             ) AS item_ids
     ) items
-WHERE e.code = 'SUPPLIER'
+WHERE e.name = 'SUPPLIER'
 GROUP BY b.id;
