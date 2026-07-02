@@ -9,6 +9,7 @@ import (
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
+	"gorm.io/gorm"
 )
 
 type CalendarScheduleService struct{}
@@ -17,15 +18,12 @@ func NewCalendarScheduleService() *CalendarScheduleService {
 	return &CalendarScheduleService{}
 }
 
+// Reads don't need a transaction — querying initializers.DB directly avoids
+// opening a tx that never gets committed/rolled back (a connection leak).
 func (s *CalendarScheduleService) GetCalendarSchedulesService(conditions map[string]interface{}) (*[]models.CalendarScheduleModel, int, error) {
-	tx := initializers.DB.Begin()
 	var schedules = &[]models.CalendarScheduleModel{}
 
-	if tx.Error != nil {
-		return schedules, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
-	}
-
-	if err := tx.Where(conditions).Find(schedules).Error; err != nil {
+	if err := initializers.DB.Where(conditions).Find(schedules).Error; err != nil {
 		fmt.Println("ERROR:", err)
 		return schedules, fiber.StatusInternalServerError, errors.New("failed getting calendar schedules")
 	}
@@ -34,45 +32,29 @@ func (s *CalendarScheduleService) GetCalendarSchedulesService(conditions map[str
 }
 
 func (s *CalendarScheduleService) GetCalendarScheduleService(conditions map[string]interface{}) (*models.CalendarScheduleModel, int, error) {
-	tx := initializers.DB.Begin()
 	var schedule = &models.CalendarScheduleModel{}
 
-	if tx.Error != nil {
-		return schedule, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
-	}
-
-	if err := tx.Where(conditions).First(schedule).Error; err != nil {
+	if err := initializers.DB.Where(conditions).First(schedule).Error; err != nil {
 		return schedule, fiber.StatusNotFound, errors.New("calendar schedule not found")
 	}
 
 	return schedule, fiber.StatusOK, nil
 }
 
-func (s *CalendarScheduleService) CreateCalendarScheduleService(schedule *models.CalendarScheduleModel, at models.At) (*models.CalendarScheduleModel, int, error) {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return schedule, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
-	}
-
+// CreateCalendarScheduleService inserts within the caller's transaction so it
+// commits/rolls back atomically with whatever operation is creating this schedule
+// (e.g. a Delivery Receipt). It does not begin or commit a transaction itself.
+func (s *CalendarScheduleService) CreateCalendarScheduleService(tx *gorm.DB, schedule *models.CalendarScheduleModel, at models.At) (*models.CalendarScheduleModel, int, error) {
 	if err := services.DbInsert(tx, &schedule); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-			err = errors.New("duplicate record error")
-		} else {
-			err = errors.New("failed creating schedule")
+			return schedule, fiber.StatusInternalServerError, errors.New("duplicate record error")
 		}
-		tx.Rollback()
-		return schedule, fiber.StatusInternalServerError, err
+		return schedule, fiber.StatusInternalServerError, errors.New("failed creating schedule")
 	}
 
 	atdata := models.CalendarScheduleAt{RefId: schedule.ID, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		tx.Rollback()
 		return schedule, fiber.StatusInternalServerError, errors.New("failed creating scheduleat")
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return schedule, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
 	return schedule, fiber.StatusOK, nil
@@ -85,6 +67,7 @@ func (s *CalendarScheduleService) UpdateCalendarScheduleService(schedule *models
 	}
 
 	if err := services.DbUpdate(tx, &schedule, conditions); err != nil {
+		tx.Rollback()
 		return schedule, fiber.StatusInternalServerError, errors.New("failed updating schedule")
 	}
 
@@ -111,10 +94,12 @@ func (s *CalendarScheduleService) DeleteCalendarScheduleService(conditions map[s
 
 	schedule, status, err := s.GetCalendarScheduleService(conditions)
 	if err != nil {
+		tx.Rollback()
 		return schedule, status, errors.New("calendar schedule not found")
 	}
 
 	if err := services.DbDelete(tx, &schedule, conditions); err != nil {
+		tx.Rollback()
 		return schedule, fiber.StatusInternalServerError, errors.New("failed deleting calendar schedule")
 	}
 

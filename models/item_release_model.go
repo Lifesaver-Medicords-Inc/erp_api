@@ -17,7 +17,7 @@ type ItemRelease struct {
 	ID    uint `gorm:"primaryKey" json:"id"`
 	DocNo int  `gorm:"size:50" json:"doc_no"`
 	ItemReleaseContent
-	ItemReleaseDetails []ItemReleaseDetails `gorm:"foreignKey:ItemReleaseID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"item_release_details,omitempty"`
+	ItemReleaseDetails *[]ItemReleaseDetails `gorm:"foreignKey:ItemReleaseID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"item_release_details,omitempty"`
 }
 
 func (ItemRelease) TableName() string {

@@ -17,7 +17,7 @@ type DeliveryReceiptCosts struct {
 }
 
 func (DeliveryReceiptCosts) TableName() string {
-	return "dispatching_tbl_delivery_receipt_costs"
+	return "tbl_dispatching_delivery_receipt_costs"
 }
 
 type DeliveryReceiptCostsAt struct {
@@ -28,5 +28,5 @@ type DeliveryReceiptCostsAt struct {
 }
 
 func (DeliveryReceiptCostsAt) TableName() string {
-	return "z_dispatching_tbl_delivery_receipt_costs"
+	return "z_tbl_dispatching_delivery_receipt_costs"
 }

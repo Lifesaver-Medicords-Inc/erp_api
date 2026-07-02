@@ -373,6 +373,7 @@ func migrateLogisticsDispatching() {
 		&dispatching_models.ReceiptFile{}, &dispatching_models.ReceiptFileAt{},
 		&dispatching_models.SalesCalendarScheduleModel{}, &dispatching_models.SalesCalendarScheduleModelAt{},
 		&dispatching_models.EngineeringCalendarScheduleModel{}, &dispatching_models.EngineeringCalendarScheduleModelAt{},
+		&dispatching_models.LogisticsCalendarScheduleModel{}, &dispatching_models.LogisticsCalendarScheduleModelAt{},
 	)
 }
 

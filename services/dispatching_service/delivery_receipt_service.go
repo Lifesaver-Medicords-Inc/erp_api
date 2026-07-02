@@ -90,7 +90,11 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *dispatching_
 		return data, fiber.StatusInternalServerError, errors.New("failed creating delivery receipt")
 	}
 
-	atdata := models.CalendarScheduleAt{RefId: data.ID, At: at}
+	atdata := dispatching_models.DeliveryReceiptAt{
+		RefId: data.ID,
+		DocNo: strconv.Itoa(data.DocNo),
+		At:    at,
+	}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
 		return data, fiber.StatusInternalServerError, errors.New("failed creating receiptat")
@@ -100,11 +104,13 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *dispatching_
 		ReferenceDocId: &data.SalesOrderID,
 		CalendarScheduleContent: models.CalendarScheduleContent{
 			DepartmentType: "Logistics",
+			StartDate:      data.DeliveryDate,
+			EndDate:        data.DeliveryDate,
 			Description:    "",
 		},
 	}
 
-	if _, _, err := s.CalendarScheduleService.CreateCalendarScheduleService(&schedule, at); err != nil {
+	if _, _, err := s.CalendarScheduleService.CreateCalendarScheduleService(tx, &schedule, at); err != nil {
 		tx.Rollback()
 		return data, fiber.StatusInternalServerError, errors.New("failed creating calendar schedule")
 	}
