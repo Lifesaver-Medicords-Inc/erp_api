@@ -10,6 +10,7 @@ import (
 	"github.com/pierceperado/smpc/models"
 	dispatching_models "github.com/pierceperado/smpc/models/dispatching_model"
 	"github.com/pierceperado/smpc/services"
+	"gorm.io/gorm"
 )
 
 type LogisticsCalendarScheduleService struct{}
@@ -50,21 +51,15 @@ func (s *LogisticsCalendarScheduleService) GetLogisticsSchedule(conditions map[s
 	return schedule, fiber.StatusOK, nil
 }
 
-// CREATE a logistics schedule
-func (s *LogisticsCalendarScheduleService) CreateLogisticsSchedule(schedule *dispatching_models.LogisticsCalendarScheduleModel, at models.At) (*dispatching_models.LogisticsCalendarScheduleModel, int, error) {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return schedule, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
-	}
-
+// CREATE a logistics schedule within the caller's transaction, so it commits/rolls
+// back automically with whatever operation is creating it (e.g. a Delivery Receipt).
+// It does not begin or commit a transaction itself.
+func (s *LogisticsCalendarScheduleService) CreateLogisticsSchedule(tx *gorm.DB, schedule *dispatching_models.LogisticsCalendarScheduleModel, at models.At) (*dispatching_models.LogisticsCalendarScheduleModel, int, error) {
 	if err := services.DbInsert(tx, &schedule); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-			err = errors.New("duplicate record error")
-		} else {
-			err = errors.New("failed creating logistics schedule")
+			return schedule, fiber.StatusInternalServerError, errors.New("duplicate record error")
 		}
-		tx.Rollback()
-		return schedule, fiber.StatusInternalServerError, err
+		return schedule, fiber.StatusInternalServerError, errors.New("failed creating logistics schedule")
 	}
 
 	atdata := dispatching_models.LogisticsCalendarScheduleModelAt{CalendarSchedulesBaseAt: dispatching_models.CalendarSchedulesBaseAt{
@@ -72,25 +67,16 @@ func (s *LogisticsCalendarScheduleService) CreateLogisticsSchedule(schedule *dis
 		At:    at,
 	}}
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		tx.Rollback()
 		return schedule, fiber.StatusInternalServerError, errors.New("failed creating logistics schedule audit")
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return schedule, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
 	return schedule, fiber.StatusOK, nil
 }
 
-// UPDATE a logistics schedule
-func (s *LogisticsCalendarScheduleService) UpdateLogisticsSchedule(schedule *dispatching_models.LogisticsCalendarScheduleModel, conditions map[string]interface{}, at models.At) (*dispatching_models.LogisticsCalendarScheduleModel, int, error) {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return schedule, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
-	}
-
+// UpdateLogisticsSchedule updates within the caller's transaction so it commits/rolls
+// back atomically with whatever operation is updating it (e.g. a Delivery Receipt).
+// It does not begin or commit a transaction itself.
+func (s *LogisticsCalendarScheduleService) UpdateLogisticsSchedule(tx *gorm.DB, schedule *dispatching_models.LogisticsCalendarScheduleModel, conditions map[string]interface{}, at models.At) (*dispatching_models.LogisticsCalendarScheduleModel, int, error) {
 	if err := services.DbUpdate(tx, &schedule, conditions); err != nil {
 		return schedule, fiber.StatusInternalServerError, errors.New("failed updating logistics schedule")
 	}
@@ -100,13 +86,7 @@ func (s *LogisticsCalendarScheduleService) UpdateLogisticsSchedule(schedule *dis
 		At:    at,
 	}}
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		tx.Rollback()
 		return schedule, fiber.StatusInternalServerError, errors.New("failed creating logistics schedule audit")
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return schedule, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
 	return schedule, fiber.StatusOK, nil

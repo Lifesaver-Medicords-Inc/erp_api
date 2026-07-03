@@ -13,7 +13,7 @@ type LogisticsCalendarScheduleContent struct {
 
 type LogisticsCalendarScheduleModel struct {
 	CalendarScheduleBase
-	SalesCalendarScheduleContent
+	LogisticsCalendarScheduleContent
 }
 
 func (LogisticsCalendarScheduleModel) TableName() string {
@@ -22,7 +22,7 @@ func (LogisticsCalendarScheduleModel) TableName() string {
 
 type LogisticsCalendarScheduleModelAt struct {
 	CalendarSchedulesBaseAt
-	SalesCalendarScheduleContent
+	LogisticsCalendarScheduleContent
 }
 
 func (LogisticsCalendarScheduleModelAt) TableName() string {

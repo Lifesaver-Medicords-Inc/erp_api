@@ -10,7 +10,8 @@ func DeliveryReceiptRoutes(app *fiber.App) {
 	api := app.Group("/api/delivery-receipts")
 
 	calendarService := dispatching_services.NewCalendarScheduleService()
-	deliveryReceiptService := dispatching_services.NewDeliveryReceiptService(calendarService)
+	logisticsCalendarService := dispatching_services.NewLogisticsCalendarScheduleService()
+	deliveryReceiptService := dispatching_services.NewDeliveryReceiptService(calendarService, logisticsCalendarService)
 	deliveryReceiptHandler := dispatching_handlers.NewDeliveryReceiptHandler(deliveryReceiptService)
 	api.Get("/", deliveryReceiptHandler.GetDeliveryReceiptsHandler)
 	api.Get("/so-with-approved-ir/", deliveryReceiptHandler.GetSOWithApprovedIRHandler)

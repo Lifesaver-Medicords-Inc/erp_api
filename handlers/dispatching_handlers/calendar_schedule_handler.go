@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	dispatching_models "github.com/pierceperado/smpc/models/dispatching_model"
 	dispatching_services "github.com/pierceperado/smpc/services/dispatching_service"
@@ -206,9 +207,20 @@ func (h *CalendarScheduleHandler) CreateCalendarScheduleHandler(c *fiber.Ctx) er
 			return utils.RespondError(c, fiber.StatusBadRequest, "Invalid Logistics schedule body")
 		}
 
-		data, status, err := h.LogisticsScheduleService.CreateLogisticsSchedule(&body, at)
+		tx := initializers.DB.Begin()
+		if tx.Error != nil {
+			return utils.RespondError(c, fiber.StatusInternalServerError, "failed to start DB transaction")
+		}
+
+		data, status, err := h.LogisticsScheduleService.CreateLogisticsSchedule(tx, &body, at)
 		if err != nil {
+			tx.Rollback()
 			return utils.RespondError(c, status, err.Error())
+		}
+
+		if err := tx.Commit().Error; err != nil {
+			tx.Rollback()
+			return utils.RespondError(c, fiber.StatusInternalServerError, "failed to commit transaction")
 		}
 		return utils.RespondSuccess(c, data)
 
@@ -268,10 +280,21 @@ func (h *CalendarScheduleHandler) UpdateCalendarScheduleHandler(c *fiber.Ctx) er
 			return utils.RespondError(c, fiber.StatusBadRequest, "Invalid Logistics schedule body")
 		}
 
+		tx := initializers.DB.Begin()
+		if tx.Error != nil {
+			return utils.RespondError(c, fiber.StatusInternalServerError, "failed to start DB transaction")
+		}
+
 		data, status, err :=
-			h.LogisticsScheduleService.UpdateLogisticsSchedule(&body, conditions, at)
+			h.LogisticsScheduleService.UpdateLogisticsSchedule(tx, &body, conditions, at)
 		if err != nil {
+			tx.Rollback()
 			return utils.RespondError(c, status, err.Error())
+		}
+
+		if err := tx.Commit().Error; err != nil {
+			tx.Rollback()
+			return utils.RespondError(c, fiber.StatusInternalServerError, "failed to commit transaction")
 		}
 		return utils.RespondSuccess(c, data)
 

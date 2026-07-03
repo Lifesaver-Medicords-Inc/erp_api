@@ -2,6 +2,7 @@ package dispatching_services
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -15,12 +16,14 @@ import (
 )
 
 type DeliveryReceiptService struct {
-	CalendarScheduleService *CalendarScheduleService
+	CalendarScheduleService          *CalendarScheduleService
+	LogisticsCalendarScheduleService *LogisticsCalendarScheduleService
 }
 
-func NewDeliveryReceiptService(calendarScheduleService *CalendarScheduleService) *DeliveryReceiptService {
+func NewDeliveryReceiptService(calendarScheduleService *CalendarScheduleService, logisticsCalendarScheduleService *LogisticsCalendarScheduleService) *DeliveryReceiptService {
 	return &DeliveryReceiptService{
-		CalendarScheduleService: calendarScheduleService,
+		CalendarScheduleService:          calendarScheduleService,
+		LogisticsCalendarScheduleService: logisticsCalendarScheduleService,
 	}
 }
 
@@ -115,6 +118,25 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *dispatching_
 		return data, fiber.StatusInternalServerError, errors.New("failed creating calendar schedule")
 	}
 
+	logisticsSchedule := dispatching_models.LogisticsCalendarScheduleModel{
+		CalendarScheduleBase: dispatching_models.CalendarScheduleBase{
+			Department: "LOGISTICS",
+			StartDate:  data.DeliveryDate,
+			EndDate:    data.DeliveryDate,
+			Title:      fmt.Sprintf("Delivery Receipt #%d", data.DocNo),
+		},
+		LogisticsCalendarScheduleContent: dispatching_models.LogisticsCalendarScheduleContent{
+			SalesOrderId:         data.SalesOrderID,
+			DeliveryReceiptId:    data.ID,
+			DeliveryReceiptDocNo: strconv.Itoa(data.DocNo),
+		},
+	}
+
+	if _, _, err := s.LogisticsCalendarScheduleService.CreateLogisticsSchedule(tx, &logisticsSchedule, at); err != nil {
+		tx.Rollback()
+		return data, fiber.StatusInternalServerError, errors.New("failed creating logistics calendar schedule")
+	}
+
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return data, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
@@ -173,6 +195,73 @@ func (s *DeliveryReceiptService) UpdateDeliveryReceiptService(update *dispatchin
 		if err := tx.Create(&update.DeliveryReceiptCosts).Error; err != nil {
 			tx.Rollback()
 			return receipt, fiber.StatusInternalServerError, errors.New("failed reinserting costs")
+		}
+	}
+
+	// Keep the calendar entries created at DR-create time in sync with the new
+	// delivery date (partial update — only touch dates/title, not the rest of
+	// the schedule content in case logistics staff edited it separately). If no
+	// row exists yet (e.g. this DR predates the calendar-linking feature), create
+	// one instead of silently no-oping.
+	//
+	// The generic tbl_calendar_schedule row only has reference_doc_id (=SalesOrderID),
+	// not a delivery_receipt_id, so this match is best-effort if a sales order has
+	// multiple delivery receipts.
+	genericResult := tx.Model(&models.CalendarScheduleModel{}).
+		Where("reference_doc_id = ? AND department_type = ?", receipt.SalesOrderID, "Logistics").
+		Updates(map[string]interface{}{
+			"start_date": update.DeliveryDate,
+			"end_date":   update.DeliveryDate,
+		})
+	if genericResult.Error != nil {
+		tx.Rollback()
+		return receipt, fiber.StatusInternalServerError, errors.New("failed syncing calendar schedule")
+	}
+	if genericResult.RowsAffected == 0 {
+		schedule := models.CalendarScheduleModel{
+			ReferenceDocId: &receipt.SalesOrderID,
+			CalendarScheduleContent: models.CalendarScheduleContent{
+				DepartmentType: "Logistics",
+				StartDate:      update.DeliveryDate,
+				EndDate:        update.DeliveryDate,
+			},
+		}
+		if _, _, err := s.CalendarScheduleService.CreateCalendarScheduleService(tx, &schedule, at); err != nil {
+			tx.Rollback()
+			return receipt, fiber.StatusInternalServerError, errors.New("failed creating calendar schedule")
+		}
+	}
+
+	// tbl_dispatching_logistics_calendar_schedule has a real delivery_receipt_id,
+	// so this match is reliable.
+	logisticsResult := tx.Model(&dispatching_models.LogisticsCalendarScheduleModel{}).
+		Where("delivery_receipt_id = ?", receipt.ID).
+		Updates(map[string]interface{}{
+			"start_date": update.DeliveryDate,
+			"end_date":   update.DeliveryDate,
+			"title":      fmt.Sprintf("Delivery Receipt #%d", receipt.DocNo),
+		})
+	if logisticsResult.Error != nil {
+		tx.Rollback()
+		return receipt, fiber.StatusInternalServerError, errors.New("failed syncing logistics calendar schedule")
+	}
+	if logisticsResult.RowsAffected == 0 {
+		logisticsSchedule := dispatching_models.LogisticsCalendarScheduleModel{
+			CalendarScheduleBase: dispatching_models.CalendarScheduleBase{
+				Department: "LOGISTICS",
+				StartDate:  update.DeliveryDate,
+				EndDate:    update.DeliveryDate,
+				Title:      fmt.Sprintf("Delivery Receipt #%d", receipt.DocNo),
+			},
+			LogisticsCalendarScheduleContent: dispatching_models.LogisticsCalendarScheduleContent{
+				SalesOrderId:         receipt.SalesOrderID,
+				DeliveryReceiptId:    receipt.ID,
+				DeliveryReceiptDocNo: strconv.Itoa(receipt.DocNo),
+			},
+		}
+		if _, _, err := s.LogisticsCalendarScheduleService.CreateLogisticsSchedule(tx, &logisticsSchedule, at); err != nil {
+			tx.Rollback()
+			return receipt, fiber.StatusInternalServerError, errors.New("failed creating logistics calendar schedule")
 		}
 	}
 

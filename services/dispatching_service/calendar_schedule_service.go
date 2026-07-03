@@ -60,27 +60,18 @@ func (s *CalendarScheduleService) CreateCalendarScheduleService(tx *gorm.DB, sch
 	return schedule, fiber.StatusOK, nil
 }
 
-func (s *CalendarScheduleService) UpdateCalendarScheduleService(schedule *models.CalendarScheduleModel, conditions map[string]interface{}, at models.At) (*models.CalendarScheduleModel, int, error) {
-	tx := initializers.DB.Begin()
-	if tx.Error != nil {
-		return schedule, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
-	}
-
+// UpdateCalendarScheduleService updates within the caller's transaction so it
+// commits/rolls back atomically with whatever operation is updating this schedule
+// (e.g. a Delivery Receipt). It does not begin or commit a transaction itself.
+func (s *CalendarScheduleService) UpdateCalendarScheduleService(tx *gorm.DB, schedule *models.CalendarScheduleModel, conditions map[string]interface{}, at models.At) (*models.CalendarScheduleModel, int, error) {
 	if err := services.DbUpdate(tx, &schedule, conditions); err != nil {
-		tx.Rollback()
 		return schedule, fiber.StatusInternalServerError, errors.New("failed updating schedule")
 	}
 
 	atdata := models.CalendarScheduleAt{RefId: schedule.ID, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		tx.Rollback()
 		return schedule, fiber.StatusInternalServerError, errors.New("failed creating scheduleat")
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return schedule, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
 	}
 
 	return schedule, fiber.StatusOK, nil
