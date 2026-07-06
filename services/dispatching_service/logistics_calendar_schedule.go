@@ -20,16 +20,13 @@ func NewLogisticsCalendarScheduleService() *LogisticsCalendarScheduleService {
 }
 
 func (s *LogisticsCalendarScheduleService) GetLogisticsSchedules(conditions map[string]interface{}) (*[]dispatching_models.LogisticsCalendarScheduleModel, int, error) {
-	tx := initializers.DB.Begin()
 	var schedules = &[]dispatching_models.LogisticsCalendarScheduleModel{}
 
-	if tx.Error != nil {
-		return schedules, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
-	}
-
-	if err := tx.Where(conditions).Find(schedules).Error; err != nil {
+	if err := initializers.DB.Where(conditions).
+		Preload("Routes").Preload("Routes.Costs").
+		Find(schedules).Error; err != nil {
 		fmt.Println("ERROR:", err)
-		return schedules, fiber.StatusNotFound, errors.New("failed getting logistics calendar schedules")
+		return schedules, fiber.StatusInternalServerError, errors.New("failed getting logistics calendar schedules")
 	}
 
 	return schedules, fiber.StatusOK, nil
@@ -37,14 +34,11 @@ func (s *LogisticsCalendarScheduleService) GetLogisticsSchedules(conditions map[
 
 // GET a single logistics schedule by ID
 func (s *LogisticsCalendarScheduleService) GetLogisticsSchedule(conditions map[string]interface{}) (*dispatching_models.LogisticsCalendarScheduleModel, int, error) {
-	tx := initializers.DB.Begin()
 	var schedule = &dispatching_models.LogisticsCalendarScheduleModel{}
 
-	if tx.Error != nil {
-		return schedule, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
-	}
-
-	if err := tx.Where(conditions).First(schedule).Error; err != nil {
+	if err := initializers.DB.Where(conditions).
+		Preload("Routes").Preload("Routes.Costs").
+		First(schedule).Error; err != nil {
 		return schedule, fiber.StatusNotFound, errors.New("logistics calendar schedule not found")
 	}
 
@@ -79,6 +73,25 @@ func (s *LogisticsCalendarScheduleService) CreateLogisticsSchedule(tx *gorm.DB, 
 func (s *LogisticsCalendarScheduleService) UpdateLogisticsSchedule(tx *gorm.DB, schedule *dispatching_models.LogisticsCalendarScheduleModel, conditions map[string]interface{}, at models.At) (*dispatching_models.LogisticsCalendarScheduleModel, int, error) {
 	if err := services.DbUpdate(tx, &schedule, conditions); err != nil {
 		return schedule, fiber.StatusInternalServerError, errors.New("failed updating logistics schedule")
+	}
+
+	// Replace routes (Internal only) with the incoming set. DbUpdate only touches
+	// the schedule's own columns, not nested associations, so this is manual —
+	// delete-then-reinsert, same pattern as DeliveryReceipt's items/costs.
+	if err := tx.Where("schedule_id = ?", schedule.ID).Delete(&dispatching_models.LogisticsRoute{}).Error; err != nil {
+		return schedule, fiber.StatusInternalServerError, errors.New("failed clearing old routes")
+	}
+	if len(schedule.Routes) > 0 {
+		for i := range schedule.Routes {
+			schedule.Routes[i].ID = 0
+			schedule.Routes[i].ScheduleId = schedule.ID
+			for j := range schedule.Routes[i].Costs {
+				schedule.Routes[i].Costs[j].ID = 0
+			}
+		}
+		if err := tx.Create(&schedule.Routes).Error; err != nil {
+			return schedule, fiber.StatusInternalServerError, errors.New("failed saving routes")
+		}
 	}
 
 	atdata := dispatching_models.LogisticsCalendarScheduleModelAt{CalendarSchedulesBaseAt: dispatching_models.CalendarSchedulesBaseAt{

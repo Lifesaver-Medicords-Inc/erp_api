@@ -20,6 +20,17 @@ type DeliveryReceiptService struct {
 	LogisticsCalendarScheduleService *LogisticsCalendarScheduleService
 }
 
+// Looks up the sales order's document number via the vw_get_sales_order_dr
+// join so it can be shown on the logistics schedule/route without requiring
+// the client to look it up separately. Best-effort: returns "" if not found.
+func getSalesOrderDocNo(tx *gorm.DB, salesOrderID uint) string {
+	var soView models.SalesOrderDrView
+	if err := tx.Where("order_id = ?", salesOrderID).First(&soView).Error; err != nil {
+		return ""
+	}
+	return soView.DocumentNo
+}
+
 func NewDeliveryReceiptService(calendarScheduleService *CalendarScheduleService, logisticsCalendarScheduleService *LogisticsCalendarScheduleService) *DeliveryReceiptService {
 	return &DeliveryReceiptService{
 		CalendarScheduleService:          calendarScheduleService,
@@ -127,6 +138,7 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *dispatching_
 		},
 		LogisticsCalendarScheduleContent: dispatching_models.LogisticsCalendarScheduleContent{
 			SalesOrderId:         data.SalesOrderID,
+			SalesOrderDocNo:      getSalesOrderDocNo(tx, data.SalesOrderID),
 			DeliveryReceiptId:    data.ID,
 			DeliveryReceiptDocNo: strconv.Itoa(data.DocNo),
 		},
@@ -237,9 +249,10 @@ func (s *DeliveryReceiptService) UpdateDeliveryReceiptService(update *dispatchin
 	logisticsResult := tx.Model(&dispatching_models.LogisticsCalendarScheduleModel{}).
 		Where("delivery_receipt_id = ?", receipt.ID).
 		Updates(map[string]interface{}{
-			"start_date": update.DeliveryDate,
-			"end_date":   update.DeliveryDate,
-			"title":      fmt.Sprintf("Delivery Receipt #%d", receipt.DocNo),
+			"start_date":       update.DeliveryDate,
+			"end_date":         update.DeliveryDate,
+			"title":            fmt.Sprintf("Delivery Receipt #%d", receipt.DocNo),
+			"reference_doc_no": getSalesOrderDocNo(tx, receipt.SalesOrderID),
 		})
 	if logisticsResult.Error != nil {
 		tx.Rollback()
@@ -255,6 +268,7 @@ func (s *DeliveryReceiptService) UpdateDeliveryReceiptService(update *dispatchin
 			},
 			LogisticsCalendarScheduleContent: dispatching_models.LogisticsCalendarScheduleContent{
 				SalesOrderId:         receipt.SalesOrderID,
+				SalesOrderDocNo:      getSalesOrderDocNo(tx, receipt.SalesOrderID),
 				DeliveryReceiptId:    receipt.ID,
 				DeliveryReceiptDocNo: strconv.Itoa(receipt.DocNo),
 			},

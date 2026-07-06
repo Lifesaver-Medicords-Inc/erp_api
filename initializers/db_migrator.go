@@ -20,14 +20,14 @@ func MigrateAll() {
 	// migrateItemManagement()
 	// migrateBomBoq()
 	// migrateInventoryWarehouse()
-	//migrateEngineering()
+	// migrateEngineering()
 	// migrateSalesCrm()
 	// migrateSalesProject()
 	// migratePurchasingVendor()
 	// migrateBpi()
 	// migrateAccounting()
 	// migrateJobOrder()
-	//migrateLogisticsDispatching()
+	migrateLogisticsDispatching()
 	// migrateVehicleManagement()
 	// migrateInventoryTransaction()
 }
@@ -366,15 +366,14 @@ func migrateLogisticsDispatching() {
 	migrateAndLog(&dispatching_models.CalendarCategoryModel{}, &dispatching_models.CalendarCategoryAt{})
 	migrateAndLog(&dispatching_models.CalendarCostTypeModel{}, &dispatching_models.CalendarCostTypeAt{})
 	migrateAndLog(&models.CalendarScheduleModel{}, &models.CalendarScheduleAt{})
-	migrateAndLog(
-		&dispatching_models.DeliveryReceipt{}, &dispatching_models.DeliveryReceiptAt{},
-		&dispatching_models.DeliveryReceiptItems{}, &dispatching_models.DeliveryReceiptItemsAt{},
-		&dispatching_models.DeliveryReceiptCosts{}, &dispatching_models.DeliveryReceiptCostsAt{},
-		&dispatching_models.ReceiptFile{}, &dispatching_models.ReceiptFileAt{},
-		&dispatching_models.SalesCalendarScheduleModel{}, &dispatching_models.SalesCalendarScheduleModelAt{},
-		&dispatching_models.EngineeringCalendarScheduleModel{}, &dispatching_models.EngineeringCalendarScheduleModelAt{},
-		&dispatching_models.LogisticsCalendarScheduleModel{}, &dispatching_models.LogisticsCalendarScheduleModelAt{},
-	)
+	migrateAndLog(&dispatching_models.DeliveryReceipt{}, &dispatching_models.DeliveryReceiptAt{})
+	migrateAndLog(&dispatching_models.DeliveryReceiptCosts{}, &dispatching_models.DeliveryReceiptCostsAt{})
+	migrateAndLog(&dispatching_models.ReceiptFile{}, &dispatching_models.ReceiptFileAt{})
+	migrateAndLog(&dispatching_models.SalesCalendarScheduleModel{}, &dispatching_models.SalesCalendarScheduleModelAt{})
+	migrateAndLog(&dispatching_models.EngineeringCalendarScheduleModel{}, &dispatching_models.EngineeringCalendarScheduleModelAt{})
+	migrateAndLog(&dispatching_models.LogisticsCalendarScheduleModel{}, &dispatching_models.LogisticsCalendarScheduleModelAt{})
+	migrateAndLog(&dispatching_models.LogisticsRoute{}, &dispatching_models.LogisticsRouteAt{})
+	migrateAndLog(&dispatching_models.LogisticsRouteCost{})
 }
 
 // ============================================
