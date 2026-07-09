@@ -2,6 +2,7 @@ package models
 
 type CalendarScheduleContent struct {
 	DepartmentType string `json:"department_type"` // Sales, Engineering, Logistics
+	Title          string `json:"title"`
 	StartDate      string `json:"start_date"`
 	EndDate        string `json:"end_date"`
 	CategoryId     uint   `json:"category_id"`

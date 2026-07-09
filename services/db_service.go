@@ -518,6 +518,48 @@ func DbUpdate(tx *gorm.DB, model interface{}, conditions map[string]interface{})
 	return nil
 }
 
+// DbUpdateDetails synchronizes a has-many child association after a parent
+// update. DbUpdate/UpdateColumns only touch the parent row's own columns —
+// GORM does not cascade Update calls to associations the way it does on
+// Create — so callers updating a parent with nested detail rows (e.g.
+// ItemReleaseDetails, DeliveryReceiptItems) must persist those rows
+// separately. This does that generically: setFK stamps the parent foreign
+// key onto each detail before saving, rows with a zero ID are inserted, rows
+// with a non-zero ID are fully overwritten (Select("*")) so cleared/zeroed
+// fields from the client are persisted too, not silently skipped.
+//
+// T must have a uint (or unsigned integer) "ID" field.
+func DbUpdateDetails[T any](tx *gorm.DB, details []T, setFK func(*T)) error {
+	for i := range details {
+		detail := &details[i]
+
+		if setFK != nil {
+			setFK(detail)
+		}
+
+		idField := reflect.ValueOf(detail).Elem().FieldByName("ID")
+		if !idField.IsValid() || idField.Kind() != reflect.Uint {
+			return errors.New("DbUpdateDetails: detail struct must have a uint ID field")
+		}
+
+		if idField.Uint() == 0 {
+			if err := tx.Create(detail).Error; err != nil {
+				return err
+			}
+			continue
+		}
+
+		if err := tx.Model(new(T)).
+			Where("id = ?", idField.Uint()).
+			Select("*").
+			Updates(detail).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func DbUpdatePointer(tx *gorm.DB, model interface{}, conditions map[string]interface{}) error {
 	query := tx.Model(model)
 

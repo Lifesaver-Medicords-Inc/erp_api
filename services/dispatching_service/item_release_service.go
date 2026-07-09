@@ -102,6 +102,19 @@ func (s *ItemReleaseService) UpdateItemReleaseService(release *models.ItemReleas
 		return release, fiber.StatusInternalServerError, errors.New("failed updating item release")
 	}
 
+	// DbUpdate above only issues UPDATE on the item release's own columns; GORM's
+	// UpdateColumns does not cascade to the has-many ItemReleaseDetails association,
+	// so edited detail rows (e.g. released_qty from Pick Activity) must be saved here.
+	if release.ItemReleaseDetails != nil {
+		err := services.DbUpdateDetails(tx, *release.ItemReleaseDetails, func(d *models.ItemReleaseDetails) {
+			d.ItemReleaseID = release.ID
+		})
+		if err != nil {
+			tx.Rollback()
+			return release, fiber.StatusInternalServerError, errors.New("failed saving item release details")
+		}
+	}
+
 	// Insert audit record
 	atdata := models.ItemReleaseAt{
 		RefId: release.ID,

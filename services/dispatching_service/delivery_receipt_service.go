@@ -118,6 +118,7 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *dispatching_
 		ReferenceDocId: &data.SalesOrderID,
 		CalendarScheduleContent: models.CalendarScheduleContent{
 			DepartmentType: "Logistics",
+			Title:          fmt.Sprintf("Delivery Receipt #%d", data.DocNo),
 			StartDate:      data.DeliveryDate,
 			EndDate:        data.DeliveryDate,
 			Description:    "",
@@ -224,6 +225,7 @@ func (s *DeliveryReceiptService) UpdateDeliveryReceiptService(update *dispatchin
 		Updates(map[string]interface{}{
 			"start_date": update.DeliveryDate,
 			"end_date":   update.DeliveryDate,
+			"title":      fmt.Sprintf("Delivery Receipt #%d", receipt.DocNo),
 		})
 	if genericResult.Error != nil {
 		tx.Rollback()
@@ -234,6 +236,7 @@ func (s *DeliveryReceiptService) UpdateDeliveryReceiptService(update *dispatchin
 			ReferenceDocId: &receipt.SalesOrderID,
 			CalendarScheduleContent: models.CalendarScheduleContent{
 				DepartmentType: "Logistics",
+				Title:          fmt.Sprintf("Delivery Receipt #%d", receipt.DocNo),
 				StartDate:      update.DeliveryDate,
 				EndDate:        update.DeliveryDate,
 			},
