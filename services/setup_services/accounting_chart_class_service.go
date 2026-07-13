@@ -1,9 +1,8 @@
 package setup_services
 
 import (
-	// "errors"
-
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -73,10 +72,13 @@ func (s *ChartClassService) CreateChartClass(body *accounting_models.ChartClass,
 		return body, fiber.StatusInternalServerError, errors.New("failed creating chart class")
 	}
 
-	atdata := accounting_models.ChartClassAt{RefId: body.ID, Code: body.Code, ChartClassContent: body.ChartClassContent, At: at}
+	atdata := accounting_models.ChartClassAt{RefId: body.ID, Code: body.Code, Name: body.Name, Type: body.Type, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed creating chart class at")
+		if strings.Contains(err.Error(), "duplicate key") {
+			return body, fiber.StatusConflict, errors.New("duplicate record error")
+		}
+		return body, fiber.StatusInternalServerError, fmt.Errorf("failed creating chart class at: %w", err)
 	}
 
 	// Commit once
@@ -102,9 +104,12 @@ func (s *ChartClassService) UpdateChartClass(body *accounting_models.ChartClass,
 		return body, fiber.StatusInternalServerError, errors.New("failed updating class")
 	}
 
-	atdata := accounting_models.ChartClassAt{RefId: body.ID, Code: body.Code, ChartClassContent: body.ChartClassContent, At: at}
+	atdata := accounting_models.ChartClassAt{RefId: body.ID, Code: body.Code, Name: body.Name, Type: body.Type, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed updating journal entry at")
+		if strings.Contains(err.Error(), "duplicate key") {
+			return body, fiber.StatusConflict, errors.New("duplicate record error")
+		}
+		return body, fiber.StatusInternalServerError, fmt.Errorf("failed updating journal entry at: %w", err)
 	}
 
 	// Commit once
@@ -130,10 +135,13 @@ func (s *ChartClassService) DeleteChartClass(body *accounting_models.ChartClass,
 		return body, fiber.StatusInternalServerError, errors.New("failed deleting class")
 	}
 
-	atdata := accounting_models.ChartClassAt{RefId: body.ID, Code: body.Code, ChartClassContent: body.ChartClassContent, At: at}
+	atdata := accounting_models.ChartClassAt{RefId: body.ID, Code: body.Code, Name: body.Name, Type: body.Type, At: at}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed creating classat")
+		if strings.Contains(err.Error(), "duplicate key") {
+			return body, fiber.StatusConflict, errors.New("duplicate record error")
+		}
+		return body, fiber.StatusInternalServerError, fmt.Errorf("failed creating classat: %w", err)
 	}
 
 	// Commit once

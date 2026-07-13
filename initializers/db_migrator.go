@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pierceperado/smpc/models"
+	accounting_models "github.com/pierceperado/smpc/models/accounting_models"
 	dispatching_models "github.com/pierceperado/smpc/models/dispatching_model"
 )
 
@@ -313,6 +314,9 @@ func migrateBpi() {
 // ============================================
 func migrateAccounting() {
 	// fmt.Println("=== Migrating ACCOUNTING Module ===")
+	migrateAndLog(
+		&accounting_models.ChartClass{}, &accounting_models.ChartClassAt{},
+	)
 	// migrateAndLog(
 	// 	&accounting_models.ChartOfAccounts{}, &accounting_models.ChartOfAccountsAt{},
 	// 	&accounting_models.Tax{}, &accounting_models.TaxAt{},

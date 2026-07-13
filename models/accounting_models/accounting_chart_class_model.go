@@ -21,7 +21,7 @@ type ChartClassAt struct {
 	RefId uint   `json:"ref_id"`
 	Code  string `json:"code"`
 	Name  string `json:"name"`
-	ChartClassContent
+	Type  string `json:"type"`
 	models.At
 }
 

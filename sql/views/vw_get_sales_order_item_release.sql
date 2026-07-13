@@ -23,7 +23,3 @@ LEFT JOIN tbl_setup_item_unit_measurement uom
  LEFT JOIN tbl_inv_item_release_details ird
 	ON ird.sales_order_id = sod.based_id
 	AND ird.item_id = sod.item_id
-
-
-GO
-

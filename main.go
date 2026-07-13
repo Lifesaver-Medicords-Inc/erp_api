@@ -17,6 +17,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/migrations"
 	"github.com/pierceperado/smpc/routes"
 	"github.com/pierceperado/smpc/services"
 )
@@ -25,7 +26,7 @@ func init() {
 	initializers.LoadEnv()
 	initializers.ConnectDb()
 	initializers.MigrateAll()
-	//initializers.MigrateModel()
+	initializers.MigrateModel("accounting")
 	initializers.InitRedis()
 	initializers.InitWm()
 	initializers.InitWm2()
@@ -33,7 +34,7 @@ func init() {
 	initializers.InitWmJobOrder()
 	initializers.InitWmQuotation()
 	initializers.InitLogger()
-	//migrations.RunSQLMigrations()
+	migrations.RunSQLMigrations()
 }
 
 func main() {
