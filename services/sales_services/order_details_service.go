@@ -68,9 +68,14 @@ func UpdateOrderDetail(tx *gorm.DB, orderdetails models.OrderDetails, at models.
 		return errors.New("failed updating order details")
 	}
 
+	var full models.OrderDetails
+	if err := tx.Where(conditions).First(&full).Error; err != nil {
+		return errors.New("failed fetching updated order details")
+	}
+
 	orderdetailsat := models.OrderDetailsAt{
-		RefId:               orderdetails.OrderDetailsID,
-		OrderDetailsContent: orderdetails.OrderDetailsContent,
+		RefId:               full.OrderDetailsID,
+		OrderDetailsContent: full.OrderDetailsContent,
 		At:                  at,
 	}
 

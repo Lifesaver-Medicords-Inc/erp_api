@@ -252,10 +252,10 @@ func (s *DeliveryReceiptService) UpdateDeliveryReceiptService(update *dispatchin
 	logisticsResult := tx.Model(&dispatching_models.LogisticsCalendarScheduleModel{}).
 		Where("delivery_receipt_id = ?", receipt.ID).
 		Updates(map[string]interface{}{
-			"start_date":       update.DeliveryDate,
-			"end_date":         update.DeliveryDate,
-			"title":            fmt.Sprintf("Delivery Receipt #%d", receipt.DocNo),
-			"reference_doc_no": getSalesOrderDocNo(tx, receipt.SalesOrderID),
+			"start_date":         update.DeliveryDate,
+			"end_date":           update.DeliveryDate,
+			"title":              fmt.Sprintf("Delivery Receipt #%d", receipt.DocNo),
+			"sales_order_doc_no": getSalesOrderDocNo(tx, receipt.SalesOrderID),
 		})
 	if logisticsResult.Error != nil {
 		tx.Rollback()

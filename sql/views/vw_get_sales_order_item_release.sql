@@ -12,7 +12,7 @@ SELECT
     sod.delivery_preference,
     sod.item_code,
 	ird.released_qty,
-	ird.released_uom_id
+	ird.released_uom_id as released_uom 
 FROM tbl_trans_sales_order_details sod
 LEFT JOIN tbl_trans_sales_order so
 	ON sod.based_id = so.order_id
@@ -20,6 +20,8 @@ LEFT JOIN tbl_setup_item i
     ON sod.item_id = i.id
 LEFT JOIN tbl_setup_item_unit_measurement uom
 	ON i.unit_of_measure_id = uom.id
- LEFT JOIN tbl_inv_item_release_details ird
+LEFT JOIN tbl_inv_item_release_details ird
 	ON ird.sales_order_id = sod.based_id
 	AND ird.item_id = sod.item_id
+LEFT JOIN tbl_setup_item_unit_measurement seum
+	ON ird.released_uom_id = seum.id

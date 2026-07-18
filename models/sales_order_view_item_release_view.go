@@ -12,7 +12,7 @@ type SalesOrderItemReleaseView struct {
 	RequiredUom         string `json:"required_uom"`
 	DeliveryPreference  string `json:"delivery_preference"`
 	ReleasedQty         *uint  `json:"released_qty"`
-	ReleaseUom          string `json:"release_uom"`
+	ReleasedUom         string `json:"released_uom"`
 	SerialNo            string `json:"serial_no"`
 }
 
