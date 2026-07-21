@@ -37,8 +37,17 @@ type SalesProjectAllTabs struct {
 	SalesProjectItemSet                  models.SalesProjectItemSet            `json:"sales_project_item_set"`
 	SalesProjectContent                  models.SalesProjectContent            `json:"sales_project_content"`
 	SalesProjectContentAdvancedCondition models.SalesProjectAdvancedConditions `json:"sales_project_content_advanced_condition"`
-	SalesProjectItems                    []models.SalesProjectItems            `json:"sales_project_items"`
+	SalesProjectItems                    []SalesProjectItemsWithImages         `json:"sales_project_items"`
 	SalesProjectWirings                  []models.SalesProjectWiring           `json:"sales_project_wiring"`
+}
+
+// Project items didn't have any way to carry selected images through Create - this mirrors
+// SalesQuotationQuickWithImages (the same pattern Quick Quote items already use): the item's
+// own fields stay flattened at the top level (anonymous embed, no json tag), plus the
+// per-item image selections riding alongside under "quick_selected_image".
+type SalesProjectItemsWithImages struct {
+	models.SalesProjectItems
+	QuickSelectedImage []models.SalesQuotationSelectedImage `json:"quick_selected_image"`
 }
 
 type CreateNewProjectItem struct {
@@ -229,6 +238,10 @@ func GetSalesProjects(conditions map[string]interface{}) (interface{}, int, erro
 		SalesProjectContentAdvancedCondition []models.SalesProjectAdvancedConditions `json:"sales_project_content_advanced_condition"`
 		SalesProjectItems                    []models.SalesProjectItems              `json:"sales_project_items"`
 		SalesProjectWirings                  []models.SalesProjectWiring             `json:"sales_project_wiring"`
+		// Same table Quick Quote's selected images ride in - a separate JSON key here
+		// since these rows are keyed against project items' IDs, not quick quote IDs,
+		// even though it's the same underlying table.
+		SalesProjectItemsSelectedImages []models.SalesQuotationSelectedImage `json:"sales_project_items_selected_images"`
 	}
 
 	var response Response
@@ -270,6 +283,9 @@ func GetSalesProjects(conditions map[string]interface{}) (interface{}, int, erro
 		return response, fiber.StatusInternalServerError, err
 	}
 	if err := GetProjectWiring(&response.SalesProjectWirings, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, err
+	}
+	if err := GetQuotationQuickSelectedImages(&response.SalesProjectItemsSelectedImages, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, err
 	}
 
@@ -329,7 +345,7 @@ func CreateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, erro
 		}
 
 		for _, v := range x.SalesProjectItems {
-			if err := CreateProjectItems(tx, x.SalesProjectItemSet.ItemSetID, v, at); err != nil {
+			if err := CreateProjectItems(tx, x.SalesProjectItemSet.ItemSetID, v.SalesProjectItems, v.QuickSelectedImage, at); err != nil {
 				return body, fiber.StatusInternalServerError, err
 			}
 		}
@@ -557,7 +573,7 @@ func applyItemSetDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.Sa
 	}
 	for _, item := range diff.Removed {
 		if err := services.DbDelete(tx, &models.SalesProjectItemSet{}, map[string]interface{}{
-			"itemset_id": item.ItemSetID,
+			"item_set_id": item.ItemSetID,
 		}); err != nil {
 			return fmt.Errorf("item set remove: %w", err)
 		}
@@ -565,7 +581,7 @@ func applyItemSetDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.Sa
 	for _, entry := range diff.Updated {
 		entry.Item.BasedId = projectID
 		if err := services.DbUpdate(tx, &entry.Item, map[string]interface{}{
-			"itemset_id": entry.Item.ItemSetID,
+			"item_set_id": entry.Item.ItemSetID,
 		}); err != nil {
 			return fmt.Errorf("item set update: %w", err)
 		}
@@ -750,7 +766,7 @@ func CreateNewItems(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, error) {
 		}
 
 		for _, v := range x.SalesProjectItems {
-			if err := CreateProjectItems(tx, x.SalesProjectItemSet.ItemSetID, v, at); err != nil {
+			if err := CreateProjectItems(tx, x.SalesProjectItemSet.ItemSetID, v.SalesProjectItems, v.QuickSelectedImage, at); err != nil {
 				return body, fiber.StatusInternalServerError, err
 			}
 		}

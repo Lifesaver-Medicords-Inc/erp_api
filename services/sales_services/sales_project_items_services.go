@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func CreateProjectItems(tx *gorm.DB, parentId uint, projectitems models.SalesProjectItems, at models.At) error {
+func CreateProjectItems(tx *gorm.DB, parentId uint, projectitems models.SalesProjectItems, images []models.SalesQuotationSelectedImage, at models.At) error {
 	projectitems.BasedId = parentId
 
 	if err := services.DbInsert(tx, &projectitems); err != nil {
@@ -23,6 +23,16 @@ func CreateProjectItems(tx *gorm.DB, parentId uint, projectitems models.SalesPro
 
 	if err := services.DbInsert(tx, &projectconditionsat); err != nil {
 		return errors.New("failed creating content child")
+	}
+
+	// Reuses the same table/service Quick Quote items already use for selected images -
+	// the column is still named quotation_quick_id, but it's just a plain FK-style int
+	// column (no DB-level constraint), and SalesProjectItems.ItemsID is a valid ID to
+	// key it by here. DbInsert sets ItemsID on the struct above, so it's available now.
+	if len(images) > 0 {
+		if err := CreateSalesQuotationSelectedImages(tx, projectitems.ItemsID, images, at); err != nil {
+			return err
+		}
 	}
 
 	return nil

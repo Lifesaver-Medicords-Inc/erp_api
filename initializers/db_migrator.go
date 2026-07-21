@@ -23,9 +23,9 @@ func MigrateAll() {
 	// migrateInventoryWarehouse()
 	// migrateEngineering()
 	// migrateSalesCrm()
-	// migrateSalesProject()
+	migrateSalesProject()
 	// migratePurchasingVendor()
-	// migrateBpi()
+	migrateBpi()
 	// migrateAccounting()
 	// migrateJobOrder()
 	migrateLogisticsDispatching()
@@ -258,19 +258,26 @@ func migrateSalesCrm() {
 // SALES PROJECT
 // ============================================
 func migrateSalesProject() {
-	// fmt.Println("=== Migrating SALES PROJECT Module ===")
-	// migrateAndLog(
-	// 	&models.SalesProjectTemplate{}, &models.SalesProjectTemplateAt{},
-	// 	&models.SalesProjectTemplateChild{}, &models.SalesProjectTemplateChildAt{},
-	// 	&models.SalesProjectMultiplier{}, &models.SalesProjectMultiplierAt{},
-	// 	&models.SalesProjectHistory{}, &models.SalesProjectHistoryAt{},
-	// 	&models.SalesProjectItemSet{}, &models.SalesProjectItemSetAt{},
-	// 	&models.SalesProjectContent{}, &models.SalesProjectContentAt{},
-	// 	&models.SalesProjectContentFinal{}, &models.SalesProjectContentFinalAt{},
-	// 	&models.SalesProjectAdvancedConditions{}, &models.SalesProjectAdvancedConditionsAt{},
-	// 	&models.SalesProjectItems{}, &models.SalesProjectItemsAt{},
-	// 	&models.SalesProjectWiring{}, &models.SalesProjectWiringAt{},
-	// )
+	fmt.Println("=== Migrating SALES PROJECT Module ===")
+	// Was fully commented out, so the live DB never picked up schema changes made to
+	// these models over time (e.g. SalesProjectContent.IsWiring, added to the struct but
+	// never applied to the actual table - "Invalid column name 'is_wiring'"). AutoMigrate
+	// is additive-only (creates missing tables/columns/indexes, never drops or alters
+	// existing data), and migrateAndLog logs+continues per model instead of aborting on
+	// a single failure, so re-enabling this is safe to run on every startup - it'll pick
+	// up is_wiring here and self-heals the same way for any other drift in this module.
+	migrateAndLog(
+		&models.SalesProjectTemplate{}, &models.SalesProjectTemplateAt{},
+		&models.SalesProjectTemplateChild{}, &models.SalesProjectTemplateChildAt{},
+		&models.SalesProjectMultiplier{}, &models.SalesProjectMultiplierAt{},
+		&models.SalesProjectHistory{}, &models.SalesProjectHistoryAt{},
+		&models.SalesProjectItemSet{}, &models.SalesProjectItemSetAt{},
+		&models.SalesProjectContent{}, &models.SalesProjectContentAt{},
+		&models.SalesProjectContentFinal{}, &models.SalesProjectContentFinalAt{},
+		&models.SalesProjectAdvancedConditions{}, &models.SalesProjectAdvancedConditionsAt{},
+		&models.SalesProjectItems{}, &models.SalesProjectItemsAt{},
+		&models.SalesProjectWiring{}, &models.SalesProjectWiringAt{},
+	)
 }
 
 // ============================================
@@ -305,8 +312,14 @@ func migrateBpi() {
 	// 	&models.BpiFinance{}, &models.BpiFinanceAt{},
 	// 	&models.BpiAccreditation{}, &models.BpiAccreditationAt{},
 	// 	&models.BpiHistory{}, &models.BpiHistoryAt{},
-	// 	&accounting_models.BpiOverpayment{}, &accounting_models.BpiOverpaymentAt{},
 	// )
+	// Only this pair is active for now - z_tbl_accounting_bpi_overpayment_at
+	// was missing AT_USER (and likely other At-embedded columns), causing
+	// "Invalid column name 'AT_USER'" on insert. The rest of the BPI module
+	// above stays untouched/commented out.
+	migrateAndLog(
+		&accounting_models.BpiOverpayment{}, &accounting_models.BpiOverpaymentAt{},
+	)
 }
 
 // ============================================
