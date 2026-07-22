@@ -1,4 +1,9 @@
-CREATE OR ALTER VIEW [dbo].[vw_get_sales_order_with_approved_ir] AS
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'vw_get_sales_order_with_approved_ir' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[vw_get_sales_order_with_approved_ir] AS SELECT 1 AS placeholder')
+END
+GO
+ALTER VIEW [dbo].[vw_get_sales_order_with_approved_ir] AS
 SELECT
 	a.order_id as sales_order_id,
     a.customer_id, 

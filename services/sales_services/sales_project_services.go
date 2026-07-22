@@ -89,6 +89,13 @@ type HeaderDiff struct {
 }
 
 type TabDiff struct {
+	// The client already resolves and sends this: the tab's real item_set_id for an
+	// existing tab, or a client-side placeholder (always > 0) for a brand-new tab that
+	// hasn't been inserted yet. It was previously not read at all here, so the server fell
+	// back to using the quotation's own id for every child record's based_id, which is
+	// wrong per SalesProjectContentContent.BasedId's own comment ("SHOULD BE THE TAB # /
+	// SET #") - see the resolution logic in UpdateSalesProject.
+	BasedId                              uint                                                   `json:"BasedId"`
 	SalesProjectHistory                  CollectionDiff[models.SalesProjectHistory]            `json:"SalesProjectHistory"`
 	SalesProjectItemSet                  CollectionDiff[models.SalesProjectItemSet]            `json:"SalesProjectItemSet"`
 	SalesProjectContent                  CollectionDiff[models.SalesProjectContent]            `json:"SalesProjectContent"`
@@ -397,33 +404,48 @@ func UpdateSalesProject(c *fiber.Ctx, tx *gorm.DB) (UpdateProjectBody, int, erro
 	// ---- TABS ----
 	for _, tab := range body.Tabs {
 
+		// ---- ITEM SET ----
+		// Resolve this tab's real item_set_id before touching any of its children. For an
+		// existing tab, tab.BasedId (sent by the client) already IS the real id. For a
+		// brand-new tab, tab.BasedId is just a client-side placeholder - applyItemSetDiff
+		// inserts the new tbl_trans_sales_project_item_set row and hands back its real,
+		// database-assigned id, which we then use for everything below instead.
+		//
+		// Previously every child record here (content/advanced conditions/items/wirings)
+		// was saved with body.ID (the quotation's own id) as its based_id, which is wrong -
+		// based_id on those tables means "which tab/item set", not "which quotation" (see
+		// the "SHOULD BE THE TAB # / SET #" comments on the model structs). That silently
+		// mis-filed every child record under the quotation id instead of the tab, and a
+		// brand-new tab's item set was never reachable at all because nothing resolved its id.
+		resolvedItemSetId := tab.BasedId
+		if newItemSetId, err := applyItemSetDiff(tx, body.ID, tab.SalesProjectItemSet, at); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		} else if newItemSetId != 0 {
+			resolvedItemSetId = newItemSetId
+		}
+
 		// ---- HISTORY ----
-		if err := applyHistoryDiff(tx, body.ID, tab.SalesProjectHistory, at); err != nil {
+		if err := applyHistoryDiff(tx, resolvedItemSetId, tab.SalesProjectHistory, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 
-		// ---- ITEM SET ----
-		if err := applyItemSetDiff(tx, body.ID, tab.SalesProjectItemSet, at); err != nil {
-			return body, fiber.StatusInternalServerError, err
-		}
-		println("Gids", tab.SalesProjectContent.Updated)
 		// ---- CONTENT ----
-		if err := applyContentDiff(tx, body.ID, tab.SalesProjectContent, at); err != nil {
+		if err := applyContentDiff(tx, resolvedItemSetId, tab.SalesProjectContent, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 
 		// ---- ADVANCED CONDITIONS ----
-		if err := applyAdvancedConditionDiff(tx, body.ID, tab.SalesProjectContentAdvancedCondition, at); err != nil {
+		if err := applyAdvancedConditionDiff(tx, resolvedItemSetId, tab.SalesProjectContentAdvancedCondition, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 
 		// ---- ITEMS ----
-		if err := applyItemsDiff(tx, body.ID, tab.SalesProjectItems, at); err != nil {
+		if err := applyItemsDiff(tx, resolvedItemSetId, tab.SalesProjectItems, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 
 		// ---- WIRINGS ----
-		if err := applyWiringsDiff(tx, body.ID, tab.SalesProjectWirings, at); err != nil {
+		if err := applyWiringsDiff(tx, resolvedItemSetId, tab.SalesProjectWirings, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
@@ -564,18 +586,27 @@ func applyHistoryDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.Sale
 	return nil
 }
 
-func applyItemSetDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.SalesProjectItemSet], at models.At) error {
+// applyItemSetDiff applies the tab's own item-set-level changes and returns the real,
+// database-assigned item_set_id when a new item set was inserted (0 if the tab already
+// existed and its item set wasn't itself Added). Callers should fall back to the tab's
+// own resolved BasedId when this returns 0.
+func applyItemSetDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.SalesProjectItemSet], at models.At) (uint, error) {
+	var newItemSetId uint
 	for _, item := range diff.Added {
 		item.BasedId = projectID
+		// The client can only ever send a placeholder here for a brand-new tab (there's no
+		// real id yet) - never trust it as a real primary key to insert with.
+		item.ItemSetID = 0
 		if err := services.DbInsert(tx, &item); err != nil {
-			return fmt.Errorf("item set add: %w", err)
+			return 0, fmt.Errorf("item set add: %w", err)
 		}
+		newItemSetId = item.ItemSetID
 	}
 	for _, item := range diff.Removed {
 		if err := services.DbDelete(tx, &models.SalesProjectItemSet{}, map[string]interface{}{
 			"item_set_id": item.ItemSetID,
 		}); err != nil {
-			return fmt.Errorf("item set remove: %w", err)
+			return 0, fmt.Errorf("item set remove: %w", err)
 		}
 	}
 	for _, entry := range diff.Updated {
@@ -583,10 +614,10 @@ func applyItemSetDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.Sa
 		if err := services.DbUpdate(tx, &entry.Item, map[string]interface{}{
 			"item_set_id": entry.Item.ItemSetID,
 		}); err != nil {
-			return fmt.Errorf("item set update: %w", err)
+			return 0, fmt.Errorf("item set update: %w", err)
 		}
 	}
-	return nil
+	return newItemSetId, nil
 }
 
 func applyContentDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.SalesProjectContent], at models.At) error {
@@ -646,8 +677,9 @@ func applyContentDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.Sale
 	return nil
 }
 
-func applyAdvancedConditionDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.SalesProjectAdvancedConditions], at models.At) error {
+func applyAdvancedConditionDiff(tx *gorm.DB, basedId uint, diff CollectionDiff[models.SalesProjectAdvancedConditions], at models.At) error {
 	for _, item := range diff.Added {
+		item.BasedId = basedId
 		if err := services.DbInsert(tx, &item); err != nil {
 			return fmt.Errorf("advanced condition add: %w", err)
 		}
@@ -669,8 +701,9 @@ func applyAdvancedConditionDiff(tx *gorm.DB, projectID uint, diff CollectionDiff
 	return nil
 }
 
-func applyItemsDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.SalesProjectItems], at models.At) error {
+func applyItemsDiff(tx *gorm.DB, basedId uint, diff CollectionDiff[models.SalesProjectItems], at models.At) error {
 	for _, item := range diff.Added {
+		item.BasedId = basedId
 		if err := services.DbInsert(tx, &item); err != nil {
 			return fmt.Errorf("item add: %w", err)
 		}
@@ -692,8 +725,9 @@ func applyItemsDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.Sale
 	return nil
 }
 
-func applyWiringsDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.SalesProjectWiring], at models.At) error {
+func applyWiringsDiff(tx *gorm.DB, basedId uint, diff CollectionDiff[models.SalesProjectWiring], at models.At) error {
 	for _, item := range diff.Added {
+		item.BasedId = basedId
 		if err := services.DbInsert(tx, &item); err != nil {
 			return fmt.Errorf("wiring add: %w", err)
 		}

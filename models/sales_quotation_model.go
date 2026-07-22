@@ -24,8 +24,8 @@ type SalesQuotationContent struct {
 	CashDiscount         float64 `json:"cash_discount"`
 	NetAmountDue         float64 `json:"net_amount_due"`
 	TotalAmountDue       float64 `json:"total_amount_due"`
-	Contact1             string  `json:"contact_1"`
-	Contact2             string  `json:"contact_2"`
+	Contact1             string  `json:"contact_1" gorm:"column:contact_1"`
+	Contact2             string  `json:"contact_2" gorm:"column:contact_2"`
 	DocumentNo           string  `json:"document_no"`
 	VersionNo            string  `json:"version_no"`
 	SubVersionNo         string  `json:"sub_version_no"`

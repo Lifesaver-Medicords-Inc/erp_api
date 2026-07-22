@@ -30,7 +30,7 @@ func DeleteFile(c *fiber.Ctx) error {
 
 func ViewFile(c *fiber.Ctx) error {
 	fileName := c.Params("filename")
-	filePath := filepath.Join("./files", fileName)
+	filePath := filepath.Join(services.FilesDir(), fileName)
 
 	file, err := os.Open(filePath)
 	if err != nil {

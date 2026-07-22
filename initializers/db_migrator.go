@@ -22,7 +22,7 @@ func MigrateAll() {
 	// migrateBomBoq()
 	// migrateInventoryWarehouse()
 	// migrateEngineering()
-	// migrateSalesCrm()
+	migrateSalesCrm()
 	migrateSalesProject()
 	// migratePurchasingVendor()
 	migrateBpi()
@@ -247,11 +247,19 @@ func migrateSalesCrm() {
 	// 	&models.CRM{}, &models.CRMAt{},
 	// 	&models.Status{}, &models.StatusAt{},
 	// 	&models.Opportunity{}, &models.OpportunityAt{},
-	// 	&models.SalesQuotation{}, &models.SalesQuotationAt{},
 	// 	&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{},
 	// 	&models.SalesQuotationSelectedImage{}, &models.SalesQuotationSelectedImageAt{},
 	// )
 	// migrateAndLog(&models.SalesCanvasSheet{})
+
+	// Only this pair is active for now - contact_1/contact_2 (SalesQuotationContent) were
+	// missing an explicit column tag, so applyQuotationFieldChanges' hand-built update map
+	// (which uses the literal keys "contact_1"/"contact_2") didn't match whatever column
+	// name GORM would otherwise assume, causing "Invalid column name 'contact_1'" on save.
+	// The rest of the Sales & CRM module above stays untouched/commented out.
+	migrateAndLog(
+		&models.SalesQuotation{}, &models.SalesQuotationAt{},
+	)
 }
 
 // ============================================
