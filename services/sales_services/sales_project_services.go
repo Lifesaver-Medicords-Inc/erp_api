@@ -557,9 +557,24 @@ func applyQuotationFieldChanges(tx *gorm.DB, id uint, fields QuotationFieldChang
 		return nil
 	}
 
-	return tx.Model(&models.SalesQuotation{}).
+	if err := tx.Model(&models.SalesQuotation{}).
 		Where("id = ?", id).
-		Updates(updates).Error
+		Updates(updates).Error; err != nil {
+		return err
+	}
+
+	// Unlike every other apply*Diff function in this file, this one updates via a raw
+	// GORM call (Updates takes a partial map, not a full model struct, so it can't go
+	// through services.DbUpdate as-is) - which means it never invalidated the
+	// SalesQuotation cache the way the others do via DbUpdate/DbInsert/DbDelete. The
+	// database write itself was always correct; the app just kept serving the
+	// pre-edit cached copy on every GET until the process restarted, e.g. an edited
+	// Application field showing the database's new value in a SQL client but not in
+	// the app's own view even after refreshing.
+	if err := services.InvalidateCache(services.GetKey(&models.SalesQuotation{}, nil)); err != nil {
+		return err
+	}
+	return services.InvalidateCacheByModel(&models.SalesQuotation{})
 }
 
 func applyHistoryDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.SalesProjectHistory], at models.At) error {
@@ -710,14 +725,14 @@ func applyItemsDiff(tx *gorm.DB, basedId uint, diff CollectionDiff[models.SalesP
 	}
 	for _, item := range diff.Removed {
 		if err := services.DbDelete(tx, &models.SalesProjectItems{}, map[string]interface{}{
-			"item_id": item.ItemID,
+			"items_id": item.ItemsID,
 		}); err != nil {
 			return fmt.Errorf("item remove: %w", err)
 		}
 	}
 	for _, entry := range diff.Updated {
 		if err := services.DbUpdate(tx, &entry.Item, map[string]interface{}{
-			"item_id": entry.Item.ItemID,
+			"items_id": entry.Item.ItemsID,
 		}); err != nil {
 			return fmt.Errorf("item update: %w", err)
 		}
