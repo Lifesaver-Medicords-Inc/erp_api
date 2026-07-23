@@ -13,6 +13,11 @@ import (
 func CreateSalesProjectMultiplier(tx *gorm.DB, parentId uint, multiplier models.SalesProjectMultiplier, at models.At) error {
 	multiplier.BasedId = parentId
 
+	// Same fix as CreateProjectItemSet's ItemSetID = 0 - MultiplierID is client-controlled on
+	// the wire, but this function only ever creates a brand new row. Always let the DB assign
+	// a fresh id instead of trusting whatever (possibly stale/leftover) id the client sent.
+	multiplier.MultiplierID = 0
+
 	if err := services.DbInsert(tx, &multiplier); err != nil {
 		fmt.Println(err)
 		fmt.Println("ERR", &multiplier)
@@ -45,6 +50,9 @@ func applyMultiplierDiff(tx *gorm.DB, Id uint, diff CollectionDiff[models.SalesP
 	// ---- ADDED ----
 	for _, item := range diff.Added {
 		item.BasedId = Id
+		// Same reason as CreateProjectContent's ContentID = 0 - always let the DB assign a
+		// fresh id for anything landing in Added, never trust a client-sent MultiplierID.
+		item.MultiplierID = 0
 		if err := services.DbInsert(tx, &item); err != nil {
 			return fmt.Errorf("multiplier add: %w", err)
 		}

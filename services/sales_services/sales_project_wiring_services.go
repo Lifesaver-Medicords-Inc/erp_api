@@ -11,6 +11,11 @@ import (
 func CreateProjectWiring(tx *gorm.DB, parentId uint, projectwiring models.SalesProjectWiring, at models.At) error {
 	projectwiring.BasedId = parentId
 
+	// Same fix as CreateProjectItemSet's ItemSetID = 0 - ID is client-controlled on the wire,
+	// but this function only ever creates a brand new row. Always let the DB assign a fresh id
+	// instead of trusting whatever (possibly stale/leftover) id the client sent.
+	projectwiring.ID = 0
+
 	if err := services.DbInsert(tx, &projectwiring); err != nil {
 		return errors.New("failed creating project wirings")
 	}

@@ -11,6 +11,11 @@ import (
 func CreateProjectItems(tx *gorm.DB, parentId uint, projectitems models.SalesProjectItems, images []models.SalesQuotationSelectedImage, at models.At) error {
 	projectitems.BasedId = parentId
 
+	// Same fix as CreateProjectItemSet's ItemSetID = 0 - ItemsID is client-controlled on the
+	// wire, but this function only ever creates a brand new item row. Always let the DB assign
+	// a fresh id instead of trusting whatever (possibly stale/leftover) id the client sent.
+	projectitems.ItemsID = 0
+
 	if err := services.DbInsert(tx, &projectitems); err != nil {
 		return errors.New("failed creating project items")
 	}

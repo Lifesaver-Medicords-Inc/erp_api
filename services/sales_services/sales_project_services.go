@@ -86,6 +86,11 @@ type UpdateProjectBody struct {
 type HeaderDiff struct {
 	QuotationFields QuotationFieldChanges                         `json:"QuotationFields"`
 	Multipliers     CollectionDiff[models.SalesProjectMultiplier] `json:"Multipliers"`
+	// Change History entries generated client-side for edits that aren't scoped to any
+	// one tab (top-part header fields like project name, and the multipliers grid) -
+	// applied the same way as a tab's SalesProjectHistory, just keyed to the quotation's
+	// own id (body.ID) instead of a tab's item_set_id.
+	SalesProjectHistory CollectionDiff[models.SalesProjectHistory] `json:"SalesProjectHistory"`
 }
 
 type TabDiff struct {
@@ -401,6 +406,11 @@ func UpdateSalesProject(c *fiber.Ctx, tx *gorm.DB) (UpdateProjectBody, int, erro
 		return body, fiber.StatusInternalServerError, err
 	}
 
+	// ---- HEADER-LEVEL HISTORY (project name/other top fields + multipliers) ----
+	if err := applyHistoryDiff(tx, body.ID, body.Header.SalesProjectHistory, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
 	// ---- TABS ----
 	for _, tab := range body.Tabs {
 
@@ -580,6 +590,11 @@ func applyQuotationFieldChanges(tx *gorm.DB, id uint, fields QuotationFieldChang
 func applyHistoryDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.SalesProjectHistory], at models.At) error {
 	for _, item := range diff.Added {
 		item.BasedId = BasedId
+		// Same reason as CreateProjectContent's ContentID = 0 - always let the DB assign a
+		// fresh id for anything landing in Added, never trust a client-sent HistoryID. The
+		// auto-generated Change History entries always send 0 here anyway, but this closes
+		// off the same class of collision for any future caller that doesn't.
+		item.HistoryID = 0
 		if err := services.DbInsert(tx, &item); err != nil {
 			return fmt.Errorf("history add: %w", err)
 		}
@@ -643,6 +658,12 @@ func applyContentDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.Sale
 	// ---- ADDED ----
 	for _, item := range diff.Added {
 		item.BasedId = BasedId
+		// Same reason as CreateProjectContent's ContentID = 0 - a "new" content row can still
+		// carry a stale/leftover ContentID from the client (e.g. a UI control that wasn't
+		// cleared for a brand-new tab), which would force GORM into an explicit
+		// IDENTITY_INSERT with that id and risk a PRIMARY KEY collision. Always let the DB
+		// assign a fresh id for anything landing in Added.
+		item.ContentID = 0
 		if err := services.DbInsert(tx, &item); err != nil {
 			return fmt.Errorf("content add: %w", err)
 		}
@@ -695,6 +716,9 @@ func applyContentDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.Sale
 func applyAdvancedConditionDiff(tx *gorm.DB, basedId uint, diff CollectionDiff[models.SalesProjectAdvancedConditions], at models.At) error {
 	for _, item := range diff.Added {
 		item.BasedId = basedId
+		// Same reason as CreateProjectContent's ContentID = 0 - always let the DB assign a
+		// fresh id for anything landing in Added, never trust a client-sent ConditionsID.
+		item.ConditionsID = 0
 		if err := services.DbInsert(tx, &item); err != nil {
 			return fmt.Errorf("advanced condition add: %w", err)
 		}
@@ -719,6 +743,9 @@ func applyAdvancedConditionDiff(tx *gorm.DB, basedId uint, diff CollectionDiff[m
 func applyItemsDiff(tx *gorm.DB, basedId uint, diff CollectionDiff[models.SalesProjectItems], at models.At) error {
 	for _, item := range diff.Added {
 		item.BasedId = basedId
+		// Same reason as CreateProjectContent's ContentID = 0 - always let the DB assign a
+		// fresh id for anything landing in Added, never trust a client-sent ItemsID.
+		item.ItemsID = 0
 		if err := services.DbInsert(tx, &item); err != nil {
 			return fmt.Errorf("item add: %w", err)
 		}
@@ -743,6 +770,9 @@ func applyItemsDiff(tx *gorm.DB, basedId uint, diff CollectionDiff[models.SalesP
 func applyWiringsDiff(tx *gorm.DB, basedId uint, diff CollectionDiff[models.SalesProjectWiring], at models.At) error {
 	for _, item := range diff.Added {
 		item.BasedId = basedId
+		// Same reason as CreateProjectContent's ContentID = 0 - always let the DB assign a
+		// fresh id for anything landing in Added, never trust a client-sent ID.
+		item.ID = 0
 		if err := services.DbInsert(tx, &item); err != nil {
 			return fmt.Errorf("wiring add: %w", err)
 		}

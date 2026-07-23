@@ -11,6 +11,11 @@ import (
 func CreateProjectAdvancedConditions(tx *gorm.DB, parentId uint, ProjectConditions models.SalesProjectAdvancedConditions, at models.At) error {
 	ProjectConditions.BasedId = parentId
 
+	// Same fix as CreateProjectItemSet's ItemSetID = 0 - ConditionsID is client-controlled on
+	// the wire, but this function only ever creates a brand new row. Always let the DB assign
+	// a fresh id instead of trusting whatever (possibly stale/leftover) id the client sent.
+	ProjectConditions.ConditionsID = 0
+
 	if err := services.DbInsert(tx, &ProjectConditions); err != nil {
 		return errors.New("failed creating project advanced conditions")
 	}
