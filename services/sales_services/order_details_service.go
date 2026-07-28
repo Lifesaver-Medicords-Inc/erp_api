@@ -102,6 +102,17 @@ func UpdateSalesOrderDetails(tx *gorm.DB, orderdetails models.OrderDetails, at m
 
 	fmt.Printf("Fetched existing order details: %+v\n", existing)
 
+	// This function is only ever called from the Purchasing module (creating/
+	// cancelling a PO against a sales order line - see purchase_order_service.go),
+	// whose request payload has no concept of item_set_header at all. DbUpdate
+	// below does a full-column UpdateColumns, which (unlike GORM's Updates)
+	// writes every field including zero values - so without this, every PO
+	// create/update against a line item would silently blank out the itemset
+	// header label captured when the sales order was saved. Purchasing should
+	// never be able to touch this field, so always carry the existing value
+	// forward regardless of what's on the incoming struct.
+	orderdetails.ItemSetHeader = existing.ItemSetHeader
+
 	if status == "CANCELLED" && mode == "update" {
 		fmt.Println("ORDER DATA: ", orderdetails)
 

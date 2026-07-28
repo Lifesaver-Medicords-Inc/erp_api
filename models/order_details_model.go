@@ -17,6 +17,15 @@ type OrderDetailsContent struct {
 	AllocatedQty       *int    `json:"allocated_qty"`
 	OrderType          string  `json:"order_type"`
 	BomId              uint    `json:"bom_id"`
+	// Dynamic label of the itemset "tab" (from the source project quotation, e.g.
+	// tbl_trans_sales_project_item_set.tab_number) that this line item belongs to.
+	// Populated only for orders converted from a project quotation; blank/empty for
+	// everything else. Kept on each real item row (rather than saving the itemset
+	// header itself as its own row) because header rows carry item_id = 0, which
+	// violates the item_id foreign key on this table - see the skip in Orders.cs's
+	// save handler. Printing reconstructs the header rows from this column by
+	// grouping consecutive rows that share the same value.
+	ItemSetHeader      string  `json:"item_set_header"`
 	Item               *Item   `json:"item"`
 	Order              *Order  `gorm:"foreignKey:Based_ID;references:Order_ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"order,omitempty"`
 }

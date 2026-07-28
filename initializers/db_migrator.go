@@ -260,6 +260,14 @@ func migrateSalesCrm() {
 	migrateAndLog(
 		&models.SalesQuotation{}, &models.SalesQuotationAt{},
 	)
+
+	// OrderDetailsContent gained ItemSetHeader (item_set_header) so project-sourced
+	// order lines can carry their itemset tab name for print reconstruction. AutoMigrate
+	// is additive-only (adds the missing column, doesn't touch existing rows/data), so
+	// running this on every startup is safe - same reasoning as migrateSalesProject.
+	migrateAndLog(
+		&models.OrderDetails{}, &models.OrderDetailsAt{},
+	)
 }
 
 // ============================================
