@@ -5,4 +5,6 @@ SELECT u.id,
     u.first_name + ' ' + u.last_name AS full_name,
     u.department
 FROM tbl_setup_users u
-WHERE department = 'Engineering'
+    LEFT JOIN tbl_position p ON u.position_id = p.id
+WHERE UPPER(LTRIM(RTRIM(ISNULL(u.department, '')))) = 'ENGINEERING'
+    OR UPPER(LTRIM(RTRIM(ISNULL(p.name, '')))) = 'ENGINEER'
