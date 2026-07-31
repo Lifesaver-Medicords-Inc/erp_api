@@ -252,6 +252,80 @@ func (s *ItemStockService) RestoreStockWithTx(tx *gorm.DB, body *inventory_model
 	return &existing, nil
 }
 
+// GetItemStocksList returns every tbl_inv_item_stocks row (one per item+warehouse+bin),
+// joined with item code/name/brand and warehouse name so the Inventory Item Stocks module
+// (and any other caller, e.g. Sales Order's stock check) doesn't have to re-resolve IDs
+// itself. No existing DB view already does this join against the live table - the
+// pre-existing inventory views are built on the separate legacy tbl_inv_stocks_location
+// table, which the current Receiving Report flow doesn't write to.
+func (s *ItemStockService) GetItemStocksList() ([]inventory_models.ItemStockListView, int, error) {
+	var response []inventory_models.ItemStockListView
+
+	query := `
+		SELECT its.id, its.item_id, b.item_code,
+		       ISNULL(c.name, '') AS item_name,
+		       ISNULL(d.name, '') AS brand,
+		       its.warehouse_id, ISNULL(w.name, '') AS warehouse_name,
+		       its.bin_location, its.stock_qty, its.stock_uom, its.is_active
+		FROM tbl_inv_item_stocks its
+		LEFT JOIN tbl_setup_item b ON its.item_id = b.id
+		LEFT JOIN tbl_setup_item_name c ON b.item_name_id = c.id
+		LEFT JOIN tbl_setup_item_brand d ON b.item_brand_id = d.id
+		LEFT JOIN tbl_inv_warehouse_name w ON its.warehouse_id = w.id
+		ORDER BY ISNULL(c.name, ''), its.bin_location
+	`
+
+	if err := initializers.DB.Raw(query).Scan(&response).Error; err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed getting item stocks list")
+	}
+
+	return response, fiber.StatusOK, nil
+}
+
+// AdjustItemStock is a manual correction, distinct from UpsertStockWithTx/DeductStockWithTx
+// (which add/subtract a delta as part of a receiving/issuing transaction) - this SETS
+// stock_qty directly to whatever the user physically counted, and always writes an audit
+// entry (with Remarks) so the correction is traceable later.
+func (s *ItemStockService) AdjustItemStock(body *inventory_models.ItemStockAdjustmentBody, at models.At) (*inventory_models.ItemStocks, int, error) {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+	}
+	defer tx.Rollback()
+
+	var existing inventory_models.ItemStocks
+	if err := tx.Where("id = ?", body.ID).First(&existing).Error; err != nil {
+		return nil, fiber.StatusNotFound, errors.New("no stock record found for this bin")
+	}
+
+	newQty := body.NewQty
+	existing.StockQty = &newQty
+	s.SetActiveStatus(&existing)
+
+	if err := services.DbUpdate(tx, &existing, map[string]interface{}{"id": existing.ID}); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed updating item stock")
+	}
+
+	atdata := inventory_models.ItemStocksAt{
+		RefId:             existing.ID,
+		SourceType:        "manual_adjustment",
+		Remarks:           body.Remarks,
+		ItemStocksContent: existing.ItemStocksContent,
+		At:                at,
+	}
+
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed creating item stock audit record")
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	invalidateCaches()
+	return &existing, fiber.StatusOK, nil
+}
+
 // setActiveStatus sets IsActive to true when StockQty > 0, false when zero.
 // Pointer bool ensures GORM persists false without treating it as a zero-value omission.
 func (s *ItemStockService) SetActiveStatus(stock *inventory_models.ItemStocks) {

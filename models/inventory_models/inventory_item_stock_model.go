@@ -27,10 +27,41 @@ type ItemStocksAt struct {
 	Code       string `json:"code"`
 	SourceId   uint   `json:"source_id"`
 	SourceType string `json:"source_type"`
+	// Only meaningful on manual adjustments made from the Inventory Item Stocks module
+	// (see AdjustItemStock) - lets the audit trail record WHY a balance was corrected by
+	// hand (e.g. "physical count", "damaged goods"), not just what it changed to. Left
+	// blank for every other source (receiving, pick activity, etc.).
+	Remarks string `json:"remarks"`
 	ItemStocksContent
 	models.At
 }
 
 func (ItemStocksAt) TableName() string {
 	return "z_tbl_inv_item_stocks_at"
+}
+
+// ItemStockListView is the display shape for the Inventory Item Stocks module's list
+// screen (and any other caller, e.g. Sales Order's stock check) - one row per
+// item+warehouse+bin, joined with human-readable item/warehouse names instead of raw IDs.
+type ItemStockListView struct {
+	ID            uint   `json:"id"`
+	ItemId        uint   `json:"item_id"`
+	ItemCode      string `json:"item_code"`
+	ItemName      string `json:"item_name"`
+	Brand         string `json:"brand"`
+	WarehouseId   uint   `json:"warehouse_id"`
+	WarehouseName string `json:"warehouse_name"`
+	BinLocation   string `json:"bin_location"`
+	StockQty      int    `json:"stock_qty"`
+	StockUom      string `json:"stock_uom"`
+	IsActive      bool   `json:"is_active"`
+}
+
+// ItemStockAdjustmentBody is the request body for a manual stock correction. Unlike the
+// receive/deduct flows elsewhere in this package (which add/subtract a delta as part of a
+// transaction), this SETS stock_qty directly to whatever the user physically counted.
+type ItemStockAdjustmentBody struct {
+	ID      uint   `json:"id"`
+	NewQty  int    `json:"new_qty"`
+	Remarks string `json:"remarks"`
 }

@@ -27,6 +27,10 @@ func init() {
 	initializers.ConnectDb()
 	initializers.MigrateAll()
 	initializers.MigrateModel("accounting")
+	// Only adds the new z_tbl_inv_item_stocks_at.remarks column (see migrateInventoryWarehouse) -
+	// migrateInventoryWarehouse() itself is otherwise all commented out, so this doesn't touch
+	// any of the other legacy inventory models still sitting in that block.
+	initializers.MigrateModel("inventory")
 	initializers.InitRedis()
 	initializers.InitWm()
 	initializers.InitWm2()

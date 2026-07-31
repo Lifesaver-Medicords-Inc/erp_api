@@ -8,6 +8,7 @@ import (
 	"github.com/pierceperado/smpc/models"
 	accounting_models "github.com/pierceperado/smpc/models/accounting_models"
 	dispatching_models "github.com/pierceperado/smpc/models/dispatching_model"
+	inventory_models "github.com/pierceperado/smpc/models/inventory_models"
 )
 
 // models "github.com/pierceperado/smpc/models"
@@ -174,6 +175,12 @@ func migrateInventoryWarehouse() {
 	// 	&models.InventoryStocksHistory{}, &models.InventoryStocksHistoryAt{},
 	//	&inventory_models.ItemStocks{}, &inventory_models.ItemStocksAt{},
 	// )
+	// Scoped narrowly to just the new Remarks column on the audit table (added for the
+	// Inventory Item Stocks manual-adjustment feature) - not the broader commented-out
+	// block above, which covers several other legacy models this isn't touching.
+	migrateAndLog(
+		&inventory_models.ItemStocksAt{},
+	)
 	// migrateAndLog(
 	//	&inventory_models.ReceivingReport{}, &inventory_models.ReceivingReportAt{},
 	//	&inventory_models.ReceivingReportDetails{}, &inventory_models.ReceivingReportDetailsAt{},

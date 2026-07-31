@@ -2,7 +2,9 @@ package routes
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/handlers/item_stock_handlers"
 	"github.com/pierceperado/smpc/handlers/receiving_report_handlers"
+	"github.com/pierceperado/smpc/services/item_stock_services"
 	"github.com/pierceperado/smpc/services/receiving_report_services"
 )
 
@@ -10,6 +12,13 @@ func InventoryRoutes(router fiber.Router) {
 	inventoryApi := router.Group("/inventory")
 
 	setupReceivingReportRoutes(inventoryApi)
+	setupItemStockRoutes(inventoryApi)
+}
+
+func setupItemStockRoutes(api fiber.Router) {
+	handler := item_stock_handlers.NewItemStockHandler(item_stock_services.NewItemStockService())
+	api.Get("/item_stocks", handler.GetItemStocksList)
+	api.Put("/item_stocks", handler.AdjustItemStock)
 }
 
 func setupReceivingReportRoutes(api fiber.Router) {
