@@ -269,12 +269,26 @@ func UpdateFinalizeQuote(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
+	// Guard: without a valid id, DbUpdate's implicit primary-key match falls
+	// through to an unconditioned UPDATE that touches every row in the table.
+	// Fail fast instead of silently overwriting the whole quotation list.
+	if body.SalesQuotation.ID == 0 {
+		return body, fiber.StatusBadRequest, errors.New("missing or invalid quotation id")
+	}
+
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
 		at = models.At{}
 	}
 
-	if err := UpdateQuotationQuick(tx, body.SalesQuotation, at, conditions); err != nil {
+	// Always scope the update to this specific id explicitly, rather than
+	// relying solely on GORM's implicit primary-key condition.
+	updateConditions := map[string]interface{}{"id": body.SalesQuotation.ID}
+	for k, v := range conditions {
+		updateConditions[k] = v
+	}
+
+	if err := UpdateQuotationQuick(tx, body.SalesQuotation, at, updateConditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 
