@@ -28,8 +28,10 @@ type FinalizeBody struct {
 
 type Body struct {
 	models.SalesQuotation
-	// Child 1
-	SalesQuotationQuick models.SalesQuotationQuick `json:"sales_quotation_quick"`
+	// Child 1 - must be a slice: a quotation normally has multiple line
+	// items, and GORM's Find into a single struct scans each matching row
+	// into the same destination, silently keeping only the last one.
+	SalesQuotationQuick []models.SalesQuotationQuick `json:"sales_quotation_quick"`
 }
 
 type CreateBody struct {
@@ -136,7 +138,7 @@ func GetSalesQuotation(id int) (Body, int, error) {
 	}
 
 	// Child 1
-	if err := GetSalesQuotationQuick(&record.SalesQuotationQuick, conditions); err != nil {
+	if err := GetSalesQuotationQuicks(&record.SalesQuotationQuick, conditions); err != nil {
 		return record, fiber.StatusInternalServerError, err
 	}
 
