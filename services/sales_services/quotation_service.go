@@ -118,6 +118,13 @@ func GetSalesQuotation(id int) (Body, int, error) {
 		return record, fiber.StatusInternalServerError, errors.New("failed getting quotation")
 	}
 
+	// DbGet uses GORM's Find, which does not error when nothing matches, so
+	// a nonexistent id would otherwise fall through and report success with
+	// an empty record. Check explicitly and report 404 instead.
+	if record.SalesQuotation.ID == 0 {
+		return record, fiber.StatusNotFound, errors.New("quotation not found")
+	}
+
 	conditions = map[string]interface{}{
 		// based on parent ID
 		"based_id": record.ID,
@@ -203,6 +210,10 @@ func GetBpi(id int) (CustomerBody, int, error) {
 		return record, fiber.StatusInternalServerError, errors.New("failed getting quotation")
 	}
 
+	if record.Bpi.ID == 0 {
+		return record, fiber.StatusNotFound, errors.New("bpi not found")
+	}
+
 	conditions = map[string]interface{}{
 		"based_id": record.ID,
 	}
@@ -257,6 +268,11 @@ func GetItem(id int) (ItemBody, int, error) {
 	if err := services.DbGet(&record.ItemName, conditions); err != nil {
 		return record, fiber.StatusInternalServerError, err
 	}
+
+	if record.ItemName.ID == 0 {
+		return record, fiber.StatusNotFound, errors.New("item not found")
+	}
+
 	return record, 0, nil
 }
 
