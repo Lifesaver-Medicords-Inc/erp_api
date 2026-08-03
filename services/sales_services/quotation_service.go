@@ -19,6 +19,11 @@ type CustomerBody struct {
 
 type FinalizeBody struct {
 	models.SalesQuotation
+	// Child 1 - previously omitted, so any line-item edits sent alongside a
+	// PUT /sales/quotation request were parsed away by BodyParser and
+	// silently never persisted, even though the request appeared to
+	// succeed. Line items are only synced if this is present in the body.
+	SalesQuotationQuickWithImages []SalesQuotationQuickWithImages `json:"sales_quotation_quick"`
 }
 
 type Body struct {
@@ -306,6 +311,23 @@ func UpdateFinalizeQuote(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 
 	if err := UpdateQuotationQuick(tx, body.SalesQuotation, at, updateConditions); err != nil {
 		return body, fiber.StatusInternalServerError, err
+	}
+
+	// Sync any line items sent alongside the header: existing rows (id set)
+	// get updated in place, new rows (id zero) get inserted.
+	for _, v := range body.SalesQuotationQuickWithImages {
+		quick := v.SalesQuotationQuick
+		if quick.ID == 0 {
+			if err := CreateSalesQuotationQuick(tx, body.SalesQuotation.ID, quick, v.QuickSelectedImage, at); err != nil {
+				return body, fiber.StatusInternalServerError, err
+			}
+			continue
+		}
+
+		itemConditions := map[string]interface{}{"id": quick.ID}
+		if err := UpdateSalesQuotationQuick(tx, quick, at, itemConditions); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
 	}
 
 	return body, 0, nil
