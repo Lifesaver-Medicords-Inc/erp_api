@@ -73,7 +73,7 @@ func UpdateQuotationQuickSelectedImage(tx *gorm.DB, basedId uint, SalesQuotation
 		At:                                 at,
 	}
 
-	if err := services.DbInsert(tx, quotationquickselectedimageat); err != nil {
+	if err := services.DbInsert(tx, &quotationquickselectedimageat); err != nil {
 		return errors.New("failed creating quotationquickselectedimageat")
 	}
 
