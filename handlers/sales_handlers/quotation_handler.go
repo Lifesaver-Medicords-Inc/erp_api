@@ -18,7 +18,7 @@ func GetSalesQuotations(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 func GetLatestQuotations(c *fiber.Ctx) error {
-	data, status, err := sales_services.GetSalesQuotations(nil)
+	data, status, err := sales_services.GetLatestQuotations(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
