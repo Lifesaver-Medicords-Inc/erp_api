@@ -46,8 +46,11 @@ func CreateSalesQuotationSelectedImages(tx *gorm.DB, parentQuickId uint, images 
 		}
 
 		// also insert into the *_At table for tracking
+		// RefId must point back to the row just inserted above (img.ID),
+		// not img.ImageId (a foreign key to an unrelated images entity) -
+		// using ImageId broke history/audit lookups for this table.
 		imgAt := models.SalesQuotationSelectedImageAt{
-			RefId:                              img.ImageId,
+			RefId:                              img.ID,
 			SalesQuotationSelectedImageContent: img.SalesQuotationSelectedImageContent,
 			At:                                 at,
 		}
