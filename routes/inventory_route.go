@@ -18,6 +18,7 @@ func InventoryRoutes(router fiber.Router) {
 func setupItemStockRoutes(api fiber.Router) {
 	handler := item_stock_handlers.NewItemStockHandler(item_stock_services.NewItemStockService())
 	api.Get("/item_stocks", handler.GetItemStocksList)
+	api.Post("/item_stocks", handler.InsertItemStock)
 	api.Put("/item_stocks", handler.AdjustItemStock)
 }
 
