@@ -460,6 +460,13 @@ func UpdateSalesProject(c *fiber.Ctx, tx *gorm.DB) (UpdateProjectBody, int, erro
 		}
 	}
 
+	// NOTE: the "quotation_saved" broadcast deliberately does NOT happen here. This function
+	// runs inside the caller's still-open transaction (see UpdateSalesProject in
+	// sales_project_handler.go, which calls tx.Commit() after this returns) - broadcasting
+	// before that commit could notify another client to refresh before this save is actually
+	// durable, racing them into re-reading pre-commit (or, worse, rolled-back) data. The
+	// broadcast happens in the handler, after tx.Commit() succeeds.
+
 	return body, fiber.StatusOK, nil
 }
 

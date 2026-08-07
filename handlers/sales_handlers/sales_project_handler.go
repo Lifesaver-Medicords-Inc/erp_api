@@ -85,6 +85,20 @@ func UpdateSalesProject(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
+	// Let anyone else with this same project quotation open know a save just happened, so
+	// their client can refresh instead of waiting for its next 5-minute poll. Only fired once
+	// the transaction has actually committed, so a notified client re-reading now always sees
+	// this save, never a half-applied or rolled-back one. Scoped to this project's own WS
+	// channel (see BroadcastToProject/WM3), so only viewers of this exact record get notified.
+	// Best-effort: the save itself already succeeded above, so a broadcast failure (e.g. no
+	// one currently connected) is only logged, never turned into a failed response.
+	if err := services.BroadcastToProject("Sales", fmt.Sprint(data.ID), map[string]interface{}{
+		"event": "quotation_saved",
+		"id":    data.ID,
+	}); err != nil {
+		fmt.Println("Error broadcasting project update:", err)
+	}
+
 	return utils.RespondSuccess(c, data)
 }
 
@@ -235,6 +249,22 @@ func UpdateProjectCondition(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
+	// Same reasoning as UpdateProjectContent below - Advanced Conditions saves through its
+	// own endpoint too, separately from the main "Save" button, and
+	// data.SalesProjectContentAdvancedCondition.BasedId is the item set/tab id, not the
+	// quotation id, so resolve the real quotation id through the item set before notifying.
+	var itemSet models.SalesProjectItemSet
+	if err := initializers.DB.Where("item_set_id = ?", data.SalesProjectContentAdvancedCondition.BasedId).First(&itemSet).Error; err == nil {
+		if err := services.BroadcastToProject("Sales", fmt.Sprint(itemSet.BasedId), map[string]interface{}{
+			"event": "quotation_saved",
+			"id":    itemSet.BasedId,
+		}); err != nil {
+			fmt.Println("Error broadcasting project condition update:", err)
+		}
+	} else {
+		fmt.Println("Error resolving quotation id for condition broadcast:", err)
+	}
+
 	return utils.RespondSuccess(c, data)
 }
 
@@ -259,6 +289,26 @@ func UpdateProjectContent(c *fiber.Ctx) error {
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+	}
+
+	// Content fields (Flow/Head/Voltage/RPM/HP/Phase/etc.) save through this endpoint
+	// separately from the main "Save" button (UpdateSalesProject above) - without this, an
+	// edit made through this path never notified other viewers at all. data.BasedId here is
+	// the item set/tab id, not the quotation id (see the "SHOULD BE THE TAB # / SET #" note
+	// on SalesProjectContentContent.BasedId) - resolve the actual quotation id through the
+	// item set so the broadcast reaches viewers of the right project. Queried against
+	// initializers.DB (not tx - the transaction is already committed and done at this point),
+	// after the commit above, for the same reason as UpdateSalesProject's broadcast.
+	var itemSet models.SalesProjectItemSet
+	if err := initializers.DB.Where("item_set_id = ?", data.BasedId).First(&itemSet).Error; err == nil {
+		if err := services.BroadcastToProject("Sales", fmt.Sprint(itemSet.BasedId), map[string]interface{}{
+			"event": "quotation_saved",
+			"id":    itemSet.BasedId,
+		}); err != nil {
+			fmt.Println("Error broadcasting project content update:", err)
+		}
+	} else {
+		fmt.Println("Error resolving quotation id for content broadcast:", err)
 	}
 
 	return utils.RespondSuccess(c, data)
