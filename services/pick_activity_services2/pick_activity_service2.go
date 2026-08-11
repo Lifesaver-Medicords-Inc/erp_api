@@ -183,6 +183,13 @@ func (s *PickActivityService) CreatePickActivityDetails(tx *gorm.DB, body *inven
 // CreatePickActivityLocations upserts locations for a single detail line.
 // Called only from UpdatePickActivityDetails — never standalone.
 func (s *PickActivityService) CreatePickActivityLocations(tx *gorm.DB, detail *inventory_models.PickActivityDetails, locations []inventory_models.PickActivityLocations, at models.At) error {
+	// detail.PickActivityId IS the Pick Activity header's own primary key, so it can be
+	// used directly as the ledger's source_id — no extra lookup needed for that part.
+	// DocNo isn't on the detail row though, so fetch it once here for a readable note.
+	var paDocNo int
+	tx.Model(&inventory_models.PickActivity{}).Select("doc_no").Where("id = ?", detail.PickActivityId).Scan(&paDocNo)
+	paRemarks := fmt.Sprintf("Pick Activity #%d", paDocNo)
+
 	for i := range locations {
 		loc := &locations[i]
 
@@ -218,8 +225,9 @@ func (s *PickActivityService) CreatePickActivityLocations(tx *gorm.DB, detail *i
 		}
 
 		stockAtBody := &inventory_models.ItemStocksAt{
-			SourceId:   detail.ID,
+			SourceId:   detail.PickActivityId,
 			SourceType: "pick_activity",
+			Remarks:    paRemarks,
 		}
 
 		if _, err := s.stockService.DeductStockWithTx(tx, stockBody, stockAtBody, at); err != nil {
@@ -300,11 +308,12 @@ func (s *PickActivityService) UpdatePickActivityDetails(tx *gorm.DB, body *inven
 			}
 
 			stockAtBody := &inventory_models.ItemStocksAt{
-				SourceId:   detail.ID,
+				SourceId:   body.PickActivity.ID,
 				SourceType: "pick_activity",
+				Remarks:    fmt.Sprintf("Pick Activity #%d", body.PickActivity.DocNo),
 			}
 
-			if _, err := s.stockService.UpsertStockWithTx(tx, stockBody, stockAtBody, at); err != nil {
+			if _, err := s.stockService.UpsertStockWithTx(tx, stockBody, stockAtBody, at, nil); err != nil {
 				return fmt.Errorf("failed upserting inventory stock for item %d: %w", detail.ItemId, err)
 			}
 		}
@@ -359,6 +368,12 @@ func (s *PickActivityService) DeletePickActivity(body *inventory_models.PickActi
 func (s *PickActivityService) DeletePickActivityDetails(tx *gorm.DB, body *inventory_models.PickActivityBody, at models.At) error {
 	pickActivityId := body.PickActivity.ID
 
+	// Delete requests typically only carry the Pick Activity's ID, not its DocNo, so
+	// fetch the doc number once here rather than showing "#0" in the ledger notes below.
+	var paDocNo int
+	tx.Model(&inventory_models.PickActivity{}).Select("doc_no").Where("id = ?", pickActivityId).Scan(&paDocNo)
+	paDeletionRemarks := fmt.Sprintf("Pick Activity #%d (deleted)", paDocNo)
+
 	// --- 1. Fetch locations BEFORE deleting (need data for audit + stock restore) ---
 	var deletedLocations []inventory_models.PickActivityLocations
 	if err := tx.Unscoped().
@@ -384,8 +399,9 @@ func (s *PickActivityService) DeletePickActivityDetails(tx *gorm.DB, body *inven
 			},
 		}
 		stockAtBody := &inventory_models.ItemStocksAt{
-			SourceId:   loc.PickActivityDetailsId,
+			SourceId:   pickActivityId,
 			SourceType: "pick_activity_deletion",
+			Remarks:    paDeletionRemarks,
 		}
 		if _, err := s.stockService.RestoreStockWithTx(tx, stockBody, stockAtBody, at); err != nil {
 			return fmt.Errorf("failed restoring stock for location %d (bin %d): %w", loc.ID, loc.BinId, err)
@@ -415,8 +431,16 @@ func (s *PickActivityService) DeletePickActivityDetails(tx *gorm.DB, body *inven
 		).First(&stock).Error
 
 		if err == nil {
+			// Known gap, not fixed here: doesn't touch tbl_inv_stock_lots (this Upsert
+			// created a lot via UpsertStockWithTx when ActualQty > 0 - see
+			// UpdatePickActivityDetails above). Same class of gap as
+			// receiving_report_service.go's equivalent block.
 			*stock.StockQty -= detail.ActualQty
 			s.stockService.SetActiveStatus(&stock) // flips IsActive to false if qty hits zero
+
+			if err := services.SetStockAuditContext(tx, "pick_activity_delete", pickActivityId, paDeletionRemarks, nil); err != nil {
+				return errors.New("failed setting stock audit context")
+			}
 
 			if err := services.DbUpdate(tx, &stock, map[string]interface{}{"id": stock.ID}); err != nil {
 				return errors.New("failed reversing inventory stock for deleted detail")
@@ -425,8 +449,9 @@ func (s *PickActivityService) DeletePickActivityDetails(tx *gorm.DB, body *inven
 			// Audit the reversal
 			atStock := inventory_models.ItemStocksAt{
 				RefId:             stock.ID,
-				SourceId:          detail.ID,
+				SourceId:          pickActivityId,
 				SourceType:        "pick_activity_delete",
+				Remarks:           paDeletionRemarks,
 				ItemStocksContent: stock.ItemStocksContent,
 				At:                at,
 			}

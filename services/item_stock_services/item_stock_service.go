@@ -28,7 +28,7 @@ func (s *ItemStockService) InsertItemStock(body *inventory_models.ItemStocks, at
 	}
 	defer tx.Rollback()
 
-	result, err := s.UpsertStockWithTx(tx, body, atBody, at)
+	result, err := s.UpsertStockWithTx(tx, body, atBody, at, nil)
 	if err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
@@ -68,6 +68,10 @@ func (s *ItemStockService) UpdateItemStock(body *inventory_models.ItemStocks, at
 	*existing.StockQty -= *body.StockQty
 	s.SetActiveStatus(&existing)
 
+	if err := services.SetStockAuditContext(tx, atBody.SourceType, atBody.SourceId, atBody.Remarks, nil); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed setting stock audit context")
+	}
+
 	if err := services.DbUpdate(tx, &existing, map[string]interface{}{"id": existing.ID}); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			return body, fiber.StatusConflict, errors.New("duplicate record error")
@@ -95,8 +99,12 @@ func (s *ItemStockService) UpdateItemStock(body *inventory_models.ItemStocks, at
 	return &existing, fiber.StatusOK, nil
 }
 
-// UpsertStockWithTx is the shared core upsert logic that runs inside an existing transaction.
-func (s *ItemStockService) UpsertStockWithTx(tx *gorm.DB, body *inventory_models.ItemStocks, atBody *inventory_models.ItemStocksAt, at models.At) (*inventory_models.ItemStocks, error) {
+// UpsertStockWithTx is the shared core upsert logic that runs inside an existing
+// transaction. lot is optional (pass nil for callers that aren't a real purchase, e.g.
+// manual stock add) - when non-nil, a new StockLot row is created for the incoming qty
+// so a later sale can draw from it FIFO (see ConsumeLotsFIFO), and the same cost info
+// is attached to this IN movement's ledger row via SetStockAuditContext.
+func (s *ItemStockService) UpsertStockWithTx(tx *gorm.DB, body *inventory_models.ItemStocks, atBody *inventory_models.ItemStocksAt, at models.At, lot *inventory_models.LotInfo) (*inventory_models.ItemStocks, error) {
 
 	var existing inventory_models.ItemStocks
 
@@ -109,6 +117,16 @@ func (s *ItemStockService) UpsertStockWithTx(tx *gorm.DB, body *inventory_models
 		// Row exists — accumulate incoming qty into existing stock
 		*existing.StockQty += *body.StockQty
 		s.SetActiveStatus(&existing)
+
+		if err := services.SetStockAuditContext(tx, atBody.SourceType, atBody.SourceId, atBody.Remarks, lot); err != nil {
+			return nil, errors.New("failed setting stock audit context")
+		}
+
+		if lot != nil {
+			if err := s.CreateStockLot(tx, existing.ItemId, existing.WarehouseId, existing.BinLocation, *body.StockQty, lot); err != nil {
+				return nil, fmt.Errorf("failed creating stock lot: %w", err)
+			}
+		}
 
 		if err := services.DbUpdate(tx, &existing, map[string]interface{}{"id": existing.ID}); err != nil {
 			return nil, errors.New("failed updating existing item stocks")
@@ -138,11 +156,21 @@ func (s *ItemStockService) UpsertStockWithTx(tx *gorm.DB, body *inventory_models
 	body.DocNo = nextDocNo
 	s.SetActiveStatus(body)
 
+	if err := services.SetStockAuditContext(tx, atBody.SourceType, atBody.SourceId, atBody.Remarks, lot); err != nil {
+		return nil, errors.New("failed setting stock audit context")
+	}
+
 	if err := services.DbInsert(tx, body); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			return nil, errors.New("duplicate record error")
 		}
 		return nil, errors.New("failed creating item stocks")
+	}
+
+	if lot != nil {
+		if err := s.CreateStockLot(tx, body.ItemId, body.WarehouseId, body.BinLocation, *body.StockQty, lot); err != nil {
+			return nil, fmt.Errorf("failed creating stock lot: %w", err)
+		}
 	}
 
 	atdata := inventory_models.ItemStocksAt{
@@ -192,6 +220,20 @@ func (s *ItemStockService) DeductStockWithTx(tx *gorm.DB, body *inventory_models
 	*existing.StockQty -= *body.StockQty
 	s.SetActiveStatus(&existing)
 
+	// Draw the deducted qty from the oldest available lot(s) first (FIFO), so the
+	// ledger row below can carry what this specific sale actually cost. RefType/RefId
+	// use the same source_type/source_id as the ledger note - see the comment on
+	// StockLotConsumption for the one edge case that doesn't cover (multiple lines for
+	// the same item+bin under one document).
+	cost, err := s.ConsumeLotsFIFO(tx, existing.ItemId, existing.WarehouseId, existing.BinLocation, *body.StockQty, atBody.SourceType, atBody.SourceId)
+	if err != nil {
+		return nil, fmt.Errorf("failed consuming stock lots: %w", err)
+	}
+
+	if err := services.SetStockAuditContext(tx, atBody.SourceType, atBody.SourceId, atBody.Remarks, cost); err != nil {
+		return nil, errors.New("failed setting stock audit context")
+	}
+
 	//Update DB
 	if err := services.DbUpdate(tx, &existing, map[string]interface{}{"id": existing.ID}); err != nil {
 		return nil, errors.New("failed updating item stocks")
@@ -232,6 +274,17 @@ func (s *ItemStockService) RestoreStockWithTx(tx *gorm.DB, body *inventory_model
 
 	*existing.StockQty += *body.StockQty
 	s.SetActiveStatus(&existing)
+
+	// Undo whatever ConsumeLotsFIFO drew down for this same (source_type, source_id)
+	// when the original deduction happened, oldest-consumed-lot-first in reverse.
+	cost, err := s.ReleaseLotsFIFO(tx, atBody.SourceType, atBody.SourceId)
+	if err != nil {
+		return nil, fmt.Errorf("failed releasing stock lots: %w", err)
+	}
+
+	if err := services.SetStockAuditContext(tx, atBody.SourceType, atBody.SourceId, atBody.Remarks, cost); err != nil {
+		return nil, errors.New("failed setting stock audit context")
+	}
 
 	if err := services.DbUpdate(tx, &existing, map[string]interface{}{"id": existing.ID}); err != nil {
 		return nil, errors.New("failed restoring item stock")
@@ -282,6 +335,35 @@ func (s *ItemStockService) GetItemStocksList() ([]inventory_models.ItemStockList
 	return response, fiber.StatusOK, nil
 }
 
+// GetStockTransactions returns the trigger-written stock ledger (tbl_inv_stock_transactions)
+// - one row per movement, newest first - joined with item/warehouse names, same pattern as
+// GetItemStocksList. Optionally filtered to a single item.
+func (s *ItemStockService) GetStockTransactions(itemId uint) ([]inventory_models.StockTransactionListView, int, error) {
+	var response []inventory_models.StockTransactionListView
+
+	query := `
+		SELECT t.id, t.item_id, b.item_code,
+		       ISNULL(c.name, '') AS item_name,
+		       t.warehouse_id, ISNULL(w.name, '') AS warehouse_name,
+		       t.bin_location, t.direction, t.qty_before, t.qty_after, t.qty_change,
+		       t.doc_no, t.source_type, t.source_id, t.remarks,
+		       t.unit_cost, t.supplier_id, t.supplier, t.purchase_date,
+		       t.transaction_at, t.db_user
+		FROM tbl_inv_stock_transactions t
+		LEFT JOIN tbl_setup_item b ON t.item_id = b.id
+		LEFT JOIN tbl_setup_item_name c ON b.item_name_id = c.id
+		LEFT JOIN tbl_inv_warehouse_name w ON t.warehouse_id = w.id
+		WHERE (? = 0 OR t.item_id = ?)
+		ORDER BY t.transaction_at DESC, t.id DESC
+	`
+
+	if err := initializers.DB.Raw(query, itemId, itemId).Scan(&response).Error; err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed getting stock transactions")
+	}
+
+	return response, fiber.StatusOK, nil
+}
+
 // AdjustItemStock is a manual correction, distinct from UpsertStockWithTx/DeductStockWithTx
 // (which add/subtract a delta as part of a receiving/issuing transaction) - this SETS
 // stock_qty directly to whatever the user physically counted, and always writes an audit
@@ -301,6 +383,10 @@ func (s *ItemStockService) AdjustItemStock(body *inventory_models.ItemStockAdjus
 	newQty := body.NewQty
 	existing.StockQty = &newQty
 	s.SetActiveStatus(&existing)
+
+	if err := services.SetStockAuditContext(tx, "manual_adjustment", 0, body.Remarks, nil); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed setting stock audit context")
+	}
 
 	if err := services.DbUpdate(tx, &existing, map[string]interface{}{"id": existing.ID}); err != nil {
 		return nil, fiber.StatusInternalServerError, errors.New("failed updating item stock")

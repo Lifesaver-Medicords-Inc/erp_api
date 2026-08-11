@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"time"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
@@ -20,6 +22,7 @@ import (
 	"github.com/pierceperado/smpc/migrations"
 	"github.com/pierceperado/smpc/routes"
 	"github.com/pierceperado/smpc/services"
+	"github.com/pierceperado/smpc/services/item_stock_services"
 )
 
 func init() {
@@ -39,6 +42,46 @@ func init() {
 	initializers.InitWmQuotation()
 	initializers.InitLogger()
 	migrations.RunSQLMigrations()
+	startStockReservationSweep()
+}
+
+// startStockReservationSweep periodically deletes expired rows from
+// tbl_inv_stock_reservations (see ExpireStockReservations) so a quotation's soft hold
+// on stock doesn't outlive its own ValidUntil. There's no existing job scheduler in
+// this app, so this is a plain goroutine + ticker - deliberately placed here rather
+// than in the initializers package, since item_stock_services already imports
+// initializers and putting it there would create an import cycle.
+func startStockReservationSweep() {
+	stockService := item_stock_services.NewItemStockService()
+
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			tx := initializers.DB.Begin()
+			if tx.Error != nil {
+				fmt.Println("stock reservation sweep: failed starting transaction:", tx.Error)
+				continue
+			}
+
+			count, err := stockService.ExpireStockReservations(tx)
+			if err != nil {
+				fmt.Println("stock reservation sweep: failed:", err)
+				tx.Rollback()
+				continue
+			}
+
+			if err := tx.Commit().Error; err != nil {
+				fmt.Println("stock reservation sweep: failed committing:", err)
+				continue
+			}
+
+			if count > 0 {
+				fmt.Println("stock reservation sweep: released", count, "expired reservation(s)")
+			}
+		}
+	}()
 }
 
 func main() {

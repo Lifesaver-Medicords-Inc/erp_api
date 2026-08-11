@@ -57,4 +57,7 @@ func runSQLFolder(path string) {
 func RunSQLMigrations() {
 	runSQLFolder("sql/views")
 	runSQLFolder("sql/procedures")
+	// Triggers last: tr_inv_item_stocks_ledger depends on tbl_inv_stock_transactions,
+	// which initializers.MigrateModel("inventory") creates earlier in main.go's init().
+	runSQLFolder("sql/triggers")
 }

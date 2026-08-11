@@ -181,6 +181,25 @@ func migrateInventoryWarehouse() {
 	migrateAndLog(
 		&inventory_models.ItemStocksAt{},
 	)
+	// StockTransaction (tbl_inv_stock_transactions) - the trigger-written stock ledger.
+	// Must run before migrations.RunSQLMigrations() (called later in main.go's init())
+	// creates tr_inv_item_stocks_ledger, since the trigger inserts into this table.
+	migrateAndLog(
+		&inventory_models.StockTransaction{},
+	)
+	// StockLot / StockLotConsumption - FIFO purchase-cost tracking. Written directly by
+	// item_stock_services (CreateStockLot/ConsumeLotsFIFO/ReleaseLotsFIFO), not by a
+	// trigger, since FIFO consumption is inherently sequential/procedural.
+	migrateAndLog(
+		&inventory_models.StockLot{},
+		&inventory_models.StockLotConsumption{},
+	)
+	// StockReservation - soft holds placed by Sales Quotation lines (see
+	// quick_quotation_service.go). Never touched by the trigger; swept on a timer by
+	// main.go's startStockReservationSweep, not here.
+	migrateAndLog(
+		&inventory_models.StockReservation{},
+	)
 	// migrateAndLog(
 	//	&inventory_models.ReceivingReport{}, &inventory_models.ReceivingReportAt{},
 	//	&inventory_models.ReceivingReportDetails{}, &inventory_models.ReceivingReportDetailsAt{},

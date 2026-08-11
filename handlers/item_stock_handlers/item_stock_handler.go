@@ -1,6 +1,8 @@
 package item_stock_handlers
 
 import (
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/models/inventory_models"
@@ -20,6 +22,34 @@ func NewItemStockHandler(service *item_stock_services.ItemStockService) *ItemSto
 // item+warehouse+bin, with item/warehouse names already resolved.
 func (h *ItemStockHandler) GetItemStocksList(c *fiber.Ctx) error {
 	data, status, err := h.Service.GetItemStocksList()
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+// GetStockTransactions backs the stock ledger screen - one row per movement on
+// tbl_inv_item_stocks (receiving, picking, requests, manual adds/adjustments, and any
+// reversal of those), newest first. Pass ?item_id= to scope to one item.
+func (h *ItemStockHandler) GetStockTransactions(c *fiber.Ctx) error {
+	itemId, _ := strconv.Atoi(c.Query("item_id", "0"))
+
+	data, status, err := h.Service.GetStockTransactions(uint(itemId))
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+// GetAvailableStock returns physical stock minus active quotation reservations, so a
+// quotation screen can show what's actually free to promise rather than just what's
+// physically in the warehouse. Pass ?item_id= to scope to one item.
+func (h *ItemStockHandler) GetAvailableStock(c *fiber.Ctx) error {
+	itemId, _ := strconv.Atoi(c.Query("item_id", "0"))
+
+	data, status, err := h.Service.GetAvailableStock(uint(itemId))
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

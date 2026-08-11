@@ -171,7 +171,7 @@ func CreateSalesQuotation(c *fiber.Ctx, tx *gorm.DB) (CreateBody, int, error) {
 	}
 
 	for _, v := range body.SalesQuotationQuickWithImages {
-		if err := CreateSalesQuotationQuick(tx, body.ID, v.SalesQuotationQuick, v.QuickSelectedImage, at); err != nil {
+		if err := CreateSalesQuotationQuick(tx, body.ID, v.SalesQuotationQuick, v.QuickSelectedImage, at, body.ValidUntil); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}
@@ -320,14 +320,14 @@ func UpdateFinalizeQuote(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 	for _, v := range body.SalesQuotationQuickWithImages {
 		quick := v.SalesQuotationQuick
 		if quick.ID == 0 {
-			if err := CreateSalesQuotationQuick(tx, body.SalesQuotation.ID, quick, v.QuickSelectedImage, at); err != nil {
+			if err := CreateSalesQuotationQuick(tx, body.SalesQuotation.ID, quick, v.QuickSelectedImage, at, body.SalesQuotation.ValidUntil); err != nil {
 				return body, fiber.StatusInternalServerError, err
 			}
 			continue
 		}
 
 		itemConditions := map[string]interface{}{"id": quick.ID}
-		if err := UpdateSalesQuotationQuick(tx, quick, at, itemConditions); err != nil {
+		if err := UpdateSalesQuotationQuick(tx, quick, at, itemConditions, body.SalesQuotation.ValidUntil); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
 	}

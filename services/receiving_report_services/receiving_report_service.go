@@ -182,11 +182,34 @@ func (s *ReceivingReportService) CreateReceivingReportDetails(tx *gorm.DB, body 
 		}
 
 		stockAtBody := &inventory_models.ItemStocksAt{
-			SourceId:   detail.ID,
+			// SourceId points at the Receiving Report header, not this detail line, so the
+			// ledger can be joined straight back to tbl_inv_receiving_report without also
+			// needing the detail table. Remarks carries the human-readable doc number so
+			// that join isn't even necessary for a quick look.
+			SourceId:   body.ReceivingReport.ID,
 			SourceType: "receiving_report",
+			Remarks:    fmt.Sprintf("Receiving Report #%d", body.ReceivingReport.DocNo),
 		}
 
-		if _, err := s.stockService.UpsertStockWithTx(tx, stockBody, stockAtBody, at); err != nil {
+		// Supplier and date are always on the RR header regardless of whether it's
+		// linked to a PO. Unit cost only exists on the PO side, so it's looked up
+		// separately and left at 0 if there's no PurchaseOrderDetailsId to join on
+		// (e.g. a receiving entered without a PO reference).
+		lotInfo := &inventory_models.LotInfo{
+			SupplierId:   body.ReceivingReport.SupplierID,
+			Supplier:     body.ReceivingReport.Supplier,
+			PurchaseDate: body.ReceivingReport.DateReceived,
+			SourceType:   "receiving_report",
+			SourceId:     body.ReceivingReport.ID,
+		}
+		if detail.PurchaseOrderDetailsId != 0 {
+			var poDetail models.PurchaseOrderDetails
+			if err := tx.Select("unit_price").Where("id = ?", detail.PurchaseOrderDetailsId).First(&poDetail).Error; err == nil {
+				lotInfo.UnitCost = poDetail.UnitPrice
+			}
+		}
+
+		if _, err := s.stockService.UpsertStockWithTx(tx, stockBody, stockAtBody, at, lotInfo); err != nil {
 			return fmt.Errorf("failed upserting inventory stock for item %d: %w", detail.ItemID, err)
 		}
 	}
@@ -290,6 +313,12 @@ func (s *ReceivingReportService) DeleteReceivingReportDetails(tx *gorm.DB, body 
 		return errors.New("failed fetching receiving report details for deletion")
 	}
 
+	// Delete requests typically only carry the RR's ID, not its DocNo, so fetch the doc
+	// number once here rather than showing "#0" in the ledger note below.
+	var rrDocNo int
+	tx.Model(&inventory_models.ReceivingReport{}).Select("doc_no").Where("id = ?", body.ReceivingReport.ID).Scan(&rrDocNo)
+	reversalRemarks := fmt.Sprintf("Receiving Report #%d (deleted)", rrDocNo)
+
 	for _, detail := range deletedDetails {
 		// Reverse the stock that was added when this detail was created
 		var stock inventory_models.ItemStocks
@@ -299,8 +328,18 @@ func (s *ReceivingReportService) DeleteReceivingReportDetails(tx *gorm.DB, body 
 		).First(&stock).Error
 
 		if err == nil {
+			// Known gap, not fixed here: this doesn't touch tbl_inv_stock_lots, so the
+			// lot this RR created (if any) keeps its qty_remaining as if the RR still
+			// existed - a later sale could still draw FIFO cost from a lot backed by
+			// stock that's just been reversed. Same class of gap as the line below,
+			// which also doesn't check whether some of this qty was already sold
+			// elsewhere before letting the RR be deleted.
 			*stock.StockQty -= detail.ReceivedQty
 			s.stockService.SetActiveStatus(&stock) // flips IsActive to false if qty hits zero
+
+			if err := services.SetStockAuditContext(tx, "receiving_report_delete", body.ReceivingReport.ID, reversalRemarks, nil); err != nil {
+				return errors.New("failed setting stock audit context")
+			}
 
 			if err := services.DbUpdate(tx, &stock, map[string]interface{}{"id": stock.ID}); err != nil {
 				return errors.New("failed reversing inventory stock for deleted detail")
@@ -309,8 +348,9 @@ func (s *ReceivingReportService) DeleteReceivingReportDetails(tx *gorm.DB, body 
 			// Audit the reversal
 			atStock := inventory_models.ItemStocksAt{
 				RefId:             stock.ID,
-				SourceId:          detail.ID,
+				SourceId:          body.ReceivingReport.ID,
 				SourceType:        "receiving_report_delete",
+				Remarks:           reversalRemarks,
 				ItemStocksContent: stock.ItemStocksContent,
 				At:                at,
 			}

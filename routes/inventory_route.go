@@ -20,6 +20,8 @@ func setupItemStockRoutes(api fiber.Router) {
 	api.Get("/item_stocks", handler.GetItemStocksList)
 	api.Post("/item_stocks", handler.InsertItemStock)
 	api.Put("/item_stocks", handler.AdjustItemStock)
+	api.Get("/item_stocks/transactions", handler.GetStockTransactions)
+	api.Get("/item_stocks/available", handler.GetAvailableStock)
 }
 
 func setupReceivingReportRoutes(api fiber.Router) {

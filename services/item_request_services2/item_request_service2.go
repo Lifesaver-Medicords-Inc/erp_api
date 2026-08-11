@@ -152,6 +152,13 @@ func (s *ItemRequestService) CreateItemRequestDetails(tx *gorm.DB, body *invento
 // CreateItemRequestLocations upserts locations for a single detail line.
 // Called only from UpdateItemRequestDetails — never standalone.
 func (s *ItemRequestService) CreateItemRequestLocations(tx *gorm.DB, detail *inventory_models.ItemRequestDetails, locations []inventory_models.ItemRequestLocations, at models.At) error {
+	// detail.ItemRequestId IS the Item Request header's own primary key, so it can be
+	// used directly as the ledger's source_id — no extra lookup needed for that part.
+	// DocNo isn't on the detail row though, so fetch it once here for a readable note.
+	var irDocNo int
+	tx.Model(&inventory_models.ItemRequest{}).Select("doc_no").Where("id = ?", detail.ItemRequestId).Scan(&irDocNo)
+	irRemarks := fmt.Sprintf("Item Request #%d", irDocNo)
+
 	for i := range locations {
 		loc := &locations[i]
 
@@ -187,8 +194,9 @@ func (s *ItemRequestService) CreateItemRequestLocations(tx *gorm.DB, detail *inv
 		}
 
 		stockAtBody := &inventory_models.ItemStocksAt{
-			SourceId:   detail.ID,
+			SourceId:   detail.ItemRequestId,
 			SourceType: "item_request",
+			Remarks:    irRemarks,
 		}
 
 		if _, err := s.stockService.DeductStockWithTx(tx, stockBody, stockAtBody, at); err != nil {
@@ -307,6 +315,12 @@ func (s *ItemRequestService) DeleteItemRequest(body *inventory_models.ItemReques
 func (s *ItemRequestService) DeleteItemRequestDetails(tx *gorm.DB, body *inventory_models.ItemRequestBody, at models.At) error {
 	itemRequestId := body.ItemRequest.ID
 
+	// Delete requests typically only carry the Item Request's ID, not its DocNo, so
+	// fetch the doc number once here rather than showing "#0" in the ledger note below.
+	var irDocNo int
+	tx.Model(&inventory_models.ItemRequest{}).Select("doc_no").Where("id = ?", itemRequestId).Scan(&irDocNo)
+	irDeletionRemarks := fmt.Sprintf("Item Request #%d (deleted)", irDocNo)
+
 	// --- 1. Audit then delete locations ---
 	var deletedLocations []inventory_models.ItemRequestLocations
 	if err := tx.Unscoped().
@@ -330,8 +344,9 @@ func (s *ItemRequestService) DeleteItemRequestDetails(tx *gorm.DB, body *invento
 				},
 			}
 			stockAtBody := &inventory_models.ItemStocksAt{
-				SourceId:   loc.ItemRequestDetailsId,
+				SourceId:   loc.ItemRequestId,
 				SourceType: "item_request_deletion",
+				Remarks:    irDeletionRemarks,
 			}
 			if _, err := s.stockService.RestoreStockWithTx(tx, stockBody, stockAtBody, at); err != nil {
 				return fmt.Errorf("failed restoring stock for location %d (bin %d): %w", loc.ID, loc.BinId, err)
