@@ -2,6 +2,7 @@ package item_stock_services
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -11,13 +12,74 @@ import (
 	"gorm.io/gorm"
 )
 
+// getAvailableSnapshot is physical stock (summed across every bin) minus current
+// reservations for one item - the same formula as GetAvailableStock below, just scoped
+// to a single item and callable inside an existing tx (GetAvailableStock always reads
+// via initializers.DB, which wouldn't see this transaction's own uncommitted writes).
+func (s *ItemStockService) getAvailableSnapshot(tx *gorm.DB, itemId uint) (int, error) {
+	var physical int
+	if err := tx.Raw(`SELECT ISNULL(SUM(stock_qty), 0) FROM tbl_inv_item_stocks WHERE item_id = ?`, itemId).Scan(&physical).Error; err != nil {
+		return 0, err
+	}
+
+	var reserved int
+	if err := tx.Raw(`SELECT ISNULL(SUM(qty), 0) FROM tbl_inv_stock_reservations WHERE item_id = ?`, itemId).Scan(&reserved).Error; err != nil {
+		return 0, err
+	}
+
+	return physical - reserved, nil
+}
+
+// logReservationLedger records a reservation/release as its own row in
+// tbl_inv_stock_transactions - the same ledger tr_inv_item_stocks_ledger writes to for
+// every physical movement, but written directly here instead, since nothing in
+// tbl_inv_item_stocks itself changes when stock is only reserved (that trigger would
+// never fire). Direction is "RESERVE"/"RELEASE" rather than the trigger's "IN"/"OUT", so
+// anyone reading the ledger can tell these apart from a real physical movement.
+// QtyBefore/QtyAfter/QtyChange track *available* stock (physical minus reservations),
+// not physical stock, since that's the number a reservation actually moves.
+func (s *ItemStockService) logReservationLedger(tx *gorm.DB, itemId uint, direction string, qtyBefore int, qtyAfter int, qtyChange int, sourceType string, sourceId uint, quotationId uint, dbUser string, remarks string) error {
+	st := sourceType
+	sid := sourceId
+	rm := remarks
+
+	entry := &inventory_models.StockTransaction{
+		// No single tbl_inv_item_stocks row backs a reservation (it isn't bin/warehouse
+		// scoped), so there's nothing real to put here.
+		RefId:       0,
+		ItemId:      itemId,
+		WarehouseId: 0,
+		BinLocation: "",
+		DocNo:       int(quotationId),
+		Direction:   direction,
+		QtyBefore:   qtyBefore,
+		QtyAfter:    qtyAfter,
+		QtyChange:   qtyChange,
+		SourceType:  &st,
+		SourceId:    &sid,
+		Remarks:     &rm,
+		TransactionAt: time.Now(),
+		DbUser:        dbUser,
+	}
+
+	return services.DbInsert(tx, entry)
+}
+
 // CreateStockReservation places a soft hold for a quotation line. expiresAt is
 // whatever the caller resolved from the parent document (e.g. a quotation's
 // ValidUntil) - pass nil if it couldn't be parsed, but note that means
-// ExpireStockReservations will never clean this row up on its own.
-func (s *ItemStockService) CreateStockReservation(tx *gorm.DB, itemId uint, qty uint, sourceType string, sourceId uint, quotationId uint, expiresAt *time.Time) error {
+// ExpireStockReservations will never clean this row up on its own. Also writes a
+// "RESERVE" row to the stock ledger (see logReservationLedger) so the reservation shows
+// up as a deduction against available stock there, even though physical stock (and
+// therefore the trigger-driven side of the ledger) never moves.
+func (s *ItemStockService) CreateStockReservation(tx *gorm.DB, itemId uint, qty uint, sourceType string, sourceId uint, quotationId uint, expiresAt *time.Time, dbUser string) error {
 	if qty == 0 {
 		return nil
+	}
+
+	availableBefore, err := s.getAvailableSnapshot(tx, itemId)
+	if err != nil {
+		return err
 	}
 
 	reservation := &inventory_models.StockReservation{
@@ -30,26 +92,171 @@ func (s *ItemStockService) CreateStockReservation(tx *gorm.DB, itemId uint, qty 
 		ExpiresAt:   expiresAt,
 	}
 
-	return services.DbInsert(tx, reservation)
+	if err := services.DbInsert(tx, reservation); err != nil {
+		return err
+	}
+
+	availableAfter := availableBefore - int(qty)
+	remarks := fmt.Sprintf("Reserved for sales quotation #%d", quotationId)
+	return s.logReservationLedger(tx, itemId, "RESERVE", availableBefore, availableAfter, -int(qty), sourceType, sourceId, quotationId, dbUser, remarks)
 }
 
 // ReleaseStockReservation removes the hold for one source line (e.g. a quotation line
-// being deleted). A row simply not existing means "not reserved" - there's no
-// is_active flag to flip.
-func (s *ItemStockService) ReleaseStockReservation(tx *gorm.DB, sourceType string, sourceId uint) error {
-	return services.DbDelete(tx, &inventory_models.StockReservation{}, map[string]interface{}{
+// being deleted, or a manager unchecking RESERVE). A row simply not existing means "not
+// reserved" - there's no is_active flag to flip, and nothing to log either. Also writes
+// a "RELEASE" row to the stock ledger mirroring CreateStockReservation's "RESERVE" row -
+// see logReservationLedger.
+func (s *ItemStockService) ReleaseStockReservation(tx *gorm.DB, sourceType string, sourceId uint, dbUser string) error {
+	var existing inventory_models.StockReservation
+	err := tx.Where("source_type = ? AND source_id = ?", sourceType, sourceId).First(&existing).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	availableBefore, err := s.getAvailableSnapshot(tx, existing.ItemId)
+	if err != nil {
+		return err
+	}
+
+	if err := services.DbDelete(tx, &inventory_models.StockReservation{}, map[string]interface{}{
 		"source_type": sourceType,
 		"source_id":   sourceId,
-	})
+	}); err != nil {
+		return err
+	}
+
+	availableAfter := availableBefore + int(existing.Qty)
+	remarks := fmt.Sprintf("Released from sales quotation #%d", existing.QuotationId)
+	return s.logReservationLedger(tx, existing.ItemId, "RELEASE", availableBefore, availableAfter, int(existing.Qty), sourceType, sourceId, existing.QuotationId, dbUser, remarks)
 }
 
-// ExpireStockReservations deletes every reservation whose ExpiresAt has passed.
-// Nothing in this codebase calls this on its own - see initializers.StartReservationSweep
-// for the periodic goroutine that does.
+// CreateStockReservationByRef is the standalone entry point for a sales rep/manager
+// manually checking "RESERVE" on the stock-check modal - the counterpart to
+// ReleaseStockReservationByRef below. Reservations are no longer placed automatically
+// when a quotation line is created (see quick_quotation_service.go) - this is the only
+// place one gets created from the UI now.
+func (s *ItemStockService) CreateStockReservationByRef(itemId uint, qty uint, sourceType string, sourceId uint, quotationId uint, expiresAt *time.Time, dbUser string) (int, error) {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+	}
+	defer tx.Rollback()
+
+	if err := s.CreateStockReservation(tx, itemId, qty, sourceType, sourceId, quotationId, expiresAt, dbUser); err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed creating stock reservation")
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	return fiber.StatusOK, nil
+}
+
+// GetReservation looks up whether a specific quotation line currently has a manual
+// reservation - the stock-check modal needs this to know whether to draw its RESERVE
+// checkbox as checked when it's first opened, since (unlike before) nothing reserves a
+// line automatically anymore. Returns (nil, nil) if there's no reservation for that ref.
+func (s *ItemStockService) GetReservation(sourceType string, sourceId uint) (*inventory_models.StockReservation, error) {
+	var reservation inventory_models.StockReservation
+	err := initializers.DB.Where("source_type = ? AND source_id = ?", sourceType, sourceId).First(&reservation).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &reservation, nil
+}
+
+// SyncReservationQty keeps an already-existing manual reservation's qty in line with a
+// quotation line's edited QTY. It deliberately does NOT create a reservation where none
+// exists - reserving is an explicit, manager-gated action from StockCheckModal, not
+// something editing a quotation line should trigger on its own.
+func (s *ItemStockService) SyncReservationQty(tx *gorm.DB, sourceType string, sourceId uint, qty uint) error {
+	var existing inventory_models.StockReservation
+	err := tx.Where("source_type = ? AND source_id = ?", sourceType, sourceId).First(&existing).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// Nothing reserved for this line - nothing to sync.
+			return nil
+		}
+		return err
+	}
+
+	if existing.Qty == qty {
+		return nil
+	}
+
+	existing.Qty = qty
+	return services.DbUpdate(tx, &existing, map[string]interface{}{"id": existing.ID})
+}
+
+// ReleaseStockReservationByRef is the standalone entry point for releasing a reservation
+// from the UI directly - e.g. a sales manager unchecking "RESERVE" on the stock-check
+// modal to free stock back to the pool before the line's own ValidUntil expiry would
+// have done it automatically. CreateStockReservation/ReleaseStockReservation above take
+// an existing tx because they're called from inside the quotation create/update/delete
+// flow; this opens and commits its own, the same way InsertItemStock/AdjustItemStock do.
+//
+// Re-reserving afterward means checking RESERVE again from the UI (CreateStockReservationByRef
+// above) - editing the line's qty no longer recreates a released reservation, it only
+// syncs the qty of one that's still active (see SyncReservationQty).
+func (s *ItemStockService) ReleaseStockReservationByRef(sourceType string, sourceId uint, dbUser string) (int, error) {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+	}
+	defer tx.Rollback()
+
+	if err := s.ReleaseStockReservation(tx, sourceType, sourceId, dbUser); err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed releasing stock reservation")
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	return fiber.StatusOK, nil
+}
+
+// ExpireStockReservations deletes every reservation whose ExpiresAt has passed, logging
+// a "RELEASE" ledger row for each one it removes (see logReservationLedger) - same as a
+// manual release, just triggered by time instead of someone unchecking RESERVE. Nothing
+// in this codebase calls this on its own - see initializers.StartReservationSweep for
+// the periodic goroutine that does.
 func (s *ItemStockService) ExpireStockReservations(tx *gorm.DB) (int64, error) {
-	result := tx.Where("expires_at IS NOT NULL AND expires_at < ?", time.Now()).
-		Delete(&inventory_models.StockReservation{})
-	return result.RowsAffected, result.Error
+	var expired []inventory_models.StockReservation
+	if err := tx.Where("expires_at IS NOT NULL AND expires_at < ?", time.Now()).Find(&expired).Error; err != nil {
+		return 0, err
+	}
+
+	if len(expired) == 0 {
+		return 0, nil
+	}
+
+	for _, reservation := range expired {
+		availableBefore, err := s.getAvailableSnapshot(tx, reservation.ItemId)
+		if err != nil {
+			return 0, err
+		}
+
+		if err := services.DbDelete(tx, &inventory_models.StockReservation{}, map[string]interface{}{"id": reservation.ID}); err != nil {
+			return 0, err
+		}
+
+		availableAfter := availableBefore + int(reservation.Qty)
+		remarks := fmt.Sprintf("Reservation expired for sales quotation #%d", reservation.QuotationId)
+		if err := s.logReservationLedger(tx, reservation.ItemId, "RELEASE", availableBefore, availableAfter, int(reservation.Qty), reservation.SourceType, reservation.SourceId, reservation.QuotationId, "system", remarks); err != nil {
+			return 0, err
+		}
+	}
+
+	return int64(len(expired)), nil
 }
 
 // GetAvailableStock returns physical stock (summed across every bin) minus whatever's

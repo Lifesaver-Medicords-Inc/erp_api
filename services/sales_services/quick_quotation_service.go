@@ -3,8 +3,6 @@ package sales_services
 import (
 	"errors"
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -12,37 +10,13 @@ import (
 	"gorm.io/gorm"
 )
 
-// parseQuotationExpiry tries the date formats this codebase actually uses elsewhere
-// (they're inconsistent - see invoice_receipt_service.go vs sales_invoice_service.go)
-// and returns nil rather than erroring if none match. A nil result just means the
-// resulting reservation never gets swept by ExpireStockReservations - it needs manual
-// cleanup, which is a known limitation, not a crash.
-func parseQuotationExpiry(validUntil string) *time.Time {
-	trimmed := strings.TrimSpace(validUntil)
-	if trimmed == "" {
-		return nil
-	}
-
-	for _, layout := range []string{"2006-01-02", "01/02/2006", "2006-01-02T15:04:05Z07:00"} {
-		if t, err := time.Parse(layout, trimmed); err == nil {
-			return &t
-		}
-	}
-
-	return nil
-}
-
-// reserveQuotationLineStock places a soft hold for one quotation line - see
-// inventory_models.StockReservation for why this doesn't touch physical stock at all.
-func reserveQuotationLineStock(tx *gorm.DB, quotationId uint, validUntil string, quick models.SalesQuotationQuick) error {
-	if quick.ItemId == 0 || quick.Qty == 0 {
-		return nil
-	}
-
-	return item_stock_services.NewItemStockService().CreateStockReservation(
-		tx, quick.ItemId, quick.Qty, "sales_quotation", quick.ID, quotationId, parseQuotationExpiry(validUntil),
-	)
-}
+// Reservations are no longer placed automatically here - see the RESERVE checkbox on
+// StockCheckModal (Quotation.cs) and item_stock_handlers.CreateStockReservation. A sales
+// rep/manager has to explicitly check RESERVE for a line; creating or editing a
+// quotation line no longer holds stock on its own. validUntil is still threaded through
+// Create/Update below only because quotation_service.go already passes it and nothing
+// currently uses it - kept rather than ripped out of every call site for what's now a
+// no-op.
 
 // Create Quick Quotation
 func CreateSalesQuotationQuick(tx *gorm.DB, parentId uint, QuickQuote models.SalesQuotationQuick, images []models.SalesQuotationSelectedImage, at models.At, validUntil string) error {
@@ -60,10 +34,6 @@ func CreateSalesQuotationQuick(tx *gorm.DB, parentId uint, QuickQuote models.Sal
 
 	if err := services.DbInsert(tx, &quickquotationsat); err != nil {
 		return errors.New("failed creating quick quotations")
-	}
-
-	if err := reserveQuotationLineStock(tx, parentId, validUntil, QuickQuote); err != nil {
-		return fmt.Errorf("failed reserving stock for quotation line: %w", err)
 	}
 
 	if len(images) > 0 {
@@ -93,10 +63,6 @@ func CreateSalesQuotationQuickWithSelectedImage(tx *gorm.DB, parentId uint, Quic
 
 	if err := services.DbInsert(tx, &quickquotationsat); err != nil {
 		return errors.New("failed creating quick quotations")
-	}
-
-	if err := reserveQuotationLineStock(tx, parentId, validUntil, QuickQuote); err != nil {
-		return fmt.Errorf("failed reserving stock for quotation line: %w", err)
 	}
 
 	// for _, v := range body.PurchaseOrderDetails {
@@ -129,9 +95,10 @@ func GetSalesQuotationQuicks(quickquotes *[]models.SalesQuotationQuick, conditio
 	return nil
 }
 
-// update quick quotes. validUntil is the parent quotation's ValidUntil - the
-// reservation is released and re-placed from scratch with the (possibly changed)
-// qty/expiry rather than trying to patch it in place.
+// update quick quotes. If this line already has a manually-placed reservation (see the
+// RESERVE checkbox on StockCheckModal), its qty is kept in sync with whatever the user
+// just edited QTY to - it does NOT create a reservation for a line that doesn't already
+// have one, and editing qty/item here never places a new hold on its own.
 func UpdateSalesQuotationQuick(tx *gorm.DB, quickquotes models.SalesQuotationQuick, at models.At, conditions map[string]interface{}, validUntil string) error {
 	if err := services.DbUpdate(tx, &quickquotes, conditions); err != nil {
 		return errors.New("failed updating quickquotations")
@@ -148,11 +115,8 @@ func UpdateSalesQuotationQuick(tx *gorm.DB, quickquotes models.SalesQuotationQui
 	}
 
 	stockService := item_stock_services.NewItemStockService()
-	if err := stockService.ReleaseStockReservation(tx, "sales_quotation", quickquotes.ID); err != nil {
-		return fmt.Errorf("failed releasing prior stock reservation: %w", err)
-	}
-	if err := reserveQuotationLineStock(tx, quickquotes.BasedId, validUntil, quickquotes); err != nil {
-		return fmt.Errorf("failed re-reserving stock for quotation line: %w", err)
+	if err := stockService.SyncReservationQty(tx, "sales_quotation", quickquotes.ID, quickquotes.Qty); err != nil {
+		return fmt.Errorf("failed syncing stock reservation qty: %w", err)
 	}
 
 	return nil
@@ -175,7 +139,7 @@ func DeleteSalesQuotationQuick(tx *gorm.DB, quickquotes models.SalesQuotationQui
 
 	// The quotation line is gone, so whatever it was holding should be too - don't
 	// wait for expiry.
-	if err := item_stock_services.NewItemStockService().ReleaseStockReservation(tx, "sales_quotation", quickquotes.ID); err != nil {
+	if err := item_stock_services.NewItemStockService().ReleaseStockReservation(tx, "sales_quotation", quickquotes.ID, at.AtUser); err != nil {
 		return fmt.Errorf("failed releasing stock reservation: %w", err)
 	}
 

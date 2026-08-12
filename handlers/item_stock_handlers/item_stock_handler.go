@@ -2,6 +2,8 @@ package item_stock_handlers
 
 import (
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -9,6 +11,35 @@ import (
 	"github.com/pierceperado/smpc/services/item_stock_services"
 	"github.com/pierceperado/smpc/utils"
 )
+
+// CreateStockReservationBody is what the stock-check modal's RESERVE checkbox posts.
+// ExpiresAt is optional - the WinForms client sends the quotation's own ValidUntil
+// (already known client-side) formatted as "2006-01-02" or RFC3339; left blank, the
+// reservation never gets picked up by the periodic expiry sweep and needs manual
+// cleanup (same limitation the old auto-reserve path had).
+type CreateStockReservationBody struct {
+	ItemId      uint   `json:"item_id"`
+	Qty         uint   `json:"qty"`
+	SourceType  string `json:"source_type"`
+	SourceId    uint   `json:"source_id"`
+	QuotationId uint   `json:"quotation_id"`
+	ExpiresAt   string `json:"expires_at"`
+}
+
+func parseReservationExpiry(value string) *time.Time {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return nil
+	}
+
+	for _, layout := range []string{"2006-01-02T15:04:05Z07:00", "2006-01-02"} {
+		if t, err := time.Parse(layout, trimmed); err == nil {
+			return &t
+		}
+	}
+
+	return nil
+}
 
 type ItemStockHandler struct {
 	Service *item_stock_services.ItemStockService
@@ -55,6 +86,88 @@ func (h *ItemStockHandler) GetAvailableStock(c *fiber.Ctx) error {
 	}
 
 	return utils.RespondSuccess(c, data)
+}
+
+// GetStockReservation reports whether one quotation line currently has a manual
+// reservation (see CreateStockReservation/ReleaseStockReservation below) - the
+// stock-check modal calls this per line when it opens, to draw RESERVE checked or not.
+// Pass ?source_type= (defaults to "sales_quotation") and ?source_id=. Responds with
+// null data if nothing's reserved for that line, not an error.
+func (h *ItemStockHandler) GetStockReservation(c *fiber.Ctx) error {
+	sourceType := c.Query("source_type", "sales_quotation")
+	sourceId, _ := strconv.Atoi(c.Query("source_id", "0"))
+
+	if sourceId == 0 {
+		return utils.RespondError(c, fiber.StatusBadRequest, "source_id is required")
+	}
+
+	reservation, err := h.Service.GetReservation(sourceType, uint(sourceId))
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusInternalServerError, "failed getting stock reservation")
+	}
+
+	return utils.RespondSuccess(c, reservation)
+}
+
+// CreateStockReservation lets a sales rep/manager manually check "RESERVE" on the
+// stock-check modal in Quick Quote / Project Quotation - the only place a reservation
+// gets placed from the UI now (creating/editing a quotation line no longer reserves
+// stock on its own; see quick_quotation_service.go).
+func (h *ItemStockHandler) CreateStockReservation(c *fiber.Ctx) error {
+	var body CreateStockReservationBody
+
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if body.ItemId == 0 || body.SourceId == 0 || body.Qty == 0 {
+		return utils.RespondError(c, fiber.StatusBadRequest, "item_id, source_id and qty are required")
+	}
+
+	sourceType := body.SourceType
+	if sourceType == "" {
+		sourceType = "sales_quotation"
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	status, err := h.Service.CreateStockReservationByRef(
+		body.ItemId, body.Qty, sourceType, body.SourceId, body.QuotationId, parseReservationExpiry(body.ExpiresAt), at.AtUser,
+	)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, nil)
+}
+
+// ReleaseStockReservation lets a sales manager manually release a quotation line's soft
+// stock hold early (the "RESERVE" checkbox on the stock-check modal in Quick Quote /
+// Project Quotation) - freeing it back into the shared pool for other quotations.
+// Pass ?source_type= (defaults to "sales_quotation") and ?source_id= (the
+// SalesQuotationQuick line's id).
+func (h *ItemStockHandler) ReleaseStockReservation(c *fiber.Ctx) error {
+	sourceType := c.Query("source_type", "sales_quotation")
+	sourceId, _ := strconv.Atoi(c.Query("source_id", "0"))
+
+	if sourceId == 0 {
+		return utils.RespondError(c, fiber.StatusBadRequest, "source_id is required")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	status, err := h.Service.ReleaseStockReservationByRef(sourceType, uint(sourceId), at.AtUser)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, nil)
 }
 
 // InsertItemStock is the "Add Stock" endpoint for the Inventory Item Stocks module - adds
