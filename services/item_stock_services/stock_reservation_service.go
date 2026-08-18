@@ -22,8 +22,10 @@ func (s *ItemStockService) getAvailableSnapshot(tx *gorm.DB, itemId uint) (int, 
 		return 0, err
 	}
 
+	// Pending AND Approved both still hold the stock (see the Status doc comment on
+	// StockReservation) - only Rejected drops out.
 	var reserved int
-	if err := tx.Raw(`SELECT ISNULL(SUM(qty), 0) FROM tbl_inv_stock_reservations WHERE item_id = ?`, itemId).Scan(&reserved).Error; err != nil {
+	if err := tx.Raw(`SELECT ISNULL(SUM(qty), 0) FROM tbl_inv_stock_reservations WHERE item_id = ? AND status <> ?`, itemId, inventory_models.ReservationStatusRejected).Scan(&reserved).Error; err != nil {
 		return 0, err
 	}
 
@@ -90,6 +92,10 @@ func (s *ItemStockService) CreateStockReservation(tx *gorm.DB, itemId uint, qty 
 		QuotationId: quotationId,
 		ReservedAt:  time.Now(),
 		ExpiresAt:   expiresAt,
+		// Always starts out awaiting sign-off from a dispatcher/inventory manager (see
+		// ApproveReservation/RejectReservation) - still counts as a soft hold against
+		// available stock while pending, it just isn't authorized yet.
+		Status: inventory_models.ReservationStatusPending,
 	}
 
 	if err := services.DbInsert(tx, reservation); err != nil {
@@ -280,13 +286,151 @@ func (s *ItemStockService) GetAvailableStock(itemId uint) ([]inventory_models.Av
 		LEFT JOIN (
 			SELECT item_id, SUM(qty) AS reserved
 			FROM tbl_inv_stock_reservations
-			WHERE (? = 0 OR item_id = ?)
+			WHERE (? = 0 OR item_id = ?) AND status <> ?
 			GROUP BY item_id
 		) r ON r.item_id = p.item_id
 	`
 
-	if err := initializers.DB.Raw(query, itemId, itemId, itemId, itemId).Scan(&response).Error; err != nil {
+	if err := initializers.DB.Raw(query, itemId, itemId, itemId, itemId, inventory_models.ReservationStatusRejected).Scan(&response).Error; err != nil {
 		return nil, fiber.StatusInternalServerError, errors.New("failed getting available stock")
+	}
+
+	return response, fiber.StatusOK, nil
+}
+
+// ReservationApprovalAccessCode is the tbl_position_access code that grants a Position
+// the ability to approve/reject pending stock reservations - the same module-access
+// mechanism used everywhere else in this app (see position_access_service.go), just
+// applied to a business action instead of a screen. Grant it to whatever Position
+// actually handles this (Dispatcher, Inventory Manager, or whatever it ends up being
+// called) from the normal Position Access setup screen - nothing here hardcodes a
+// position name.
+const ReservationApprovalAccessCode = "RESERVATION_APPROVAL"
+
+// UserCanApproveReservations checks whether the given user's Position has been granted
+// ReservationApprovalAccessCode.
+func (s *ItemStockService) UserCanApproveReservations(userId uint) (bool, error) {
+	if userId == 0 {
+		return false, nil
+	}
+
+	var count int64
+	err := initializers.DB.Raw(`
+		SELECT COUNT(*)
+		FROM tbl_position_access pa
+		INNER JOIN tbl_setup_users u ON u.position_id = pa.position_id
+		WHERE u.id = ? AND pa.code = ?
+	`, userId, ReservationApprovalAccessCode).Scan(&count).Error
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+// ApproveReservation signs off on a pending reservation. It's already been holding
+// stock since the moment it was created (Pending counts the same as Approved in the
+// Reserved sum - see the Status doc comment on StockReservation), so this doesn't touch
+// availability at all; it just records who authorized it and moves it off the pending
+// queue.
+func (s *ItemStockService) ApproveReservation(reservationId uint, approvedByUserId uint) (int, error) {
+	return s.setReservationDecision(reservationId, approvedByUserId, inventory_models.ReservationStatusApproved)
+}
+
+// RejectReservation declines a pending reservation. Unlike Approve, this DOES free the
+// stock back up - Rejected is the one status excluded from the Reserved sum - so it logs
+// a RELEASE ledger row the same way a manual release or expiry does.
+func (s *ItemStockService) RejectReservation(reservationId uint, rejectedByUserId uint) (int, error) {
+	return s.setReservationDecision(reservationId, rejectedByUserId, inventory_models.ReservationStatusRejected)
+}
+
+func (s *ItemStockService) setReservationDecision(reservationId uint, actingUserId uint, newStatus string) (int, error) {
+	canApprove, err := s.UserCanApproveReservations(actingUserId)
+	if err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed checking approver permission")
+	}
+	if !canApprove {
+		return fiber.StatusForbidden, errors.New("this user's position is not authorized to approve or reject reservations")
+	}
+
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+	}
+	defer tx.Rollback()
+
+	var reservation inventory_models.StockReservation
+	if err := tx.First(&reservation, reservationId).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fiber.StatusNotFound, errors.New("reservation not found")
+		}
+		return fiber.StatusInternalServerError, errors.New("failed loading reservation")
+	}
+
+	if reservation.Status != inventory_models.ReservationStatusPending {
+		return fiber.StatusConflict, fmt.Errorf("reservation is already %s", reservation.Status)
+	}
+
+	now := time.Now()
+	reservation.Status = newStatus
+	reservation.ApprovedBy = &actingUserId
+	reservation.ApprovedAt = &now
+
+	if err := services.DbUpdate(tx, &reservation, map[string]interface{}{"id": reservation.ID}); err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed updating reservation")
+	}
+
+	if newStatus == inventory_models.ReservationStatusRejected {
+		availableBefore, err := s.getAvailableSnapshot(tx, reservation.ItemId)
+		if err != nil {
+			return fiber.StatusInternalServerError, err
+		}
+		availableAfter := availableBefore + int(reservation.Qty)
+		remarks := fmt.Sprintf("Reservation rejected for sales quotation #%d", reservation.QuotationId)
+		if err := s.logReservationLedger(tx, reservation.ItemId, "RELEASE", availableBefore, availableAfter, int(reservation.Qty), reservation.SourceType, reservation.SourceId, reservation.QuotationId, fmt.Sprintf("user#%d", actingUserId), remarks); err != nil {
+			return fiber.StatusInternalServerError, err
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	return fiber.StatusOK, nil
+}
+
+// GetPendingReservations lists every reservation still awaiting a dispatcher/inventory
+// manager's decision, oldest first, joined with just enough item/quotation context to
+// review without a separate lookup per row.
+func (s *ItemStockService) GetPendingReservations() ([]inventory_models.PendingReservationView, int, error) {
+	var response []inventory_models.PendingReservationView
+
+	query := `
+		SELECT
+			r.id,
+			r.item_id,
+			ISNULL(n.name, '') AS item_name,
+			ISNULL(i.item_model, '') AS item_model,
+			ISNULL(i.item_code, '') AS item_code,
+			r.qty,
+			r.source_type,
+			r.source_id,
+			r.quotation_id,
+			ISNULL(q.document_no, '') AS document_no,
+			ISNULL(q.created_by, '') AS requested_by,
+			r.reserved_at,
+			r.expires_at,
+			r.status
+		FROM tbl_inv_stock_reservations r
+		LEFT JOIN tbl_setup_item i ON i.id = r.item_id
+		LEFT JOIN tbl_setup_item_name n ON n.id = i.item_name_id
+		LEFT JOIN tbl_trans_sales_quotation q ON q.id = r.quotation_id
+		WHERE r.status = ?
+		ORDER BY r.reserved_at ASC
+	`
+
+	if err := initializers.DB.Raw(query, inventory_models.ReservationStatusPending).Scan(&response).Error; err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed getting pending reservations")
 	}
 
 	return response, fiber.StatusOK, nil

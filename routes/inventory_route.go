@@ -25,6 +25,9 @@ func setupItemStockRoutes(api fiber.Router) {
 	api.Get("/item_stocks/reservations", handler.GetStockReservation)
 	api.Post("/item_stocks/reservations", handler.CreateStockReservation)
 	api.Delete("/item_stocks/reservations", handler.ReleaseStockReservation)
+	api.Get("/item_stocks/reservations/pending", handler.GetPendingReservations)
+	api.Post("/item_stocks/reservations/:id/approve", handler.ApproveReservation)
+	api.Post("/item_stocks/reservations/:id/reject", handler.RejectReservation)
 }
 
 func setupReceivingReportRoutes(api fiber.Router) {

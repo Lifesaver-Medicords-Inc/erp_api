@@ -170,6 +170,69 @@ func (h *ItemStockHandler) ReleaseStockReservation(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, nil)
 }
 
+// GetPendingReservations backs the dispatcher/inventory manager's approval queue -
+// every stock reservation still awaiting a decision, oldest first.
+func (h *ItemStockHandler) GetPendingReservations(c *fiber.Ctx) error {
+	data, status, err := h.Service.GetPendingReservations()
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+// actingUserId pulls the numeric user id off the same "at" audit context every other
+// write endpoint already relies on (see utils/at_util.go) - there's no separate
+// authentication/session concept in this API beyond that, so it's what identifies who's
+// clicking Approve/Reject for the position-access check in the service layer.
+func actingUserId(c *fiber.Ctx) uint {
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		return 0
+	}
+
+	id, err := strconv.Atoi(at.AtUserId)
+	if err != nil || id < 0 {
+		return 0
+	}
+
+	return uint(id)
+}
+
+// ApproveReservation signs off on a pending reservation. Only a user whose Position has
+// been granted the RESERVATION_APPROVAL access code (see
+// item_stock_services.ReservationApprovalAccessCode) can do this - anyone else gets a
+// 403, checked server-side rather than trusted to the client hiding the button.
+func (h *ItemStockHandler) ApproveReservation(c *fiber.Ctx) error {
+	reservationId, err := strconv.Atoi(c.Params("id"))
+	if err != nil || reservationId <= 0 {
+		return utils.RespondError(c, fiber.StatusBadRequest, "a valid reservation id is required")
+	}
+
+	status, err := h.Service.ApproveReservation(uint(reservationId), actingUserId(c))
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, nil)
+}
+
+// RejectReservation declines a pending reservation and frees its held stock back up.
+// Same RESERVATION_APPROVAL gate as ApproveReservation.
+func (h *ItemStockHandler) RejectReservation(c *fiber.Ctx) error {
+	reservationId, err := strconv.Atoi(c.Params("id"))
+	if err != nil || reservationId <= 0 {
+		return utils.RespondError(c, fiber.StatusBadRequest, "a valid reservation id is required")
+	}
+
+	status, err := h.Service.RejectReservation(uint(reservationId), actingUserId(c))
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, nil)
+}
+
 // InsertItemStock is the "Add Stock" endpoint for the Inventory Item Stocks module - adds
 // stock for an item+warehouse+bin combination. If a row for that exact combination already
 // exists, the service upserts (adds the qty onto the existing row) instead of creating a

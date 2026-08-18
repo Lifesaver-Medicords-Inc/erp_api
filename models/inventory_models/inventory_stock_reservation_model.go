@@ -18,6 +18,20 @@ import "time"
 // "quotation becomes an order" hookup in this codebase today (see the conversation
 // this was scoped in), so double-counting between a lingering reservation and the
 // real downstream deduction is a known possibility until that path exists.
+// Status is the approval state of the soft hold - "Pending" the instant a sales rep
+// checks RESERVE, "Approved" once a dispatcher/inventory manager (any user whose
+// Position has the RESERVATION_APPROVAL access code - see stock_reservation_service.go)
+// signs off on it, or "Rejected" if they decline it. Pending AND Approved both still
+// count against available stock (see GetAvailableStock) - the approval gate is about
+// authorization/visibility, not a race-condition guard, so two reps still can't both
+// think the same units are free while a request sits unreviewed. Only Rejected drops
+// out of the Reserved sum.
+const (
+	ReservationStatusPending  = "Pending"
+	ReservationStatusApproved = "Approved"
+	ReservationStatusRejected = "Rejected"
+)
+
 type StockReservation struct {
 	ID          uint       `gorm:"primarykey" json:"id"`
 	ItemId      uint       `json:"item_id"`
@@ -27,6 +41,9 @@ type StockReservation struct {
 	QuotationId uint       `json:"quotation_id"` // SalesQuotation.ID (SalesQuotationQuick.BasedId)
 	ReservedAt  time.Time  `json:"reserved_at"`
 	ExpiresAt   *time.Time `json:"expires_at"`
+	Status      string     `gorm:"default:Pending" json:"status"`
+	ApprovedBy  *uint      `json:"approved_by"`
+	ApprovedAt  *time.Time `json:"approved_at"`
 }
 
 func (StockReservation) TableName() string {
@@ -40,4 +57,24 @@ type AvailableStockView struct {
 	Physical  int  `json:"physical"`
 	Reserved  int  `json:"reserved"`
 	Available int  `json:"available"`
+}
+
+// PendingReservationView is one row in the dispatcher/inventory manager's approval
+// queue - a StockReservation joined with just enough context (item name/model, the
+// quotation it came from) to review it without a separate lookup per row.
+type PendingReservationView struct {
+	ID           uint       `json:"id"`
+	ItemId       uint       `json:"item_id"`
+	ItemName     string     `json:"item_name"`
+	ItemModel    string     `json:"item_model"`
+	ItemCode     string     `json:"item_code"`
+	Qty          uint       `json:"qty"`
+	SourceType   string     `json:"source_type"`
+	SourceId     uint       `json:"source_id"`
+	QuotationId  uint       `json:"quotation_id"`
+	DocumentNo   string     `json:"document_no"`
+	RequestedBy  string     `json:"requested_by"`
+	ReservedAt   time.Time  `json:"reserved_at"`
+	ExpiresAt    *time.Time `json:"expires_at"`
+	Status       string     `json:"status"`
 }
