@@ -23,6 +23,7 @@ func MigrateAll() {
 	// migrateBomBoq()
 	// migrateInventoryWarehouse()
 	// migrateEngineering()
+	migrateAccessControl()
 	migrateSalesCrm()
 	migrateSalesProject()
 	// migratePurchasingVendor()
@@ -97,6 +98,23 @@ func migrateAdmin() {
 	// 	&models.CompanyAddressModel{}, &models.CompanyAddressAt{},
 	// 	&models.CompanyContactModel{}, &models.CompanyContactAt{},
 	// )
+}
+
+// ============================================
+// ACCESS CONTROL CATALOG
+// ============================================
+// Only the new AccessModuleModel (tbl_access_modules) - the master catalog of every
+// grantable screen/action, seeded from SMPC_User_Access_Level_List.xlsx (see
+// SeedAccessModules in seed_access_modules.go, called once from main.go's init() right
+// after this). Deliberately its own function, not folded into migrateAdmin() above,
+// since migrateAdmin() itself is commented out (Position/User/PositionAccess tables
+// already exist and are intentionally left alone here) - this only touches the one new
+// table, same narrow-scope reasoning as the ItemStocksAt/StockReservation calls in
+// migrateInventoryWarehouse().
+func migrateAccessControl() {
+	migrateAndLog(
+		&models.AccessModuleModel{},
+	)
 }
 
 // ============================================

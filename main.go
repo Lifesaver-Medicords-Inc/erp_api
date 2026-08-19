@@ -34,6 +34,9 @@ func init() {
 	// migrateInventoryWarehouse() itself is otherwise all commented out, so this doesn't touch
 	// any of the other legacy inventory models still sitting in that block.
 	initializers.MigrateModel("inventory")
+	// One-time (idempotent) load of the Access Control catalog into tbl_access_modules -
+	// must run after MigrateAll()/migrateAccessControl() above has created the table.
+	initializers.SeedAccessModules()
 	initializers.InitRedis()
 	initializers.InitWm()
 	initializers.InitWm2()

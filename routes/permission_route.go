@@ -13,7 +13,12 @@ func PermissionRoutes(app *fiber.App) {
 	permissionHandler := adminhandlers.NewPermissionHandler(permissionService)
 	api.Get("/", permissionHandler.GetPermissionsHandler)
 	api.Get("/:id", permissionHandler.GetPermissionHandler)
-	api.Get("/:id", permissionHandler.GetUserPermissionHandler)
+	// GetUserPermissionHandler (looks up by user_id, not the permission row's own id) was
+	// registered on this exact same "/:id" path above - Fiber only ever dispatches to the
+	// first match, so it was dead code and every "get this user's permission" caller
+	// (e.g. LoginForm.cs on login) was actually hitting GetPermissionHandler instead,
+	// which filters by the wrong column. Given its own path so both are reachable.
+	api.Get("/user/:id", permissionHandler.GetUserPermissionHandler)
 	api.Post("/", permissionHandler.CreatePermissionHandler)
 	api.Put("/:id", permissionHandler.UpdatePermissionHandler)
 	api.Delete("/:id", permissionHandler.DeletePermissionHandler)

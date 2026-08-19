@@ -13,7 +13,10 @@ import (
 func GetPositions(conditions map[string]interface{}) ([]models.PositionModel, int, error) {
 	var positions []models.PositionModel
 
-	if err := services.DbGet(&positions, conditions); err != nil {
+	// Same DbGet-never-preloads gap as GetPosition below - the Access Control screen's
+	// position list (and PositionUsers) needs each position's Access to show existing
+	// grants; without this every position looked ungranted even when it wasn't.
+	if err := services.DbGetWithPreloads(&positions, conditions, "Access"); err != nil {
 		return positions, fiber.StatusInternalServerError, errors.New("failed getting positions")
 	}
 
@@ -26,7 +29,12 @@ func GetPosition(id int) (models.PositionModel, int, error) {
 	}
 	var position models.PositionModel
 
-	if err := services.DbGet(&position, conditions); err != nil {
+	// Was plain DbGet, which never loads GORM associations - Access (tbl_position_access)
+	// came back empty on every single call regardless of what was actually granted,
+	// which is what LoginForm.cs uses to populate SessionService.CurrentPositionAccess.
+	// Every position looked completely unauthorized for every screen because of this,
+	// independent of any actual grants in the DB.
+	if err := services.DbGetWithPreloads(&position, conditions, "Access"); err != nil {
 		return position, fiber.StatusInternalServerError, errors.New("failed getting position")
 	}
 

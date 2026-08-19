@@ -15,6 +15,10 @@ func SetupRoutes(app *fiber.App) {
 	// Position access routes
 	PositionAccessRoutes(app)
 
+	// Access module catalog routes (read-only list of every grantable
+	// screen/action, for the Access Control screen's tree)
+	AccessModuleRoutes(app)
+
 	// Permission routes
 	PermissionRoutes(app)
 

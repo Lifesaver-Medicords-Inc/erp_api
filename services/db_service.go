@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/pierceperado/smpc/initializers"
@@ -409,7 +410,13 @@ func DbGetWithPreloads(model interface{}, conditions map[string]interface{}, pre
 	fmt.Println("CONDITION GET SERVICES", conditions)
 
 	ctx := context.Background()
-	key := GetKey(model, conditions)
+	// Deliberately NOT the same key as DbGet's plain GetKey(model, conditions) - a caller
+	// that used to fetch this model without preloads (e.g. GetPosition before this fix)
+	// may have already cached a response with the relation missing/empty. Reusing that
+	// key here would keep serving that stale, relation-less copy instead of ever hitting
+	// the DB with the preload. Suffixing the preload list makes this its own cache
+	// namespace, so switching a caller onto preloads always gets a fresh DB fetch once.
+	key := GetKey(model, conditions) + ":preloads:" + strings.Join(preloads, ",")
 
 	fmt.Println("GET Rel Keeey", key)
 
