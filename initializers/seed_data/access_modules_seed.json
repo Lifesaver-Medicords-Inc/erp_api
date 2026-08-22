@@ -1,6 +1,15 @@
 [
   {
     "app_name": "SMPC_Admin",
+    "module": "Admin Tools",
+    "submodule": "Admin Tools (parent menu)",
+    "button": "",
+    "code": "ADMIN TOOLS",
+    "kind": "page",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "SMPC_Admin",
     "module": "Admin Tools > Access Control",
     "submodule": "Access Control View (container)",
     "button": "",
@@ -366,60 +375,6 @@
     "button": "",
     "code": "Application Shell.Main Layout (shell/navigation)",
     "kind": "page",
-    "is_sensitive": false
-  },
-  {
-    "app_name": "SMPC_Admin",
-    "module": "Application Shell",
-    "submodule": "Login",
-    "button": "",
-    "code": "Application Shell.Login",
-    "kind": "page",
-    "is_sensitive": false
-  },
-  {
-    "app_name": "SMPC_Admin",
-    "module": "Application Shell",
-    "submodule": "Login",
-    "button": "Login",
-    "code": "Application Shell.Login.Login",
-    "kind": "button",
-    "is_sensitive": false
-  },
-  {
-    "app_name": "SMPC_Admin",
-    "module": "Application Shell",
-    "submodule": "Login",
-    "button": "Cancel",
-    "code": "Application Shell.Login.Cancel",
-    "kind": "button",
-    "is_sensitive": false
-  },
-  {
-    "app_name": "Sales System",
-    "module": "Authentication",
-    "submodule": "Login",
-    "button": "",
-    "code": "Authentication.Login",
-    "kind": "page",
-    "is_sensitive": false
-  },
-  {
-    "app_name": "Sales System",
-    "module": "Authentication",
-    "submodule": "Login",
-    "button": "Login",
-    "code": "Authentication.Login.Login",
-    "kind": "button",
-    "is_sensitive": false
-  },
-  {
-    "app_name": "Sales System",
-    "module": "Authentication",
-    "submodule": "Login",
-    "button": "Cancel",
-    "code": "Authentication.Login.Cancel",
-    "kind": "button",
     "is_sensitive": false
   },
   {
@@ -1401,33 +1356,6 @@
     "button": "",
     "code": "Core / Navigation.Layout (sidebar navigation)",
     "kind": "page",
-    "is_sensitive": false
-  },
-  {
-    "app_name": "Inventory App",
-    "module": "Core / Navigation",
-    "submodule": "Login",
-    "button": "",
-    "code": "Core / Navigation.Login",
-    "kind": "page",
-    "is_sensitive": false
-  },
-  {
-    "app_name": "Inventory App",
-    "module": "Core / Navigation",
-    "submodule": "Login",
-    "button": "Login",
-    "code": "Core / Navigation.Login.Login",
-    "kind": "button",
-    "is_sensitive": false
-  },
-  {
-    "app_name": "Inventory App",
-    "module": "Core / Navigation",
-    "submodule": "Login",
-    "button": "Cancel",
-    "code": "Core / Navigation.Login.Cancel",
-    "kind": "button",
     "is_sensitive": false
   },
   {
@@ -4142,33 +4070,6 @@
   {
     "app_name": "Engineering App",
     "module": "Application Shell",
-    "submodule": "Login",
-    "button": "",
-    "code": "Application Shell.Login",
-    "kind": "page",
-    "is_sensitive": false
-  },
-  {
-    "app_name": "Engineering App",
-    "module": "Application Shell",
-    "submodule": "Login",
-    "button": "Login",
-    "code": "Application Shell.Login.Login",
-    "kind": "button",
-    "is_sensitive": false
-  },
-  {
-    "app_name": "Engineering App",
-    "module": "Application Shell",
-    "submodule": "Login",
-    "button": "Cancel",
-    "code": "Application Shell.Login.Cancel",
-    "kind": "button",
-    "is_sensitive": false
-  },
-  {
-    "app_name": "Engineering App",
-    "module": "Application Shell",
     "submodule": "Layout (sidebar navigation)",
     "button": "",
     "code": "Application Shell.Layout (sidebar navigation)",
@@ -4749,24 +4650,6 @@
     "button": "",
     "code": "Transactions.Sales Quotation List (view)",
     "kind": "page",
-    "is_sensitive": false
-  },
-  {
-    "app_name": "Dispatching App",
-    "module": "Application Shell",
-    "submodule": "Login",
-    "button": "",
-    "code": "Application Shell.Login",
-    "kind": "page",
-    "is_sensitive": false
-  },
-  {
-    "app_name": "Dispatching App",
-    "module": "Application Shell",
-    "submodule": "Login",
-    "button": "Log In",
-    "code": "Application Shell.Login.Log In",
-    "kind": "button",
     "is_sensitive": false
   },
   {
@@ -5749,33 +5632,6 @@
     "code": "Shared/Cross-module.Schedule List Sidebar.Delete",
     "kind": "button",
     "is_sensitive": true
-  },
-  {
-    "app_name": "Accounting App",
-    "module": "Application Shell",
-    "submodule": "Login",
-    "button": "",
-    "code": "Application Shell.Login",
-    "kind": "page",
-    "is_sensitive": false
-  },
-  {
-    "app_name": "Accounting App",
-    "module": "Application Shell",
-    "submodule": "Login",
-    "button": "Login",
-    "code": "Application Shell.Login.Login",
-    "kind": "button",
-    "is_sensitive": false
-  },
-  {
-    "app_name": "Accounting App",
-    "module": "Application Shell",
-    "submodule": "Login",
-    "button": "Cancel",
-    "code": "Application Shell.Login.Cancel",
-    "kind": "button",
-    "is_sensitive": false
   },
   {
     "app_name": "Accounting App",

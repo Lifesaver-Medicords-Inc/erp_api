@@ -1,6 +1,7 @@
 package item_stock_handlers
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -186,16 +187,22 @@ func (h *ItemStockHandler) GetPendingReservations(c *fiber.Ctx) error {
 // authentication/session concept in this API beyond that, so it's what identifies who's
 // clicking Approve/Reject for the position-access check in the service layer.
 func actingUserId(c *fiber.Ctx) uint {
-	at, ok := c.Locals("at").(models.At)
+	// TEMP DEBUG - remove once RESERVATION_APPROVAL 403s are confirmed fixed.
+	atRaw := c.Locals("at")
+	at, ok := atRaw.(models.At)
 	if !ok {
+		fmt.Printf("[RESV-DEBUG] c.Locals(\"at\") missing or wrong type - RequireAuth did not run on this request. raw=%#v\n", atRaw)
 		return 0
 	}
+	fmt.Printf("[RESV-DEBUG] c.Locals(\"at\") = %#v\n", at)
 
 	id, err := strconv.Atoi(at.AtUserId)
 	if err != nil || id < 0 {
+		fmt.Printf("[RESV-DEBUG] AtUserId %q did not parse to a valid uint: %v\n", at.AtUserId, err)
 		return 0
 	}
 
+	fmt.Printf("[RESV-DEBUG] actingUserId resolved to %d\n", id)
 	return uint(id)
 }
 

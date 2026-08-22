@@ -62,6 +62,11 @@ type AvailableStockView struct {
 // PendingReservationView is one row in the dispatcher/inventory manager's approval
 // queue - a StockReservation joined with just enough context (item name/model, the
 // quotation it came from) to review it without a separate lookup per row.
+// CustomerName / ProjectName come off the parent SalesQuotation so the approver can
+// tell at a glance who the stock is being promised to - customer_id on the quotation
+// is a tbl_bpi.id, whose display name lives one hop away in tbl_bpi_general.branch_name
+// (same shape as the GetBpiCustomer view). A quotation can have no project name (Quick
+// Quote), in which case ProjectName comes back empty rather than null.
 type PendingReservationView struct {
 	ID           uint       `json:"id"`
 	ItemId       uint       `json:"item_id"`
@@ -73,6 +78,8 @@ type PendingReservationView struct {
 	SourceId     uint       `json:"source_id"`
 	QuotationId  uint       `json:"quotation_id"`
 	DocumentNo   string     `json:"document_no"`
+	CustomerName string     `json:"customer_name"`
+	ProjectName  string     `json:"project_name"`
 	RequestedBy  string     `json:"requested_by"`
 	ReservedAt   time.Time  `json:"reserved_at"`
 	ExpiresAt    *time.Time `json:"expires_at"`

@@ -19,6 +19,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/sample_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/middlewares"
 	"github.com/pierceperado/smpc/migrations"
 	"github.com/pierceperado/smpc/routes"
 	"github.com/pierceperado/smpc/services"
@@ -126,8 +127,18 @@ func SetupApp() *fiber.App {
 		api.Get("/vfile/:filename", public_handlers.ViewFile)
 
 		// Protected Endpoints
-
-		// api.Use(middlewares.RequireAuth)
+		//
+		// This was commented out - meaning c.Locals("user")/c.Locals("at") were
+		// never populated for ANY request, on ANY of these "protected" routes.
+		// Every request could reach these handlers with no valid token at all,
+		// and actingUserId(c) (used by e.g. reservation approve/reject) always
+		// returned 0 regardless of what was in the Authorization header, because
+		// it reads c.Locals("at") - which this middleware is the only thing that
+		// ever sets. Re-enabling this is what actually makes RESERVATION_APPROVAL
+		// (and every other position-access check that relies on the acting user's
+		// id) work, and it also fixes AT_USER_ID/AT_USER audit-trail fields that
+		// were silently recording blank/zero for everyone on these routes.
+		api.Use(middlewares.RequireAuth)
 		{
 			// Sample Endpoints
 

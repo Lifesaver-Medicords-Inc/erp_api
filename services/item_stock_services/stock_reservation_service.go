@@ -48,18 +48,18 @@ func (s *ItemStockService) logReservationLedger(tx *gorm.DB, itemId uint, direct
 	entry := &inventory_models.StockTransaction{
 		// No single tbl_inv_item_stocks row backs a reservation (it isn't bin/warehouse
 		// scoped), so there's nothing real to put here.
-		RefId:       0,
-		ItemId:      itemId,
-		WarehouseId: 0,
-		BinLocation: "",
-		DocNo:       int(quotationId),
-		Direction:   direction,
-		QtyBefore:   qtyBefore,
-		QtyAfter:    qtyAfter,
-		QtyChange:   qtyChange,
-		SourceType:  &st,
-		SourceId:    &sid,
-		Remarks:     &rm,
+		RefId:         0,
+		ItemId:        itemId,
+		WarehouseId:   0,
+		BinLocation:   "",
+		DocNo:         int(quotationId),
+		Direction:     direction,
+		QtyBefore:     qtyBefore,
+		QtyAfter:      qtyAfter,
+		QtyChange:     qtyChange,
+		SourceType:    &st,
+		SourceId:      &sid,
+		Remarks:       &rm,
 		TransactionAt: time.Now(),
 		DbUser:        dbUser,
 	}
@@ -310,7 +310,11 @@ const ReservationApprovalAccessCode = "RESERVATION_APPROVAL"
 // UserCanApproveReservations checks whether the given user's Position has been granted
 // ReservationApprovalAccessCode.
 func (s *ItemStockService) UserCanApproveReservations(userId uint) (bool, error) {
+	// TEMP DEBUG - remove once RESERVATION_APPROVAL 403s are confirmed fixed.
+	fmt.Printf("[RESV-DEBUG] UserCanApproveReservations called with userId=%d\n", userId)
+
 	if userId == 0 {
+		fmt.Println("[RESV-DEBUG] userId is 0 - short-circuiting to false without querying the DB")
 		return false, nil
 	}
 
@@ -322,9 +326,11 @@ func (s *ItemStockService) UserCanApproveReservations(userId uint) (bool, error)
 		WHERE u.id = ? AND pa.code = ?
 	`, userId, ReservationApprovalAccessCode).Scan(&count).Error
 	if err != nil {
+		fmt.Printf("[RESV-DEBUG] query error: %v\n", err)
 		return false, err
 	}
 
+	fmt.Printf("[RESV-DEBUG] userId=%d matched %d row(s) - canApprove=%v\n", userId, count, count > 0)
 	return count > 0, nil
 }
 
@@ -417,6 +423,8 @@ func (s *ItemStockService) GetPendingReservations() ([]inventory_models.PendingR
 			r.source_id,
 			r.quotation_id,
 			ISNULL(q.document_no, '') AS document_no,
+			ISNULL(cust.branch_name, '') AS customer_name,
+			ISNULL(q.project_name, '') AS project_name,
 			ISNULL(q.created_by, '') AS requested_by,
 			r.reserved_at,
 			r.expires_at,
@@ -425,6 +433,16 @@ func (s *ItemStockService) GetPendingReservations() ([]inventory_models.PendingR
 		LEFT JOIN tbl_setup_item i ON i.id = r.item_id
 		LEFT JOIN tbl_setup_item_name n ON n.id = i.item_name_id
 		LEFT JOIN tbl_trans_sales_quotation q ON q.id = r.quotation_id
+		-- q.customer_id is a tbl_bpi.id; the display name is one hop away in
+		-- tbl_bpi_general (same join the GetBpiCustomer view makes). OUTER APPLY
+		-- rather than a plain LEFT JOIN because a BPI can carry several branch
+		-- rows - a join would fan one reservation out into several queue rows.
+		OUTER APPLY (
+			SELECT TOP 1 g.branch_name
+			FROM tbl_bpi_general g
+			WHERE g.based_id = q.customer_id
+			ORDER BY CASE WHEN g.is_main = 1 THEN 0 ELSE 1 END, g.id
+		) cust
 		WHERE r.status = ?
 		ORDER BY r.reserved_at ASC
 	`
