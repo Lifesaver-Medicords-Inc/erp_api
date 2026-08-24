@@ -61,6 +61,8 @@ func MigrateModel(categories ...string) {
 			migrateSalesCrm()
 		case "sales_project":
 			migrateSalesProject()
+		case "returns", "sales_return", "purchase_return":
+			migrateReturns()
 		case "purchasing", "vendor", "purchasing_vendor":
 			migratePurchasingVendor()
 		case "bpi", "business_partner":
@@ -311,6 +313,22 @@ func migrateSalesCrm() {
 	// running this on every startup is safe - same reasoning as migrateSalesProject.
 	migrateAndLog(
 		&models.OrderDetails{}, &models.OrderDetailsAt{},
+	)
+}
+
+// ============================================
+// RETURNS (SALES & PURCHASE) - spec §5.13, §5.8
+// ============================================
+// New models, no existing data to disturb. AutoMigrate creates these four
+// tables (+ their _at audit pairs) the first time this runs and is a no-op
+// on every run after - same additive-only guarantee as every other
+// migrateAndLog call in this file.
+func migrateReturns() {
+	migrateAndLog(
+		&models.SalesReturn{}, &models.SalesReturnAt{},
+		&models.SalesReturnDetails{}, &models.SalesReturnDetailsAt{},
+		&models.PurchaseReturn{}, &models.PurchaseReturnAt{},
+		&models.PurchaseReturnDetails{}, &models.PurchaseReturnDetailsAt{},
 	)
 }
 

@@ -299,6 +299,16 @@ func UpdateFinalizeQuote(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 		return body, fiber.StatusBadRequest, errors.New("missing or invalid quotation id")
 	}
 
+	// Guard: a header-only quotation with nothing to price, produce, or
+	// eventually invoice used to finalize successfully with zero line items.
+	// Scoped to finalize specifically (IsFinalized true), not every plain
+	// edit/save - a draft may legitimately be saved mid-entry before any
+	// item has been picked yet (Sales Quotation, §5.1.2: a new quote opens
+	// with one blank, unselected row).
+	if body.SalesQuotation.IsFinalized && len(body.SalesQuotationQuickWithImages) == 0 {
+		return body, fiber.StatusBadRequest, errors.New("cannot finalize a quotation with no line items")
+	}
+
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
 		at = models.At{}

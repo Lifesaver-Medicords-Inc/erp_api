@@ -35,6 +35,9 @@ func init() {
 	// migrateInventoryWarehouse() itself is otherwise all commented out, so this doesn't touch
 	// any of the other legacy inventory models still sitting in that block.
 	initializers.MigrateModel("inventory")
+	// New Sales Return / Purchase Return tables (spec §5.13, §5.8) - additive-only,
+	// creates the four tables + their _at audit pairs on first run.
+	initializers.MigrateModel("returns")
 	// One-time (idempotent) load of the Access Control catalog into tbl_access_modules -
 	// must run after MigrateAll()/migrateAccessControl() above has created the table.
 	initializers.SeedAccessModules()
