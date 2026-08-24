@@ -22,6 +22,10 @@ type PurchaseReturnContent struct {
 	RefIRID uint   `gorm:"not null" json:"ref_ir_id"`
 	RefIRNo string `gorm:"size:50" json:"ref_ir_no,omitempty"`
 
+	// System-set, read-only - same DocDate convention as every other
+	// document in this codebase (see SalesReturnContent.DocDate).
+	DocDate string `json:"doc_date,omitempty"`
+
 	// "Return with Debit Memo" | "Return without Debit Memo" (§5.8). With
 	// = a receipt exists, so a Debit Memo is auto-created against the
 	// supplier's account. Without = no receipt, no DM needed. The DM
@@ -64,4 +68,15 @@ type PurchaseReturnAt struct {
 
 func (PurchaseReturnAt) TableName() string {
 	return "z_tbl_trans_purchase_return_at"
+}
+
+// Request/response DTO shapes - same convention as SalesReturnBody/Get.
+type PurchaseReturnBody struct {
+	PurchaseReturn        PurchaseReturn          `json:"purchase_return"`
+	PurchaseReturnDetails []PurchaseReturnDetails `json:"purchase_return_details"`
+}
+
+type PurchaseReturnGet struct {
+	PurchaseReturn        []PurchaseReturn        `json:"purchase_return"`
+	PurchaseReturnDetails []PurchaseReturnDetails `json:"purchase_return_details"`
 }

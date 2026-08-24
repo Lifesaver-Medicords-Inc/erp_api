@@ -46,6 +46,11 @@ func SetupRoutes(app *fiber.App) {
 
 	SalesOrderRoutes(app)
 
+	// Returns (§5.13, §5.8) - own top-level groups, see each route file's
+	// doc comment.
+	SalesReturnRoutes(app)
+	PurchaseReturnRoutes(app)
+
 	AccountingRoutes(api)
 
 	EngineeringRoutes(api)

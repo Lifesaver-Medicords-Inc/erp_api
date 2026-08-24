@@ -18,6 +18,12 @@ type SalesReturnContent struct {
 	RefDocID   uint   `gorm:"not null" json:"ref_doc_id"`
 	RefDocNo   string `gorm:"size:50" json:"ref_doc_no,omitempty"`
 
+	// System-set, read-only per §5.13's header table - same convention as
+	// every other document in this codebase (e.g.
+	// accounting_models.SalesInvoiceContent.DocDate): set client-side from
+	// the user's PC clock at "New", not derived server-side from time.Now().
+	DocDate string `json:"doc_date,omitempty"`
+
 	// Reference SO and quote follow from RefDocID, not stored redundantly
 	// here - they are looked up through the reference document.
 	ExpectedReturnedDate string `json:"expected_returned_date,omitempty"`
@@ -82,4 +88,17 @@ type SalesReturnAt struct {
 
 func (SalesReturnAt) TableName() string {
 	return "z_tbl_trans_sales_return_at"
+}
+
+// Request/response DTO shapes - same Body (create request) / Get (list
+// response) split used by every other document in this codebase (e.g.
+// accounting_models.SalesInvoiceBody/SalesInvoiceGet).
+type SalesReturnBody struct {
+	SalesReturn        SalesReturn          `json:"sales_return"`
+	SalesReturnDetails []SalesReturnDetails `json:"sales_return_details"`
+}
+
+type SalesReturnGet struct {
+	SalesReturn        []SalesReturn        `json:"sales_return"`
+	SalesReturnDetails []SalesReturnDetails `json:"sales_return_details"`
 }
