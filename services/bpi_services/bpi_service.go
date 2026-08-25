@@ -493,6 +493,18 @@ func InvalidateChildKey() {
 	canvassKey := services.GetKey(models.PurchasingCanvassSheetSOView{}, nil)
 	services.InvalidateCache(canvassKey)
 
+	// Same gap, different consumer: the "ADD SUPPLIER" picker (SupplierModal
+	// .cs) reads PurchasingListSupplierView, which aggregates each
+	// supplier's own comma-joined item_ids. sales_services/order_service.go's
+	// InvalidateSOCaches() already clears this whenever a Sales Order
+	// changes, but nothing clears it when the item<->supplier link itself
+	// changes at the source (BPI). Confirmed live: a long-established item
+	// (already priced, not newly added) never appeared in the picker either
+	// - this cache entry has likely never been invalidated since the
+	// server last started.
+	supplierListKey := services.GetKey(models.PurchasingListSupplierView{}, nil)
+	services.InvalidateCache(supplierListKey)
+
 	financeKey := services.GetKey(models.BpiFinance{}, nil)
 	services.InvalidateCache(financeKey)
 
