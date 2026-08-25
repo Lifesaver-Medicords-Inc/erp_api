@@ -51,6 +51,10 @@ func SetupRoutes(app *fiber.App) {
 	SalesReturnRoutes(app)
 	PurchaseReturnRoutes(app)
 
+	// Memos (§5.18, §5.19) - own top-level groups, same convention.
+	CreditMemoRoutes(app)
+	DebitMemoRoutes(app)
+
 	AccountingRoutes(api)
 
 	EngineeringRoutes(api)
