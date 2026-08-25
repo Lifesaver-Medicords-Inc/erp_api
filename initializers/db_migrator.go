@@ -63,6 +63,8 @@ func MigrateModel(categories ...string) {
 			migrateSalesProject()
 		case "returns", "sales_return", "purchase_return":
 			migrateReturns()
+		case "memos", "credit_memo", "debit_memo":
+			migrateMemos()
 		case "purchasing", "vendor", "purchasing_vendor":
 			migratePurchasingVendor()
 		case "bpi", "business_partner":
@@ -329,6 +331,23 @@ func migrateReturns() {
 		&models.SalesReturnDetails{}, &models.SalesReturnDetailsAt{},
 		&models.PurchaseReturn{}, &models.PurchaseReturnAt{},
 		&models.PurchaseReturnDetails{}, &models.PurchaseReturnDetailsAt{},
+	)
+}
+
+// ============================================
+// MEMOS (CREDIT & DEBIT) - spec §5.18, §5.19
+// ============================================
+// New models, no existing data to disturb - same additive-only guarantee as
+// migrateReturns() above. This was missing entirely (models/service/handler/
+// routes/client UI all existed, but nothing ever created these tables), so
+// every Credit Memo/Debit Memo API call has been failing against a real
+// database since those were built - found while setting up Phase 1's
+// integration testing (item 1.10).
+func migrateMemos() {
+	migrateAndLog(
+		&models.CreditMemo{}, &models.CreditMemoAt{},
+		&models.DebitMemo{}, &models.DebitMemoAt{},
+		&models.DebitMemoDetails{}, &models.DebitMemoDetailsAt{},
 	)
 }
 

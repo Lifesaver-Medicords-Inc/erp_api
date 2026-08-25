@@ -38,6 +38,10 @@ func init() {
 	// New Sales Return / Purchase Return tables (spec §5.13, §5.8) - additive-only,
 	// creates the four tables + their _at audit pairs on first run.
 	initializers.MigrateModel("returns")
+	// Credit Memo / Debit Memo tables (spec §5.18, §5.19) - was missing entirely,
+	// so neither document could ever persist against a real database. See
+	// migrateMemos()'s own comment.
+	initializers.MigrateModel("memos")
 	// One-time (idempotent) load of the Access Control catalog into tbl_access_modules -
 	// must run after MigrateAll()/migrateAccessControl() above has created the table.
 	initializers.SeedAccessModules()
