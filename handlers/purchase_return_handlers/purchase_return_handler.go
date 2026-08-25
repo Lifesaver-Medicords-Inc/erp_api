@@ -60,3 +60,31 @@ func (h *PurchaseReturnHandler) CreatePurchaseReturn(c *fiber.Ctx) error {
 
 	return utils.RespondSuccess(c, data)
 }
+
+// ApprovePurchaseReturn signs off on a pending Purchase Return. Only a user
+// whose Position has been granted the PURCHASE_RETURN_APPROVAL access code
+// (see purchase_return_services.PurchaseReturnApprovalAccessCode - CBDO)
+// can do this - checked server-side, not trusted to the client hiding the
+// button.
+func (h *PurchaseReturnHandler) ApprovePurchaseReturn(c *fiber.Ctx) error {
+	purchaseReturnId, err := strconv.Atoi(c.Params("id"))
+	if err != nil || purchaseReturnId <= 0 {
+		return utils.RespondError(c, fiber.StatusBadRequest, "a valid purchase return id is required")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+	actingUserId := uint(0)
+	if id, err := strconv.Atoi(at.AtUserId); err == nil && id > 0 {
+		actingUserId = uint(id)
+	}
+
+	status, err := h.Service.ApprovePurchaseReturn(uint(purchaseReturnId), actingUserId)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, nil)
+}

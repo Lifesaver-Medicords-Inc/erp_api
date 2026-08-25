@@ -7,8 +7,7 @@ import (
 )
 
 // PurchaseReturnRoutes - Purchase Return (PRT#), spec §5.8. Own top-level
-// group, matching SalesReturnRoutes' convention. No approve endpoint yet -
-// see PurchaseReturnService.CreatePurchaseReturn's doc comment for why.
+// group, matching SalesReturnRoutes' convention.
 func PurchaseReturnRoutes(app *fiber.App) {
 	api := app.Group("/api/purchase-returns")
 
@@ -17,4 +16,5 @@ func PurchaseReturnRoutes(app *fiber.App) {
 	api.Get("/", handler.GetPurchaseReturn)
 	api.Get("/:id", handler.GetPurchaseReturnById)
 	api.Post("/", handler.CreatePurchaseReturn)
+	api.Post("/:id/approve", handler.ApprovePurchaseReturn)
 }

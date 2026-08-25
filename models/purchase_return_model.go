@@ -46,6 +46,17 @@ type PurchaseReturnContent struct {
 
 	Remarks string `gorm:"type:text" json:"remarks,omitempty"`
 
+	// Approval gate - not described in §5.8's own text, but implied by
+	// §3.2 ("Purchase Return Approval" is an Admin-accessible module) and
+	// §16's glossary ("CBDO - Executive approver ... purchase return").
+	// Confirmed with the user rather than guessed: CBDO approves, mirroring
+	// the SRT/CM approval-gate shape already built elsewhere in this file
+	// set. The stock-decrease-on-release effect (§5.8) is gated on this.
+	IsApproved     bool   `json:"is_approved"`
+	ApprovedByID   uint   `json:"approved_by_id,omitempty"`
+	ApprovedByName string `gorm:"size:255" json:"approved_by_name,omitempty"`
+	ApprovalDate   string `json:"approval_date,omitempty"`
+
 	PurchaseReturnDetails []PurchaseReturnDetails `gorm:"foreignKey:PurchaseReturnID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"purchase_return_details,omitempty"`
 }
 
