@@ -480,6 +480,19 @@ func InvalidateChildKey() {
 	itemKey := services.GetKey(models.BpiItemsView{}, nil)
 	services.InvalidateCache(itemKey)
 
+	// Purchasing List / Canvass Sheet reads a separate cached view
+	// (PurchasingCanvassSheetSOView) built from this same item<->supplier
+	// data, but purchasing_canvass_sheet_service.go's own
+	// InvalidateItemCaches() is never reached from the BPI-side add/edit
+	// flow - only from editing a canvass sheet row directly. Without this,
+	// an item added straight from Business Partner Info's ITEMS tab never
+	// shows up on Canvass Sheet until the server restarts and the cache
+	// empties on its own. (purchasing_services already imports
+	// bpi_services, so calling back into it here would be a circular
+	// import - invalidating the same key directly instead.)
+	canvassKey := services.GetKey(models.PurchasingCanvassSheetSOView{}, nil)
+	services.InvalidateCache(canvassKey)
+
 	financeKey := services.GetKey(models.BpiFinance{}, nil)
 	services.InvalidateCache(financeKey)
 
