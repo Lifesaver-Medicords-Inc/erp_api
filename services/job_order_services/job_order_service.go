@@ -12,7 +12,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/models/inventory_models"
 	"github.com/pierceperado/smpc/services"
+	"github.com/pierceperado/smpc/services/item_stock_services"
 	"gorm.io/gorm"
 )
 
@@ -27,6 +29,19 @@ func (s *JobOrderService) GetJobOrder(conditions map[string]interface{}) (interf
 
 	if err := services.DbRaw(&response, "sp_GetJobOrders", conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting job order data")
+	}
+
+	return response, 0, nil
+}
+
+// GetPendingProductionReports is the Warehouse Manager's §5.23 acknowledgement
+// queue - every Job Order marked COMPLETE that hasn't been WH-acknowledged yet,
+// company-wide. Backs the Inventory app's Production screen (Phase 2 item 2.4).
+func (s *JobOrderService) GetPendingProductionReports() (interface{}, int, error) {
+	var response []models.PendingProductionReportView
+
+	if err := services.DbRaw(&response, "sp_GetPendingProductionReports", nil); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting pending production reports")
 	}
 
 	return response, 0, nil
@@ -277,13 +292,24 @@ func (s *JobOrderService) AcceptJobOrder(jobOrderId uint, acceptedByUserId uint)
 // IN STOCK (confirmed). Requires the job to already be marked complete - acknowledging a
 // job that hasn't finished production yet would be confirming stock that was never
 // actually produced.
-func (s *JobOrderService) AcknowledgeJobOrder(jobOrderId uint, acknowledgedByUserId uint) (int, error) {
+//
+// §5.23's other stated effect - "item stock increases" - happens here too: the produced
+// units (this job's own Quantity) are added to whichever warehouse/bin the Warehouse
+// Manager picks at acknowledgement time. There's no implicit "production output"
+// location anywhere else in this codebase - every existing stock-increase path
+// (Receiving Report, Stock Transfer's destination) requires an explicit pick, so this
+// follows the same convention rather than inventing a default.
+func (s *JobOrderService) AcknowledgeJobOrder(jobOrderId uint, acknowledgedByUserId uint, warehouseId uint, binLocation string, at models.At) (int, error) {
 	canAcknowledge, err := s.UserCanAcknowledgeJobOrder(acknowledgedByUserId)
 	if err != nil {
 		return fiber.StatusInternalServerError, errors.New("failed checking acknowledgement permission")
 	}
 	if !canAcknowledge {
 		return fiber.StatusForbidden, errors.New("this user's position is not authorized to acknowledge job orders (Warehouse Manager only, §5.23)")
+	}
+
+	if warehouseId == 0 || strings.TrimSpace(binLocation) == "" {
+		return fiber.StatusBadRequest, errors.New("warehouse_id and bin_location are required - where do the produced units go into stock?")
 	}
 
 	tx := initializers.DB.Begin()
@@ -320,6 +346,30 @@ func (s *JobOrderService) AcknowledgeJobOrder(jobOrderId uint, acknowledgedByUse
 
 	if err := services.DbUpdate(tx, &jobOrder, map[string]interface{}{"id": jobOrder.ID}); err != nil {
 		return fiber.StatusInternalServerError, errors.New("failed updating job order")
+	}
+
+	var orderDetail models.OrderDetails
+	if err := tx.First(&orderDetail, jobOrder.OrderDetailsId).Error; err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed loading the sales order line this job order produces")
+	}
+
+	producedQty := int(jobOrder.Quantity)
+	stockService := item_stock_services.NewItemStockService()
+	stockBody := &inventory_models.ItemStocks{
+		ItemStocksContent: inventory_models.ItemStocksContent{
+			ItemId:      orderDetail.Item_ID,
+			StockQty:    &producedQty,
+			StockUom:    "",
+			WarehouseId: warehouseId,
+			BinLocation: binLocation,
+		},
+	}
+	atBody := &inventory_models.ItemStocksAt{
+		SourceId:   jobOrder.ID,
+		SourceType: "job_order_production",
+	}
+	if _, err := stockService.UpsertStockWithTx(tx, stockBody, atBody, at, nil); err != nil {
+		return fiber.StatusInternalServerError, fmt.Errorf("failed increasing item stock: %w", err)
 	}
 
 	if err := services.RecomputeSoItemStatus(tx, jobOrder.OrderDetailsId); err != nil {

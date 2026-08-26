@@ -128,19 +128,45 @@ func (h *JobOrderHandler) AcceptJobOrder(c *fiber.Ctx) error {
 }
 
 // AcknowledgeJobOrder - §5.23's Warehouse Manager acknowledgement step, access-gated via
-// JobOrderWhAckAccessCode.
+// JobOrderWhAckAccessCode. Body carries the destination the produced units go into
+// stock at - see AcknowledgeJobOrder's own doc comment for why that's required rather
+// than defaulted.
 func (h *JobOrderHandler) AcknowledgeJobOrder(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "invalid job order id")
 	}
 
-	status, err := h.Service.AcknowledgeJobOrder(uint(id), actingUserId(c))
+	var body struct {
+		WarehouseId uint   `json:"warehouse_id"`
+		BinLocation string `json:"bin_location"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	status, err := h.Service.AcknowledgeJobOrder(uint(id), actingUserId(c), body.WarehouseId, body.BinLocation, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
 	return utils.RespondSuccess(c, nil)
+}
+
+// GetPendingProductionReports - §5.23's Warehouse Manager acknowledgement queue,
+// company-wide (Phase 2 item 2.4).
+func (h *JobOrderHandler) GetPendingProductionReports(c *fiber.Ctx) error {
+	data, status, err := h.Service.GetPendingProductionReports()
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
 }
 
 // actingUserId pulls the numeric user id off the same "at" audit context every other

@@ -30,6 +30,9 @@ func setupJobOrderRoutes(api fiber.Router) {
 	api.Put("/job_order", handler.UpdateJobOrder)
 	api.Post("/job_order/:id/accept", handler.AcceptJobOrder)
 	api.Post("/job_order/:id/acknowledge", handler.AcknowledgeJobOrder)
+	// Must be registered before the /job_order/:user_id wildcard below, or Fiber
+	// would try to parse "pending_production_reports" as a user id.
+	api.Get("/job_order/pending_production_reports", handler.GetPendingProductionReports)
 	api.Get("/job_order/:user_id", handler.GetJobOrder)
 }
 

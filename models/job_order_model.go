@@ -73,6 +73,16 @@ type JobOrderView struct {
 	SoItemStatus string `json:"so_item_status"`
 }
 
+// PendingProductionReportView is sp_GetPendingProductionReports' read shape - the
+// Warehouse Manager's §5.23 acknowledgement queue: every Job Order marked COMPLETE
+// that hasn't been WH-acknowledged yet, company-wide (not scoped to one engineer's
+// approved SOs the way sp_GetJobOrders/JobOrderView is - see AcknowledgeJobOrder).
+type PendingProductionReportView struct {
+	JobOrder
+	SoItemStatus string `json:"so_item_status"`
+	ItemId       uint   `json:"item_id"`
+}
+
 type JobOrderSales struct {
 	Id           int    `json:"id"`
 	Customer     string `json:"customer"`
