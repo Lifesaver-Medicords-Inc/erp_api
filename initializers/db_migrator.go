@@ -18,6 +18,7 @@ import (
 // // MigrateAll runs all database migrations - Use for deployment
 func MigrateAll() {
 	// migrateAdmin()
+	migrateCompanySettings()
 	// migrateSetup()
 	// migrateItemManagement()
 	// migrateBomBoq()
@@ -102,6 +103,21 @@ func migrateAdmin() {
 	// 	&models.CompanyAddressModel{}, &models.CompanyAddressAt{},
 	// 	&models.CompanyContactModel{}, &models.CompanyContactAt{},
 	// )
+}
+
+// migrateAdmin() above is commented out wholesale (User/Position/PositionAccess/
+// UserPermission/Social/Entity/Application/Company/CompanyAddress/CompanyContact) -
+// those predate this selective-migration setup and re-enabling the whole group is
+// a much bigger blast radius than this needs. tbl_company already exists with its
+// base columns (Phase 3 item 3.4 built and used it successfully), so this migrates
+// only what's actually new on CompanyModel since then: markup_multiplier_price
+// (declared on the model, but this exact gap is why the column was never created -
+// confirmed directly against the live DB, "Invalid column name") and
+// vat_rate_percent (Sales_Quotation_Bug_Report_2026-08-03.md #18 - both now
+// configurable instead of hardcoded, see company_model.go's own comment on these
+// two fields).
+func migrateCompanySettings() {
+	migrateAndLog(&models.CompanyModel{}, &models.CompanyAt{})
 }
 
 // ============================================

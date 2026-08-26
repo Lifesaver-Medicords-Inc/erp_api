@@ -17,12 +17,29 @@ type CompanyContent struct {
 	BegBal                   float64 `json:"beg_bal"`
 	MonthlyRate              float64 `json:"monthly_rate"`
 	CurrencyCode             string  `json:"currency_code"`
-	MarkUpMultiplierPrice    float64 `json:"markup_multiplier_price"`
+	// MarkUpMultiplierPrice/VatRatePercent - Sales_Quotation_Bug_Report_2026-08-03.md
+	// #18: the hierarchical BOM markup computation (Quotation.cs's
+	// ComputeByReferenceHierarchy/GetTotalUnitPriceForChildren, ItemSetUC.cs's
+	// own copy) hardcoded a bare 1.186 multiplier with no company-wide setting
+	// behind it, contradicting the VAT_RATE = 0.12m constant used elsewhere.
+	// User confirmed 1.186 is a markup figure, not VAT - both are configurable
+	// here now instead of hardcoded. MarkUpMultiplierPrice is the raw
+	// multiplier itself (e.g. 1.186), matching how the code already used it
+	// directly. VatRatePercent is a whole-number percentage (12 means 12%),
+	// matching how VAT is written everywhere else in the spec ("VAT (12%)") -
+	// callers divide by 100 rather than storing the raw decimal fraction.
+	// Explicit column tag: GORM's default naming convention derives
+	// "mark_up_multiplier_price" from this field name (treating "Up" as its
+	// own word), which doesn't match the json tag at all - confirmed directly
+	// against the live DB after this field's very first migration. Pinned
+	// explicitly so the column name actually matches the API contract.
+	MarkUpMultiplierPrice    float64 `json:"markup_multiplier_price" gorm:"column:markup_multiplier_price"`
 	StartFiscalDate          string  `json:"start_fiscal_date"`
 	EndFiscalDate            string  `json:"end_fiscal_date"`
 	InclusionsQuotationTerms string  `json:"inclusions_quotation_terms"`
 	ExclusionsQuotationTerms string  `json:"exclusions_quotation_terms"`
 	TermAndConditions        string  `json:"term_and_conditions"`
+	VatRatePercent           float64 `json:"vat_rate_percent"`
 }
 
 type CompanyModel struct {
@@ -65,12 +82,13 @@ type CompanyCacheModel struct {
 	BegBal                   float64 `json:"beg_bal"`
 	MonthlyRate              float64 `json:"monthly_rate"`
 	CurrencyCode             string  `json:"currency_code"`
-	MarkUpMultiplierPrice    float64 `json:"markup_multiplier_price"`
+	MarkUpMultiplierPrice    float64 `json:"markup_multiplier_price" gorm:"column:markup_multiplier_price"`
 	StartFiscalDate          string  `json:"start_fiscal_date"`
 	EndFiscalDate            string  `json:"end_fiscal_date"`
 	InclusionsQuotationTerms string  `json:"inclusions_quotation_terms"`
 	ExclusionsQuotationTerms string  `json:"exclusions_quotation_terms"`
 	TermAndConditions        string  `json:"term_and_conditions"`
+	VatRatePercent           float64 `json:"vat_rate_percent"`
 }
 
 func (CompanyCacheModel) TableName() string {
