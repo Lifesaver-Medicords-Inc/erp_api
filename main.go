@@ -52,6 +52,11 @@ func init() {
 	// One-time (idempotent) load of the Access Control catalog into tbl_access_modules -
 	// must run after MigrateAll()/migrateAccessControl() above has created the table.
 	initializers.SeedAccessModules()
+	// Delivery Cost's COST TYPE list (LABOR/VEHICLE/FUEL/TOLL GATE/INSURANCE/
+	// PENALTY/OTHERS) and, only on a genuinely fresh DB with zero templates,
+	// one placeholder Project Quotation template - see seed_defaults.go.
+	initializers.SeedCalendarCostTypes()
+	initializers.SeedDefaultProjectQuotationTemplate()
 	initializers.InitRedis()
 	initializers.InitWm()
 	initializers.InitWm2()
