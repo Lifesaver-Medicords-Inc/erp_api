@@ -61,6 +61,18 @@ func (JobOrderAt) TableName() string {
 	return "z_tbl_trans_job_order_at"
 }
 
+// JobOrderView is the read shape sp_GetJobOrders actually returns - adds
+// SoItemStatus (§7.1, joined from tbl_trans_sales_order_details.status via
+// order_details_id - Phase 2 item 2.6's recompute engine owns that column).
+// Kept deliberately separate from JobOrder/JobOrderContent (the real CRUD
+// model, auto-migrated onto tbl_trans_job_order) since SoItemStatus is not a
+// column on that table - only ever populated by this raw-SQL read path. See
+// JobOrderService.GetJobOrder, the only place this is used.
+type JobOrderView struct {
+	JobOrder
+	SoItemStatus string `json:"so_item_status"`
+}
+
 type JobOrderSales struct {
 	Id           int    `json:"id"`
 	Customer     string `json:"customer"`

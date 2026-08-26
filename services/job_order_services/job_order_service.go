@@ -23,7 +23,7 @@ func NewJobOrderService() *JobOrderService {
 }
 
 func (s *JobOrderService) GetJobOrder(conditions map[string]interface{}) (interface{}, int, error) {
-	var response []models.JobOrder
+	var response []models.JobOrderView
 
 	if err := services.DbRaw(&response, "sp_GetJobOrders", conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting job order data")
