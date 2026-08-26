@@ -197,6 +197,26 @@ func UpdateOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 		if err := UpdateOrderDetail(tx, orderDetail, at, orderDetailConditions); err != nil {
 			return bodyorder, fiber.StatusInternalServerError, err
 		}
+
+		// Activate (Orders.cs's btn_check_Click) deliberately stopped sending a
+		// client-guessed "status" here - see commit 8335598, which fixed that
+		// write clobbering §7.1's richer status on every Activate. But nothing
+		// else ever gives a line its FIRST status either: sp_RecomputeSoItemStatus
+		// is only ever invoked by downstream events (Job Order, PO/RR, Item
+		// Release, ...), none of which have happened yet the moment an SO is
+		// first approved. Without this, a freshly-activated line's status stays
+		// NULL forever until some unrelated later event happens to touch it.
+		// Recomputing here - gated on the header actually being ACTIVE, so a
+		// draft save never fires it - gives every line its correct real status
+		// (CANVASS/IN STOCK based on actual stock, via the engine's own base-case
+		// fallback) at exactly the moment activation used to fake one, without
+		// reintroducing the coarse client-side guess that bug was fixed for.
+		if bodyorder.Order.Status == "ACTIVE" {
+			if err := services.RecomputeSoItemStatus(tx, orderDetail.OrderDetailsID); err != nil {
+				return bodyorder, fiber.StatusInternalServerError, errors.New("failed recomputing SO item status")
+			}
+		}
+
 		fmt.Println(bodyorder)
 	}
 	fmt.Println(bodyorder)
