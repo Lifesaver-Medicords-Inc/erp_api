@@ -42,6 +42,13 @@ func init() {
 	// so neither document could ever persist against a real database. See
 	// migrateMemos()'s own comment.
 	initializers.MigrateModel("memos")
+	// migrateJobOrder() exists but was never called anywhere (commented out inside
+	// MigrateAll() too) - tbl_trans_job_order predates this selective-migration setup,
+	// so it already has its base columns, but nothing was propagating new ones. Found
+	// this because IsAccepted/IsWhAcknowledged (§7.1's accept/WH-ack split, added this
+	// pass) never showed up on the live table despite a clean build+restart. Additive
+	// GORM AutoMigrate only - safe to turn on.
+	initializers.MigrateModel("job_order")
 	// One-time (idempotent) load of the Access Control catalog into tbl_access_modules -
 	// must run after MigrateAll()/migrateAccessControl() above has created the table.
 	initializers.SeedAccessModules()
