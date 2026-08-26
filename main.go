@@ -451,6 +451,8 @@ func SetupApp() *fiber.App {
 				// POST for Parent
 				salesApi.Post("/quotation", sales_handlers.CreateSalesQuotation)
 				salesApi.Put("/quotation", sales_handlers.UpdateQuotation)
+				// §3.2/§6.3 REQUEST FOR ENGR. (Phase 4 item 4.1) - was a client-side stub.
+				salesApi.Post("/quotation/:id/request_for_engr", sales_handlers.RequestQuotationForEngr)
 
 				salesApi.Post("/salescanvas", sales_handlers.CreateSalesCanvasSheet)
 				//salesApi.Get("/salescanvas", sales_handlers.GetSalesCanvasView)

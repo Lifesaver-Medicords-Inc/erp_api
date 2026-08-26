@@ -3,6 +3,8 @@ package sales_services
 import (
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -343,6 +345,50 @@ func UpdateFinalizeQuote(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 	}
 
 	return body, 0, nil
+}
+
+// RequestQuotationForEngr is §3.2/§6.3's "REQUEST FOR ENGR." action - previously a
+// pure client-side stub (btn_request_for_engr_Click just opened an unrelated test
+// form) with no backing field anywhere. Makes the per-quote-to-a-specific-engineer
+// grant §3.2 describes explicit, rather than the engineering red box/Sales
+// Quotation List inferring "sent to engineering" implicitly from "has a project
+// name and at least one wiring row" (see vw_get_engineering_redbox_quotation_list.sql),
+// which fires with no deliberate action and isn't scoped to any one engineer.
+// Phase 4 item 4.1.
+func RequestQuotationForEngr(tx *gorm.DB, quotationId uint, engrId uint, at models.At) (*models.SalesQuotation, int, error) {
+	if engrId == 0 {
+		return nil, fiber.StatusBadRequest, errors.New("engr_id is required - which engineer is this being requested to?")
+	}
+
+	var quotation models.SalesQuotation
+	if err := tx.First(&quotation, quotationId).Error; err != nil {
+		return nil, fiber.StatusNotFound, errors.New("quotation not found")
+	}
+
+	var engr models.User
+	if err := tx.First(&engr, engrId).Error; err != nil {
+		return nil, fiber.StatusBadRequest, errors.New("engineer not found")
+	}
+
+	quotation.IsRequestedForEngr = true
+	quotation.RequestedEngrId = engrId
+	quotation.RequestedEngrName = strings.TrimSpace(engr.FirstName + " " + engr.LastName)
+	quotation.RequestedForEngrDate = time.Now().Format("01/02/2006 3:04:05 PM")
+
+	if err := services.DbUpdate(tx, &quotation, map[string]interface{}{"id": quotation.ID}); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed requesting quotation for engineering")
+	}
+
+	atdata := models.SalesQuotationAt{
+		RefId:                  quotation.ID,
+		SalesQuotationContent:  quotation.SalesQuotationContent,
+		At:                     at,
+	}
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed creating sales quotation at")
+	}
+
+	return &quotation, fiber.StatusOK, nil
 }
 
 // for finalizing the quotation

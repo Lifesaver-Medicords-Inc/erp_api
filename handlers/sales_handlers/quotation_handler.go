@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
+	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services/sales_services"
 	"github.com/pierceperado/smpc/utils"
 )
@@ -100,6 +101,45 @@ func CreateSalesQuotation(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 	data, status, err := sales_services.CreateSalesQuotation(c, tx)
+	if err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+// RequestQuotationForEngr - §3.2/§6.3's REQUEST FOR ENGR. action (Phase 4 item 4.1).
+func RequestQuotationForEngr(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	idNum, err := strconv.Atoi(idParam)
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "invalid quotation id")
+	}
+
+	var body struct {
+		EngrId uint `json:"engr_id"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "cannot bind request")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+	}
+
+	data, status, err := sales_services.RequestQuotationForEngr(tx, uint(idNum), body.EngrId, at)
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())

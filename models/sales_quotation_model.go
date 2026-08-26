@@ -33,6 +33,18 @@ type SalesQuotationContent struct {
 	FinalRefNo           string  `json:"final_ref_no"`
 	IsFinalized          bool    `json:"is_finalized"`
 	IsProject            bool    `json:"is_project"`
+
+	// §3.2/§6.3 - REQUEST FOR ENGR. was a client-side stub (btn_request_for_engr_Click
+	// just opened an old test form) with no backing field at all. The engineering red
+	// box/Sales Quotation List instead inferred "sent to engineering" implicitly from
+	// "has a project name and at least one wiring row" - which fires with no explicit
+	// action and isn't scoped to any one engineer, contradicting §3.2's "an engineer
+	// sees the quotations sent to them and no others" (a per-quote grant). These make
+	// the grant explicit and assignable to a specific engineer - Phase 4 item 4.1.
+	IsRequestedForEngr   bool   `json:"is_requested_for_engr"`
+	RequestedEngrId      uint   `json:"requested_engr_id"`
+	RequestedEngrName    string `json:"requested_engr_name"`
+	RequestedForEngrDate string `json:"requested_for_engr_date"`
 }
 
 type SalesQuotation struct {

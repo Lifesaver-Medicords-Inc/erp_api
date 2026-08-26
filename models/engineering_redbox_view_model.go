@@ -8,6 +8,12 @@ type EngineeringRedboxQuotationListContent struct {
 	ProjectName    string `json:"project_name"`
 	SalesExecutive string `json:"sales_executive"`
 	Remark         string `json:"remark"`
+	// Added for Phase 4 item 4.1 - lets a future per-engineer scoped query (the
+	// Sales Quotation List itself, or a scoped WS route mirroring Job Order's own
+	// /job_order/:userId) filter with conditions{"requested_engr_id": ...} via the
+	// existing GetSortedEngineeringRedboxQuotationList(conditions) plumbing,
+	// without needing a new stored procedure.
+	RequestedEngrId uint `json:"requested_engr_id"`
 }
 
 type EngineeringRedboxQuotationListView struct {
