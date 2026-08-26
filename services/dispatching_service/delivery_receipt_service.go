@@ -96,12 +96,30 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *dispatching_
 	data.DocNo = nextDocNo
 	data.ID = 0 // safety: never trust client-provided ID
 
+	// Same safety, extended to the nested items - this field wasn't covered by the
+	// header-only reset above, and a non-zero client-supplied id here would make
+	// GORM's association cascade upsert (MATCH-if-found, INSERT-if-not) instead of a
+	// plain insert of new rows, which is both a correctness risk (a malformed/stale
+	// payload could silently overwrite an unrelated existing row by id) and - the way
+	// this was actually found - the exact shape SQL Server refuses outright once the
+	// target table has any trigger (see RecomputeSoItemStatus's own doc comment).
+	for i := range data.DeliveryReceiptItems {
+		data.DeliveryReceiptItems[i].ID = 0
+	}
+
 	if err := services.DbInsert(tx, data); err != nil { // only once
 		tx.Rollback()
 		if strings.Contains(err.Error(), "duplicate key") {
 			return data, fiber.StatusInternalServerError, errors.New("duplicate record error")
 		}
 		return data, fiber.StatusInternalServerError, errors.New("failed creating delivery receipt")
+	}
+
+	for _, item := range data.DeliveryReceiptItems {
+		if err := services.RecomputeSoItemStatus(tx, item.SalesOrderDetailsId); err != nil {
+			tx.Rollback()
+			return data, fiber.StatusInternalServerError, errors.New("failed recomputing SO item status")
+		}
 	}
 
 	atdata := dispatching_models.DeliveryReceiptAt{

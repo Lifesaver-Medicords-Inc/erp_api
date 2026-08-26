@@ -212,6 +212,10 @@ func (s *ReceivingReportService) CreateReceivingReportDetails(tx *gorm.DB, body 
 		if _, err := s.stockService.UpsertStockWithTx(tx, stockBody, stockAtBody, at, lotInfo); err != nil {
 			return fmt.Errorf("failed upserting inventory stock for item %d: %w", detail.ItemID, err)
 		}
+
+		if err := services.RecomputeSoItemStatusForPurchaseOrderDetails(tx, detail.PurchaseOrderDetailsId); err != nil {
+			return errors.New("failed recomputing SO item status")
+		}
 	}
 	return nil
 }
@@ -272,6 +276,10 @@ func (s *ReceivingReportService) UpdateReceivingReportDetails(tx *gorm.DB, body 
 
 		if err := services.DbInsert(tx, &atdataDetail); err != nil {
 			return errors.New("failed creating receiving report details at")
+		}
+
+		if err := services.RecomputeSoItemStatusForPurchaseOrderDetails(tx, detail.PurchaseOrderDetailsId); err != nil {
+			return errors.New("failed recomputing SO item status")
 		}
 	}
 

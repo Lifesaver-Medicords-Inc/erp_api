@@ -80,6 +80,15 @@ func (s *ItemReleaseService) CreateItemReleaseService(release *models.ItemReleas
 		return release, fiber.StatusInternalServerError, errors.New("failed creating releaseat")
 	}
 
+	if release.ItemReleaseDetails != nil {
+		for _, detail := range *release.ItemReleaseDetails {
+			if err := services.RecomputeSoItemStatus(tx, detail.SalesOrderDetailsID); err != nil {
+				tx.Rollback()
+				return release, fiber.StatusInternalServerError, errors.New("failed recomputing SO item status")
+			}
+		}
+	}
+
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return release, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
@@ -112,6 +121,13 @@ func (s *ItemReleaseService) UpdateItemReleaseService(release *models.ItemReleas
 		if err != nil {
 			tx.Rollback()
 			return release, fiber.StatusInternalServerError, errors.New("failed saving item release details")
+		}
+
+		for _, detail := range *release.ItemReleaseDetails {
+			if err := services.RecomputeSoItemStatus(tx, detail.SalesOrderDetailsID); err != nil {
+				tx.Rollback()
+				return release, fiber.StatusInternalServerError, errors.New("failed recomputing SO item status")
+			}
 		}
 	}
 

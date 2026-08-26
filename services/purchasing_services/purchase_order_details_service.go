@@ -32,6 +32,10 @@ func CreatePurchaseOrderDetails(tx *gorm.DB, basedId uint, PurchaseOrderDetails 
 		return errors.New("failed creating purchase orderdetailsat")
 	}
 
+	if err := services.RecomputeSoItemStatusForCsv(tx, PurchaseOrderDetails.OrderDetailIds); err != nil {
+		return errors.New("failed recomputing SO item status")
+	}
+
 	return nil
 }
 
@@ -47,6 +51,10 @@ func UpdatePurchaseOrderDetails(tx *gorm.DB, basedId uint, purchaserderdetails m
 	}
 	if err := services.DbInsert(tx, &purchaseorderdetailsat); err != nil {
 		return errors.New("failed creating purchaseorderdetailsat")
+	}
+
+	if err := services.RecomputeSoItemStatusForCsv(tx, purchaserderdetails.OrderDetailIds); err != nil {
+		return errors.New("failed recomputing SO item status")
 	}
 
 	return nil

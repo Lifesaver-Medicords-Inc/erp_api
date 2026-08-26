@@ -94,6 +94,10 @@ func (s *JobOrderService) CreateJobOrder(body *[]models.JobOrder, at models.At) 
 		if err := services.DbInsert(tx, &atdata); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
+
+		if err := services.RecomputeSoItemStatus(tx, item.OrderDetailsId); err != nil {
+			return body, fiber.StatusInternalServerError, errors.New("failed recomputing SO item status")
+		}
 	}
 
 	// Commit once
@@ -156,6 +160,10 @@ func (s *JobOrderService) UpdateJobOrder(body *[]models.JobOrder, conditions map
 
 		if err := services.DbInsert(tx, &atdata); err != nil {
 			return body, fiber.StatusInternalServerError, err
+		}
+
+		if err := services.RecomputeSoItemStatus(tx, item.OrderDetailsId); err != nil {
+			return body, fiber.StatusInternalServerError, errors.New("failed recomputing SO item status")
 		}
 	}
 
@@ -253,6 +261,10 @@ func (s *JobOrderService) AcceptJobOrder(jobOrderId uint, acceptedByUserId uint)
 		return fiber.StatusInternalServerError, errors.New("failed updating job order")
 	}
 
+	if err := services.RecomputeSoItemStatus(tx, jobOrder.OrderDetailsId); err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed recomputing SO item status")
+	}
+
 	if err := tx.Commit().Error; err != nil {
 		return fiber.StatusInternalServerError, errors.New("failed committing transaction")
 	}
@@ -308,6 +320,10 @@ func (s *JobOrderService) AcknowledgeJobOrder(jobOrderId uint, acknowledgedByUse
 
 	if err := services.DbUpdate(tx, &jobOrder, map[string]interface{}{"id": jobOrder.ID}); err != nil {
 		return fiber.StatusInternalServerError, errors.New("failed updating job order")
+	}
+
+	if err := services.RecomputeSoItemStatus(tx, jobOrder.OrderDetailsId); err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed recomputing SO item status")
 	}
 
 	if err := tx.Commit().Error; err != nil {

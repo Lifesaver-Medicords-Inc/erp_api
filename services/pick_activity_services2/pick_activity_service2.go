@@ -176,6 +176,10 @@ func (s *PickActivityService) CreatePickActivityDetails(tx *gorm.DB, body *inven
 		if err := services.DbInsert(tx, &atdataDetail); err != nil {
 			return errors.New("failed creating pick activity details at")
 		}
+
+		if err := services.RecomputeSoItemStatus(tx, detail.SalesOrderDetailsId); err != nil {
+			return errors.New("failed recomputing SO item status")
+		}
 	}
 	return nil
 }
@@ -330,6 +334,10 @@ func (s *PickActivityService) UpdatePickActivityDetails(tx *gorm.DB, body *inven
 			if err := s.CreatePickActivityLocations(tx, detail, detailLocations, at); err != nil {
 				return err
 			}
+		}
+
+		if err := services.RecomputeSoItemStatus(tx, detail.SalesOrderDetailsId); err != nil {
+			return errors.New("failed recomputing SO item status")
 		}
 	}
 

@@ -92,6 +92,15 @@ func (s *LogisticsCalendarScheduleService) UpdateLogisticsSchedule(tx *gorm.DB, 
 		if err := tx.Create(&schedule.Routes).Error; err != nil {
 			return schedule, fiber.StatusInternalServerError, errors.New("failed saving routes")
 		}
+
+		// §7.1 rows 16-17 (FAILED/RETURN, DELIVERED) - a route's departed_at/arrived_at/
+		// returned_at is what actually distinguishes those two states, so every SO line
+		// on whichever Delivery Receipt this route is tracking needs recomputing here.
+		for _, route := range schedule.Routes {
+			if err := services.RecomputeSoItemStatusForDeliveryReceiptDoc(tx, route.DeliveryReceiptDoc); err != nil {
+				return schedule, fiber.StatusInternalServerError, errors.New("failed recomputing SO item status")
+			}
+		}
 	}
 
 	atdata := dispatching_models.LogisticsCalendarScheduleModelAt{CalendarSchedulesBaseAt: dispatching_models.CalendarSchedulesBaseAt{
