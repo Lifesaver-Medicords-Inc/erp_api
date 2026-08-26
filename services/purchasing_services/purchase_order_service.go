@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
 	"github.com/pierceperado/smpc/services/sales_services"
@@ -20,8 +21,8 @@ type PurchaseOrderBody struct {
 
 func GetPurchaseOrder(conditions map[string]interface{}) (interface{}, int, error) {
 	type Response struct {
-		PurchaseOrder        []models.PurchaseOrder        `json:"purchaseorder"`
-		PurchaseOrderDetails []models.PurchaseOrderDetails `json:"purchaseorderdetails"`
+		PurchaseOrder        []models.PurchaseOrder                  `json:"purchaseorder"`
+		PurchaseOrderDetails []models.PurchaseOrderDetailsWithStatus `json:"purchaseorderdetails"`
 	}
 
 	var response Response
@@ -30,11 +31,55 @@ func GetPurchaseOrder(conditions map[string]interface{}) (interface{}, int, erro
 		return response, fiber.StatusInternalServerError, errors.New("failed getting purchase order")
 	}
 
-	if err := GetPurchaseOrderDetails(&response.PurchaseOrderDetails, conditions); err != nil {
+	var plainDetails []models.PurchaseOrderDetails
+	if err := GetPurchaseOrderDetails(&plainDetails, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, err
 	}
 
+	receivedQtyByPodId, err := receivedQtyByPurchaseOrderDetailsId()
+	if err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed computing received quantities")
+	}
+
+	response.PurchaseOrderDetails = make([]models.PurchaseOrderDetailsWithStatus, len(plainDetails))
+	for i, d := range plainDetails {
+		deliveryStatus := "WAITING FOR DELIVERY"
+		if receivedQtyByPodId[d.ID] >= d.OrderQty {
+			deliveryStatus = "IN STOCK"
+		}
+		response.PurchaseOrderDetails[i] = models.PurchaseOrderDetailsWithStatus{
+			PurchaseOrderDetails: d,
+			DeliveryStatus:       deliveryStatus,
+		}
+	}
+
 	return response, 0, nil
+}
+
+// receivedQtyByPurchaseOrderDetailsId sums tbl_inv_receiving_report_details.received_qty
+// per PO detail line - the same source sp_RecomputeSoItemStatus's own PO/RR block
+// (§7.1 rows 3-4) uses, kept consistent rather than reusing the older
+// tbl_inv_warehouse_receiving_history table a different, unrelated read path uses.
+func receivedQtyByPurchaseOrderDetailsId() (map[uint]int, error) {
+	type row struct {
+		PurchaseOrderDetailsId uint
+		ReceivedQty            int
+	}
+	var rows []row
+
+	if err := initializers.DB.Raw(`
+		SELECT purchase_order_details_id AS purchase_order_details_id, SUM(ISNULL(received_qty, 0)) AS received_qty
+		FROM tbl_inv_receiving_report_details
+		GROUP BY purchase_order_details_id
+	`).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	result := make(map[uint]int, len(rows))
+	for _, r := range rows {
+		result[r.PurchaseOrderDetailsId] = r.ReceivedQty
+	}
+	return result, nil
 }
 
 func CreatePurchaseOrder(c *fiber.Ctx, tx *gorm.DB) (PurchaseOrderBody, int, error) {

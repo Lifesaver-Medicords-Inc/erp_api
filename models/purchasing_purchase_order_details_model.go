@@ -21,6 +21,24 @@ type PurchaseOrderDetailsContent struct {
 	// PurchaseOrder PurchaseOrder `gorm:"foreignKey:BasedId;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"purchase_order"`
 }
 
+// PurchaseOrderDetailsWithStatus adds a per-line delivery status the Purchasing
+// List (2.7) needs, without disturbing PurchaseOrderDetails/PurchaseOrderDetailsContent
+// (the real CRUD model, auto-migrated onto tbl_purchasing_purchase_order_details).
+//
+// Deliberately NOT the same §7.1 vocabulary sp_RecomputeSoItemStatus writes onto
+// tbl_trans_sales_order_details.status - a single PO line can consolidate the SAME
+// item across MULTIPLE sales orders (order_detail_ids is a comma list, per
+// CLAUDE.md invariant #7), each of which could be at a different §7.1 state right
+// now, so there is no single correct SO-line status to show here. Confirmed with
+// the user: compute a simpler, PO-line-scoped value instead - WAITING FOR DELIVERY
+// until this line's own order_qty is fully received, then IN STOCK - since once
+// delivery happens the stock lands in the warehouse regardless of which SO(s) it
+// was originally destined for.
+type PurchaseOrderDetailsWithStatus struct {
+	PurchaseOrderDetails
+	DeliveryStatus string `json:"delivery_status"`
+}
+
 type PurchaseOrderDetailsView struct {
 	PodId           uint   `json:"pod_id"`
 	ItemID          uint   `json:"item_id"`
