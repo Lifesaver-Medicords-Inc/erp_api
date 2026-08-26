@@ -19,6 +19,26 @@ func GetEngineeringRedboxQuotationList(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
+// GetEngineeringQuotationListByEngr - §3.2's "an engineer sees the quotations
+// sent to them and no others" (Phase 4 item 4.1, "build the list" half).
+// Mirrors GetEngineeringRedboxJobOrder's own :userId scoping below - the
+// view's requested_engr_id column (added for the REQUEST FOR ENGR. trigger)
+// is what conditions filters on here.
+func GetEngineeringQuotationListByEngr(c *fiber.Ctx) error {
+	userId := c.Params("userId")
+
+	conditions := map[string]interface{}{
+		"requested_engr_id": userId,
+	}
+
+	data, status, err := engineering_services.GetSortedEngineeringRedboxQuotationList(conditions)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
 func BroadcastRedboxQuotationList() error {
 	data, status, err := engineering_services.GetSortedEngineeringRedboxQuotationList(nil)
 	if err != nil {

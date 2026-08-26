@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/handlers/bin_location_handlers"
+	"github.com/pierceperado/smpc/handlers/engineering_handlers"
 	item_request_handlers "github.com/pierceperado/smpc/handlers/item_request_handlers2"
 	"github.com/pierceperado/smpc/handlers/job_order_handlers"
 	pick_activity_handlers "github.com/pierceperado/smpc/handlers/pick_activity_handlers2"
@@ -19,6 +20,13 @@ func EngineeringRoutes(router fiber.Router) {
 	setupItemRequestRoutes(engineeringApi)
 	setupBinLocationRoutes(engineeringApi)
 	setupPickActivityRoutes(engineeringApi)
+	setupSalesQuotationListRoutes(engineeringApi)
+}
+
+// §3.2 Sales Quotation List (Phase 4 item 4.1, "build the list" half) - the
+// engineer's own scoped view of REQUEST FOR ENGR. quotations.
+func setupSalesQuotationListRoutes(api fiber.Router) {
+	api.Get("/sales_quotation_list/:userId", engineering_handlers.GetEngineeringQuotationListByEngr)
 }
 
 func setupJobOrderRoutes(api fiber.Router) {
