@@ -28,6 +28,8 @@ func setupJobOrderRoutes(api fiber.Router) {
 	api.Get("/job_order/components/:bom_id", handler.GetComponents)
 	api.Post("/job_order", handler.CreateJobOrder)
 	api.Put("/job_order", handler.UpdateJobOrder)
+	api.Post("/job_order/:id/accept", handler.AcceptJobOrder)
+	api.Post("/job_order/:id/acknowledge", handler.AcknowledgeJobOrder)
 	api.Get("/job_order/:user_id", handler.GetJobOrder)
 }
 

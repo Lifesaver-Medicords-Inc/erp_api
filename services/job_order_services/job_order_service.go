@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
+	"gorm.io/gorm"
 )
 
 type JobOrderService struct{}
@@ -162,4 +164,155 @@ func (s *JobOrderService) UpdateJobOrder(body *[]models.JobOrder, conditions map
 	}
 
 	return body, 0, nil
+}
+
+// JobOrderAcceptAccessCode gates "accept SO items for production" (§6.1 (D)) - the
+// missing step that splits WAITING ACKNOWLEDGEMENT from WAITING FOR ENGR
+// (SO_Item_Status_Module_Spec_2026-08-13.md row 5 vs 6). Grant it to whichever
+// Engineering position actually does this from the normal Position Access setup
+// screen - nothing here hardcodes a position name.
+const JobOrderAcceptAccessCode = "JOB_ORDER_ACCEPT_ACCESS"
+
+// JobOrderWhAckAccessCode gates the warehouse acknowledgement step (§5.23: "acknowledged
+// by the Warehouse Manager") that splits CHECKING from IN STOCK (same spec doc, row 9 vs
+// 10).
+const JobOrderWhAckAccessCode = "JOB_ORDER_WH_ACK_ACCESS"
+
+func userHasAccess(userId uint, code string) (bool, error) {
+	if userId == 0 {
+		return false, nil
+	}
+
+	var count int64
+	err := initializers.DB.Raw(`
+		SELECT COUNT(*)
+		FROM tbl_position_access pa
+		INNER JOIN tbl_setup_users u ON u.position_id = pa.position_id
+		WHERE u.id = ? AND pa.code = ?
+	`, userId, code).Scan(&count).Error
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+// UserCanAcceptJobOrder checks JobOrderAcceptAccessCode.
+func (s *JobOrderService) UserCanAcceptJobOrder(userId uint) (bool, error) {
+	return userHasAccess(userId, JobOrderAcceptAccessCode)
+}
+
+// UserCanAcknowledgeJobOrder checks JobOrderWhAckAccessCode.
+func (s *JobOrderService) UserCanAcknowledgeJobOrder(userId uint) (bool, error) {
+	return userHasAccess(userId, JobOrderWhAckAccessCode)
+}
+
+// AcceptJobOrder is the missing "accept SO items for production" step (§6.1 (D)) -
+// separate from assignment (EngrId/AEngr), so a job can sit accepted-but-unassigned
+// (WAITING FOR ENGR) rather than collapsing straight into PENDING/WAITING
+// ACKNOWLEDGEMENT the way the UI's existing PENDING-tab filter does today.
+func (s *JobOrderService) AcceptJobOrder(jobOrderId uint, acceptedByUserId uint) (int, error) {
+	canAccept, err := s.UserCanAcceptJobOrder(acceptedByUserId)
+	if err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed checking accept permission")
+	}
+	if !canAccept {
+		return fiber.StatusForbidden, errors.New("this user's position is not authorized to accept job orders")
+	}
+
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+	}
+	defer tx.Rollback()
+
+	var jobOrder models.JobOrder
+	if err := tx.First(&jobOrder, jobOrderId).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fiber.StatusNotFound, errors.New("job order not found")
+		}
+		return fiber.StatusInternalServerError, errors.New("failed loading job order")
+	}
+
+	if jobOrder.IsAccepted {
+		return fiber.StatusConflict, errors.New("job order is already accepted")
+	}
+
+	var acceptedBy models.User
+	acceptedByName := ""
+	if err := tx.First(&acceptedBy, acceptedByUserId).Error; err == nil {
+		acceptedByName = strings.TrimSpace(acceptedBy.FirstName + " " + acceptedBy.LastName)
+	}
+
+	jobOrder.IsAccepted = true
+	jobOrder.AcceptedById = acceptedByUserId
+	jobOrder.AcceptedByName = acceptedByName
+	jobOrder.AcceptedDate = time.Now().Format("01/02/2006 3:04:05 PM")
+
+	if err := services.DbUpdate(tx, &jobOrder, map[string]interface{}{"id": jobOrder.ID}); err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed updating job order")
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	return fiber.StatusOK, nil
+}
+
+// AcknowledgeJobOrder is the missing warehouse-confirmation step (§5.23) that splits
+// CHECKING (job Status="COMPLETE" but nobody's confirmed the units landed in stock) from
+// IN STOCK (confirmed). Requires the job to already be marked complete - acknowledging a
+// job that hasn't finished production yet would be confirming stock that was never
+// actually produced.
+func (s *JobOrderService) AcknowledgeJobOrder(jobOrderId uint, acknowledgedByUserId uint) (int, error) {
+	canAcknowledge, err := s.UserCanAcknowledgeJobOrder(acknowledgedByUserId)
+	if err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed checking acknowledgement permission")
+	}
+	if !canAcknowledge {
+		return fiber.StatusForbidden, errors.New("this user's position is not authorized to acknowledge job orders (Warehouse Manager only, §5.23)")
+	}
+
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+	}
+	defer tx.Rollback()
+
+	var jobOrder models.JobOrder
+	if err := tx.First(&jobOrder, jobOrderId).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fiber.StatusNotFound, errors.New("job order not found")
+		}
+		return fiber.StatusInternalServerError, errors.New("failed loading job order")
+	}
+
+	if !strings.EqualFold(strings.TrimSpace(jobOrder.Status), "COMPLETE") {
+		return fiber.StatusBadRequest, errors.New("this job order is not marked complete yet - nothing to acknowledge")
+	}
+	if jobOrder.IsWhAcknowledged {
+		return fiber.StatusConflict, errors.New("job order is already acknowledged")
+	}
+
+	var acknowledgedBy models.User
+	acknowledgedByName := ""
+	if err := tx.First(&acknowledgedBy, acknowledgedByUserId).Error; err == nil {
+		acknowledgedByName = strings.TrimSpace(acknowledgedBy.FirstName + " " + acknowledgedBy.LastName)
+	}
+
+	jobOrder.IsWhAcknowledged = true
+	jobOrder.WhAcknowledgedById = acknowledgedByUserId
+	jobOrder.WhAcknowledgedByName = acknowledgedByName
+	jobOrder.WhAcknowledgedDate = time.Now().Format("01/02/2006 3:04:05 PM")
+
+	if err := services.DbUpdate(tx, &jobOrder, map[string]interface{}{"id": jobOrder.ID}); err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed updating job order")
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	return fiber.StatusOK, nil
 }

@@ -110,3 +110,53 @@ func (h *JobOrderHandler) UpdateJobOrder(c *fiber.Ctx) error {
 
 	return utils.RespondSuccess(c, data)
 }
+
+// AcceptJobOrder - §6.1 (D) "accept SO items for production", access-gated via
+// JobOrderAcceptAccessCode.
+func (h *JobOrderHandler) AcceptJobOrder(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "invalid job order id")
+	}
+
+	status, err := h.Service.AcceptJobOrder(uint(id), actingUserId(c))
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, nil)
+}
+
+// AcknowledgeJobOrder - §5.23's Warehouse Manager acknowledgement step, access-gated via
+// JobOrderWhAckAccessCode.
+func (h *JobOrderHandler) AcknowledgeJobOrder(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "invalid job order id")
+	}
+
+	status, err := h.Service.AcknowledgeJobOrder(uint(id), actingUserId(c))
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, nil)
+}
+
+// actingUserId pulls the numeric user id off the same "at" audit context every other
+// write endpoint relies on (see utils/at_util.go and the identical helper in
+// sales_return_handlers/item_stock_handlers) - there's no separate authentication/
+// session concept in this API beyond that.
+func actingUserId(c *fiber.Ctx) uint {
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		return 0
+	}
+
+	id, err := strconv.Atoi(at.AtUserId)
+	if err != nil || id < 0 {
+		return 0
+	}
+
+	return uint(id)
+}

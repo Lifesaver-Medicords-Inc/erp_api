@@ -20,6 +20,24 @@ type JobOrderContent struct {
 	SerialNo       string `json:"serial_no"`
 	ReportBase     string `json:"report_base"`
 	Report         string `json:"report"`
+
+	// §7.1/SO_Item_Status_Module_Spec_2026-08-13.md rows 5-6: "not yet accepted" and
+	// "accepted but not assigned" both used to collapse into PENDING (a_engr null) -
+	// this is the missing accept step that splits WAITING ACKNOWLEDGEMENT from
+	// WAITING FOR ENGR. Deliberately separate from EngrId/AEngr (assignment) - a job
+	// can be accepted into the pool before anyone is assigned to it.
+	IsAccepted     bool   `json:"is_accepted"`
+	AcceptedById   uint   `json:"accepted_by_id"`
+	AcceptedByName string `json:"accepted_by_name"`
+	AcceptedDate   string `json:"accepted_date"`
+
+	// §5.23/§7.1 rows 9-10: Status="COMPLETE" alone doesn't distinguish CHECKING (done,
+	// not yet confirmed) from IN STOCK (done AND the Warehouse Manager has confirmed the
+	// finished units actually landed in stock) - this is that confirmation step.
+	IsWhAcknowledged     bool   `json:"is_wh_acknowledged"`
+	WhAcknowledgedById   uint   `json:"wh_acknowledged_by_id"`
+	WhAcknowledgedByName string `json:"wh_acknowledged_by_name"`
+	WhAcknowledgedDate   string `json:"wh_acknowledged_date"`
 }
 type JobOrder struct {
 	ID uint `gorm:"primarykey" json:"id"`
