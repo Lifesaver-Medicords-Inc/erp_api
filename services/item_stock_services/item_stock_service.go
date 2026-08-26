@@ -404,11 +404,58 @@ func (s *ItemStockService) GetStockTransactions(itemId uint) ([]inventory_models
 	return response, fiber.StatusOK, nil
 }
 
+// StockTransferAccessCode is the tbl_position_access code gating all three §10.6 stock
+// functions - Transfer, manual increase, and manual decrease. §14.87: "MUST NOT give
+// anyone but Admin and the Warehouse Manager access." Grant it to those two Positions
+// from the normal Position Access setup screen; nothing here hardcodes a position name.
+//
+// Retrofitted onto AdjustItemStock (manual increase/decrease) here - that function
+// previously had no server-side permission check at all. The only gate was a client-side
+// substring match in ItemStocksPage.cs ("admin" or "manager" anywhere in the position
+// name, which is broader than spec - any manager-titled position qualified, not
+// specifically Warehouse Manager) - and it was trivially bypassable by calling this
+// endpoint directly, since nothing on the server ever checked it.
+const StockTransferAccessCode = "STOCK_TRANSFER_ACCESS"
+
+// UserCanAccessStockTransfer checks whether the given user's Position has been granted
+// StockTransferAccessCode. Same module-access mechanism as every other access-gated
+// action in this codebase (see ReservationApprovalAccessCode in
+// stock_reservation_service.go).
+func (s *ItemStockService) UserCanAccessStockTransfer(userId uint) (bool, error) {
+	if userId == 0 {
+		return false, nil
+	}
+
+	var count int64
+	err := initializers.DB.Raw(`
+		SELECT COUNT(*)
+		FROM tbl_position_access pa
+		INNER JOIN tbl_setup_users u ON u.position_id = pa.position_id
+		WHERE u.id = ? AND pa.code = ?
+	`, userId, StockTransferAccessCode).Scan(&count).Error
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
 // AdjustItemStock is a manual correction, distinct from UpsertStockWithTx/DeductStockWithTx
 // (which add/subtract a delta as part of a receiving/issuing transaction) - this SETS
 // stock_qty directly to whatever the user physically counted, and always writes an audit
 // entry (with Remarks) so the correction is traceable later.
-func (s *ItemStockService) AdjustItemStock(body *inventory_models.ItemStockAdjustmentBody, at models.At) (*inventory_models.ItemStocks, int, error) {
+func (s *ItemStockService) AdjustItemStock(body *inventory_models.ItemStockAdjustmentBody, actingUserId uint, at models.At) (*inventory_models.ItemStocks, int, error) {
+	canAccess, err := s.UserCanAccessStockTransfer(actingUserId)
+	if err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed checking stock transfer permission")
+	}
+	if !canAccess {
+		return nil, fiber.StatusForbidden, errors.New("this user's position is not authorized for manual stock adjustments (§14.87)")
+	}
+	if strings.TrimSpace(body.Remarks) == "" {
+		return nil, fiber.StatusBadRequest, errors.New("a reason is required for every manual stock adjustment (§10.6)")
+	}
+
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {
 		return nil, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
@@ -450,6 +497,140 @@ func (s *ItemStockService) AdjustItemStock(body *inventory_models.ItemStockAdjus
 
 	invalidateCaches()
 	return &existing, fiber.StatusOK, nil
+}
+
+// TransferStock is §10.6's "Transfer" function - move some or all of one bin's stock to
+// a different bin, warehouse-to-warehouse moves included. Quantities may be split (a
+// partial transfer just leaves the remainder at the source). Deliberately no reference
+// document anywhere in this function - Stock Transfer is the one stock movement in
+// Lightspeed with no document behind it; do not wire this into RR's negative-stock
+// recovery path (§10.5), the two are unrelated on purpose.
+//
+// Both the source decrease and the destination increase go through
+// SetStockAuditContext with the same source_type/remarks, called once before either
+// write - the tr_inv_item_stocks_ledger trigger fires once per row, so both resulting
+// ledger rows end up traceable to the same transfer event even though there is no
+// document id to link them by.
+func (s *ItemStockService) TransferStock(body *inventory_models.StockTransferBody, actingUserId uint, at models.At) (int, error) {
+	canAccess, err := s.UserCanAccessStockTransfer(actingUserId)
+	if err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed checking stock transfer permission")
+	}
+	if !canAccess {
+		return fiber.StatusForbidden, errors.New("this user's position is not authorized for stock transfers (§14.87)")
+	}
+	if body.TransferQty <= 0 {
+		return fiber.StatusBadRequest, errors.New("transfer quantity must be greater than zero")
+	}
+	if strings.TrimSpace(body.Remarks) == "" {
+		return fiber.StatusBadRequest, errors.New("a reason is required for every stock transfer (§10.6)")
+	}
+
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
+	}
+	defer tx.Rollback()
+
+	var source inventory_models.ItemStocks
+	if err := tx.Where("id = ?", body.SourceStockId).First(&source).Error; err != nil {
+		return fiber.StatusNotFound, errors.New("source stock record not found")
+	}
+
+	if source.WarehouseId == body.DestWarehouseId && strings.EqualFold(strings.TrimSpace(source.BinLocation), strings.TrimSpace(body.DestBinLocation)) {
+		return fiber.StatusBadRequest, errors.New("source and destination are the same location")
+	}
+
+	sourceQty := 0
+	if source.StockQty != nil {
+		sourceQty = *source.StockQty
+	}
+	if body.TransferQty > sourceQty {
+		return fiber.StatusBadRequest, fmt.Errorf(
+			"cannot transfer %d unit(s) - only %d available at the source location", body.TransferQty, sourceQty,
+		)
+	}
+
+	if err := services.SetStockAuditContext(tx, "stock_transfer", 0, body.Remarks, nil); err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed setting stock audit context")
+	}
+
+	newSourceQty := sourceQty - body.TransferQty
+	source.StockQty = &newSourceQty
+	s.SetActiveStatus(&source)
+
+	if err := services.DbUpdate(tx, &source, map[string]interface{}{"id": source.ID}); err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed updating source stock")
+	}
+
+	sourceAt := inventory_models.ItemStocksAt{
+		RefId:             source.ID,
+		SourceType:        "stock_transfer",
+		Remarks:           body.Remarks,
+		ItemStocksContent: source.ItemStocksContent,
+		At:                at,
+	}
+	if err := services.DbInsert(tx, &sourceAt); err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed creating source stock audit record")
+	}
+
+	// Find the destination bin's existing row, if any - a bin with no prior stock for
+	// this item has no row to update, so one is created instead.
+	var dest inventory_models.ItemStocks
+	destErr := tx.Where(
+		"item_id = ? AND warehouse_id = ? AND bin_location = ?",
+		source.ItemId, body.DestWarehouseId, body.DestBinLocation,
+	).First(&dest).Error
+
+	if errors.Is(destErr, gorm.ErrRecordNotFound) {
+		newDestQty := body.TransferQty
+		dest = inventory_models.ItemStocks{
+			ItemStocksContent: inventory_models.ItemStocksContent{
+				ItemId:      source.ItemId,
+				StockQty:    &newDestQty,
+				StockUom:    source.StockUom,
+				WarehouseId: body.DestWarehouseId,
+				BinLocation: body.DestBinLocation,
+			},
+		}
+		s.SetActiveStatus(&dest)
+
+		if err := services.DbInsert(tx, &dest); err != nil {
+			return fiber.StatusInternalServerError, errors.New("failed creating destination stock record")
+		}
+	} else if destErr != nil {
+		return fiber.StatusInternalServerError, errors.New("failed checking destination stock record")
+	} else {
+		destQty := 0
+		if dest.StockQty != nil {
+			destQty = *dest.StockQty
+		}
+		newDestQty := destQty + body.TransferQty
+		dest.StockQty = &newDestQty
+		s.SetActiveStatus(&dest)
+
+		if err := services.DbUpdate(tx, &dest, map[string]interface{}{"id": dest.ID}); err != nil {
+			return fiber.StatusInternalServerError, errors.New("failed updating destination stock")
+		}
+	}
+
+	destAt := inventory_models.ItemStocksAt{
+		RefId:             dest.ID,
+		SourceType:        "stock_transfer",
+		Remarks:           body.Remarks,
+		ItemStocksContent: dest.ItemStocksContent,
+		At:                at,
+	}
+	if err := services.DbInsert(tx, &destAt); err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed creating destination stock audit record")
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed committing transaction")
+	}
+
+	invalidateCaches()
+	return fiber.StatusOK, nil
 }
 
 // setActiveStatus sets IsActive to true when StockQty > 0, false when zero.

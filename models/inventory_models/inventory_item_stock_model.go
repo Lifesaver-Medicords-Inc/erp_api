@@ -65,3 +65,15 @@ type ItemStockAdjustmentBody struct {
 	NewQty  int    `json:"new_qty"`
 	Remarks string `json:"remarks"`
 }
+
+// StockTransferBody is the request body for §10.6's "Transfer" function - move some or
+// all of one bin's stock to a different bin, warehouse-to-warehouse moves included.
+// Deliberately no reference document field anywhere on this struct - §10.6 is explicit
+// that Stock Transfer is the one stock movement with no document behind it.
+type StockTransferBody struct {
+	SourceStockId   uint   `json:"source_stock_id"` // tbl_inv_item_stocks.id to transfer FROM
+	TransferQty     int    `json:"transfer_qty"`
+	DestWarehouseId uint   `json:"dest_warehouse_id"`
+	DestBinLocation string `json:"dest_bin_location"`
+	Remarks         string `json:"remarks"`
+}

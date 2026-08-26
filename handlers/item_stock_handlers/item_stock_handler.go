@@ -283,10 +283,33 @@ func (h *ItemStockHandler) AdjustItemStock(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
-	data, status, err := h.Service.AdjustItemStock(&body, at)
+	data, status, err := h.Service.AdjustItemStock(&body, actingUserId(c), at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
 	return utils.RespondSuccess(c, data)
+}
+
+// TransferStock is §10.6's "Transfer" function - move stock between bins/warehouses
+// with no reference document, gated to Admin and the Warehouse Manager (§14.87) via the
+// same StockTransferAccessCode as AdjustItemStock.
+func (h *ItemStockHandler) TransferStock(c *fiber.Ctx) error {
+	var body inventory_models.StockTransferBody
+
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	status, err := h.Service.TransferStock(&body, actingUserId(c), at)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, nil)
 }
