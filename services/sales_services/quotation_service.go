@@ -301,6 +301,22 @@ func UpdateFinalizeQuote(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 		return body, fiber.StatusBadRequest, errors.New("missing or invalid quotation id")
 	}
 
+	// Guard: a Finalized Quote is immutable (CLAUDE.md invariant #2 / §5.2 - "an
+	// exact, uneditable copy of the SQ at finalization"). The only real
+	// protection against editing one used to be that the Sales app hides its
+	// own Edit button once isFinalized is true (bind(), Quotation.cs) - nothing
+	// stopped a direct call to this endpoint. Checked against the row's
+	// CURRENT (pre-update) state, not the incoming body's own IsFinalized -
+	// that's what lets the finalize action itself (false -> true, this same
+	// endpoint) through while blocking any edit attempt after it.
+	var existingQuotation models.SalesQuotation
+	if err := tx.First(&existingQuotation, body.SalesQuotation.ID).Error; err != nil {
+		return body, fiber.StatusNotFound, errors.New("quotation not found")
+	}
+	if existingQuotation.IsFinalized {
+		return body, fiber.StatusForbidden, errors.New("cannot edit a finalized quotation")
+	}
+
 	// Guard: a header-only quotation with nothing to price, produce, or
 	// eventually invoice used to finalize successfully with zero line items.
 	// Scoped to finalize specifically (IsFinalized true), not every plain
