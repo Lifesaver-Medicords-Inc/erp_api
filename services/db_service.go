@@ -15,7 +15,15 @@ import (
 )
 
 func DbSearch(model interface{}, conditions map[string]interface{}, term string, columns []string, numericColumns []string, cursor int, idCol string) (hasNext bool, retPageSize int, err error) {
-	const pageSize = 2
+	// Was 2 - almost certainly a leftover test value. Both current callers
+	// (Chart Class Setup, Bulk Invoice Receipt) are cursor-paginated, scroll-
+	// triggered lists with no explicit "load more" affordance - at pageSize=2,
+	// any list with more than 2 rows silently hid everything past the 2nd
+	// (ordered id DESC, so the OLDEST rows are the ones that never load)
+	// unless the user happened to scroll a grid that didn't look scrollable.
+	// Confirmed directly: Chart Class Setup showed 2 of 3 real rows, the 3rd
+	// (lowest id) missing, matching this exactly.
+	const pageSize = 50
 
 	ctx := context.Background()
 
@@ -136,7 +144,8 @@ func buildSearchQuery(conditions map[string]interface{}, term string, columns []
 }
 
 func DbGetPaginated(model interface{}, conditions map[string]interface{}, cursor int, seekID int) (hasNext bool, retPageSize int, err error) {
-	const pageSize = 2
+	// Same pageSize=2 bug as DbSearch above, same fix.
+	const pageSize = 50
 
 	ctx := context.Background()
 
