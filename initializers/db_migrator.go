@@ -19,6 +19,7 @@ import (
 func MigrateAll() {
 	// migrateAdmin()
 	migrateCompanySettings()
+	migrateInvoiceReceiptPaymentVoucherColumns()
 	// migrateSetup()
 	// migrateItemManagement()
 	// migrateBomBoq()
@@ -118,6 +119,31 @@ func migrateAdmin() {
 // two fields).
 func migrateCompanySettings() {
 	migrateAndLog(&models.CompanyModel{}, &models.CompanyAt{})
+}
+
+// Phase 0 item 0.4 (DB_API_Schema_Check_2026-08-14.md, section 3 - "4 phantom
+// columns"): InvoiceReceipt/BulkInvoiceReceipt's SupplierAddress,
+// InvoiceReceiptDetails' ReqUom, and PaymentVoucher's UnappliedAmount are all
+// declared on their Go structs but confirmed missing on the live DB (checked
+// directly via INFORMATION_SCHEMA.COLUMNS, not assumed from the old report) -
+// any write path that ever populates one of these three fields would fail with
+// "invalid column name." Root cause: migrateAccounting() (see its own comment)
+// has this whole block - these four models plus ChartOfAccounts/Tax/
+// SalesInvoice/JournalEntry/ApVoucher/PaymentReceipt - commented out wholesale,
+// and migrateAccounting() itself isn't even called from MigrateAll() (only
+// reachable via the selective MigrateModel("accounting") path). Re-enabling
+// that whole block is a much bigger blast radius against a live financial
+// system than this needs - same reasoning as migrateCompanySettings() above -
+// so this migrates only the four models that actually own the three missing
+// columns. AutoMigrate is additive-only (adds missing columns/tables, never
+// drops or alters existing ones), so this can't touch anything already there.
+func migrateInvoiceReceiptPaymentVoucherColumns() {
+	migrateAndLog(
+		&accounting_models.InvoiceReceipt{}, &accounting_models.InvoiceReceiptAt{},
+		&accounting_models.InvoiceReceiptDetails{}, &accounting_models.InvoiceReceiptDetailsAt{},
+		&accounting_models.BulkInvoiceReceipt{}, &accounting_models.BulkInvoiceReceiptAt{},
+		&accounting_models.PaymentVoucher{}, &accounting_models.PaymentVoucherAt{},
+	)
 }
 
 // ============================================
