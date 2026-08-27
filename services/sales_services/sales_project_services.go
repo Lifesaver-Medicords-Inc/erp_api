@@ -311,6 +311,26 @@ func CreateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, erro
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
+	// Guard: same fix as CreateSalesQuotation (Sales_Quotation_Bug_Report_2026-08-03.md
+	// #13) - the Project Quote path has its own separate create function and was
+	// equally unprotected. FinalizeProjectQuotation's own client-side duplicate
+	// check (against transactionProjectDataTable) was the only thing catching this
+	// before, with the exact same staleness/race exposure.
+	if body.DocumentNo != "" {
+		var existingCount int64
+		if err := tx.Model(&models.SalesQuotation{}).
+			Where("document_no = ? AND version_no = ? AND sub_version_no = ?",
+				body.DocumentNo, body.VersionNo, body.SubVersionNo).
+			Count(&existingCount).Error; err != nil {
+			return body, fiber.StatusInternalServerError, errors.New("failed checking for an existing quotation with this document number")
+		}
+		if existingCount > 0 {
+			return body, fiber.StatusBadRequest, fmt.Errorf(
+				"a quotation with document number %s (version %s, sub-version %s) already exists",
+				body.DocumentNo, body.VersionNo, body.SubVersionNo)
+		}
+	}
+
 	if err := services.DbInsert(tx, &body.SalesQuotation); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating projects")
 	}

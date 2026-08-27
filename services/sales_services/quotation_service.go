@@ -155,6 +155,34 @@ func CreateSalesQuotation(c *fiber.Ctx, tx *gorm.DB) (CreateBody, int, error) {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
+	// Guard: Sales_Quotation_Bug_Report_2026-08-03.md #13 - nothing enforced
+	// uniqueness of (document_no, version_no, sub_version_no), so a stale
+	// client-side list (Quotation.cs's own allTransactionList/
+	// transactionProjectDataTable duplicate check, which is the ONLY thing
+	// that ever caught this before) or a retried/raced request could create
+	// two rows for what should be one specific version - most visibly,
+	// clicking Finalize a second time on the same draft (a stale local list
+	// after the first finalize hadn't reloaded yet, a second window, etc.)
+	// silently created a second "FQ#..." copy with no error at all.
+	// Confirmed reproducible directly against this exact function's own
+	// insert shape before adding this. version_no/sub_version_no are matched
+	// as-is (including both empty) so this doesn't block New Version, which
+	// legitimately reuses the same document_no with a different version_no.
+	if body.DocumentNo != "" {
+		var existingCount int64
+		if err := tx.Model(&models.SalesQuotation{}).
+			Where("document_no = ? AND version_no = ? AND sub_version_no = ?",
+				body.DocumentNo, body.VersionNo, body.SubVersionNo).
+			Count(&existingCount).Error; err != nil {
+			return body, fiber.StatusInternalServerError, errors.New("failed checking for an existing quotation with this document number")
+		}
+		if existingCount > 0 {
+			return body, fiber.StatusBadRequest, fmt.Errorf(
+				"a quotation with document number %s (version %s, sub-version %s) already exists",
+				body.DocumentNo, body.VersionNo, body.SubVersionNo)
+		}
+	}
+
 	if err := services.DbInsert(tx, &body.SalesQuotation); err != nil {
 		fmt.Println(err)
 		fmt.Println("ERR", body)
