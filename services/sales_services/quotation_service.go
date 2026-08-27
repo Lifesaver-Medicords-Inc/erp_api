@@ -147,6 +147,90 @@ func GetSalesQuotation(id int) (Body, int, error) {
 	return record, 0, nil
 }
 
+// recomputeQuickQuoteTotals is the server's own authority on a Quick Quote's
+// totals - §8.2's formulas, computed independently of whatever the client
+// sent, then overwritten onto quotation before it's persisted. This is
+// deliberately "recompute and overwrite," not "recompute and reject on
+// mismatch": the client's own version already exists purely for live UI
+// feedback as the user edits (ComputeReferenceNonHierarchy/ComputeFooterTotals
+// in Quotation.cs) and is never itself persisted as authoritative - comparing
+// with a tolerance and rejecting on drift would just risk false rejections
+// from ordinary floating-point/rounding differences between the two
+// implementations, for no real benefit over simply always trusting one
+// server-side computation.
+//
+// additional_discounted and cash_discount are NOT recomputed here - §8.2
+// itself defines both as genuine inputs ("additional discount = % input",
+// "cash discount = peso input"), not values derivable from line items. They
+// are trusted as given and used as-is in the formulas below.
+//
+// §8.2 also excludes BOM child rows from every total ("gross sales is
+// computed, not summed from a column" - only top-level items count,
+// CLAUDE.md invariant #8). Quick Quote's own hierarchy marker is
+// ReferenceCode containing "." (a child, e.g. "1.1") - Quotation.cs's own
+// ComputeReferenceNonHierarchy skips these on the client the same way.
+//
+// VAT rate: this system uses one flat, company-wide rate (Company Setup,
+// backlog #18 - the user's own explicit choice over a per-quotation Tax Setup
+// lookup), fetched fresh here rather than trusting anything the client sent.
+// Known, accepted limitation: CLAUDE.md invariant #6 calls for a tax rate to
+// be frozen at a document's creation and never re-derived - there is no field
+// on this model to persist which rate a given save actually used, so a plain
+// edit made after the company rate changes will recompute VAT at the NEW
+// rate, not whatever rate was in effect when the quotation was first created.
+// This is a pre-existing gap (the current, unprotected code doesn't freeze
+// anything either - it just trusts whatever the client sends), and finalize
+// itself (backlog #11's own is_finalized lock) is what makes a quotation's
+// numbers actually permanent - once finalized, no further edit is possible
+// to be inconsistent with. Worth revisiting if a real "frozen rate" field is
+// ever added.
+func recomputeQuickQuoteTotals(tx *gorm.DB, quotation *models.SalesQuotation, lines []SalesQuotationQuickWithImages) error {
+	var grossSales, netSales float64
+
+	for _, line := range lines {
+		// Child/component row (e.g. "1.1") - excluded from every total, same
+		// as ComputeReferenceNonHierarchy's own client-side skip.
+		if strings.Contains(line.ReferenceCode, ".") {
+			continue
+		}
+
+		undiscountedPrice := line.UnitPrice
+		if line.ListPrice > 0 {
+			undiscountedPrice = line.ListPrice
+		}
+
+		grossSales += float64(line.Qty) * undiscountedPrice
+		netSales += line.LineTotal
+	}
+
+	var percentDiscount float64
+	if grossSales != 0 {
+		percentDiscount = ((grossSales - netSales) / grossSales) * 100
+	}
+	discountedAmount := grossSales - netSales
+
+	var company models.CompanyModel
+	if err := tx.First(&company, 1).Error; err != nil {
+		return errors.New("failed fetching company VAT rate for totals recompute")
+	}
+	vatRate := company.VatRatePercent / 100
+
+	netOfVat := netSales - quotation.AdditionalDiscounted
+	vatAmount := netOfVat * vatRate
+	netAmount := netOfVat + vatAmount
+	totalAmountDue := netAmount - quotation.CashDiscount
+
+	quotation.GrossSales = grossSales
+	quotation.NetSales = netSales
+	quotation.PercentDiscount = percentDiscount
+	quotation.DiscountedAmount = discountedAmount
+	quotation.VatAmount = vatAmount
+	quotation.NetAmountDue = netAmount
+	quotation.TotalAmountDue = totalAmountDue
+
+	return nil
+}
+
 func CreateSalesQuotation(c *fiber.Ctx, tx *gorm.DB) (CreateBody, int, error) {
 	var body CreateBody
 	if err := c.BodyParser(&body); err != nil {
@@ -180,6 +264,19 @@ func CreateSalesQuotation(c *fiber.Ctx, tx *gorm.DB) (CreateBody, int, error) {
 			return body, fiber.StatusBadRequest, fmt.Errorf(
 				"a quotation with document number %s (version %s, sub-version %s) already exists",
 				body.DocumentNo, body.VersionNo, body.SubVersionNo)
+		}
+	}
+
+	// Sales_Quotation_Bug_Report_2026-08-03.md #9 - gross/net/VAT/discount/line
+	// totals were trusted verbatim from the client with no recomputation, so a
+	// buggy client could persist a quotation whose totals don't match its own
+	// line items. Scoped to Quick Quote for now - Project Quote's totals come
+	// from a hierarchical BOM parent/child structure (ComputeByReferenceHierarchy
+	// in Quotation.cs) that's a different, larger computation to replicate
+	// server-side; not done in this pass.
+	if !body.IsProject {
+		if err := recomputeQuickQuoteTotals(tx, &body.SalesQuotation, body.SalesQuotationQuickWithImages); err != nil {
+			return body, fiber.StatusInternalServerError, err
 		}
 	}
 
@@ -358,6 +455,18 @@ func UpdateFinalizeQuote(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
 		at = models.At{}
+	}
+
+	// Sales_Quotation_Bug_Report_2026-08-03.md #9 - same recompute as
+	// CreateSalesQuotation, applied here too since this endpoint also handles
+	// a plain update as well as finalize (see recomputeQuickQuoteTotals's own
+	// comment for why this is "recompute and overwrite," not
+	// "recompute and reject on mismatch," and why Project Quote is out of
+	// scope for this pass).
+	if !body.IsProject {
+		if err := recomputeQuickQuoteTotals(tx, &body.SalesQuotation, body.SalesQuotationQuickWithImages); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
 	}
 
 	// Always scope the update to this specific id explicitly, rather than
