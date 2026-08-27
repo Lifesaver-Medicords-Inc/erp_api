@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/handlers/accounting_report_handlers"
 	"github.com/pierceperado/smpc/handlers/ap_voucher_handlers"
 	"github.com/pierceperado/smpc/handlers/bulk_invoice_receipt_handlers"
 	"github.com/pierceperado/smpc/handlers/invoice_receipt_handlers"
@@ -10,6 +11,7 @@ import (
 	"github.com/pierceperado/smpc/handlers/payment_voucher_handlers"
 	"github.com/pierceperado/smpc/handlers/sales_invoice_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
+	"github.com/pierceperado/smpc/services/accounting_report_services"
 	"github.com/pierceperado/smpc/services/ap_voucher_services"
 	"github.com/pierceperado/smpc/services/bulk_invoice_receipt_services"
 	"github.com/pierceperado/smpc/services/invoice_receipt_services"
@@ -33,6 +35,18 @@ func AccountingRoutes(router fiber.Router) {
 	setupChartClassRoutes(accountingApi)
 	setupChartOfAccountRoutes(accountingApi)
 	setupTaxSetupRoutes(accountingApi)
+	setupAccountingReportRoutes(accountingApi)
+}
+
+// setupAccountingReportRoutes - Admin "Reports" build (Balance Sheet, Income
+// Statement, Statement of Cash Flows, Statement of Changes in Equity, then the 4
+// ratio categories - see the approved plan). Increment 1: the Trial Balance
+// aggregation every later statement composes on top of. Grouped under
+// /accounting/reports/* so later increments (income_statement, balance_sheet,
+// ...) land as siblings here rather than scattered across unrelated route groups.
+func setupAccountingReportRoutes(api fiber.Router) {
+	handler := accounting_report_handlers.NewAccountingReportHandler(accounting_report_services.NewTrialBalanceService())
+	api.Get("/reports/trial_balance", handler.GetTrialBalance)
 }
 
 func setupInvoiceReceiptRoutes(api fiber.Router) {
