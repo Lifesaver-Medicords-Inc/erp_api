@@ -357,6 +357,7 @@ func (s *ItemStockService) GetItemStocksList() ([]inventory_models.ItemStockList
 	query := `
 		SELECT its.id, its.item_id, b.item_code,
 		       ISNULL(c.name, '') AS item_name,
+		       ISNULL(b.item_model, '') AS item_model,
 		       ISNULL(d.name, '') AS brand,
 		       its.warehouse_id, ISNULL(w.name, '') AS warehouse_name,
 		       its.bin_location, its.stock_qty, its.stock_uom, its.is_active

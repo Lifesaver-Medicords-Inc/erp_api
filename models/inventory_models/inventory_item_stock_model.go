@@ -48,6 +48,7 @@ type ItemStockListView struct {
 	ItemId        uint   `json:"item_id"`
 	ItemCode      string `json:"item_code"`
 	ItemName      string `json:"item_name"`
+	ItemModel     string `json:"item_model"`
 	Brand         string `json:"brand"`
 	WarehouseId   uint   `json:"warehouse_id"`
 	WarehouseName string `json:"warehouse_name"`
