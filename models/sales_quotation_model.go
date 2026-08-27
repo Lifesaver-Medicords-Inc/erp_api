@@ -26,9 +26,21 @@ type SalesQuotationContent struct {
 	TotalAmountDue       float64 `json:"total_amount_due"`
 	Contact1             string  `json:"contact_1" gorm:"column:contact_1"`
 	Contact2             string  `json:"contact_2" gorm:"column:contact_2"`
-	DocumentNo           string  `json:"document_no"`
-	VersionNo            string  `json:"version_no"`
-	SubVersionNo         string  `json:"sub_version_no"`
+	// Sales_Quotation_Bug_Report_2026-08-03.md #13 - sized explicitly (was an
+	// unbounded NVARCHAR(MAX), GORM's default for a plain string field) so a
+	// real composite unique index can exist on tbl_trans_sales_quotation - SQL
+	// Server flatly refuses to let a MAX-length column be an index key at all.
+	// Confirmed real data's own max lengths (7/1/1 chars) before picking these;
+	// still generous room for the full documented format ("FQ#YYYY-nnnn-v#.#").
+	// This struct is also embedded in SalesQuotationAt (the audit table, which
+	// legitimately holds many rows per document/version) - the size limit is
+	// harmless there too, but the unique index itself is added directly via
+	// SQL against tbl_trans_sales_quotation only, not through a gorm tag here,
+	// since a uniqueIndex tag on this shared struct would incorrectly try to
+	// enforce the same uniqueness on the audit table.
+	DocumentNo           string  `json:"document_no" gorm:"size:50"`
+	VersionNo            string  `json:"version_no" gorm:"size:20"`
+	SubVersionNo         string  `json:"sub_version_no" gorm:"size:20"`
 	CreatedBy            string  `json:"created_by"`
 	FinalRefNo           string  `json:"final_ref_no"`
 	IsFinalized          bool    `json:"is_finalized"`
