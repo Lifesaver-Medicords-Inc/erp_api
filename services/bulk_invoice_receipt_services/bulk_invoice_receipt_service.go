@@ -136,8 +136,8 @@ func (s *BulkInvoiceReceiptService) CreateBulkInvoiceReceipt(body *accounting_mo
 		if len(parts) != 2 {
 			continue
 		}
-		startDate, err1 := time.Parse("02/01/2006 3:04:05 pm", strings.TrimSpace(parts[0]))
-		endDate, err2 := time.Parse("02/01/2006 3:04:05 pm", strings.TrimSpace(parts[1]))
+		startDate, err1 := time.Parse("1/2/2006 3:04:05 PM", strings.TrimSpace(parts[0]))
+		endDate, err2 := time.Parse("1/2/2006 3:04:05 PM", strings.TrimSpace(parts[1]))
 		if err1 != nil || err2 != nil {
 			continue
 		}

@@ -41,8 +41,18 @@ func (s *JournalEntryService) GetCurrentJournal(conditions map[string]interface{
 		return response, fiber.StatusInternalServerError, errors.New("failed getting journal entry")
 	}
 
-	// Define layout based on your format
-	layout := "02/01/2006 3:04:05 pm"
+	// Layout must be month/day/year with uppercase AM/PM - matches what every other
+	// period-matching lookup in this codebase expects (sales_invoice_service.go,
+	// invoice_receipt_service.go, etc.) and what the accounting app's Company Setup
+	// screen now writes via a DateTimePicker (CompanySetupPage.cs). The non-padded
+	// "1"/"2" tokens are deliberate: Go's time.Parse accepts both zero-padded and
+	// non-padded digits against them, so this works whether or not the source string
+	// happens to be zero-padded. The old "02/01/2006 ... pm" layout had the day/month
+	// order backwards (rejecting any date where the day exceeds 12) and required a
+	// lowercase am/pm that nothing ever produced - no naturally-typed or -formatted
+	// date could ever satisfy it, so this always fell through to "no active journal
+	// entry" regardless of whether one actually existed.
+	layout := "1/2/2006 3:04:05 PM"
 
 	// Parse period_from
 	periodFrom, err := time.Parse(layout, response.PeriodFrom)
