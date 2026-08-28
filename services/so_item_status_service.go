@@ -26,6 +26,28 @@ func RecomputeSoItemStatus(tx *gorm.DB, orderDetailsId uint) error {
 	if orderDetailsId == 0 {
 		return nil
 	}
+
+	// §5.25: a repair/replacement pick-up may legitimately cite an already-CLOSED
+	// SO - both Item Release's own SO picker and the Logistics Calendar's
+	// REFERENCE DOC picker list every SO regardless of status, by design, and
+	// neither touches the order's own CLOSED status or anything financial about
+	// it. But letting a later document still rewrite that SO's per-line dispatch
+	// status (§7.1) is unwanted noise the spec doesn't ask for on a closed order
+	// - skip the recompute once the parent SO is CLOSED, so those labels stay
+	// frozen at whatever they were the moment the order closed.
+	var soStatus string
+	if err := tx.Raw(`
+		SELECT so.status
+		FROM tbl_trans_sales_order_details sod
+		INNER JOIN tbl_trans_sales_order so ON so.order_id = sod.based_id
+		WHERE sod.order_details_id = ?
+	`, orderDetailsId).Scan(&soStatus).Error; err != nil {
+		return err
+	}
+	if strings.EqualFold(strings.TrimSpace(soStatus), "CLOSED") {
+		return nil
+	}
+
 	return tx.Exec("EXEC sp_RecomputeSoItemStatus @order_details_id = ?", orderDetailsId).Error
 }
 
