@@ -42,25 +42,19 @@ PriceDateRanges AS (
 ),
 -- Calculate lowest prices and corresponding supplier_name
 LowestPrices AS (
+    -- §11.5: "1 YR = cheapest/lowest price within the last year" - no minimum-tenure
+    -- requirement. Previously gated on the item's FIRST-EVER purchase being at least
+    -- 365/1095 days ago, which hid a real, valid answer for any item newer than that -
+    -- a 3-month-old item with 3 purchases showed '-' instead of its actual 3-month low.
+    -- lp1/lp3 are already scoped to their own date windows below, so a plain ISNULL is
+    -- correct on its own: NULL only when no purchase falls in that window at all.
     SELECT d.item_id,
         -- Lowest 1 Year
-        CASE
-            WHEN DATEDIFF(DAY, d.first_purchase_date, GETDATE()) >= 365 THEN CAST(lp1.discounted_price AS VARCHAR)
-            ELSE '-'
-        END AS lowest_1yr,
-        CASE
-            WHEN DATEDIFF(DAY, d.first_purchase_date, GETDATE()) >= 365 THEN ISNULL(lp1.supplier_name, '-')
-            ELSE '-'
-        END AS lowest_1yr_supplier_name,
+        ISNULL(CAST(lp1.discounted_price AS VARCHAR), '-') AS lowest_1yr,
+        ISNULL(lp1.supplier_name, '-') AS lowest_1yr_supplier_name,
         -- Lowest 3 Year
-        CASE
-            WHEN DATEDIFF(DAY, d.first_purchase_date, GETDATE()) >= 3 * 365 THEN CAST(lp3.discounted_price AS VARCHAR)
-            ELSE '-'
-        END AS lowest_3yr,
-        CASE
-            WHEN DATEDIFF(DAY, d.first_purchase_date, GETDATE()) >= 3 * 365 THEN ISNULL(lp3.supplier_name, '-')
-            ELSE '-'
-        END AS lowest_3yr_supplier_name,
+        ISNULL(CAST(lp3.discounted_price AS VARCHAR), '-') AS lowest_3yr,
+        ISNULL(lp3.supplier_name, '-') AS lowest_3yr_supplier_name,
         -- Lowest All Time
         CAST(lpa.discounted_price AS VARCHAR) AS lowest_alltime,
         ISNULL(lpa.supplier_name, '-') AS lowest_alltime_supplier_name
