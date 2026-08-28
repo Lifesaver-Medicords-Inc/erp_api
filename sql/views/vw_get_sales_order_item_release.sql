@@ -12,7 +12,7 @@ SELECT
     sod.delivery_preference,
     sod.item_code,
 	ird.released_qty,
-	ird.released_uom_id as released_uom 
+	ird.released_uom_id as released_uom
 FROM tbl_trans_sales_order_details sod
 LEFT JOIN tbl_trans_sales_order so
 	ON sod.based_id = so.order_id
@@ -20,8 +20,19 @@ LEFT JOIN tbl_setup_item i
     ON sod.item_id = i.id
 LEFT JOIN tbl_setup_item_unit_measurement uom
 	ON i.unit_of_measure_id = uom.id
-LEFT JOIN tbl_inv_item_release_details ird
+-- Aggregated before the join, not joined raw: tbl_inv_item_release_details has one
+-- row per (sales_order_id, item_id) PER Item Release document, and partial releases
+-- are explicitly legitimate (spec: "Partial releases produce multiple PAs") - a raw
+-- join fanned out one duplicate SO detail row per PRIOR Item Release against the
+-- same SO, so the 2nd (and 3rd, 4th...) Item Release ever created against an SO
+-- showed every item multiplied by however many releases already existed. This
+-- restores the join to one row per (sales_order_id, item_id) regardless of history.
+LEFT JOIN (
+	SELECT sales_order_id, item_id,
+		SUM(released_qty) AS released_qty,
+		MAX(released_uom_id) AS released_uom_id
+	FROM tbl_inv_item_release_details
+	GROUP BY sales_order_id, item_id
+) ird
 	ON ird.sales_order_id = sod.based_id
 	AND ird.item_id = sod.item_id
-LEFT JOIN tbl_setup_item_unit_measurement seum
-	ON ird.released_uom_id = seum.id
