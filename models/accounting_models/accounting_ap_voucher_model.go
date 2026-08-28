@@ -44,6 +44,16 @@ type ApVoucherDetailsContent struct {
 	TwasAmount       float64 `json:"twas_amount"`
 	LineAmount       float64 `json:"line_amount"`
 	ReceiptType      string  `json:"receipt_type"`
+
+	// How much of this receipt THIS voucher is actually applying (§5.16's
+	// apply table: TRANS AMOUNT/OPEN AMOUNT/AMOUNT APPLIED/BALANCE) - until
+	// this field existed, AP Voucher had no way to record anything but
+	// taking a receipt's full LineAmount, defeating the same OPEN AMOUNT
+	// concept Debit Memo needs (see services.ComputeReceiptOpenAmount,
+	// which sums this column back out). Defaults to LineAmount when a
+	// caller doesn't set it, preserving today's all-or-nothing behavior
+	// until the AP Voucher screen itself exposes a real partial-entry UI.
+	AmountApplied float64 `json:"amount_applied"`
 }
 
 type ApVoucherDetails struct {

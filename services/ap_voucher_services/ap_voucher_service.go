@@ -108,6 +108,28 @@ func (s *ApVoucherService) CreateApVoucherDetails(tx *gorm.DB, body *accounting_
 		detail := &body.ApVoucherDetails[i]
 		detail.ApVoucherId = body.ApVoucher.ID
 
+		// Older/unmodified clients don't send AmountApplied yet - default to
+		// the full LineAmount so today's all-or-nothing behavior keeps
+		// working exactly as before, rather than silently applying 0.
+		if detail.AmountApplied == 0 {
+			detail.AmountApplied = detail.LineAmount
+		}
+
+		// Re-check against a freshly computed open amount rather than
+		// trusting whatever the client's picker showed when it was fetched -
+		// same reasoning as Item Release's insufficient-stock check: the
+		// picker result can be stale by the time Save actually runs.
+		openAmount, err := services.ComputeReceiptOpenAmount(tx, detail.ReceiptType, detail.InvoiceReceiptId)
+		if err != nil {
+			return fmt.Errorf("failed computing open amount for receipt %d: %w", detail.InvoiceReceiptId, err)
+		}
+		if detail.AmountApplied > openAmount+0.005 {
+			return fmt.Errorf(
+				"receipt #%d: amount applied %.2f exceeds its open amount %.2f",
+				detail.ReceiptNo, detail.AmountApplied, openAmount,
+			)
+		}
+
 		// Insert detail
 		if err := services.DbInsert(tx, detail); err != nil {
 			return errors.New("failed creating ap voucher details")

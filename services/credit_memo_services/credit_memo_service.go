@@ -130,11 +130,29 @@ func NewCreditMemoService() *CreditMemoService {
 
 // GetCreditMemo serves both List (conditions == nil) and GetByID
 // (conditions == {"ID": x}), same convention as every other Get here.
+//
+// Fills in OpenAmount for every supplier CM in the result - a live query per
+// row rather than a join, but this list is never large enough (one company's
+// supplier credit memos) for that to matter, and it keeps
+// ComputeCreditMemoOpenAmount as the single source of truth instead of
+// duplicating its SQL into this query too.
 func (s *CreditMemoService) GetCreditMemo(conditions map[string]interface{}) (interface{}, int, error) {
 	var response models.CreditMemoGet
 
 	if err := services.DbGet(&response.CreditMemo, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting credit memo")
+	}
+
+	for i := range response.CreditMemo {
+		cm := &response.CreditMemo[i]
+		if cm.PartnerType != "Supplier" {
+			continue
+		}
+		openAmount, err := services.ComputeCreditMemoOpenAmount(initializers.DB, cm.ID)
+		if err != nil {
+			continue // don't fail the whole list over one row's computation
+		}
+		cm.OpenAmount = openAmount
 	}
 
 	return response, fiber.StatusOK, nil

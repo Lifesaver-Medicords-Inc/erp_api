@@ -145,22 +145,25 @@ const applyToTargetDocumentsEpsilon = 0.005
 // supplier's." Previously not implemented at all (this DM only recorded its
 // own apply-table snapshot of the target, never touched the target itself).
 //
-// This codebase has no partial running-balance/OPEN AMOUNT tracking for any
-// of the three apply-target types (Invoice Receipt, Bulk Invoice Receipt,
-// Credit Memo) - confirmed by AP Voucher's own equivalent step
-// (markReceiptAsVouchered), which is a boolean "fully vouchered" flag, not a
-// numeric balance. So a line that FULLY consumes its target (AmountApplied
-// >= OpenAmount) flips that same boolean, consistent with AP Voucher and
-// reusing the exact InvoiceReceipt/BulkInvoiceReceipt.ApVoucher field so the
-// existing "open only" pickers (sp_GetInvoiceAPVoucher, filtered ap_voucher
-// = 0) automatically stop offering it - to either a future AP Voucher or a
-// future Debit Memo. Credit Memo gets an equivalent new flag, AppliedByDm,
-// since it had no such gate at all.
+// The partial-application gap this doc comment used to describe is now
+// closed a level below this function, not inside it: createDebitMemoDetails
+// (called just before this from CreateDebitMemo) already persists every
+// ticked line's AmountApplied, full or partial, into
+// tbl_trans_debit_memo_details. services.ComputeReceiptOpenAmount (used by
+// both AP Voucher's own save-time validation and sp_GetInvoiceAPVoucher, the
+// picker both AP Voucher and this DM's own "+ Invoice/Bulk IR" button call)
+// sums those rows straight back out, live, every time it's asked - so a
+// partial line is already fully visible to the next picker query without
+// this function needing to record anything extra about it.
 //
-// A PARTIAL application (AmountApplied < OpenAmount) is left as a real,
-// flagged gap: there is nowhere to record "this target is 40% consumed"
-// without inventing a running-balance column, which is a data-model
-// decision, not a bug-fix edit made on my own authority.
+// What THIS function still does is flip the InvoiceReceipt/
+// BulkInvoiceReceipt.ApVoucher / CreditMemo.AppliedByDm booleans, and it
+// still only does that on full consumption (AmountApplied >= OpenAmount).
+// That's fine: those flags are no longer what gates a document out of the
+// picker (open_amount > 0 does that now) - they're purely the informational
+// "has anything ever fully closed this out" markers AP Voucher's own
+// markReceiptAsVouchered sets the equivalent of, and nothing currently reads
+// them for a partial case.
 func (s *DebitMemoService) applyToTargetDocuments(tx *gorm.DB, body *models.DebitMemoBody) error {
 	for _, d := range body.DebitMemoDetails {
 		if !d.Apply || d.TargetDocId == 0 {
@@ -227,6 +230,30 @@ func (s *DebitMemoService) CreateDebitMemo(body *models.DebitMemoBody, at models
 		if d.TargetDocId == 0 {
 			return body, fiber.StatusBadRequest, fmt.Errorf("line %d: a ticked apply row requires a target document", i+1)
 		}
+
+		// Re-check against a freshly computed open amount rather than
+		// trusting whatever the client's picker showed when it was fetched -
+		// same reasoning as AP Voucher's own equivalent check.
+		var liveOpen float64
+		var err error
+		if d.TargetDocType == "Credit Memo" {
+			liveOpen, err = services.ComputeCreditMemoOpenAmount(initializers.DB, d.TargetDocId)
+		} else {
+			receiptType := "INVOICE RECEIPT"
+			if d.TargetDocType == "Bulk Invoice Receipt" {
+				receiptType = "BULK INVOICE RECEIPT"
+			}
+			liveOpen, err = services.ComputeReceiptOpenAmount(initializers.DB, receiptType, d.TargetDocId)
+		}
+		if err != nil {
+			return body, fiber.StatusInternalServerError, fmt.Errorf("line %d: failed computing open amount for target: %w", i+1, err)
+		}
+		if d.AmountApplied > liveOpen+applyToTargetDocumentsEpsilon {
+			return body, fiber.StatusBadRequest, fmt.Errorf(
+				"line %d: amount applied %.2f exceeds this target's open amount %.2f", i+1, d.AmountApplied, liveOpen,
+			)
+		}
+
 		appliedTotal += d.AmountApplied
 	}
 

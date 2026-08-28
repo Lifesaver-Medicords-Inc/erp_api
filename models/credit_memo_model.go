@@ -55,13 +55,20 @@ type CreditMemoContent struct {
 
 	// AppliedByDm: set true once a Debit Memo's apply line fully consumes
 	// this (supplier) Credit Memo (§12.6.3: "a DM's save also updates every
-	// account it was applied against"). Same all-or-nothing shape as
-	// InvoiceReceipt/BulkInvoiceReceipt's own ApVoucher flag - this codebase
-	// has no partial running-balance tracking for any of the three DM apply
-	// targets, so a partial application leaves this false and there is
-	// currently no way to record the partial consumption. See
-	// debit_memo_services.applyToTargetDocuments.
+	// account it was applied against"). Purely informational now, same as
+	// InvoiceReceipt/BulkInvoiceReceipt's own ApVoucher flag - see
+	// debit_memo_services.applyToTargetDocuments's doc comment. What
+	// actually gates whether a CM still has room for a Debit Memo to apply
+	// against it is OpenAmount below.
 	AppliedByDm bool `json:"applied_by_dm"`
+
+	// OpenAmount: TransAmount minus every Debit Memo detail already applied
+	// against this CM (services.ComputeCreditMemoOpenAmount) - computed
+	// live on read, never stored, same reasoning as the IR/Bulk IR side.
+	// Populated by CreditMemoService.GetCreditMemo for a supplier CM only
+	// (the only side a Debit Memo can target, §5.19); left at its zero
+	// value for a customer CM, which has no such consumer.
+	OpenAmount float64 `gorm:"-" json:"open_amount,omitempty"`
 }
 
 type CreditMemo struct {
