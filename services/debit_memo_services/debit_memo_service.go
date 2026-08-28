@@ -4,14 +4,108 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
+	"github.com/pierceperado/smpc/services/journal_entry_services"
 	"github.com/pierceperado/smpc/utils"
 	"gorm.io/gorm"
 )
+
+// Fixed debit/credit COA pair, same precedent-following reasoning as
+// CreditMemoService's own pair (see its doc comment). A DM lessens what
+// SMPC owes: debit Accounts Payable (decreasing the liability), credit the
+// closest generic offsetting account in the live chart.
+const (
+	debitMemoDebitCoaId  uint = 40030 // ACCOUNTS PAYABLE
+	debitMemoCreditCoaId uint = 50030 // NON-TRADE EXPENSE
+)
+
+// postDebitMemoJournalEntry writes the DM's debit+credit pair (§12.2,
+// §12.6.3: "On save... the journal entry is written"). Same period-lookup
+// and fixed-pair pattern as postCreditMemoJournalEntry.
+func postDebitMemoJournalEntry(tx *gorm.DB, dm *models.DebitMemo, at models.At) error {
+	if strings.TrimSpace(dm.DocDate) == "" {
+		dm.DocDate = time.Now().Format("01/02/2006")
+	}
+
+	var journals []accounting_models.JournalEntry
+	if err := tx.Find(&journals).Error; err != nil {
+		return errors.New("failed fetching journal entries")
+	}
+
+	docDate, err := time.Parse("01/02/2006", strings.ToLower(strings.TrimSpace(dm.DocDate)))
+	if err != nil {
+		return errors.New("invalid debit memo doc date format")
+	}
+
+	var matchedJournalID uint
+	for _, j := range journals {
+		parts := strings.Split(j.Period, " to ")
+		if len(parts) != 2 {
+			continue
+		}
+		startDate, err1 := time.Parse("1/2/2006 3:04:05 PM", strings.TrimSpace(parts[0]))
+		endDate, err2 := time.Parse("1/2/2006 3:04:05 PM", strings.TrimSpace(parts[1]))
+		if err1 != nil || err2 != nil {
+			continue
+		}
+		if !docDate.Before(startDate) && !docDate.After(endDate) {
+			matchedJournalID = j.ID
+			break
+		}
+	}
+	if matchedJournalID == 0 {
+		return errors.New("no active journal entry period is configured for this debit memo's doc date")
+	}
+
+	var coaDEBIT, coaCREDIT accounting_models.ChartOfAccounts
+	if err := tx.First(&coaDEBIT, debitMemoDebitCoaId).Error; err != nil {
+		return errors.New("failed fetching debit chart of account")
+	}
+	if err := tx.First(&coaCREDIT, debitMemoCreditCoaId).Error; err != nil {
+		return errors.New("failed fetching credit chart of account")
+	}
+
+	createJournalEntry := func(account accounting_models.ChartOfAccounts, amount float64, isCredit bool) accounting_models.JournalEntryDetails {
+		entry := accounting_models.JournalEntryDetails{
+			JournalEntryDetailsContent: accounting_models.JournalEntryDetailsContent{
+				Origin:         "Debit Memo",
+				OriginId:       dm.ID,
+				LineMemo:       "Auto entry - " + map[bool]string{true: "CREDIT", false: "DEBIT"}[isCredit],
+				PostingDate:    dm.DocDate,
+				CreatedBy:      at.AtUser,
+				AccountTitle:   account.Name,
+				PostingRef:     account.Code,
+				PostingRefId:   account.ID,
+				JournalEntryId: matchedJournalID,
+			},
+		}
+		if isCredit {
+			entry.Credit = amount
+		} else {
+			entry.Debit = amount
+		}
+		return entry
+	}
+
+	jeService := journal_entry_services.NewJournalEntryService2()
+
+	for _, e := range []accounting_models.JournalEntryDetails{
+		createJournalEntry(coaCREDIT, dm.TransAmount, true),
+		createJournalEntry(coaDEBIT, dm.TransAmount, false),
+	} {
+		if err := jeService.AutoInsertJournalEntry(&e, dm.DocDate, at); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 type DebitMemoService struct{}
 
@@ -45,12 +139,16 @@ var validTargetDocTypes = map[string]bool{
 // UNAPPLIED AMOUNT > 0, so every peso of TransAmount has to land on a
 // ticked apply row before this succeeds.
 //
-// NOT YET IMPLEMENTED HERE, deliberately, same reasoning as
-// CreditMemoService.CreateCreditMemo: the actual effect on each applied-
-// against document's own open balance, and the journal entry write, need
-// their own pass against the live accounting code first (CLAUDE.md's
-// accounting-inverts-spec-wins rule). This persists the memo and its apply
-// table and enforces the document-level rules only.
+// The journal entry write (§12.2, §12.6.3) is handled below by
+// postDebitMemoJournalEntry, following the same accounting-inverts-spec-
+// wins diff CreditMemoService's own posting routine did.
+//
+// STILL NOT IMPLEMENTED HERE: §12.6.3's other sentence - "A DM's save also
+// updates every account it was applied against, not just the supplier's" -
+// i.e. reducing OPEN AMOUNT/BALANCE on each ticked target IR / Bulk IR / CM
+// itself, not just recording this DM's own apply-table snapshot of them.
+// That's a separate effect from the ledger posting this pass covers - flag
+// it before assuming it's also done.
 func (s *DebitMemoService) CreateDebitMemo(body *models.DebitMemoBody, at models.At) (*models.DebitMemoBody, int, error) {
 	dm := &body.DebitMemo
 
@@ -109,6 +207,12 @@ func (s *DebitMemoService) CreateDebitMemo(body *models.DebitMemoBody, at models
 	}
 
 	if err := s.createDebitMemoDetails(tx, body, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	// §12.6.3: committed by SAVE, one step - the journal entry is written
+	// right here, same as every other memo.
+	if err := postDebitMemoJournalEntry(tx, dm, at); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 

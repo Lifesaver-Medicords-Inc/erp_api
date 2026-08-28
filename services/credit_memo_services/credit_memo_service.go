@@ -9,10 +9,118 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
+	"github.com/pierceperado/smpc/services/journal_entry_services"
 	"github.com/pierceperado/smpc/utils"
 	"gorm.io/gorm"
 )
+
+// Fixed debit/credit COA pair per side, matching the precedent every other
+// auto-posting document in this codebase already follows (Sales Invoice,
+// Invoice Receipt, Payment Voucher, Payment Receipt all hardcode a fixed
+// pair rather than let the user pick one - §12.2 says otherwise, but the
+// accounting module inverts "the spec wins": production's own code is what
+// actually ships, so this follows it rather than building a GL-account
+// picker nothing else in the system has). Closest fit in the live chart -
+// there's no dedicated Purchase Discount / Sales Returns contra-account yet.
+const (
+	creditMemoSupplierDebitCoaId  uint = 50030 // NON-TRADE EXPENSE
+	creditMemoSupplierCreditCoaId uint = 40030 // ACCOUNTS PAYABLE
+	creditMemoCustomerDebitCoaId  uint = 70037 // SALES
+	creditMemoCustomerCreditCoaId uint = 70032 // TRADE RECEIVABLE
+)
+
+// postCreditMemoJournalEntry writes the CM's debit+credit pair (§12.2).
+// Supplier side: adds a payable => debit an expense, credit Accounts
+// Payable. Customer side: reduces a receivable => debit Sales (reversing
+// the recognized revenue), credit Trade Receivable. Called from
+// CreateCreditMemo for a supplier CM (commits on SAVE, §12.6.3) and from
+// ApproveCreditMemo for a customer CM (nothing posts until the COO
+// approves it - §5.18).
+func postCreditMemoJournalEntry(tx *gorm.DB, cm *models.CreditMemo, at models.At) error {
+	if strings.TrimSpace(cm.DocDate) == "" {
+		cm.DocDate = time.Now().Format("01/02/2006")
+	}
+
+	var journals []accounting_models.JournalEntry
+	if err := tx.Find(&journals).Error; err != nil {
+		return errors.New("failed fetching journal entries")
+	}
+
+	docDate, err := time.Parse("01/02/2006", strings.ToLower(strings.TrimSpace(cm.DocDate)))
+	if err != nil {
+		return errors.New("invalid credit memo doc date format")
+	}
+
+	var matchedJournalID uint
+	for _, j := range journals {
+		parts := strings.Split(j.Period, " to ")
+		if len(parts) != 2 {
+			continue
+		}
+		startDate, err1 := time.Parse("1/2/2006 3:04:05 PM", strings.TrimSpace(parts[0]))
+		endDate, err2 := time.Parse("1/2/2006 3:04:05 PM", strings.TrimSpace(parts[1]))
+		if err1 != nil || err2 != nil {
+			continue
+		}
+		if !docDate.Before(startDate) && !docDate.After(endDate) {
+			matchedJournalID = j.ID
+			break
+		}
+	}
+	if matchedJournalID == 0 {
+		return errors.New("no active journal entry period is configured for this credit memo's doc date")
+	}
+
+	debitCoaId, creditCoaId := creditMemoSupplierDebitCoaId, creditMemoSupplierCreditCoaId
+	if cm.PartnerType == "Customer" {
+		debitCoaId, creditCoaId = creditMemoCustomerDebitCoaId, creditMemoCustomerCreditCoaId
+	}
+
+	var coaDEBIT, coaCREDIT accounting_models.ChartOfAccounts
+	if err := tx.First(&coaDEBIT, debitCoaId).Error; err != nil {
+		return errors.New("failed fetching debit chart of account")
+	}
+	if err := tx.First(&coaCREDIT, creditCoaId).Error; err != nil {
+		return errors.New("failed fetching credit chart of account")
+	}
+
+	createJournalEntry := func(account accounting_models.ChartOfAccounts, amount float64, isCredit bool) accounting_models.JournalEntryDetails {
+		entry := accounting_models.JournalEntryDetails{
+			JournalEntryDetailsContent: accounting_models.JournalEntryDetailsContent{
+				Origin:         "Credit Memo",
+				OriginId:       cm.ID,
+				LineMemo:       "Auto entry - " + map[bool]string{true: "CREDIT", false: "DEBIT"}[isCredit],
+				PostingDate:    cm.DocDate,
+				CreatedBy:      at.AtUser,
+				AccountTitle:   account.Name,
+				PostingRef:     account.Code,
+				PostingRefId:   account.ID,
+				JournalEntryId: matchedJournalID,
+			},
+		}
+		if isCredit {
+			entry.Credit = amount
+		} else {
+			entry.Debit = amount
+		}
+		return entry
+	}
+
+	jeService := journal_entry_services.NewJournalEntryService2()
+
+	for _, e := range []accounting_models.JournalEntryDetails{
+		createJournalEntry(coaCREDIT, cm.TransAmount, true),
+		createJournalEntry(coaDEBIT, cm.TransAmount, false),
+	} {
+		if err := jeService.AutoInsertJournalEntry(&e, cm.DocDate, at); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 type CreditMemoService struct{}
 
@@ -61,18 +169,16 @@ func partnerHasEntityType(bpiGeneralId uint, entityCode string) (bool, error) {
 // customer and a supplier at once, so this is a membership check, not a
 // single ambiguous lookup).
 //
-// NOT YET IMPLEMENTED HERE, deliberately: the actual balance/ledger effect
-// (adding to the supplier's payable, reducing the customer's receivable)
-// and the journal entry write (§12.2, §12.6.3). CLAUDE.md's own rule for
-// this codebase is that the accounting module inverts "the spec wins" -
-// production ledger-posting code may already differ from the spec on
-// purpose, so wiring a posting routine here without first diffing against
-// the LIVE accounting code (not just this spec section) risks reintroducing
-// exactly the failure §12.6.2 warns about ("the single most damaging
-// failure this document has"). That check is its own pass. This function
-// persists the document and enforces the document-level rules (direction,
-// required reason code, the customer-side approval gate, and §14.100's
-// supplier-only fields) - nothing more.
+// The journal entry write (§12.2, §12.6.3) is handled by
+// postCreditMemoJournalEntry, called below for a supplier CM (posts on this
+// same SAVE) - a customer CM posts nothing here; see ApproveCreditMemo.
+// That posting routine was deliberately NOT built until the live
+// SI/IR/PV/PAYR posting code had been diffed against §12.2 first (the
+// accounting module inverts "the spec wins" in this codebase) - wiring one
+// blind risked reintroducing exactly the failure §12.6.2 warns about ("the
+// single most damaging failure this document has": posting a customer
+// credit as a payable). That diff is done; see postCreditMemoJournalEntry's
+// own doc comment for the resulting fixed debit/credit pair.
 func (s *CreditMemoService) CreateCreditMemo(body *models.CreditMemoBody, at models.At) (*models.CreditMemoBody, int, error) {
 	cm := &body.CreditMemo
 
@@ -135,6 +241,16 @@ func (s *CreditMemoService) CreateCreditMemo(body *models.CreditMemoBody, at mod
 		return body, fiber.StatusInternalServerError, errors.New("failed creating credit memo")
 	}
 
+	// §12.6.3: a supplier CM commits - and posts - in one step, on SAVE. A
+	// customer CM posts nothing here; ApproveCreditMemo does it, and only
+	// once the COO approves (§5.18) - "nothing reaches the receivable until
+	// then".
+	if cm.PartnerType == "Supplier" {
+		if err := postCreditMemoJournalEntry(tx, cm, at); err != nil {
+			return body, fiber.StatusInternalServerError, err
+		}
+	}
+
 	atdata := models.CreditMemoAt{
 		RefId:             cm.ID,
 		CreditMemoContent: cm.CreditMemoContent,
@@ -188,7 +304,7 @@ func (s *CreditMemoService) UserCanApproveCreditMemo(userId uint) (bool, error) 
 // actual receivable-reduction and journal entry write (§6.3 - "this is the
 // only event that credits a customer") needs its own pass against the live
 // accounting code first. This flips the approval flag and records who/when.
-func (s *CreditMemoService) ApproveCreditMemo(creditMemoId uint, approvedByUserId uint) (int, error) {
+func (s *CreditMemoService) ApproveCreditMemo(creditMemoId uint, approvedByUserId uint, at models.At) (int, error) {
 	canApprove, err := s.UserCanApproveCreditMemo(approvedByUserId)
 	if err != nil {
 		return fiber.StatusInternalServerError, errors.New("failed checking approver permission")
@@ -231,6 +347,13 @@ func (s *CreditMemoService) ApproveCreditMemo(creditMemoId uint, approvedByUserI
 
 	if err := services.DbUpdate(tx, &cm, map[string]interface{}{"id": cm.ID}); err != nil {
 		return fiber.StatusInternalServerError, errors.New("failed updating credit memo")
+	}
+
+	// Only now does the receivable actually move (§5.18, §12.6.2 step 4:
+	// "Only that approval moves the receivable and writes the journal
+	// entry").
+	if err := postCreditMemoJournalEntry(tx, &cm, at); err != nil {
+		return fiber.StatusInternalServerError, err
 	}
 
 	if err := tx.Commit().Error; err != nil {

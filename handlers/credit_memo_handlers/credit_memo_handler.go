@@ -75,7 +75,7 @@ func (h *CreditMemoHandler) ApproveCreditMemo(c *fiber.Ctx) error {
 		actingUserId = uint(id)
 	}
 
-	status, err := h.Service.ApproveCreditMemo(uint(creditMemoId), actingUserId)
+	status, err := h.Service.ApproveCreditMemo(uint(creditMemoId), actingUserId, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
