@@ -48,9 +48,11 @@ func setupAccountingReportRoutes(api fiber.Router) {
 	handler := accounting_report_handlers.NewAccountingReportHandler(
 		accounting_report_services.NewTrialBalanceService(),
 		accounting_report_services.NewIncomeStatementService(),
+		accounting_report_services.NewBalanceSheetService(),
 	)
 	api.Get("/reports/trial_balance", handler.GetTrialBalance)
 	api.Get("/reports/income_statement", handler.GetIncomeStatement)
+	api.Get("/reports/balance_sheet", handler.GetBalanceSheet)
 }
 
 func setupInvoiceReceiptRoutes(api fiber.Router) {

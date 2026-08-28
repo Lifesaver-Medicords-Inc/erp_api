@@ -9,12 +9,18 @@ import (
 type AccountingReportHandler struct {
 	TrialBalanceService    *accounting_report_services.TrialBalanceService
 	IncomeStatementService *accounting_report_services.IncomeStatementService
+	BalanceSheetService    *accounting_report_services.BalanceSheetService
 }
 
-func NewAccountingReportHandler(trialBalanceService *accounting_report_services.TrialBalanceService, incomeStatementService *accounting_report_services.IncomeStatementService) *AccountingReportHandler {
+func NewAccountingReportHandler(
+	trialBalanceService *accounting_report_services.TrialBalanceService,
+	incomeStatementService *accounting_report_services.IncomeStatementService,
+	balanceSheetService *accounting_report_services.BalanceSheetService,
+) *AccountingReportHandler {
 	return &AccountingReportHandler{
 		TrialBalanceService:    trialBalanceService,
 		IncomeStatementService: incomeStatementService,
+		BalanceSheetService:    balanceSheetService,
 	}
 }
 
@@ -52,6 +58,22 @@ func (h *AccountingReportHandler) GetIncomeStatement(c *fiber.Ctx) error {
 	}
 
 	data, status, err := h.IncomeStatementService.GetIncomeStatement(periodStart, periodEnd)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+// GetBalanceSheet - GET /accounting/reports/balance_sheet?as_of=YYYY-MM-DD
+// Required, for the same "caller owns 'today'" reason as GetTrialBalance's as_of.
+func (h *AccountingReportHandler) GetBalanceSheet(c *fiber.Ctx) error {
+	asOf := c.Query("as_of")
+	if asOf == "" {
+		return utils.RespondError(c, fiber.StatusBadRequest, "as_of query parameter is required (YYYY-MM-DD)")
+	}
+
+	data, status, err := h.BalanceSheetService.GetBalanceSheet(asOf)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
