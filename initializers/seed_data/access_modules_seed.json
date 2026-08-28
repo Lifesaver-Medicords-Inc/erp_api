@@ -361,10 +361,55 @@
   },
   {
     "app_name": "SMPC_Admin",
-    "module": "Admin Tools > Currency",
-    "submodule": "Currency (not yet implemented)",
+    "module": "Admin Tools > Position Setup",
+    "submodule": "Position Setup (add/edit/delete tbl_position)",
     "button": "",
-    "code": "ADMIN CURRENCY",
+    "code": "ADMIN POSITION SETUP",
+    "kind": "page",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "SMPC_Admin",
+    "module": "Reports",
+    "submodule": "Reports (parent menu)",
+    "button": "",
+    "code": "ADMIN REPORTS",
+    "kind": "page",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "SMPC_Admin",
+    "module": "Reports > Income Statement",
+    "submodule": "Income Statement Report",
+    "button": "",
+    "code": "ADMIN REPORTS INCOME STATEMENT",
+    "kind": "page",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "SMPC_Admin",
+    "module": "Reports > Balance Sheet",
+    "submodule": "Balance Sheet Report",
+    "button": "",
+    "code": "ADMIN REPORTS BALANCE SHEET",
+    "kind": "page",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "SMPC_Admin",
+    "module": "Reports > Statement of Cash Flows",
+    "submodule": "Cash Flow Report",
+    "button": "",
+    "code": "ADMIN REPORTS CASH FLOW",
+    "kind": "page",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "SMPC_Admin",
+    "module": "Reports > Financial Ratios",
+    "submodule": "Financial Ratios Report",
+    "button": "",
+    "code": "ADMIN REPORTS FINANCIAL RATIOS",
     "kind": "page",
     "is_sensitive": false
   },
