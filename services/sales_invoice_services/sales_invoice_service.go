@@ -183,12 +183,20 @@ func (s *SalesInvoiceService) CreateSalesInvoice(body *accounting_models.SalesIn
 		return body, fiber.StatusNotFound, errors.New("no journal entry found for the sales invoice period")
 	}
 
-	// Fetch debit and credit COAs
+	// Fetch debit and credit COAs. Was 40029 (INVENTORY LOSS) / 60030 (AR
+	// UNAPPLIED) - leftover placeholder ids from when the live chart had
+	// almost nothing seeded yet, neither semantically right for a Sales
+	// Invoice. Corrected to the actual receivable/revenue accounts: an SI
+	// debits Trade Receivable (the asset going up) and credits Sales (the
+	// revenue being recognized).
+	const salesInvoiceDebitCoaId = 70032  // TRADE RECEIVABLE
+	const salesInvoiceCreditCoaId = 70037 // SALES
+
 	var coaDEBIT, coaCREDIT accounting_models.ChartOfAccounts
-	if err := tx.First(&coaDEBIT, 40029).Error; err != nil {
+	if err := tx.First(&coaDEBIT, salesInvoiceDebitCoaId).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching debit chart of account")
 	}
-	if err := tx.First(&coaCREDIT, 60030).Error; err != nil {
+	if err := tx.First(&coaCREDIT, salesInvoiceCreditCoaId).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching credit chart of account")
 	}
 
