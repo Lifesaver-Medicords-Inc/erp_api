@@ -535,6 +535,7 @@ func migrateLogisticsDispatching() {
 	fmt.Println("=== Migrating LOGISTICS & DISPATCHING Module ===")
 	migrateAndLog(&models.ItemRelease{}, &models.ItemReleaseAt{})
 	migrateAndLog(&models.ItemReleaseDetails{}, &models.ItemReleaseDetailsAt{})
+	migrateAndLog(&models.ItemReleaseLocations{}, &models.ItemReleaseLocationsAt{})
 	migrateAndLog(&dispatching_models.CalendarCategoryModel{}, &dispatching_models.CalendarCategoryAt{})
 	migrateAndLog(&dispatching_models.CalendarCostTypeModel{}, &dispatching_models.CalendarCostTypeAt{})
 	migrateAndLog(&models.CalendarScheduleModel{}, &models.CalendarScheduleAt{})

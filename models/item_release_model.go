@@ -49,6 +49,14 @@ type ItemReleaseDetailsContent struct {
 	ReleasedUomID       string `json:"released_uom"`
 	SerialNo            string `json:"serial_no"`
 	DeliveryPreference  string `json:"delivery_preference"`
+
+	// Per-bin breakdown of ReleasedQty, from the dispatching app's PickActivity picker.
+	// JSON-only (gorm:"-") - never touched by GORM's association save, so a plain
+	// detail-row upsert can never silently re-deduct stock behind ApplyItemReleaseLocations'
+	// back. See item_release_service.go's ApplyItemReleaseLocations/
+	// RestoreItemReleaseLocations for the code that actually persists these rows and
+	// moves stock - this field only carries them from the request body to that code.
+	Locations []ItemReleaseLocations `gorm:"-" json:"locations,omitempty"`
 }
 
 type ItemReleaseDetails struct {
@@ -69,4 +77,43 @@ type ItemReleaseDetailsAt struct {
 
 func (ItemReleaseDetailsAt) TableName() string {
 	return "z_tbl_inv_item_release_details_at"
+}
+
+// ItemReleaseLocations is the bin-level record behind one ItemReleaseDetails line -
+// same shape/role as ItemRequestLocations and PickActivityLocations (BinId + qty taken
+// from that specific tbl_inv_item_stocks row), added so Item Release can finally call
+// DeductStockWithTx at all (previously: never did, for any bin - see the service file).
+//
+// Deliberately keyed by this row's own ID (not the parent ItemRelease's ID) when it
+// talks to DeductStockWithTx/RestoreStockWithTx below, unlike Item Request/Pick Activity
+// which both key on their *header* ID - that shared-ID choice makes ReleaseLotsFIFO
+// (which reverses everything recorded under one refType+refId, with no finer
+// granularity) reverse an entire document's FIFO cost lots even when only one line/bin
+// is being restored. Using this row's own ID keeps every deduct/restore scoped to
+// exactly the bin it concerns. Not fixed on the other two here - out of scope for this
+// change - just not repeated.
+type ItemReleaseLocationsContent struct {
+	ItemReleaseDetailsID uint `json:"item_release_details_id"`
+	BinId                uint `json:"bin_id"`
+	SelectedQty          int  `json:"selected_qty"`
+}
+
+type ItemReleaseLocations struct {
+	ID uint `gorm:"primaryKey" json:"id"`
+	ItemReleaseLocationsContent
+}
+
+func (ItemReleaseLocations) TableName() string {
+	return "tbl_inv_item_release_locations"
+}
+
+type ItemReleaseLocationsAt struct {
+	ID    uint `gorm:"primaryKey" json:"id"`
+	RefId uint `json:"ref_id"`
+	ItemReleaseLocationsContent
+	At
+}
+
+func (ItemReleaseLocationsAt) TableName() string {
+	return "z_tbl_inv_item_release_locations_at"
 }
