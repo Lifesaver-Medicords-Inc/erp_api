@@ -9,6 +9,15 @@ type ChartOfAccountContent struct {
 	ClassId      uint   `json:"class_id"`
 	Group        string `json:"group"`
 	GroupId      uint   `json:"group_id"`
+
+	// CashFlowCategory: "" (default - treated as OPERATING) | "FINANCING".
+	// Set per account via Chart of Accounts Setup. Only LIABILITY/EQUITY
+	// accounts tagged FINANCING get pulled out of the Cash Flow Statement's
+	// working-capital section into its itemized Financing section - see
+	// cash_flow_service.go. Nothing defaults an account to FINANCING on its
+	// own; the user classifies each one, same "GL account chosen by the
+	// user" precedent as everywhere else in this system.
+	CashFlowCategory string `json:"cash_flow_category"`
 }
 
 type ChartOfAccounts struct {

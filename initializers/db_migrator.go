@@ -477,6 +477,14 @@ func migrateAccounting() {
 		&accounting_models.AssetCategory{}, &accounting_models.AssetCategoryAt{},
 		&accounting_models.FixedAsset{}, &accounting_models.FixedAssetAt{},
 	)
+	// Adds cash_flow_category to the already-live tbl_setup_chart_of_accounts
+	// table - AutoMigrate only adds missing columns, it never touches
+	// existing data. Deliberately not the &ChartOfAccountsAt{} audit twin or
+	// the Tax/TaxDetails models bundled with it in the commented-out block
+	// above - leaving whatever reason that block was disabled alone.
+	migrateAndLog(
+		&accounting_models.ChartOfAccounts{},
+	)
 	// migrateAndLog(
 	// 	&accounting_models.ChartOfAccounts{}, &accounting_models.ChartOfAccountsAt{},
 	// 	&accounting_models.Tax{}, &accounting_models.TaxAt{},

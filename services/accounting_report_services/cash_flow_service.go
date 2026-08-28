@@ -70,7 +70,6 @@ func (s *CashFlowService) GetCashFlow(periodStart, periodEnd string) (*accountin
 		PeriodStart:             periodStart,
 		PeriodEnd:               periodEnd,
 		InventoryChangeExcluded: true,
-		FinancingIsResidual:     true,
 	}
 
 	// Cash accounts, tracked separately - not part of working capital.
@@ -80,32 +79,36 @@ func (s *CashFlowService) GetCashFlow(periodStart, periodEnd string) (*accountin
 	}
 	result.NetChangeInCash = result.EndingCash - result.BeginningCash
 
-	// Working capital: every other ASSET/LIABILITY account that shows up on
-	// either snapshot. Sign convention matches BalanceSheetService's own:
-	// ASSET is debit-normal (NetBalance as-is); LIABILITY is credit-normal
-	// (TotalCredit-TotalDebit).
+	// Sign convention matches BalanceSheetService's own: ASSET/EQUITY are
+	// debit/credit per their own normal balance below; LIABILITY is
+	// credit-normal (TotalCredit-TotalDebit), same as ASSET is debit-normal
+	// (NetBalance as-is).
+	balanceFor := func(row accounting_models.TrialBalanceRow, class string) float64 {
+		if class == "ASSET" {
+			return row.NetBalance
+		}
+		return row.TotalCredit - row.TotalDebit // LIABILITY, EQUITY
+	}
+
 	seen := map[uint]bool{}
-	addLine := func(id uint, code, name, class string) {
+
+	// Working capital: non-cash ASSET accounts, and LIABILITY accounts NOT
+	// tagged FINANCING (blank/OPERATING is the default treatment - most
+	// payables/accruals are operating by nature).
+	addWorkingCapitalLine := func(id uint, code, name, class string) {
 		if seen[id] || cashAccountIds[id] {
 			return
 		}
 		seen[id] = true
 
-		beginRow := beginByAccount[id]
-		endRow := endByAccount[id]
+		beginBal := balanceFor(beginByAccount[id], class)
+		endBal := balanceFor(endByAccount[id], class)
 
-		var beginBal, endBal, cashEffect float64
-		switch class {
-		case "ASSET":
-			beginBal = beginRow.NetBalance
-			endBal = endRow.NetBalance
+		var cashEffect float64
+		if class == "ASSET" {
 			cashEffect = -(endBal - beginBal) // asset up = cash used
-		case "LIABILITY":
-			beginBal = beginRow.TotalCredit - beginRow.TotalDebit
-			endBal = endRow.TotalCredit - endRow.TotalDebit
+		} else {
 			cashEffect = endBal - beginBal // liability up = cash freed
-		default:
-			return
 		}
 
 		result.WorkingCapitalLines = append(result.WorkingCapitalLines, accounting_models.CashFlowWorkingCapitalLine{
@@ -115,16 +118,58 @@ func (s *CashFlowService) GetCashFlow(periodStart, periodEnd string) (*accountin
 		result.NetChangeInWorkingCapital += cashEffect
 	}
 
-	for _, r := range beginRows {
-		if r.AccountClass == "ASSET" || r.AccountClass == "LIABILITY" {
-			addLine(uint(r.AccountId), r.Code, r.Name, r.AccountClass)
+	// Financing: LIABILITY or EQUITY accounts explicitly tagged FINANCING.
+	// EQUITY is otherwise excluded entirely from working capital and from
+	// financing - an untagged equity account's movement is either driven by
+	// Net Income (already counted in Operating via NetIncome itself, so
+	// including it here again would double-count it) or by an appropriation
+	// this system has no workflow for yet (Statement of Changes in Equity).
+	financingSeen := map[uint]bool{}
+	addFinancingLine := func(id uint, code, name, class string) {
+		if financingSeen[id] {
+			return
+		}
+		financingSeen[id] = true
+
+		beginBal := balanceFor(beginByAccount[id], class)
+		endBal := balanceFor(endByAccount[id], class)
+		cashEffect := endBal - beginBal // up = cash in (debt/equity raised), down = cash out (repaid/dividends)
+
+		result.FinancingLines = append(result.FinancingLines, accounting_models.CashFlowFinancingLine{
+			AccountId: id, Code: code, Name: name, AccountClass: class,
+			BeginBalance: beginBal, EndBalance: endBal, CashEffect: cashEffect,
+		})
+		result.NetCashFromFinancingItemized += cashEffect
+	}
+
+	classify := func(rows []accounting_models.TrialBalanceRow) {
+		for _, r := range rows {
+			id := uint(r.AccountId)
+			if cashAccountIds[id] {
+				continue
+			}
+			isFinancing := r.CashFlowCategory == "FINANCING"
+
+			switch r.AccountClass {
+			case "ASSET":
+				addWorkingCapitalLine(id, r.Code, r.Name, r.AccountClass)
+			case "LIABILITY":
+				if isFinancing {
+					addFinancingLine(id, r.Code, r.Name, r.AccountClass)
+				} else {
+					addWorkingCapitalLine(id, r.Code, r.Name, r.AccountClass)
+				}
+			case "EQUITY":
+				if isFinancing {
+					addFinancingLine(id, r.Code, r.Name, r.AccountClass)
+				}
+				// untagged EQUITY: deliberately excluded, see addFinancingLine's
+				// own doc comment.
+			}
 		}
 	}
-	for _, r := range endRows {
-		if r.AccountClass == "ASSET" || r.AccountClass == "LIABILITY" {
-			addLine(uint(r.AccountId), r.Code, r.Name, r.AccountClass)
-		}
-	}
+	classify(beginRows)
+	classify(endRows)
 
 	// Net Income + Depreciation come from the Income Statement engine
 	// directly rather than being recomputed here, so this can never drift
@@ -147,10 +192,14 @@ func (s *CashFlowService) GetCashFlow(periodStart, periodEnd string) (*accountin
 	result.PpeAdditions = additions
 	result.NetCashFromInvesting = -additions
 
-	// Financing is the plug that makes the three sections reconcile to the
-	// real, observed change in cash - see CashFlowResult's own comment for
-	// why this isn't itemized.
-	result.NetCashFromFinancing = result.NetChangeInCash - result.NetCashFromOperating - result.NetCashFromInvesting
+	// Financing = itemized (accounts explicitly tagged FINANCING) + a
+	// residual that always makes the four sections reconcile exactly to
+	// the real, observed change in cash - see CashFlowResult's own comment
+	// for why the residual exists and how to shrink it (classify more
+	// accounts via Chart of Accounts Setup's Cash Flow Category field).
+	result.FinancingResidual = result.NetChangeInCash - result.NetCashFromOperating -
+		result.NetCashFromInvesting - result.NetCashFromFinancingItemized
+	result.NetCashFromFinancing = result.NetCashFromFinancingItemized + result.FinancingResidual
 
 	return result, fiber.StatusOK, nil
 }

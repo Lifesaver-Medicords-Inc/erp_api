@@ -24,4 +24,8 @@ type TrialBalanceRow struct {
 	TotalDebit   float64 `json:"total_debit"`
 	TotalCredit  float64 `json:"total_credit"`
 	NetBalance   float64 `json:"net_balance"`
+	// CashFlowCategory: "" (OPERATING) | "FINANCING" - straight off
+	// tbl_setup_chart_of_accounts.cash_flow_category, set via Chart of
+	// Accounts Setup. Only the Cash Flow Statement reads this today.
+	CashFlowCategory string `json:"cash_flow_category"`
 }

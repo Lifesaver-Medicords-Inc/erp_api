@@ -66,14 +66,15 @@ func (s *TrialBalanceService) GetTrialBalance(periodStart, asOfDate string) ([]a
 			CAST(ISNULL(SUM(CAST(jed.debit AS DECIMAL(18,2))), 0) AS FLOAT) AS total_debit,
 			CAST(ISNULL(SUM(CAST(jed.credit AS DECIMAL(18,2))), 0) AS FLOAT) AS total_credit,
 			CAST(ISNULL(SUM(CAST(jed.debit AS DECIMAL(18,2))), 0)
-			   - ISNULL(SUM(CAST(jed.credit AS DECIMAL(18,2))), 0) AS FLOAT) AS net_balance
+			   - ISNULL(SUM(CAST(jed.credit AS DECIMAL(18,2))), 0) AS FLOAT) AS net_balance,
+			ISNULL(coa.cash_flow_category, '') AS cash_flow_category
 		FROM tbl_setup_chart_of_accounts coa
 		LEFT JOIN tbl_setup_chart_class cc ON coa.class_id = cc.id
 		LEFT JOIN tbl_accounting_journal_entry_details jed
 			ON jed.posting_ref_id = coa.id
 			AND TRY_CONVERT(date, jed.posting_date, 101) <= TRY_CONVERT(date, ?, 23)
 			AND (? = '' OR TRY_CONVERT(date, jed.posting_date, 101) >= TRY_CONVERT(date, ?, 23))
-		GROUP BY coa.id, coa.code, coa.name, cc.type
+		GROUP BY coa.id, coa.code, coa.name, cc.type, coa.cash_flow_category
 		HAVING ISNULL(SUM(jed.debit), 0) <> 0 OR ISNULL(SUM(jed.credit), 0) <> 0
 		ORDER BY coa.code
 	`
