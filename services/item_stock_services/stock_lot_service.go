@@ -1,6 +1,7 @@
 package item_stock_services
 
 import (
+	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models/inventory_models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
@@ -171,4 +172,65 @@ func (s *ItemStockService) ReleaseLotsFIFO(tx *gorm.DB, refType string, refId ui
 		Supplier:     firstSupplier,
 		PurchaseDate: firstPurchaseDate,
 	}, nil
+}
+
+// GetCostOfSales sums the actual FIFO cost of everything consumed (sold/released)
+// between periodStart and periodEnd inclusive (both "YYYY-MM-DD") - built for the
+// Admin "Reports" Income Statement (approved plan, increment 2), which needs Cost
+// of Sales but has no Inventory-side report of its own to call yet.
+//
+// This is a perpetual-inventory answer, not the periodic Beginning+Purchases-Ending
+// formula the reference financial statements use (Note 11) - it reads directly off
+// tbl_inv_stock_lot_consumptions, which already records exactly what was drawn from
+// which lot and when. Deliberately not reproducing the periodic formula: it would
+// need a "beginning inventory" snapshot this system has no mechanism to produce,
+// while this table already has the real answer recorded as it happened.
+//
+// created_at is a genuine datetime column (unlike the accounting side's free-text
+// posting_date), so this compares directly - no TRY_CONVERT gymnastics needed.
+//
+// Known, inherited limitation (see ConsumeLotsFIFO's own doc comment): stock that
+// predates lot tracking, or was added without a lot (e.g. a manual stock adjustment),
+// consumes at zero recorded cost. This understates Cost of Sales for exactly that
+// portion - flagged here rather than silently trusted, not fixed by this function.
+func (s *ItemStockService) GetCostOfSales(periodStart, periodEnd string) (float64, error) {
+	var totalCost float64
+
+	query := `
+		SELECT ISNULL(SUM(
+			CAST(c.qty_consumed AS DECIMAL(18,2)) * CAST(l.unit_cost AS DECIMAL(18,4))
+		), 0)
+		FROM tbl_inv_stock_lot_consumptions c
+		JOIN tbl_inv_stock_lots l ON c.lot_id = l.id
+		WHERE c.created_at >= ? AND c.created_at < DATEADD(day, 1, CAST(? AS date))
+	`
+
+	if err := initializers.DB.Raw(query, periodStart, periodEnd).Row().Scan(&totalCost); err != nil {
+		return 0, err
+	}
+
+	return totalCost, nil
+}
+
+// GetInventoryValue is the current total FIFO cost of everything still on hand
+// (SUM(qty_remaining * unit_cost) across every lot) - the Balance Sheet's Inventory
+// line and the Income Statement's Ending Inventory figure both need this. Always
+// "as of now": there's no lot-level history snapshot mechanism to ask for a past
+// date's value, so an as-of-date parameter would be misleading rather than useful -
+// not offered here.
+func (s *ItemStockService) GetInventoryValue() (float64, error) {
+	var totalValue float64
+
+	query := `
+		SELECT ISNULL(SUM(
+			CAST(qty_remaining AS DECIMAL(18,2)) * CAST(unit_cost AS DECIMAL(18,4))
+		), 0)
+		FROM tbl_inv_stock_lots
+	`
+
+	if err := initializers.DB.Raw(query).Row().Scan(&totalValue); err != nil {
+		return 0, err
+	}
+
+	return totalValue, nil
 }

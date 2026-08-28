@@ -45,8 +45,12 @@ func AccountingRoutes(router fiber.Router) {
 // /accounting/reports/* so later increments (income_statement, balance_sheet,
 // ...) land as siblings here rather than scattered across unrelated route groups.
 func setupAccountingReportRoutes(api fiber.Router) {
-	handler := accounting_report_handlers.NewAccountingReportHandler(accounting_report_services.NewTrialBalanceService())
+	handler := accounting_report_handlers.NewAccountingReportHandler(
+		accounting_report_services.NewTrialBalanceService(),
+		accounting_report_services.NewIncomeStatementService(),
+	)
 	api.Get("/reports/trial_balance", handler.GetTrialBalance)
+	api.Get("/reports/income_statement", handler.GetIncomeStatement)
 }
 
 func setupInvoiceReceiptRoutes(api fiber.Router) {
