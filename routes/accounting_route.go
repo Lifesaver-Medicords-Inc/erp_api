@@ -35,7 +35,30 @@ func AccountingRoutes(router fiber.Router) {
 	setupChartClassRoutes(accountingApi)
 	setupChartOfAccountRoutes(accountingApi)
 	setupTaxSetupRoutes(accountingApi)
+	setupAssetCategoryRoutes(accountingApi)
+	setupFixedAssetRoutes(accountingApi)
 	setupAccountingReportRoutes(accountingApi)
+}
+
+// setupAssetCategoryRoutes / setupFixedAssetRoutes - the PP&E register's
+// Setup screens (category + individual asset). Net new scope, not in
+// SMPC_ERP_SPEC_*.md - see accounting_asset_category_model.go's comment.
+func setupAssetCategoryRoutes(api fiber.Router) {
+	handler := setup_handlers.NewAssetCategoryHandler(setup_services.NewAssetCategoryService())
+	api.Get("/asset_category", handler.GetAssetCategories)
+	api.Get("/asset_category/:id", handler.GetAssetCategory)
+	api.Post("/asset_category", handler.CreateAssetCategory)
+	api.Put("/asset_category", handler.UpdateAssetCategory)
+	api.Delete("/asset_category", handler.DeleteAssetCategory)
+}
+
+func setupFixedAssetRoutes(api fiber.Router) {
+	handler := setup_handlers.NewFixedAssetHandler(setup_services.NewFixedAssetService())
+	api.Get("/fixed_asset", handler.GetFixedAssets)
+	api.Get("/fixed_asset/:id", handler.GetFixedAsset)
+	api.Post("/fixed_asset", handler.CreateFixedAsset)
+	api.Put("/fixed_asset", handler.UpdateFixedAsset)
+	api.Delete("/fixed_asset", handler.DeleteFixedAsset)
 }
 
 // setupAccountingReportRoutes - Admin "Reports" build (Balance Sheet, Income

@@ -8,17 +8,20 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services/item_stock_services"
+	"github.com/pierceperado/smpc/services/setup_services"
 )
 
 type BalanceSheetService struct {
 	TrialBalanceService *TrialBalanceService
 	ItemStockService    *item_stock_services.ItemStockService
+	FixedAssetService   *setup_services.FixedAssetService
 }
 
 func NewBalanceSheetService() *BalanceSheetService {
 	return &BalanceSheetService{
 		TrialBalanceService: NewTrialBalanceService(),
 		ItemStockService:    item_stock_services.NewItemStockService(),
+		FixedAssetService:   setup_services.NewFixedAssetService(),
 	}
 }
 
@@ -44,7 +47,6 @@ func (s *BalanceSheetService) GetBalanceSheet(asOfDate string) (*accounting_mode
 	result := &accounting_models.BalanceSheetResult{
 		AsOf:                           asOfDate,
 		InventoryIsFromInventoryModule: true,
-		PropertyAndEquipmentIsTracked:  false,
 	}
 
 	for _, row := range rows {
@@ -71,8 +73,17 @@ func (s *BalanceSheetService) GetBalanceSheet(asOfDate string) (*accounting_mode
 	}
 	result.Inventory = inventoryValue
 
-	// PropertyAndEquipment stays 0 - no fixed-asset register exists to compute it
-	// from (see the model's own doc comment).
+	// PropertyAndEquipment: FixedAssetService stores dates as MM/dd/yyyy
+	// (this codebase's usual free-text date convention), so re-format the
+	// ISO as_of this handler already validated above before calling it.
+	asOfParsed, _ := time.Parse("2006-01-02", asOfDate)
+	ppe, err := s.FixedAssetService.GetPPEAsOf(asOfParsed.Format("01/02/2006"))
+	if err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed getting property and equipment")
+	}
+	result.PropertyAndEquipment = ppe.TotalNetBookValue
+	result.PropertyAndEquipmentCategories = ppe.Categories
+	result.PropertyAndEquipmentIsTracked = len(ppe.Categories) > 0
 
 	result.TotalAssets = result.CashAndOtherAssets + result.Inventory + result.PropertyAndEquipment
 	result.TotalLiabilitiesAndEquity = result.TotalLiabilities + result.TotalEquity

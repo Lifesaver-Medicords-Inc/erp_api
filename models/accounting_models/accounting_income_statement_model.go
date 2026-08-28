@@ -19,6 +19,12 @@ type IncomeStatementResult struct {
 	OperatingExpenses float64 `json:"operating_expenses"`
 	NetIncome         float64 `json:"net_income"`
 
+	// DepreciationExpense is computed straight-line from tbl_fixed_asset for
+	// this exact period (FixedAssetService.GetDepreciationExpense) - not a
+	// ledger account, same "compute at read time" reasoning as CostOfSales.
+	// Included inside OperatingExpenses, not on top of it.
+	DepreciationExpense float64 `json:"depreciation_expense"`
+
 	RevenueAccounts []TrialBalanceRow `json:"revenue_accounts"`
 	ExpenseAccounts []TrialBalanceRow `json:"expense_accounts"`
 

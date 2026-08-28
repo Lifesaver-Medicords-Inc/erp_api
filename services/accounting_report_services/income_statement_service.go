@@ -7,17 +7,20 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services/item_stock_services"
+	"github.com/pierceperado/smpc/services/setup_services"
 )
 
 type IncomeStatementService struct {
 	TrialBalanceService *TrialBalanceService
 	ItemStockService    *item_stock_services.ItemStockService
+	FixedAssetService   *setup_services.FixedAssetService
 }
 
 func NewIncomeStatementService() *IncomeStatementService {
 	return &IncomeStatementService{
 		TrialBalanceService: NewTrialBalanceService(),
 		ItemStockService:    item_stock_services.NewItemStockService(),
+		FixedAssetService:   setup_services.NewFixedAssetService(),
 	}
 }
 
@@ -76,6 +79,20 @@ func (s *IncomeStatementService) GetIncomeStatement(periodStart, periodEnd strin
 		return nil, fiber.StatusInternalServerError, errors.New("failed getting cost of sales")
 	}
 	result.CostOfSales = costOfSales
+
+	// FixedAssetService stores dates as MM/dd/yyyy - reformat the ISO dates
+	// this handler already validated above.
+	startParsed, _ := time.Parse("2006-01-02", periodStart)
+	endParsed, _ := time.Parse("2006-01-02", periodEnd)
+	depreciation, err := s.FixedAssetService.GetDepreciationExpense(
+		startParsed.Format("01/02/2006"),
+		endParsed.Format("01/02/2006"),
+	)
+	if err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed getting depreciation expense")
+	}
+	result.DepreciationExpense = depreciation
+	result.OperatingExpenses += depreciation
 
 	result.GrossProfit = result.Revenue - result.CostOfSales
 	result.NetIncome = result.GrossProfit - result.OperatingExpenses

@@ -27,13 +27,15 @@ type BalanceSheetResult struct {
 	Inventory                      float64 `json:"inventory"`
 	InventoryIsFromInventoryModule bool    `json:"inventory_is_from_inventory_module"`
 
-	// PropertyAndEquipment is always 0 today - this system has no fixed-asset or
-	// depreciation register at all (gap #3 in the plan; FS 2023's Note 7 shows a
-	// real ₱12.85M net carrying amount with nothing here to compute it from).
-	// PropertyAndEquipmentIsTracked is false so the UI can show "not tracked"
-	// instead of a misleading ₱0.00.
-	PropertyAndEquipment         float64 `json:"property_and_equipment"`
-	PropertyAndEquipmentIsTracked bool   `json:"property_and_equipment_is_tracked"`
+	// PropertyAndEquipment is the FixedAssetService's computed net book value
+	// as of AsOf (straight-line, tbl_fixed_asset) - gap #3 in the plan is now
+	// closed by the minimal PP&E register (setup_services/fixed_asset_service.go).
+	// PropertyAndEquipmentIsTracked stays false only when the register itself
+	// is empty (nothing entered yet), so the UI can still tell "genuinely
+	// zero" apart from "nothing entered".
+	PropertyAndEquipment           float64                `json:"property_and_equipment"`
+	PropertyAndEquipmentIsTracked  bool                   `json:"property_and_equipment_is_tracked"`
+	PropertyAndEquipmentCategories []PPECategoryBreakdown `json:"property_and_equipment_categories"`
 
 	TotalAssets float64 `json:"total_assets"`
 
