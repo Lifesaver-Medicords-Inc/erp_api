@@ -469,6 +469,14 @@ func migrateAccounting() {
 	migrateAndLog(
 		&accounting_models.ChartClass{}, &accounting_models.ChartClassAt{},
 	)
+	// PP&E register - not in the spec, see accounting_asset_category_model.go.
+	// Missed when that feature was first built: the models/services/UI all
+	// existed, but nothing registered them here, so tbl_fixed_asset never
+	// actually got created on the live DB despite the code compiling clean.
+	migrateAndLog(
+		&accounting_models.AssetCategory{}, &accounting_models.AssetCategoryAt{},
+		&accounting_models.FixedAsset{}, &accounting_models.FixedAssetAt{},
+	)
 	// migrateAndLog(
 	// 	&accounting_models.ChartOfAccounts{}, &accounting_models.ChartOfAccountsAt{},
 	// 	&accounting_models.Tax{}, &accounting_models.TaxAt{},

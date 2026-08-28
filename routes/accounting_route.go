@@ -72,10 +72,14 @@ func setupAccountingReportRoutes(api fiber.Router) {
 		accounting_report_services.NewTrialBalanceService(),
 		accounting_report_services.NewIncomeStatementService(),
 		accounting_report_services.NewBalanceSheetService(),
+		accounting_report_services.NewCashFlowService(),
+		accounting_report_services.NewFinancialRatiosService(),
 	)
 	api.Get("/reports/trial_balance", handler.GetTrialBalance)
 	api.Get("/reports/income_statement", handler.GetIncomeStatement)
 	api.Get("/reports/balance_sheet", handler.GetBalanceSheet)
+	api.Get("/reports/cash_flow", handler.GetCashFlow)
+	api.Get("/reports/financial_ratios", handler.GetFinancialRatios)
 }
 
 func setupInvoiceReceiptRoutes(api fiber.Router) {

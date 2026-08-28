@@ -10,17 +10,23 @@ type AccountingReportHandler struct {
 	TrialBalanceService    *accounting_report_services.TrialBalanceService
 	IncomeStatementService *accounting_report_services.IncomeStatementService
 	BalanceSheetService    *accounting_report_services.BalanceSheetService
+	CashFlowService        *accounting_report_services.CashFlowService
+	FinancialRatiosService *accounting_report_services.FinancialRatiosService
 }
 
 func NewAccountingReportHandler(
 	trialBalanceService *accounting_report_services.TrialBalanceService,
 	incomeStatementService *accounting_report_services.IncomeStatementService,
 	balanceSheetService *accounting_report_services.BalanceSheetService,
+	cashFlowService *accounting_report_services.CashFlowService,
+	financialRatiosService *accounting_report_services.FinancialRatiosService,
 ) *AccountingReportHandler {
 	return &AccountingReportHandler{
 		TrialBalanceService:    trialBalanceService,
 		IncomeStatementService: incomeStatementService,
 		BalanceSheetService:    balanceSheetService,
+		CashFlowService:        cashFlowService,
+		FinancialRatiosService: financialRatiosService,
 	}
 }
 
@@ -74,6 +80,40 @@ func (h *AccountingReportHandler) GetBalanceSheet(c *fiber.Ctx) error {
 	}
 
 	data, status, err := h.BalanceSheetService.GetBalanceSheet(asOf)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+// GetCashFlow - GET /accounting/reports/cash_flow?period_start=YYYY-MM-DD&period_end=YYYY-MM-DD
+// Both required, for the same "caller owns 'today'" reason as GetTrialBalance's as_of.
+func (h *AccountingReportHandler) GetCashFlow(c *fiber.Ctx) error {
+	periodStart := c.Query("period_start")
+	periodEnd := c.Query("period_end")
+	if periodStart == "" || periodEnd == "" {
+		return utils.RespondError(c, fiber.StatusBadRequest, "period_start and period_end query parameters are required (YYYY-MM-DD)")
+	}
+
+	data, status, err := h.CashFlowService.GetCashFlow(periodStart, periodEnd)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+// GetFinancialRatios - GET /accounting/reports/financial_ratios?period_start=YYYY-MM-DD&period_end=YYYY-MM-DD
+// Both required, for the same "caller owns 'today'" reason as GetTrialBalance's as_of.
+func (h *AccountingReportHandler) GetFinancialRatios(c *fiber.Ctx) error {
+	periodStart := c.Query("period_start")
+	periodEnd := c.Query("period_end")
+	if periodStart == "" || periodEnd == "" {
+		return utils.RespondError(c, fiber.StatusBadRequest, "period_start and period_end query parameters are required (YYYY-MM-DD)")
+	}
+
+	data, status, err := h.FinancialRatiosService.GetFinancialRatios(periodStart, periodEnd)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

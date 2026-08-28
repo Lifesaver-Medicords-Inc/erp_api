@@ -275,3 +275,37 @@ func (s *FixedAssetService) GetDepreciationExpense(periodStart, periodEnd string
 	}
 	return expense, nil
 }
+
+// GetAdditionsInPeriod — the Cash Flow Statement's investing-activities
+// outflow: total cost of assets acquired within [periodStart, periodEnd].
+// Deliberately not netted against disposal proceeds - no disposal-proceeds
+// field exists on FixedAsset (Status/DisposedDate record that an asset
+// left the books, not what SMPC was paid for it), so a disposal's cash
+// effect isn't represented here at all.
+func (s *FixedAssetService) GetAdditionsInPeriod(periodStart, periodEnd string) (float64, error) {
+	start, err := time.Parse(dateLayout, strings.TrimSpace(periodStart))
+	if err != nil {
+		return 0, errors.New("invalid period_start format")
+	}
+	end, err := time.Parse(dateLayout, strings.TrimSpace(periodEnd))
+	if err != nil {
+		return 0, errors.New("invalid period_end format")
+	}
+
+	var assets []accounting_models.FixedAsset
+	if err := initializers.DB.Find(&assets).Error; err != nil {
+		return 0, err
+	}
+
+	var total float64
+	for _, a := range assets {
+		acquired, err := time.Parse(dateLayout, strings.TrimSpace(a.AcquiredDate))
+		if err != nil {
+			continue
+		}
+		if !acquired.Before(start) && !acquired.After(end) {
+			total += a.Cost
+		}
+	}
+	return total, nil
+}
