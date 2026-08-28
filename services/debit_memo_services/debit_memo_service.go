@@ -134,6 +134,63 @@ var validTargetDocTypes = map[string]bool{
 	"Credit Memo":          true,
 }
 
+// applyToTargetDocumentsEpsilon guards the float comparison used to decide
+// whether a ticked apply line fully consumed its target (AmountApplied ==
+// OpenAmount, allowing for client-entered-money rounding) - same tolerance
+// as the §14.43 UNAPPLIED AMOUNT check just above.
+const applyToTargetDocumentsEpsilon = 0.005
+
+// applyToTargetDocuments implements the second half of §12.6.3: "A DM's
+// save also updates every account it was applied against, not just the
+// supplier's." Previously not implemented at all (this DM only recorded its
+// own apply-table snapshot of the target, never touched the target itself).
+//
+// This codebase has no partial running-balance/OPEN AMOUNT tracking for any
+// of the three apply-target types (Invoice Receipt, Bulk Invoice Receipt,
+// Credit Memo) - confirmed by AP Voucher's own equivalent step
+// (markReceiptAsVouchered), which is a boolean "fully vouchered" flag, not a
+// numeric balance. So a line that FULLY consumes its target (AmountApplied
+// >= OpenAmount) flips that same boolean, consistent with AP Voucher and
+// reusing the exact InvoiceReceipt/BulkInvoiceReceipt.ApVoucher field so the
+// existing "open only" pickers (sp_GetInvoiceAPVoucher, filtered ap_voucher
+// = 0) automatically stop offering it - to either a future AP Voucher or a
+// future Debit Memo. Credit Memo gets an equivalent new flag, AppliedByDm,
+// since it had no such gate at all.
+//
+// A PARTIAL application (AmountApplied < OpenAmount) is left as a real,
+// flagged gap: there is nowhere to record "this target is 40% consumed"
+// without inventing a running-balance column, which is a data-model
+// decision, not a bug-fix edit made on my own authority.
+func (s *DebitMemoService) applyToTargetDocuments(tx *gorm.DB, body *models.DebitMemoBody) error {
+	for _, d := range body.DebitMemoDetails {
+		if !d.Apply || d.TargetDocId == 0 {
+			continue
+		}
+		if d.AmountApplied < d.OpenAmount-applyToTargetDocumentsEpsilon {
+			continue // partial - no field exists yet to record this, see doc comment above
+		}
+
+		switch d.TargetDocType {
+		case "Invoice Receipt":
+			res := tx.Model(&accounting_models.InvoiceReceipt{}).Where("id = ?", d.TargetDocId).Update("ap_voucher", true)
+			if res.Error != nil {
+				return res.Error
+			}
+		case "Bulk Invoice Receipt":
+			res := tx.Model(&accounting_models.BulkInvoiceReceipt{}).Where("id = ?", d.TargetDocId).Update("ap_voucher", true)
+			if res.Error != nil {
+				return res.Error
+			}
+		case "Credit Memo":
+			res := tx.Model(&models.CreditMemo{}).Where("id = ?", d.TargetDocId).Update("applied_by_dm", true)
+			if res.Error != nil {
+				return res.Error
+			}
+		}
+	}
+	return nil
+}
+
 // CreateDebitMemo. §5.19/§12.6.3: commits entirely on SAVE - no draft, no
 // approval workflow, ever (§14.57). §14.43: MUST NOT save while
 // UNAPPLIED AMOUNT > 0, so every peso of TransAmount has to land on a
@@ -143,12 +200,10 @@ var validTargetDocTypes = map[string]bool{
 // postDebitMemoJournalEntry, following the same accounting-inverts-spec-
 // wins diff CreditMemoService's own posting routine did.
 //
-// STILL NOT IMPLEMENTED HERE: §12.6.3's other sentence - "A DM's save also
-// updates every account it was applied against, not just the supplier's" -
-// i.e. reducing OPEN AMOUNT/BALANCE on each ticked target IR / Bulk IR / CM
-// itself, not just recording this DM's own apply-table snapshot of them.
-// That's a separate effect from the ledger posting this pass covers - flag
-// it before assuming it's also done.
+// §12.6.3's other sentence - "A DM's save also updates every account it was
+// applied against" - is handled by applyToTargetDocuments below, for the
+// full-consumption case; see that function's doc comment for the partial-
+// consumption gap that remains.
 func (s *DebitMemoService) CreateDebitMemo(body *models.DebitMemoBody, at models.At) (*models.DebitMemoBody, int, error) {
 	dm := &body.DebitMemo
 
@@ -207,6 +262,10 @@ func (s *DebitMemoService) CreateDebitMemo(body *models.DebitMemoBody, at models
 	}
 
 	if err := s.createDebitMemoDetails(tx, body, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
+	if err := s.applyToTargetDocuments(tx, body); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
 

@@ -157,22 +157,31 @@ func (s *InvoiceReceiptService) CreateInvoiceReceipt(body *accounting_models.Inv
 		return body, fiber.StatusNotFound, errors.New("no journal entry found for the invoice period")
 	}
 
-	// Fetch debit and credit COAs
-	var coaDEBIT, coaCREDIT accounting_models.ChartOfAccounts
-	if err := tx.First(&coaDEBIT, 70036).Error; err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed fetching debit chart of account")
-	}
-	if err := tx.First(&coaCREDIT, 70033).Error; err != nil {
+	// Per-line posting (user-approved fix, replacing a single fixed pair
+	// that debited ACCRUED EXPENSE PAYABLE and credited INVENTORY GAIN - a
+	// revenue account, nonsensical for receiving a supplier invoice). This
+	// system has no ledger "Inventory" account at all, so the debit side
+	// isn't a fixed account - it's whatever each item's BPI record says it
+	// should be (ItemAccountId on tbl_bpi_items, keyed on this supplier +
+	// item, already exposed in the BPI Setup UI but never wired into any
+	// posting logic until now). Debit each line's own account; credit
+	// ACCOUNTS PAYABLE once for the sum of all lines, so the entry balances
+	// by construction regardless of how NetAmount (which may include
+	// OtherCharges - not tied to any item, deliberately left unposted here
+	// rather than guessed at) was computed.
+	const invoiceReceiptCreditCoaId uint = 40030 // ACCOUNTS PAYABLE
+
+	var coaCREDIT accounting_models.ChartOfAccounts
+	if err := tx.First(&coaCREDIT, invoiceReceiptCreditCoaId).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching credit chart of account")
 	}
 
-	// Helper to create journal entry
-	createJournalEntry := func(account accounting_models.ChartOfAccounts, amount float64, isCredit bool) accounting_models.JournalEntryDetails {
+	createJournalEntry := func(account accounting_models.ChartOfAccounts, amount float64, isCredit bool, memo string) accounting_models.JournalEntryDetails {
 		entry := accounting_models.JournalEntryDetails{
 			JournalEntryDetailsContent: accounting_models.JournalEntryDetailsContent{
 				Origin:         "Invoice Receipt",
 				OriginId:       body.InvoiceReceipt.ID,
-				LineMemo:       "Auto entry - " + map[bool]string{true: "CREDIT", false: "DEBIT"}[isCredit],
+				LineMemo:       memo,
 				PostingDate:    body.InvoiceReceipt.DocDate,
 				CreatedBy:      body.InvoiceReceipt.PreparedBy,
 				AccountTitle:   account.Name,
@@ -191,14 +200,37 @@ func (s *InvoiceReceiptService) CreateInvoiceReceipt(body *accounting_models.Inv
 
 	jeService := journal_entry_services.NewJournalEntryService2()
 
-	// Auto-insert debit and credit
-	for _, e := range []accounting_models.JournalEntryDetails{
-		createJournalEntry(coaCREDIT, body.InvoiceReceipt.NetAmount, true),
-		createJournalEntry(coaDEBIT, body.InvoiceReceipt.NetAmount, false),
-	} {
-		if err := jeService.AutoInsertJournalEntry(&e, body.InvoiceReceipt.DocDate, at); err != nil {
+	var lineTotal float64
+	for _, detail := range body.InvoiceReceiptDetails {
+		var item models.Item
+		if err := tx.Where("item_code = ?", detail.ItemCode).First(&item).Error; err != nil {
+			return body, fiber.StatusBadRequest, fmt.Errorf("line %q: item code %q not found", detail.ItemDescription, detail.ItemCode)
+		}
+
+		var bpiItem models.BpiItems
+		if err := tx.Where("based_id = ? AND item_id = ? AND is_deleted = 0", body.InvoiceReceipt.SupplierId, item.ID).
+			First(&bpiItem).Error; err != nil || bpiItem.ItemAccountId == 0 {
+			return body, fiber.StatusBadRequest, fmt.Errorf(
+				"line %q (%s): this supplier's Item Account is not set for this item - set it under Business Partner Info before this can be saved",
+				detail.ItemDescription, detail.ItemCode,
+			)
+		}
+
+		var coaDEBIT accounting_models.ChartOfAccounts
+		if err := tx.First(&coaDEBIT, bpiItem.ItemAccountId).Error; err != nil {
+			return body, fiber.StatusInternalServerError, fmt.Errorf("failed fetching account for line %q: %w", detail.ItemDescription, err)
+		}
+
+		entry := createJournalEntry(coaDEBIT, detail.LineAmount, false, "Auto entry - DEBIT ("+detail.ItemDescription+")")
+		if err := jeService.AutoInsertJournalEntry(&entry, body.InvoiceReceipt.DocDate, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
+		lineTotal += detail.LineAmount
+	}
+
+	creditEntry := createJournalEntry(coaCREDIT, lineTotal, true, "Auto entry - CREDIT")
+	if err := jeService.AutoInsertJournalEntry(&creditEntry, body.InvoiceReceipt.DocDate, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	// Insert audit record

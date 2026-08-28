@@ -52,6 +52,16 @@ type CreditMemoContent struct {
 	ApprovedByID   uint   `json:"approved_by_id,omitempty"`
 	ApprovedByName string `gorm:"size:255" json:"approved_by_name,omitempty"`
 	ApprovalDate   string `json:"approval_date,omitempty"`
+
+	// AppliedByDm: set true once a Debit Memo's apply line fully consumes
+	// this (supplier) Credit Memo (§12.6.3: "a DM's save also updates every
+	// account it was applied against"). Same all-or-nothing shape as
+	// InvoiceReceipt/BulkInvoiceReceipt's own ApVoucher flag - this codebase
+	// has no partial running-balance tracking for any of the three DM apply
+	// targets, so a partial application leaves this false and there is
+	// currently no way to record the partial consumption. See
+	// debit_memo_services.applyToTargetDocuments.
+	AppliedByDm bool `json:"applied_by_dm"`
 }
 
 type CreditMemo struct {

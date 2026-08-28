@@ -150,22 +150,30 @@ func (s *BulkInvoiceReceiptService) CreateBulkInvoiceReceipt(body *accounting_mo
 		return body, fiber.StatusNotFound, errors.New("no journal entry found for the bulk invoice period")
 	}
 
-	// Fetch debit and credit COAs
-	var coaDEBIT, coaCREDIT accounting_models.ChartOfAccounts
-	if err := tx.First(&coaDEBIT, 70036).Error; err != nil {
-		return body, fiber.StatusInternalServerError, errors.New("failed fetching debit chart of account")
-	}
-	if err := tx.First(&coaCREDIT, 50030).Error; err != nil {
+	// Per-line posting (user-approved fix, replacing a single fixed pair
+	// that debited ACCRUED EXPENSE PAYABLE and credited NON-TRADE EXPENSE -
+	// neither is right for receiving a non-trade invoice). Each detail line
+	// already carries its own AccountId (a real Chart-of-Accounts picker at
+	// entry time, e.g. utilities/freight/insurance's own expense account) -
+	// this was being collected and stored but never used for posting.
+	// Debit each line's own account; credit ACCOUNTS PAYABLE once for the
+	// sum of all lines, so the entry balances by construction regardless of
+	// how NetAmount (which may include OtherCharges - not itemized on any
+	// line, and deliberately left unposted here rather than guessed at) was
+	// computed.
+	const bulkInvoiceReceiptCreditCoaId uint = 40030 // ACCOUNTS PAYABLE
+
+	var coaCREDIT accounting_models.ChartOfAccounts
+	if err := tx.First(&coaCREDIT, bulkInvoiceReceiptCreditCoaId).Error; err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed fetching credit chart of account")
 	}
 
-	// Helper to create journal entry
-	createJournalEntry := func(account accounting_models.ChartOfAccounts, amount float64, isCredit bool) accounting_models.JournalEntryDetails {
+	createJournalEntry := func(account accounting_models.ChartOfAccounts, amount float64, isCredit bool, memo string) accounting_models.JournalEntryDetails {
 		entry := accounting_models.JournalEntryDetails{
 			JournalEntryDetailsContent: accounting_models.JournalEntryDetailsContent{
 				Origin:         "Bulk Invoice Receipt",
 				OriginId:       body.BulkInvoiceReceipt.ID,
-				LineMemo:       "Auto entry - " + map[bool]string{true: "CREDIT", false: "DEBIT"}[isCredit],
+				LineMemo:       memo,
 				PostingDate:    body.BulkInvoiceReceipt.DocDate,
 				CreatedBy:      body.BulkInvoiceReceipt.PreparedBy,
 				AccountTitle:   account.Name,
@@ -184,14 +192,28 @@ func (s *BulkInvoiceReceiptService) CreateBulkInvoiceReceipt(body *accounting_mo
 
 	jeService := journal_entry_services.NewJournalEntryService2()
 
-	// Auto-insert debit and credit
-	for _, e := range []accounting_models.JournalEntryDetails{
-		createJournalEntry(coaCREDIT, body.BulkInvoiceReceipt.NetAmount, true),
-		createJournalEntry(coaDEBIT, body.BulkInvoiceReceipt.NetAmount, false),
-	} {
-		if err := jeService.AutoInsertJournalEntry(&e, body.BulkInvoiceReceipt.DocDate, at); err != nil {
+	var lineTotal float64
+	for _, detail := range body.BulkInvoiceReceiptDetails {
+		if detail.AccountId == 0 {
+			return body, fiber.StatusBadRequest, fmt.Errorf(
+				"line %q has no account selected - every Bulk Invoice Receipt line needs its own Chart of Accounts entry before this can be saved",
+				detail.ChargeDescription,
+			)
+		}
+		var coaDEBIT accounting_models.ChartOfAccounts
+		if err := tx.First(&coaDEBIT, detail.AccountId).Error; err != nil {
+			return body, fiber.StatusInternalServerError, fmt.Errorf("failed fetching account for line %q: %w", detail.ChargeDescription, err)
+		}
+		entry := createJournalEntry(coaDEBIT, detail.LineAmount, false, "Auto entry - DEBIT ("+detail.ChargeDescription+")")
+		if err := jeService.AutoInsertJournalEntry(&entry, body.BulkInvoiceReceipt.DocDate, at); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
+		lineTotal += detail.LineAmount
+	}
+
+	creditEntry := createJournalEntry(coaCREDIT, lineTotal, true, "Auto entry - CREDIT")
+	if err := jeService.AutoInsertJournalEntry(&creditEntry, body.BulkInvoiceReceipt.DocDate, at); err != nil {
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	// Insert audit record
