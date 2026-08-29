@@ -24,12 +24,19 @@ ALTER VIEW [dbo].[vw_get_CRM] AS WITH LatestCRM AS (
     -- outbound interfaces table) is explicit that CRM is Customer-entities
     -- only. Same EXISTS-against-tbl_bpi_entity pattern already used by
     -- vw_get_bpi_customers.sql.
+    --
+    -- Correction: the code is 'CUS', not 'CUSTOMER' - SMPC_ERP_SPEC §17.3's
+    -- authoritative ENTITY TYPE Code|Name table gives Customer=CUS,
+    -- Affiliated=AFF, Non-Affiliated=NAF, Blacklisted=BLK, Closed=CLD,
+    -- Supplier=SUP, Temporary Supplier=TSP. vw_get_bpi_customers.sql's
+    -- original filter used 'CUSTOMER' too and never matched anything - fixed
+    -- there in the same pass this was caught.
     WHERE EXISTS (
         SELECT 1
         FROM dbo.tbl_bpi_entity AS e
             INNER JOIN dbo.tbl_setup_bpi_entity AS f ON e.entity_id = f.id
         WHERE e.bpi_general_id = a.id
-            AND f.code = 'CUSTOMER'
+            AND f.code = 'CUS'
     )
 )
 SELECT id,
