@@ -82,8 +82,12 @@ func (h *VehicleFileHandler) UploadVehicleFileHandler(c *fiber.Ctx) error {
 
 	record, status, err := h.VehicleFileService.SaveUploadedFileService(file, fileHeader, vehicleId)
 
+	// Bugs #193/#194 (Trello): missing return - on failure this fell through
+	// and called SaveVehicleFileService with a nil record anyway (Save...File
+	// returns nil on error), inserting a nil pointer and then writing a second
+	// response on top of the error already sent above.
 	if err != nil {
-		utils.RespondError(c, status, err.Error())
+		return utils.RespondError(c, status, err.Error())
 	}
 
 	defer file.Close()
