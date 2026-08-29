@@ -103,13 +103,23 @@ func UpdateBpiEntity(tx *gorm.DB, parentId uint, entityId uint, salesId string, 
 
 // ─── Number Generators ────────────────────────────────────────────────────────
 
+// Bug #292 (Trello): codes weren't incrementing - COUNT(*) of existing
+// non-blank codes stands in for "the next number" here, but a delete or an
+// entity type toggled off-then-back-on drops the count below the highest
+// number actually issued, so the next COUNT+1 collides with (or trails) an
+// already-issued code. Read the highest number ever issued instead, so a
+// gap in the sequence never gets reused.
 func generateCustomerCode(tx *gorm.DB, bpiGeneralId uint) error {
-	var count int64
-	tx.Model(&models.BpiGeneral{}).
-		Where("customer_code != ''").
-		Count(&count)
+	var maxNum int
+	if err := tx.Raw(`
+		SELECT ISNULL(MAX(TRY_CAST(SUBSTRING(customer_code, 3, LEN(customer_code)) AS INT)), 0)
+		FROM tbl_bpi_general
+		WHERE customer_code LIKE 'C#%'
+	`).Scan(&maxNum).Error; err != nil {
+		return errors.New("failed computing next customer_code")
+	}
 
-	customerCode := fmt.Sprintf("C#%04d", count+1)
+	customerCode := fmt.Sprintf("C#%04d", maxNum+1)
 
 	if err := tx.Model(&models.BpiGeneral{}).
 		Where("id = ?", bpiGeneralId).
@@ -121,13 +131,18 @@ func generateCustomerCode(tx *gorm.DB, bpiGeneralId uint) error {
 	return nil
 }
 
+// Bug #292 (Trello): same fix as generateCustomerCode above.
 func generateSupplierCode(tx *gorm.DB, bpiGeneralId uint) error {
-	var count int64
-	tx.Model(&models.BpiGeneral{}).
-		Where("supplier_code != ''").
-		Count(&count)
+	var maxNum int
+	if err := tx.Raw(`
+		SELECT ISNULL(MAX(TRY_CAST(SUBSTRING(supplier_code, 3, LEN(supplier_code)) AS INT)), 0)
+		FROM tbl_bpi_general
+		WHERE supplier_code LIKE 'S#%'
+	`).Scan(&maxNum).Error; err != nil {
+		return errors.New("failed computing next supplier_code")
+	}
 
-	supplierCode := fmt.Sprintf("S#%04d", count+1)
+	supplierCode := fmt.Sprintf("S#%04d", maxNum+1)
 
 	if err := tx.Model(&models.BpiGeneral{}).
 		Where("id = ?", bpiGeneralId).
