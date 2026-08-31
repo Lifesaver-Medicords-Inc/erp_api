@@ -160,25 +160,18 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 		return savebody, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
-	// Trello #091: ItemCode had no uniqueness check at all - two genuinely
-	// different items ("FLOAT SWITCH" and "AIR RELEASE VALVE") were both saved
-	// with code "002", which is what made the BOM/item picker look like it was
-	// showing the wrong item's components. No DB-level unique constraint exists
-	// on this column yet (live data already has at least one collision), so
-	// this is an app-layer guard first, same pattern as the quotation
-	// document-number check.
-	if savebody.ItemCode != "" {
-		var existingCount int64
-		if err := tx.Model(&models.Item{}).
-			Where("item_code = ?", savebody.ItemCode).
-			Count(&existingCount).Error; err != nil {
-			return savebody, fiber.StatusInternalServerError, errors.New("failed checking for an existing item with this code")
-		}
-		if existingCount > 0 {
-			return savebody, fiber.StatusBadRequest, fmt.Errorf(
-				"an item with code %s already exists", savebody.ItemCode)
-		}
+	// Trello #091: ItemCode was computed client-side (frm_Item_Entry.cs took
+	// the last-loaded item's code, +1, zero-padded) with no server-side
+	// sequence behind it - two near-simultaneous creates, or a stale local
+	// list, could compute and submit the same "next" code. Same class of bug
+	// as generateCustomerCode/generateSupplierCode (bpi_entity_service.go) -
+	// fixed the same way: the server generates the real code from the highest
+	// number ever issued, ignoring whatever the client guessed and sent.
+	generatedCode, err := generateItemCode(tx)
+	if err != nil {
+		return savebody, fiber.StatusInternalServerError, err
 	}
+	savebody.ItemCode = generatedCode
 
 	if err := services.DbInsert(tx, &savebody.Item); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
@@ -299,6 +292,25 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 	InvalidateItemCaches()
 	return body, 0, nil
 }
+
+// Trello #091: same fix as generateCustomerCode/generateSupplierCode
+// (bpi_entity_service.go) - read the highest number ever issued (not a
+// COUNT, and not "the last loaded row") so a gap or a concurrent create
+// never collides with, or reuses, an already-issued code. item_code is
+// stored as plain zero-padded digits with no prefix (the "I#" the UI shows
+// is display-only, added in frm_Item_Entry.cs, never persisted).
+func generateItemCode(tx *gorm.DB) (string, error) {
+	var maxNum int
+	if err := tx.Raw(`
+		SELECT ISNULL(MAX(TRY_CAST(item_code AS INT)), 0)
+		FROM tbl_setup_item
+	`).Scan(&maxNum).Error; err != nil {
+		return "", errors.New("failed computing next item_code")
+	}
+
+	return fmt.Sprintf("%04d", maxNum+1), nil
+}
+
 func DeleteItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Body, int, error) {
 	var body Body
 	if err := c.BodyParser(&body); err != nil {
