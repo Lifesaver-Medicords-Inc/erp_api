@@ -2,6 +2,7 @@ package setup_services
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -159,9 +160,29 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 		return savebody, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
+	// Trello #091: ItemCode had no uniqueness check at all - two genuinely
+	// different items ("FLOAT SWITCH" and "AIR RELEASE VALVE") were both saved
+	// with code "002", which is what made the BOM/item picker look like it was
+	// showing the wrong item's components. No DB-level unique constraint exists
+	// on this column yet (live data already has at least one collision), so
+	// this is an app-layer guard first, same pattern as the quotation
+	// document-number check.
+	if savebody.ItemCode != "" {
+		var existingCount int64
+		if err := tx.Model(&models.Item{}).
+			Where("item_code = ?", savebody.ItemCode).
+			Count(&existingCount).Error; err != nil {
+			return savebody, fiber.StatusInternalServerError, errors.New("failed checking for an existing item with this code")
+		}
+		if existingCount > 0 {
+			return savebody, fiber.StatusBadRequest, fmt.Errorf(
+				"an item with code %s already exists", savebody.ItemCode)
+		}
+	}
+
 	if err := services.DbInsert(tx, &savebody.Item); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-			err = errors.New("duplicate record error") // to be added: validation of duplicate fields
+			err = errors.New("duplicate record error")
 		} else {
 			err = errors.New("failed creating item")
 		}
@@ -213,6 +234,21 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 
 	if body.ID == 0 {
 		return body, fiber.StatusBadRequest, errors.New("item id is required for update")
+	}
+
+	// Same guard as CreateItem, excluding this item's own row so re-saving an
+	// item without changing its code doesn't reject against itself.
+	if body.ItemCode != "" {
+		var existingCount int64
+		if err := tx.Model(&models.Item{}).
+			Where("item_code = ? AND id <> ?", body.ItemCode, body.ID).
+			Count(&existingCount).Error; err != nil {
+			return body, fiber.StatusInternalServerError, errors.New("failed checking for an existing item with this code")
+		}
+		if existingCount > 0 {
+			return body, fiber.StatusBadRequest, fmt.Errorf(
+				"an item with code %s already exists", body.ItemCode)
+		}
 	}
 
 	if err := services.DbUpdate(tx, &body.Item, conditions); err != nil {
