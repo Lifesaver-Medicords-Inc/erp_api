@@ -479,11 +479,23 @@ func migrateAccounting() {
 	)
 	// Adds cash_flow_category to the already-live tbl_setup_chart_of_accounts
 	// table - AutoMigrate only adds missing columns, it never touches
-	// existing data. Deliberately not the &ChartOfAccountsAt{} audit twin or
-	// the Tax/TaxDetails models bundled with it in the commented-out block
-	// above - leaving whatever reason that block was disabled alone.
+	// existing data.
+	//
+	// ChartOfAccountsAt WAS deliberately excluded here (see git history) on
+	// the reasoning "leave whatever reason that block was disabled alone" -
+	// that turned out to be wrong, not just stale: CreateChartOfAccount
+	// writes both the main row and its _at audit twin in one call, so a
+	// column added to ChartOfAccountContent (shared by both structs) reaches
+	// the main table via this same migrateAndLog but never reaches the
+	// unmigrated _at table - the audit insert then fails with "Invalid
+	// column name 'cash_flow_category'" and the whole request 500s,
+	// including the main row (confirmed live - z_tbl_setup_chart_of_accounts_at
+	// was missing exactly this one column, nothing else). Migrating the _at
+	// twin now; still deliberately not touching Tax/TaxDetails or anything
+	// else in the commented-out block below - this is a targeted fix for the
+	// specific pair that broke, not a resurrection of the whole block.
 	migrateAndLog(
-		&accounting_models.ChartOfAccounts{},
+		&accounting_models.ChartOfAccounts{}, &accounting_models.ChartOfAccountsAt{},
 	)
 	// migrateAndLog(
 	// 	&accounting_models.ChartOfAccounts{}, &accounting_models.ChartOfAccountsAt{},
