@@ -7047,6 +7047,366 @@
     "is_sensitive": false
   },
   {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Employee Information",
+    "button": "",
+    "code": "HRIS_EMPLOYEE_INFO",
+    "kind": "page",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Employee Information",
+    "button": "New",
+    "code": "HRIS.Employee Information.New",
+    "kind": "button",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Employee Information",
+    "button": "Edit",
+    "code": "HRIS.Employee Information.Edit",
+    "kind": "button",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Employee Information",
+    "button": "Save",
+    "code": "HRIS.Employee Information.Save",
+    "kind": "button",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Employee Information",
+    "button": "Set Status",
+    "code": "HRIS.Employee Information.Set Status",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Employee Information",
+    "button": "Link ERP User",
+    "code": "HRIS.Employee Information.Link ERP User",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Employee Information",
+    "button": "Upload File",
+    "code": "HRIS.Employee Information.Upload File",
+    "kind": "button",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Employee Information",
+    "button": "Delete File",
+    "code": "HRIS.Employee Information.Delete File",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Timesheet",
+    "button": "",
+    "code": "HRIS_TIMESHEET",
+    "kind": "page",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Timesheet",
+    "button": "New",
+    "code": "HRIS.Timesheet.New",
+    "kind": "button",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Timesheet",
+    "button": "Edit",
+    "code": "HRIS.Timesheet.Edit",
+    "kind": "button",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Timesheet",
+    "button": "Save",
+    "code": "HRIS.Timesheet.Save",
+    "kind": "button",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Timesheet",
+    "button": "Approve",
+    "code": "HRIS_TIMESHEET_APPROVAL",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Timesheet",
+    "button": "Reopen",
+    "code": "HRIS.Timesheet.Reopen",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Payroll",
+    "button": "",
+    "code": "HRIS_PAYROLL",
+    "kind": "page",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Payroll",
+    "button": "New",
+    "code": "HRIS.Payroll.New",
+    "kind": "button",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Payroll",
+    "button": "Edit",
+    "code": "HRIS.Payroll.Edit",
+    "kind": "button",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Payroll",
+    "button": "Save",
+    "code": "HRIS.Payroll.Save",
+    "kind": "button",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Payroll",
+    "button": "Regenerate",
+    "code": "HRIS.Payroll.Regenerate",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Payroll",
+    "button": "Approve",
+    "code": "HRIS_PAYROLL_APPROVAL",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Payroll",
+    "button": "Reopen",
+    "code": "HRIS.Payroll.Reopen",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Holiday Calendar",
+    "button": "",
+    "code": "HRIS.Holiday Calendar",
+    "kind": "page",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Holiday Calendar",
+    "button": "New",
+    "code": "HRIS.Holiday Calendar.New",
+    "kind": "button",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Holiday Calendar",
+    "button": "Edit",
+    "code": "HRIS.Holiday Calendar.Edit",
+    "kind": "button",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Holiday Calendar",
+    "button": "Save",
+    "code": "HRIS.Holiday Calendar.Save",
+    "kind": "button",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Holiday Calendar",
+    "button": "Delete",
+    "code": "HRIS.Holiday Calendar.Delete",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Holiday Setup",
+    "button": "",
+    "code": "HRIS.Holiday Setup",
+    "kind": "page",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Holiday Setup",
+    "button": "New",
+    "code": "HRIS.Holiday Setup.New",
+    "kind": "button",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Holiday Setup",
+    "button": "Edit",
+    "code": "HRIS.Holiday Setup.Edit",
+    "kind": "button",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Holiday Setup",
+    "button": "Save",
+    "code": "HRIS.Holiday Setup.Save",
+    "kind": "button",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Holiday Setup",
+    "button": "Delete",
+    "code": "HRIS.Holiday Setup.Delete",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Holiday Setup",
+    "button": "Generate",
+    "code": "HRIS.Holiday Setup.Generate",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Leave Requests",
+    "button": "",
+    "code": "HRIS_LEAVE_APPROVAL",
+    "kind": "page",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Leave Requests",
+    "button": "Approve",
+    "code": "HRIS.Leave Requests.Approve",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Leave Requests",
+    "button": "Reject",
+    "code": "HRIS.Leave Requests.Reject",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Benefits",
+    "button": "",
+    "code": "HRIS_BENEFITS",
+    "kind": "page",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "SMPC_Admin",
+    "module": "HRIS",
+    "submodule": "HRIS (parent menu)",
+    "button": "",
+    "code": "HRIS",
+    "kind": "page",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "People Analytics",
+    "button": "",
+    "code": "HRIS_ANALYTICS",
+    "kind": "page",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Benefits",
+    "button": "Delete Plan",
+    "code": "HRIS.Benefits.Delete Plan",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
+    "app_name": "Accounting App",
+    "module": "HRIS",
+    "submodule": "Benefits",
+    "button": "End Enrollment",
+    "code": "HRIS.Benefits.End Enrollment",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
     "app_name": "Dispatching App",
     "module": "Reservation Approvals",
     "submodule": "Reservation Approval List/Detail",
