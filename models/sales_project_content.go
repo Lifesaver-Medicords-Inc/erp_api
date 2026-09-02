@@ -25,6 +25,7 @@ type SalesProjectContent struct {
 	ContentID uint `json:"content_id" gorm:"primaryKey"`
 	SalesProjectContentContent
 	SalesProjectContentFinal []SalesProjectContentFinal `json:"sales_project_content_final" gorm:"foreignKey:SalesProjectContentID;references:ContentID"`
+	SalesProjectSizeUp       []SalesProjectSizeUp       `json:"sales_project_size_up" gorm:"foreignKey:SalesProjectContentID;references:ContentID"`
 }
 
 func (SalesProjectContent) TableName() string {

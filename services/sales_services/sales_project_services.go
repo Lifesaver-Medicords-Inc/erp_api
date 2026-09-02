@@ -677,6 +677,60 @@ func applyItemSetDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.Sa
 	return newItemSetId, nil
 }
 
+// syncContentChildren persists a content row's child collections (Final Selection and
+// Size Up). Needed because the two branches of applyContentDiff handle them differently
+// and neither did so correctly: the ADDED branch leaned on GORM auto-saving the
+// associations during DbInsert (which stamps the FK, but also honours whatever id the
+// client sent), while the UPDATED branch used DbUpdate, which does not touch associations
+// at all - so editing an existing quote silently dropped every final and size-up. That is
+// why Size Up never persisted: an existing project quote always takes the UPDATED path.
+//
+// Rows carrying an id are updated in place, new ones are created with a DB-assigned id,
+// and size-up rows the client no longer sends are deleted so removing a candidate sticks.
+// Finals are not pruned - the UI has no remove action for them.
+func syncContentChildren(tx *gorm.DB, contentID uint, finals []models.SalesProjectContentFinal, sizeUps []models.SalesProjectSizeUp, at models.At) error {
+	for _, v := range finals {
+		if v.ID > 0 {
+			if err := UpdateProjectContentFinal(tx, v, at, map[string]interface{}{"id": v.ID}); err != nil {
+				return fmt.Errorf("content final update: %w", err)
+			}
+			continue
+		}
+		if err := CreateProjectContentFinal(tx, contentID, v, at); err != nil {
+			return fmt.Errorf("content final add: %w", err)
+		}
+	}
+
+	kept := map[uint]bool{}
+	for _, v := range sizeUps {
+		if v.ID > 0 {
+			kept[v.ID] = true
+			if err := UpdateProjectSizeUp(tx, v, at, map[string]interface{}{"id": v.ID}); err != nil {
+				return fmt.Errorf("size up update: %w", err)
+			}
+			continue
+		}
+		if err := CreateProjectSizeUp(tx, contentID, v, at); err != nil {
+			return fmt.Errorf("size up add: %w", err)
+		}
+	}
+
+	var existing []models.SalesProjectSizeUp
+	if err := tx.Where("sales_project_content_id = ?", contentID).Find(&existing).Error; err != nil {
+		return fmt.Errorf("size up read: %w", err)
+	}
+	for _, row := range existing {
+		if kept[row.ID] {
+			continue
+		}
+		if err := DeleteProjectSizeUp(tx, row, at); err != nil {
+			return fmt.Errorf("size up delete: %w", err)
+		}
+	}
+
+	return nil
+}
+
 func applyContentDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.SalesProjectContent], at models.At) error {
 	if diff.Added == nil && diff.Removed == nil && diff.Updated == nil {
 		return nil
@@ -691,8 +745,21 @@ func applyContentDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.Sale
 		// IDENTITY_INSERT with that id and risk a PRIMARY KEY collision. Always let the DB
 		// assign a fresh id for anything landing in Added.
 		item.ContentID = 0
+
+		// Detach before insert: GORM would auto-save these associations using the ids the
+		// client sent, which risks an IDENTITY_INSERT collision. syncContentChildren below
+		// creates them with DB-assigned ids and the parent's real ContentID.
+		addFinals := item.SalesProjectContentFinal
+		addSizeUps := item.SalesProjectSizeUp
+		item.SalesProjectContentFinal = nil
+		item.SalesProjectSizeUp = nil
+
 		if err := services.DbInsert(tx, &item); err != nil {
 			return fmt.Errorf("content add: %w", err)
+		}
+
+		if err := syncContentChildren(tx, item.ContentID, addFinals, addSizeUps, at); err != nil {
+			return err
 		}
 
 		atRecord := models.SalesProjectContentAt{
@@ -723,6 +790,12 @@ func applyContentDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.Sale
 			"content_id": entry.Item.ContentID,
 		}); err != nil {
 			return fmt.Errorf("content update: %w", err)
+		}
+
+		// DbUpdate does not touch associations, so without this the finals and size-ups
+		// on an edited tab were discarded on every save.
+		if err := syncContentChildren(tx, entry.Item.ContentID, entry.Item.SalesProjectContentFinal, entry.Item.SalesProjectSizeUp, at); err != nil {
+			return err
 		}
 
 		atRecord := models.SalesProjectContentAt{

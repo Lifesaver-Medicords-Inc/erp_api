@@ -3,8 +3,11 @@ package sales_services
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
@@ -24,6 +27,88 @@ type BodyOrderDetails struct {
 
 type UpdateBodyOrderDetails struct {
 	OrderDetails []models.OrderDetails `json:"sales_order_details"`
+}
+
+// Spec 3.3: "Approve / cancel a Sales Order - Sales Manager or CBDO only (check + cancel
+// buttons hidden from everyone else)", noted there as "View and access currently not in
+// development". These are the tbl_position_access codes that make it real. Grant them to
+// those two Positions from the normal Position Access setup screen - deliberately nothing
+// here hardcodes a position name, same as StockTransferAccessCode
+// (item_stock_service.go) and ReservationApprovalAccessCode.
+//
+// Hiding the buttons client-side is a UX nicety; this is the actual gate, because the
+// update endpoint is reachable directly with any authenticated session.
+const (
+	OrderApproveAccessCode = "Sales - Order.Orders.Approve"
+	OrderCancelAccessCode  = "Sales - Order.Orders.Cancel Order"
+)
+
+// UserHasOrderAccess reports whether the user's Position has been granted code. Same
+// mechanism and query shape as ItemStockService.UserCanAccessStockTransfer.
+func UserHasOrderAccess(userId uint, code string) (bool, error) {
+	if userId == 0 {
+		return false, nil
+	}
+
+	var count int64
+	err := initializers.DB.Raw(`
+		SELECT COUNT(*)
+		FROM tbl_position_access pa
+		INNER JOIN tbl_setup_users u ON u.position_id = pa.position_id
+		WHERE u.id = ? AND pa.code = ?
+	`, userId, code).Scan(&count).Error
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+// atUserId pulls the numeric user id off the same "at" audit context every other write
+// endpoint already relies on (utils/at_util.go) - there is no separate session concept in
+// this API beyond that. Mirrors actingUserId in item_stock_handler.go; kept here rather
+// than shared because that one lives in the handlers package.
+func atUserId(c *fiber.Ctx) uint {
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		return 0
+	}
+
+	id, err := strconv.Atoi(at.AtUserId)
+	if err != nil || id < 0 {
+		return 0
+	}
+
+	return uint(id)
+}
+
+// guardOrderStatusChange gates the two status transitions spec 3.3 restricts. Every other
+// field on an order stays editable by sales (spec 5.4: the item list "MUST remain editable
+// against the client PO"), so this deliberately keys on the status being written rather
+// than on the endpoint - a plain save is not an approval.
+//
+// An empty Status means the caller left it out entirely, which GORM's UpdateColumns skips
+// anyway, so it is not a transition and needs no permission.
+func guardOrderStatusChange(status string, actingUserId uint) error {
+	var code string
+	switch strings.ToUpper(strings.TrimSpace(status)) {
+	case "ACTIVE":
+		code = OrderApproveAccessCode
+	case "CANCELLED", "CANCELED":
+		code = OrderCancelAccessCode
+	default:
+		return nil
+	}
+
+	allowed, err := UserHasOrderAccess(actingUserId, code)
+	if err != nil {
+		return fmt.Errorf("failed checking sales order approval access: %w", err)
+	}
+	if !allowed {
+		return errors.New("only the Sales Manager or CBDO may approve or cancel a sales order")
+	}
+
+	return nil
 }
 
 func GetOrders(conditions map[string]interface{}) (interface{}, int, error) {
@@ -168,6 +253,12 @@ func UpdateOrder(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (
 	if err := c.BodyParser(&bodyorder); err != nil {
 		fmt.Println(err)
 		return bodyorder, fiber.StatusBadRequest, errors.New("cannot bind request hihi")
+	}
+
+	// Spec 3.3 - approving (status ACTIVE) or cancelling is Sales Manager / CBDO only.
+	// Checked before anything is written so a rejected attempt changes nothing.
+	if err := guardOrderStatusChange(bodyorder.Status, atUserId(c)); err != nil {
+		return bodyorder, fiber.StatusForbidden, err
 	}
 
 	// Update the parent order (already done in your existing code)

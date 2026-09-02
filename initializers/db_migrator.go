@@ -413,6 +413,8 @@ func migrateSalesProject() {
 		&models.SalesProjectItemSet{}, &models.SalesProjectItemSetAt{},
 		&models.SalesProjectContent{}, &models.SalesProjectContentAt{},
 		&models.SalesProjectContentFinal{}, &models.SalesProjectContentFinalAt{},
+		// Size Up (spec 5.1.4) - new table; it had no persistence at all before.
+		&models.SalesProjectSizeUp{}, &models.SalesProjectSizeUpAt{},
 		&models.SalesProjectAdvancedConditions{}, &models.SalesProjectAdvancedConditionsAt{},
 		&models.SalesProjectItems{}, &models.SalesProjectItemsAt{},
 		&models.SalesProjectWiring{}, &models.SalesProjectWiringAt{},

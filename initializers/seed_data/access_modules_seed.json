@@ -831,6 +831,24 @@
     "app_name": "Sales System",
     "module": "Sales - Order",
     "submodule": "Orders",
+    "button": "Approve",
+    "code": "Sales - Order.Orders.Approve",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
+    "app_name": "Sales System",
+    "module": "Sales - Order",
+    "submodule": "Orders",
+    "button": "Cancel Order",
+    "code": "Sales - Order.Orders.Cancel Order",
+    "kind": "button",
+    "is_sensitive": true
+  },
+  {
+    "app_name": "Sales System",
+    "module": "Sales - Order",
+    "submodule": "Orders",
     "button": "Delete",
     "code": "Sales - Order.Orders.Delete",
     "kind": "button",

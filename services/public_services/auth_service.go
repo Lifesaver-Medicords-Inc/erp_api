@@ -67,7 +67,13 @@ func LoginAccount(c *fiber.Ctx) (models.User, int, error) {
 	}
 
 	if err := initializers.DB.
+		// Position.Access carries the tbl_position_access codes. Preloading only
+		// "Position" left CurrentUser.position.access empty in every client, so no app
+		// could gate a button on a granted code even though the whole catalog/grant
+		// mechanism existed - the Sales Order approve/cancel strip (spec 3.3) is the
+		// first thing to actually need it client-side.
 		Preload("Position").
+		Preload("Position.Access").
 		Where(conditions).
 		First(&user).Error; err != nil {
 		return user, fiber.StatusUnauthorized, errors.New("Invalid user employee id")

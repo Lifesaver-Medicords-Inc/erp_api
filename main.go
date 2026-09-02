@@ -495,6 +495,14 @@ func SetupApp() *fiber.App {
 				// salesApi.Post("/project_wiring", sales_handlers.CreateProjectWirings)
 				// salesApi.Put("/project_wiring", sales_handlers.UpdateProjectWiring)
 
+				// Size Up (spec 5.1.4) - the list Final Selection is limited to. It
+				// normally saves as part of PUT /projects (syncContentChildren), so
+				// these are for addressing one candidate row on its own.
+				salesApi.Get("/project_size_up", sales_handlers.GetProjectSizeUps)
+				salesApi.Post("/project_size_up", sales_handlers.CreateProjectSizeUpRow)
+				salesApi.Put("/project_size_up", sales_handlers.UpdateProjectSizeUpRow)
+				salesApi.Delete("/project_size_up/:id", sales_handlers.DeleteProjectSizeUpRow)
+
 				salesApi.Get("/projects_pumps", sales_handlers.GetItemPumps)
 
 				// CRM Endpointss //test
