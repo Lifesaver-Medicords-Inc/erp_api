@@ -1,4 +1,4 @@
-package sales_services
+﻿package sales_services
 
 import (
 	"errors"
@@ -316,6 +316,14 @@ func CreateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, erro
 	// equally unprotected. FinalizeProjectQuotation's own client-side duplicate
 	// check (against transactionProjectDataTable) was the only thing catching this
 	// before, with the exact same staleness/race exposure.
+	// Assign the server-side document number BEFORE the uniqueness guard, same as the
+	// quick-quote create path - both draw from the one shared tbl_trans_sales_quotation
+	// sequence. For a brand-new project quote this replaces the client's guess (which could
+	// collide with a quick quote it never loaded); a New Version keeps its number.
+	if err := assignNewQuotationDocNo(tx, &body.SalesQuotation); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
 	if body.DocumentNo != "" {
 		var existingCount int64
 		if err := tx.Model(&models.SalesQuotation{}).

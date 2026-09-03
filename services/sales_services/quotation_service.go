@@ -1,4 +1,4 @@
-package sales_services
+﻿package sales_services
 
 import (
 	"errors"
@@ -55,6 +55,64 @@ type UpdateQuickSelectedImage struct {
 type ItemBody struct {
 	Items    models.Item `json:"items"`
 	ItemName models.Name `json:"item_name"`
+}
+
+// assignNewQuotationDocNo gives a brand-new quotation its document number on the server,
+// where it is the only place that can see the WHOLE tbl_trans_sales_quotation sequence.
+//
+// Quick and project quotes share one document_no sequence in that table, but the two
+// client screens each load only their own half (GetSalesQuotations filters out projects;
+// GetProjects returns only projects). So the client's own DocumentIncrementer computed the
+// next number from a partial list and picked one already taken by the other kind - e.g. a
+// new Quick Quote landing on Q#0003 when Q#0003 already existed as a project quote.
+//
+// This assigns only for a genuinely new document - version 1 / sub-version 0. A NEW VERSION
+// (version_no >= 2) deliberately reuses its existing document_no, so it is left untouched.
+// Finalization does not pass through here at all; it is an UpdateFinalizeQuote path.
+//
+// SELECT ... WITH (UPDLOCK, HOLDLOCK) takes a range lock for the life of the caller's
+// transaction, so two quotes being created at the same instant serialize here instead of
+// both reading the same MAX and racing onto the same number (which the
+// UQ_sales_quotation_doc_version unique index would then reject on the loser). document_no
+// is stored with its "Q#"/"FQ#" prefix, so the numeric part is taken from after the '#'.
+func assignNewQuotationDocNo(tx *gorm.DB, sq *models.SalesQuotation) error {
+	// Finalization is NOT a fresh number. It keeps its source quote's number and only
+	// swaps the prefix (Q#0005 -> FQ#0005), which the client already baked into DocumentNo.
+	// A finalize also arrives as version 1 (so isFirstVersion below can't tell it apart from
+	// a brand-new draft), which is exactly how this used to clobber FQ#0005 into a fresh
+	// Q#000n. Detect it by is_finalized or the FQ# prefix and leave the number untouched.
+	if sq.IsFinalized || strings.HasPrefix(strings.ToUpper(strings.TrimSpace(sq.DocumentNo)), "FQ#") {
+		return nil
+	}
+
+	if !isFirstVersion(sq.VersionNo, sq.SubVersionNo) {
+		return nil // a new version keeps the document_no the client sent
+	}
+
+	var maxNum int
+	err := tx.Raw(`
+		SELECT ISNULL(MAX(TRY_CONVERT(int,
+			CASE WHEN CHARINDEX('#', document_no) > 0
+			     THEN SUBSTRING(document_no, CHARINDEX('#', document_no) + 1, 50)
+			     ELSE document_no END)), 0)
+		FROM tbl_trans_sales_quotation WITH (UPDLOCK, HOLDLOCK)
+	`).Scan(&maxNum).Error
+	if err != nil {
+		return fmt.Errorf("failed computing next quotation document number: %w", err)
+	}
+
+	// A brand-new quote is always a draft "Q#"; only finalization (elsewhere) mints "FQ#".
+	sq.DocumentNo = fmt.Sprintf("Q#%04d", maxNum+1)
+	return nil
+}
+
+// isFirstVersion reports whether these version fields describe a brand-new document rather
+// than a later version of an existing one. Treats empty as the first (the client sends "1"
+// for a new quote and increments for New Version, but empty is defended against too).
+func isFirstVersion(versionNo, subVersionNo string) bool {
+	v := strings.TrimSpace(versionNo)
+	sv := strings.TrimSpace(subVersionNo)
+	return (v == "" || v == "1") && (sv == "" || sv == "0")
 }
 
 func GetLatestQuotations(conditions map[string]interface{}) (interface{}, int, error) {
@@ -252,6 +310,14 @@ func CreateSalesQuotation(c *fiber.Ctx, tx *gorm.DB) (CreateBody, int, error) {
 	// insert shape before adding this. version_no/sub_version_no are matched
 	// as-is (including both empty) so this doesn't block New Version, which
 	// legitimately reuses the same document_no with a different version_no.
+	// Assign the server-side document number BEFORE the uniqueness guard below: for a
+	// brand-new quote this replaces the client's (possibly colliding) guess with a fresh
+	// number, so the guard then validates the number that will actually be inserted. A New
+	// Version is left as-is and the guard checks it unchanged.
+	if err := assignNewQuotationDocNo(tx, &body.SalesQuotation); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
 	if body.DocumentNo != "" {
 		var existingCount int64
 		if err := tx.Model(&models.SalesQuotation{}).

@@ -14,6 +14,11 @@ type EngineeringRedboxQuotationListContent struct {
 	// existing GetSortedEngineeringRedboxQuotationList(conditions) plumbing,
 	// without needing a new stored procedure.
 	RequestedEngrId uint `json:"requested_engr_id"`
+	// DATE REQUESTED column on the engineering Sales Quotation List grid, plus the
+	// requester name - now selected by the view so the grid's col_date_requested
+	// (bound to requested_for_engr_date) is no longer blank.
+	RequestedForEngrDate string `json:"requested_for_engr_date"`
+	RequestedEngrName    string `json:"requested_engr_name"`
 }
 
 type EngineeringRedboxQuotationListView struct {

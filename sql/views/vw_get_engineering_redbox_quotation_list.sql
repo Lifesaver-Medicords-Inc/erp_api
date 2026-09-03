@@ -15,7 +15,12 @@ SELECT sq.id AS id,
         INNER JOIN tbl_trans_sales_project_item_set spis ON w.based_id = spis.item_set_id
         WHERE spis.based_id = sq.id
     ) THEN 'NEEDS WIRING' ELSE '' END AS remark,
-    sq.requested_engr_id AS requested_engr_id
+    sq.requested_engr_id AS requested_engr_id,
+    -- DATE REQUESTED / requester name for the engineering Sales Quotation List grid
+    -- (col_date_requested binds requested_for_engr_date). Were not selected before,
+    -- so that column rendered blank even once rows appeared.
+    sq.requested_for_engr_date AS requested_for_engr_date,
+    sq.requested_engr_name AS requested_engr_name
 FROM tbl_trans_sales_quotation sq
     -- LEFT JOIN (was INNER JOIN): a quotation whose customer record is
     -- missing/soft-deleted used to vanish from this list entirely instead

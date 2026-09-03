@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
+	"github.com/pierceperado/smpc/models/accounting_models"
 	"github.com/pierceperado/smpc/services"
 	"github.com/pierceperado/smpc/utils"
 	"gorm.io/gorm"
@@ -507,6 +508,21 @@ func InvalidateChildKey() {
 
 	financeKey := services.GetKey(models.BpiFinance{}, nil)
 	services.InvalidateCache(financeKey)
+
+	// Same gap as canvassKey/supplierListKey above, one more time: Sales Invoice's
+	// customer picker (SalesInvoiceService.GetCustomer) and Invoice Receipt's supplier
+	// picker (InvoiceReceiptService.GetSupplierTradeView) each read their own cached
+	// view - vw_get_customer / vw_get_supplier_trade - and both views JOIN
+	// tbl_bpi_finance for tax_code/tax/payment_term. Editing Financing here only ever
+	// invalidated BpiFinance's own cache key (financeKey, above), which those two
+	// screens don't read - so a Financing edit never reached either document's
+	// customer/supplier dropdown, no matter how many times the form itself was
+	// reopened, until the server happened to restart and the stale cache emptied.
+	customerViewKey := services.GetKey(accounting_models.CustomerView{}, nil)
+	services.InvalidateCache(customerViewKey)
+
+	supplierTradeViewKey := services.GetKey(accounting_models.SupplierTradeView{}, nil)
+	services.InvalidateCache(supplierTradeViewKey)
 
 	financePendingKey := services.GetKey(models.BpiFinancePendingView{}, nil)
 	services.InvalidateCache(financePendingKey)
