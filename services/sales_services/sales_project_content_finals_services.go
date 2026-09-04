@@ -78,3 +78,26 @@ func UpdateProjectContentFinal(tx *gorm.DB, projectcontentfinal models.SalesProj
 
 	return nil
 }
+
+// DeleteProjectContentFinal mirrors DeleteProjectSizeUp - audit row first, then the
+// delete, so the removal is recoverable from
+// z_tbl_trans_sales_project_content_final_at. Added 2026-09-03 when finals started
+// being pruned like size-ups (syncContentChildren); before that nothing ever removed
+// a final, which is why this had no delete path at all.
+func DeleteProjectContentFinal(tx *gorm.DB, ProjectContentFinal models.SalesProjectContentFinal, at models.At) error {
+	finalat := models.SalesProjectContentFinalAt{
+		RefID:                           ProjectContentFinal.ID,
+		SalesProjectContentFinalContent: ProjectContentFinal.SalesProjectContentFinalContent,
+		At:                              at,
+	}
+
+	if err := services.DbInsert(tx, &finalat); err != nil {
+		return errors.New("failed creating project content final audit row")
+	}
+
+	if err := tx.Delete(&models.SalesProjectContentFinal{}, ProjectContentFinal.ID).Error; err != nil {
+		return errors.New("failed deleting project content final")
+	}
+
+	return nil
+}

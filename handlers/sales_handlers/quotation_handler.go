@@ -115,18 +115,13 @@ func CreateSalesQuotation(c *fiber.Ctx) error {
 }
 
 // RequestQuotationForEngr - §3.2/§6.3's REQUEST FOR ENGR. action (Phase 4 item 4.1).
+// No request body anymore (changed 2026-09-03) - checking the box is the whole
+// action, there's no engineer to name.
 func RequestQuotationForEngr(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
 	if err != nil {
 		return utils.RespondError(c, fiber.StatusBadRequest, "invalid quotation id")
-	}
-
-	var body struct {
-		EngrId uint `json:"engr_id"`
-	}
-	if err := c.BodyParser(&body); err != nil {
-		return utils.RespondError(c, fiber.StatusBadRequest, "cannot bind request")
 	}
 
 	at, ok := c.Locals("at").(models.At)
@@ -139,7 +134,40 @@ func RequestQuotationForEngr(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
 	}
 
-	data, status, err := sales_services.RequestQuotationForEngr(tx, uint(idNum), body.EngrId, at)
+	data, status, err := sales_services.RequestQuotationForEngr(tx, uint(idNum), at)
+	if err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+// CancelQuotationForEngr reverses RequestQuotationForEngr (added on user request -
+// REQUEST FOR ENGR. toggles instead of being one-way).
+func CancelQuotationForEngr(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	idNum, err := strconv.Atoi(idParam)
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "invalid quotation id")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+	}
+
+	data, status, err := sales_services.CancelQuotationForEngr(tx, uint(idNum), at)
 	if err != nil {
 		tx.Rollback()
 		return utils.RespondError(c, status, err.Error())

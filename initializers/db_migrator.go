@@ -560,7 +560,14 @@ func migrateLogisticsDispatching() {
 	migrateAndLog(&dispatching_models.EngineeringCalendarScheduleModel{}, &dispatching_models.EngineeringCalendarScheduleModelAt{})
 	migrateAndLog(&dispatching_models.LogisticsCalendarScheduleModel{}, &dispatching_models.LogisticsCalendarScheduleModelAt{})
 	migrateAndLog(&dispatching_models.LogisticsRoute{}, &dispatching_models.LogisticsRouteAt{})
-	migrateAndLog(&dispatching_models.LogisticsRouteCost{})
+	// LogisticsRouteCost / tbl_dispatching_logistics_route_cost was removed on
+	// 2026-09-03 - route costs are now rows in tbl_dispatching_delivery_receipt_costs
+	// (migrated above) carrying a route_id, so there is one delivery-cost table
+	// instead of two kept in step by a sync (§13.3).
+	//
+	// AutoMigrate is additive and never drops tables, so the old one is left behind
+	// on existing databases, unread. Drop it by hand once you are satisfied nothing
+	// references it.
 }
 
 // ============================================

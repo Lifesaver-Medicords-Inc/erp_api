@@ -19,19 +19,19 @@ func GetEngineeringRedboxQuotationList(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
-// GetEngineeringQuotationListByEngr - §3.2's "an engineer sees the quotations
-// sent to them and no others" (Phase 4 item 4.1, "build the list" half).
-// Mirrors GetEngineeringRedboxJobOrder's own :userId scoping below - the
-// view's requested_engr_id column (added for the REQUEST FOR ENGR. trigger)
-// is what conditions filters on here.
+// GetEngineeringQuotationListByEngr - the Sales Quotation List's own fetch route
+// (smpc_engineering_app's SalesQuotationList.cs, :userId in the URL path).
+//
+// Changed 2026-09-03 (user decision, spec updated to match): this used to scope
+// to conditions{"requested_engr_id": userId} - "an engineer sees the quotations
+// sent to them and no others." REQUEST FOR ENGR. no longer names a specific
+// engineer (see RequestQuotationForEngr), so that column is never populated
+// anymore and scoping on it would show nobody anything. The :userId path segment
+// is kept only so the existing client route doesn't need to change; it's no
+// longer used to filter. Every engineer now gets the same list - identical to
+// GetEngineeringRedboxQuotationList above, which never scoped by engineer either.
 func GetEngineeringQuotationListByEngr(c *fiber.Ctx) error {
-	userId := c.Params("userId")
-
-	conditions := map[string]interface{}{
-		"requested_engr_id": userId,
-	}
-
-	data, status, err := engineering_services.GetSortedEngineeringRedboxQuotationList(conditions)
+	data, status, err := engineering_services.GetSortedEngineeringRedboxQuotationList(nil)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

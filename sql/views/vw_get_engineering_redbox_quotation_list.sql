@@ -40,4 +40,15 @@ FROM tbl_trans_sales_quotation sq
 -- grant (is_requested_for_engr), not "happens to have a project name and any
 -- wiring row" - that implicit condition fired with no deliberate sales action and
 -- could never distinguish which quotations were actually sent to engineering.
+--
+-- Project Quotation only (user decision, 2026-09-03): Quick Quote has no Size Up /
+-- item table / wiring sub-structure for an engineer to edit (those are Project-only
+-- concepts - ItemSetUC, tbl_trans_sales_project_item_set/_wiring), and Engineering's
+-- detail page only ever looks a quotation up via /sales/projects, which is itself
+-- filtered to project_name <> '' - a Quick Quote could never be opened there even if
+-- it showed up on this list. REQUEST FOR ENGR. is already hidden for Quick Quote on
+-- the Sales side (Quotation.cs's UpdateRequestForEngrVisibility), but this view is
+-- the single source both Engineering endpoints read from - filtering here too is
+-- the actual enforcement, not just relying on the client control being hidden.
 WHERE sq.is_requested_for_engr = 1
+    AND ISNULL(sq.project_name, '') <> ''

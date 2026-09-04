@@ -25,6 +25,16 @@ func (h *CreditMemoHandler) GetCreditMemo(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
+// GetCreditMemoCustomers - partner picker for the Customer Credit Memo screen.
+// Route is registered BEFORE "/:id" so "customers" isn't swallowed as an id.
+func (h *CreditMemoHandler) GetCreditMemoCustomers(c *fiber.Ctx) error {
+	data, status, err := h.Service.GetCreditMemoCustomers()
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
+
 func (h *CreditMemoHandler) GetCreditMemoById(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)

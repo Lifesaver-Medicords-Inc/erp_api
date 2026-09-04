@@ -16,6 +16,9 @@ func CreditMemoRoutes(app *fiber.App) {
 	handler := credit_memo_handlers.NewCreditMemoHandler(credit_memo_services.NewCreditMemoService())
 
 	api.Get("/", handler.GetCreditMemo)
+	// Before "/:id" - Fiber matches in registration order, so a literal path
+	// registered after the wildcard would be swallowed as an id.
+	api.Get("/customers", handler.GetCreditMemoCustomers)
 	api.Get("/:id", handler.GetCreditMemoById)
 	api.Post("/", handler.CreateCreditMemo)
 	api.Post("/:id/approve", handler.ApproveCreditMemo)

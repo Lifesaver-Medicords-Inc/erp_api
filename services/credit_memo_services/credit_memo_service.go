@@ -162,6 +162,24 @@ func (s *CreditMemoService) GetCreditMemo(conditions map[string]interface{}) (in
 // registered under the given tbl_setup_bpi_entity code ("CUS" or "SUP") -
 // a partner can legitimately hold both at once, so this checks membership,
 // not a single resolved "the" class.
+// GetCreditMemoCustomers backs the Customer Credit Memo screen's own partner
+// picker (vw_get_credit_memo_customer). Deliberately NOT vw_get_customer /
+// SalesInvoiceService.GetCustomer: that one exposes the parent tbl_bpi.id as
+// customer_id, which partnerHasEntityType below can never match (tbl_bpi_entity
+// keys on bpi_general_id), so every customer CM raised through the Sales
+// Invoice picker failed its own registration guard. This view returns the
+// branch id and is already filtered to partners actually holding "CUS", so the
+// picker can't offer one that would fail.
+func (s *CreditMemoService) GetCreditMemoCustomers() (interface{}, int, error) {
+	var response []accounting_models.CreditMemoCustomerView
+
+	if err := services.DbGet(&response, nil); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed getting credit memo customers")
+	}
+
+	return response, fiber.StatusOK, nil
+}
+
 func partnerHasEntityType(bpiGeneralId uint, entityCode string) (bool, error) {
 	var count int64
 	err := initializers.DB.Raw(`

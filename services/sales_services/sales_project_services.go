@@ -3,6 +3,7 @@
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -694,11 +695,30 @@ func applyItemSetDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.Sa
 // why Size Up never persisted: an existing project quote always takes the UPDATED path.
 //
 // Rows carrying an id are updated in place, new ones are created with a DB-assigned id,
-// and size-up rows the client no longer sends are deleted so removing a candidate sticks.
-// Finals are not pruned - the UI has no remove action for them.
+// and rows the client no longer sends are deleted so removing a candidate sticks.
+//
+// Both collections are now deduped on the way in and pruned on the way out
+// (2026-09-03). Previously only size-ups were pruned, on the reasoning that "the UI
+// has no remove action" for finals - but that left the write non-idempotent, so any
+// payload that carried the same pump twice silently stored it twice, with nothing
+// downstream to catch it. That is exactly what happened to content 14: the client's
+// own duplicate guard was broken for reloaded rows (see SalesProjectContentFinal's
+// ItemID note), the grid ended up holding each pump twice, and this function wrote
+// both copies. The client-side hole is fixed too, but this is the backstop - a
+// duplicate can no longer reach the table even if some other caller sends one.
 func syncContentChildren(tx *gorm.DB, contentID uint, finals []models.SalesProjectContentFinal, sizeUps []models.SalesProjectSizeUp, at models.At) error {
+	// Resolve item ids BEFORE deduping, so the dedupe below can key on the pump
+	// itself rather than falling back to comparing model text - two rows naming the
+	// same pump are then caught even if one of them arrived without an id.
+	resolveChildItemIds(tx, finals, sizeUps)
+
+	finals = dedupeFinals(finals)
+	sizeUps = dedupeSizeUps(sizeUps)
+
+	keptFinals := map[uint]bool{}
 	for _, v := range finals {
 		if v.ID > 0 {
+			keptFinals[v.ID] = true
 			if err := UpdateProjectContentFinal(tx, v, at, map[string]interface{}{"id": v.ID}); err != nil {
 				return fmt.Errorf("content final update: %w", err)
 			}
@@ -706,6 +726,19 @@ func syncContentChildren(tx *gorm.DB, contentID uint, finals []models.SalesProje
 		}
 		if err := CreateProjectContentFinal(tx, contentID, v, at); err != nil {
 			return fmt.Errorf("content final add: %w", err)
+		}
+	}
+
+	var existingFinals []models.SalesProjectContentFinal
+	if err := tx.Where("sales_project_content_id = ?", contentID).Find(&existingFinals).Error; err != nil {
+		return fmt.Errorf("content final read: %w", err)
+	}
+	for _, row := range existingFinals {
+		if keptFinals[row.ID] {
+			continue
+		}
+		if err := DeleteProjectContentFinal(tx, row, at); err != nil {
+			return fmt.Errorf("content final delete: %w", err)
 		}
 	}
 
@@ -737,6 +770,120 @@ func syncContentChildren(tx *gorm.DB, contentID uint, finals []models.SalesProje
 	}
 
 	return nil
+}
+
+// resolveChildItemIds fills in a missing item id on a Size Up / Final row by looking
+// its model name up in item setup. Added 2026-09-03: rows written before finals
+// carried an item_id have none, and any client that sends only a model name would
+// otherwise leave the duplicate check comparing free text.
+//
+// Only an EXACT, UNAMBIGUOUS match is applied. A model matching two items is left
+// alone rather than guessed at - the spec allows non-Calpeda model names to repeat
+// across items when their specs differ ("Calpeda model names must be globally
+// unique. Other brands may repeat when specs differ"), so picking one would silently
+// attach the row to the wrong pump. Leaving it at 0 is safe: the dedupe falls back
+// to the model name, which is exactly the information available.
+//
+// Best-effort throughout - a lookup failure never fails the save, it just leaves the
+// id unresolved, because the row itself is still valid without one.
+func resolveChildItemIds(tx *gorm.DB, finals []models.SalesProjectContentFinal, sizeUps []models.SalesProjectSizeUp) {
+	resolve := func(model string) uint {
+		name := strings.TrimSpace(model)
+		if name == "" {
+			return 0
+		}
+
+		var ids []uint
+		if err := tx.Model(&models.Item{}).
+			Where("item_model = ?", name).
+			Limit(2).
+			Pluck("id", &ids).Error; err != nil {
+			return 0
+		}
+
+		// Exactly one match, or nothing - never a guess between two.
+		if len(ids) == 1 {
+			return ids[0]
+		}
+		return 0
+	}
+
+	for i := range finals {
+		if finals[i].ItemID == 0 {
+			finals[i].ItemID = resolve(finals[i].Final)
+		}
+	}
+
+	for i := range sizeUps {
+		if sizeUps[i].ItemID == 0 {
+			sizeUps[i].ItemID = resolve(sizeUps[i].Model)
+		}
+	}
+}
+
+// dedupeFinals / dedupeSizeUps collapse a payload that names the same pump more than
+// once for one content row, keeping the first occurrence. Identity is the pump
+// (item_id), falling back to the model name for legacy rows saved before finals
+// carried an item id - those have ItemID 0, so keying on it alone would collapse all
+// of them into one. A row that already has a database id is always kept as-is: it is
+// an existing row being updated, not a fresh duplicate.
+func dedupeFinals(rows []models.SalesProjectContentFinal) []models.SalesProjectContentFinal {
+	if len(rows) < 2 {
+		return rows
+	}
+
+	seen := map[string]bool{}
+	out := make([]models.SalesProjectContentFinal, 0, len(rows))
+
+	for _, v := range rows {
+		key := finalIdentity(v)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, v)
+	}
+
+	return out
+}
+
+func finalIdentity(v models.SalesProjectContentFinal) string {
+	if v.ID > 0 {
+		return fmt.Sprintf("id:%d", v.ID)
+	}
+	if v.ItemID > 0 {
+		return fmt.Sprintf("item:%d", v.ItemID)
+	}
+	return "model:" + strings.TrimSpace(strings.ToUpper(v.Final))
+}
+
+func dedupeSizeUps(rows []models.SalesProjectSizeUp) []models.SalesProjectSizeUp {
+	if len(rows) < 2 {
+		return rows
+	}
+
+	seen := map[string]bool{}
+	out := make([]models.SalesProjectSizeUp, 0, len(rows))
+
+	for _, v := range rows {
+		var key string
+		switch {
+		case v.ID > 0:
+			key = fmt.Sprintf("id:%d", v.ID)
+		case v.ItemID > 0:
+			key = fmt.Sprintf("item:%d", v.ItemID)
+		default:
+			key = "model:" + strings.TrimSpace(strings.ToUpper(v.Model))
+		}
+
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, v)
+	}
+
+	return out
 }
 
 func applyContentDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.SalesProjectContent], at models.At) error {
@@ -782,6 +929,32 @@ func applyContentDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.Sale
 
 	// ---- REMOVED ----
 	for _, item := range diff.Removed {
+		// Children first. Size Up and Final Selection both carry a foreign key to this
+		// row (fk_tbl_trans_sales_project_content_sales_project_size_up and its Final
+		// counterpart), so deleting the parent on its own is refused outright by SQL
+		// Server - "The DELETE statement conflicted with the REFERENCE constraint" -
+		// and the whole save fails. Each child goes through its own delete helper so
+		// the removal still lands in the audit tables rather than vanishing.
+		var sizeUps []models.SalesProjectSizeUp
+		if err := tx.Where("sales_project_content_id = ?", item.ContentID).Find(&sizeUps).Error; err != nil {
+			return fmt.Errorf("content remove (size up read): %w", err)
+		}
+		for _, row := range sizeUps {
+			if err := DeleteProjectSizeUp(tx, row, at); err != nil {
+				return fmt.Errorf("content remove (size up): %w", err)
+			}
+		}
+
+		var finals []models.SalesProjectContentFinal
+		if err := tx.Where("sales_project_content_id = ?", item.ContentID).Find(&finals).Error; err != nil {
+			return fmt.Errorf("content remove (final read): %w", err)
+		}
+		for _, row := range finals {
+			if err := DeleteProjectContentFinal(tx, row, at); err != nil {
+				return fmt.Errorf("content remove (final): %w", err)
+			}
+		}
+
 		if err := services.DbDelete(tx, &models.SalesProjectContent{}, map[string]interface{}{
 			"content_id": item.ContentID,
 		}); err != nil {
@@ -885,16 +1058,24 @@ func applyWiringsDiff(tx *gorm.DB, basedId uint, diff CollectionDiff[models.Sale
 			return fmt.Errorf("wiring add: %w", err)
 		}
 	}
+	// "id", not "wiring_id" (fixed 2026-09-04). tbl_trans_sales_project_wiring's
+	// primary key is plain "id" - SalesProjectWiring declares `ID uint gorm:"primarykey"`
+	// with no column override - so every edit to an existing wiring row failed outright
+	// with "Invalid column name 'wiring_id'", and the whole save rolled back with it.
+	// Delete had the identical typo and would have failed the same way. Every other
+	// applier in this file names its table's real key (multiplier_id, history_id,
+	// item_set_id, content_id, conditions_id, items_id) - wiring was the only one that
+	// invented a name.
 	for _, item := range diff.Removed {
 		if err := services.DbDelete(tx, &models.SalesProjectWiring{}, map[string]interface{}{
-			"wiring_id": item.ID,
+			"id": item.ID,
 		}); err != nil {
 			return fmt.Errorf("wiring remove: %w", err)
 		}
 	}
 	for _, entry := range diff.Updated {
 		if err := services.DbUpdate(tx, &entry.Item, map[string]interface{}{
-			"wiring_id": entry.Item.ID,
+			"id": entry.Item.ID,
 		}); err != nil {
 			return fmt.Errorf("wiring update: %w", err)
 		}

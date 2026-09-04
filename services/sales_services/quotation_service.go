@@ -346,6 +346,17 @@ func CreateSalesQuotation(c *fiber.Ctx, tx *gorm.DB) (CreateBody, int, error) {
 		}
 	}
 
+	// Changed 2026-09-03 (user decision): REQUEST FOR ENGR. can now be checked
+	// before a quotation is ever saved (Quotation.cs's btn_request_for_engr_Click
+	// just flips the checkbox locally in that case), and is_requested_for_engr rides
+	// along in this same insert since it's a column on this same row - see
+	// parentData["is_requested_for_engr"] in Quotation.cs. The client only sends the
+	// flag, not a timestamp, so stamp it here the same way RequestQuotationForEngr
+	// (the separate, already-saved-record endpoint) already does.
+	if body.SalesQuotation.IsRequestedForEngr && body.SalesQuotation.RequestedForEngrDate == "" {
+		body.SalesQuotation.RequestedForEngrDate = time.Now().Format("01/02/2006 3:04:05 PM")
+	}
+
 	if err := services.DbInsert(tx, &body.SalesQuotation); err != nil {
 		fmt.Println(err)
 		fmt.Println("ERR", body)
@@ -568,40 +579,82 @@ func UpdateFinalizeQuote(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interf
 
 // RequestQuotationForEngr is §3.2/§6.3's "REQUEST FOR ENGR." action - previously a
 // pure client-side stub (btn_request_for_engr_Click just opened an unrelated test
-// form) with no backing field anywhere. Makes the per-quote-to-a-specific-engineer
-// grant §3.2 describes explicit, rather than the engineering red box/Sales
-// Quotation List inferring "sent to engineering" implicitly from "has a project
-// name and at least one wiring row" (see vw_get_engineering_redbox_quotation_list.sql),
-// which fires with no deliberate action and isn't scoped to any one engineer.
+// form) with no backing field anywhere.
+//
+// Changed 2026-09-03 (user decision, spec updated to match): this used to require
+// naming one specific engineer (a picker modal, engrId validated against
+// models.User) and scope the Engineering Sales Quotation List to only that
+// engineer via requested_engr_id - see GetEngineeringQuotationListByEngr, which no
+// longer filters on it. Checking the request is now the whole action: it just
+// flips is_requested_for_engr, and every engineer sees every checked quotation on
+// a shared list (the view's own WHERE is_requested_for_engr = 1 is what actually
+// gates visibility now). RequestedEngrId/RequestedEngrName stay on the model/table
+// but are no longer populated - nothing names a target engineer anymore.
 // Phase 4 item 4.1.
-func RequestQuotationForEngr(tx *gorm.DB, quotationId uint, engrId uint, at models.At) (*models.SalesQuotation, int, error) {
-	if engrId == 0 {
-		return nil, fiber.StatusBadRequest, errors.New("engr_id is required - which engineer is this being requested to?")
-	}
-
+func RequestQuotationForEngr(tx *gorm.DB, quotationId uint, at models.At) (*models.SalesQuotation, int, error) {
 	var quotation models.SalesQuotation
 	if err := tx.First(&quotation, quotationId).Error; err != nil {
 		return nil, fiber.StatusNotFound, errors.New("quotation not found")
 	}
 
-	var engr models.User
-	if err := tx.First(&engr, engrId).Error; err != nil {
-		return nil, fiber.StatusBadRequest, errors.New("engineer not found")
-	}
-
 	quotation.IsRequestedForEngr = true
-	quotation.RequestedEngrId = engrId
-	quotation.RequestedEngrName = strings.TrimSpace(engr.FirstName + " " + engr.LastName)
 	quotation.RequestedForEngrDate = time.Now().Format("01/02/2006 3:04:05 PM")
 
 	if err := services.DbUpdate(tx, &quotation, map[string]interface{}{"id": quotation.ID}); err != nil {
 		return nil, fiber.StatusInternalServerError, errors.New("failed requesting quotation for engineering")
 	}
 
+	// DbUpdate's own InvalidateCacheByModel only ever clears model:SalesQuotation*
+	// keys - the Engineering Sales Quotation List reads a completely different
+	// cached type (EngineeringRedboxQuotationListView, bound to
+	// vw_get_engineering_redbox_quotation_list) that also depends on this same row.
+	// Same gap already found and fixed for BPI Financing/CustomerView/
+	// SupplierTradeView - without this, a freshly requested quotation stays
+	// invisible in Engineering until the cache happens to expire on its own.
+	if err := services.InvalidateCache(services.GetKey(models.EngineeringRedboxQuotationListView{}, nil)); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed invalidating engineering quotation list cache")
+	}
+
 	atdata := models.SalesQuotationAt{
 		RefId:                  quotation.ID,
 		SalesQuotationContent:  quotation.SalesQuotationContent,
 		At:                     at,
+	}
+	if err := services.DbInsert(tx, &atdata); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed creating sales quotation at")
+	}
+
+	return &quotation, fiber.StatusOK, nil
+}
+
+// CancelQuotationForEngr reverses RequestQuotationForEngr - added on user request
+// so REQUEST FOR ENGR. is a toggle (the button relabels to CANCEL REQUEST once
+// checked) rather than a one-way action. Clears is_requested_for_engr, which is
+// the view's only visibility gate (WHERE is_requested_for_engr = 1), so the
+// quotation drops off every engineer's Sales Quotation List immediately - there is
+// no separate "remove access" step needed. requested_for_engr_date is cleared too
+// so a later re-request stamps a fresh date rather than showing the old one.
+func CancelQuotationForEngr(tx *gorm.DB, quotationId uint, at models.At) (*models.SalesQuotation, int, error) {
+	var quotation models.SalesQuotation
+	if err := tx.First(&quotation, quotationId).Error; err != nil {
+		return nil, fiber.StatusNotFound, errors.New("quotation not found")
+	}
+
+	quotation.IsRequestedForEngr = false
+	quotation.RequestedForEngrDate = ""
+
+	if err := services.DbUpdate(tx, &quotation, map[string]interface{}{"id": quotation.ID}); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed cancelling the engineering request")
+	}
+
+	if err := services.InvalidateCache(services.GetKey(models.EngineeringRedboxQuotationListView{}, nil)); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed invalidating engineering quotation list cache")
+	}
+
+	atdata := models.SalesQuotationAt{
+		RefId:                 quotation.ID,
+		SalesQuotationContent: quotation.SalesQuotationContent,
+		At:                    at,
 	}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return nil, fiber.StatusInternalServerError, errors.New("failed creating sales quotation at")

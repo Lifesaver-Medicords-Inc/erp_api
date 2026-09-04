@@ -24,7 +24,11 @@ type LogisticsRouteContent struct {
 type LogisticsRoute struct {
 	ID uint `gorm:"primaryKey" json:"id"`
 	LogisticsRouteContent
-	Costs []LogisticsRouteCost `gorm:"foreignKey:RouteId;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"costs,omitempty"`
+	// User decision, 2026-09-03: route costs now live in the single delivery-cost
+	// table (tbl_dispatching_delivery_receipt_costs) instead of their own
+	// tbl_dispatching_logistics_route_cost, so the route and the Delivery Receipt
+	// read the same rows rather than two copies kept in step by a sync - §13.3.
+	Costs []DeliveryReceiptCosts `gorm:"foreignKey:RouteId;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"costs,omitempty"`
 }
 
 func (LogisticsRoute) TableName() string {

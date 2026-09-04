@@ -49,6 +49,13 @@ func (s *LogisticsCalendarScheduleService) GetLogisticsSchedule(conditions map[s
 // back automically with whatever operation is creating it (e.g. a Delivery Receipt).
 // It does not begin or commit a transaction itself.
 func (s *LogisticsCalendarScheduleService) CreateLogisticsSchedule(tx *gorm.DB, schedule *dispatching_models.LogisticsCalendarScheduleModel, at models.At) (*dispatching_models.LogisticsCalendarScheduleModel, int, error) {
+	// Route costs are rows in the shared delivery-cost table (§13.3). Resolve COST
+	// TYPE, compute TOTAL COST and attach the named Delivery Receipt before DbInsert
+	// cascades them, since GORM writes the association as-is.
+	if err := NormalizeRouteCosts(tx, schedule.Routes); err != nil {
+		return schedule, fiber.StatusInternalServerError, errors.New("failed preparing route costs")
+	}
+
 	if err := services.DbInsert(tx, &schedule); err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			return schedule, fiber.StatusInternalServerError, errors.New("duplicate record error")
@@ -78,6 +85,12 @@ func (s *LogisticsCalendarScheduleService) UpdateLogisticsSchedule(tx *gorm.DB, 
 	// Replace routes (Internal only) with the incoming set. DbUpdate only touches
 	// the schedule's own columns, not nested associations, so this is manual —
 	// delete-then-reinsert, same pattern as DeliveryReceipt's items/costs.
+	// Cost rows live in the shared table now, keyed by route_id, so they must be
+	// cleared before their routes disappear - see DeleteRouteCostsForSchedule for why
+	// the FK cascade is not relied on.
+	if err := DeleteRouteCostsForSchedule(tx, schedule.ID); err != nil {
+		return schedule, fiber.StatusInternalServerError, errors.New("failed clearing old route costs")
+	}
 	if err := tx.Where("schedule_id = ?", schedule.ID).Delete(&dispatching_models.LogisticsRoute{}).Error; err != nil {
 		return schedule, fiber.StatusInternalServerError, errors.New("failed clearing old routes")
 	}
@@ -85,9 +98,9 @@ func (s *LogisticsCalendarScheduleService) UpdateLogisticsSchedule(tx *gorm.DB, 
 		for i := range schedule.Routes {
 			schedule.Routes[i].ID = 0
 			schedule.Routes[i].ScheduleId = schedule.ID
-			for j := range schedule.Routes[i].Costs {
-				schedule.Routes[i].Costs[j].ID = 0
-			}
+		}
+		if err := NormalizeRouteCosts(tx, schedule.Routes); err != nil {
+			return schedule, fiber.StatusInternalServerError, errors.New("failed preparing route costs")
 		}
 		if err := tx.Create(&schedule.Routes).Error; err != nil {
 			return schedule, fiber.StatusInternalServerError, errors.New("failed saving routes")

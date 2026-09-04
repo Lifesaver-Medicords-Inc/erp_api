@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -111,7 +112,18 @@ func main() {
 	app := SetupApp()
 
 	// Start Listen
-	app.Listen(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT"))
+	//
+	// The error was previously discarded. Because init() above runs the migrations
+	// BEFORE this point, a failed bind produced the worst possible symptom: the SQL
+	// migrations printed and the schema really was updated, then the process exited
+	// 0 with no message at all - indistinguishable from a clean run, except nothing
+	// was serving. The usual cause is a previous `go run .` still holding the port,
+	// so say which address failed and why.
+	addr := os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT")
+	if err := app.Listen(addr); err != nil {
+		log.Fatalf("API failed to start on %s: %v (if this is \"address already in use\", "+
+			"an earlier instance is still running - stop it and retry)", addr, err)
+	}
 }
 
 func SetupApp() *fiber.App {
@@ -453,6 +465,8 @@ func SetupApp() *fiber.App {
 				salesApi.Put("/quotation", sales_handlers.UpdateQuotation)
 				// §3.2/§6.3 REQUEST FOR ENGR. (Phase 4 item 4.1) - was a client-side stub.
 				salesApi.Post("/quotation/:id/request_for_engr", sales_handlers.RequestQuotationForEngr)
+				// Reverses the above - added on user request so the button toggles.
+				salesApi.Post("/quotation/:id/cancel_request_for_engr", sales_handlers.CancelQuotationForEngr)
 
 				salesApi.Post("/salescanvas", sales_handlers.CreateSalesCanvasSheet)
 				//salesApi.Get("/salescanvas", sales_handlers.GetSalesCanvasView)
