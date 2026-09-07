@@ -3,12 +3,47 @@ package setup_services
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
 )
+
+// removeStoredImage deletes an item image's file from the files directory.
+//
+// A file that is already gone is NOT an error. The database row is the record of the
+// image; the file is a copy of it on disk, and the two can legitimately be out of step -
+// a restored database is the obvious case (the rows come across, the files folder does
+// not), and so is a file removed by hand or a half-finished earlier delete.
+//
+// Treating a missing file as fatal made those images undeletable forever: the error
+// aborted the enclosing transaction, so the whole item update rolled back and the row
+// stayed exactly where it was, to fail again on the next attempt (user-reported
+// 2026-09-05, "failed to delete image file" on Item Entry). Every image row in the
+// rehearsal database points at a file that is not on disk, so this was every image.
+//
+// Same rule job_order_service.go already applies when replacing a report file.
+//
+// Path comes from FilesDir() rather than a hard-coded "files/" so it still resolves if
+// FILES_DIR is set - which is exactly what a real server deployment would do.
+func removeStoredImage(image string) error {
+	if image == "" {
+		return nil
+	}
+
+	// Stored as a bare file name (UploadFile returns one, and GetItemImages re-bases what
+	// it hands back), but Base() also makes this safe against a legacy row that kept a
+	// full path.
+	path := filepath.Join(services.FilesDir(), filepath.Base(image))
+
+	if err := services.DeleteFile(path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	return nil
+}
 
 func GetImageURL(filename string) string {
 	return filename
@@ -65,8 +100,8 @@ func UpdateItemImageChild(tx *gorm.DB, itemImageID uint, newImage string, filena
 		return errors.New("image not found")
 	}
 
-	// Delete old file
-	if err := services.DeleteFile("files/" + body.Image); err != nil {
+	// Delete old file. A missing one does not stop the replacement - see removeStoredImage.
+	if err := removeStoredImage(body.Image); err != nil {
 		fmt.Println("REPLACE ERR:", err)
 		return errors.New("failed to delete old image file")
 	}
@@ -110,7 +145,8 @@ func DeleteItemImageChild(tx *gorm.DB, itemImageID uint) error {
 		return errors.New("image not found")
 	}
 
-	if err := services.DeleteFile("files/" + body.Image); err != nil {
+	// The row goes regardless of whether its file is still on disk - see removeStoredImage.
+	if err := removeStoredImage(body.Image); err != nil {
 		fmt.Println("BODY IMAGE", body.Image, err)
 		return errors.New("failed to delete image file")
 	}
