@@ -61,8 +61,14 @@ func (h *JobOrderHandler) GetComponents(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusBadRequest, err.Error())
 	}
 
+	// Optional (defaults 0, same as sp_GetComponents' own @SoId default) - without
+	// it the real stock figure still comes back, just without the carve-out for
+	// this job's own SO's own approved reservation (see that proc's header).
+	soIdNum, _ := strconv.Atoi(c.Query("so_id", "0"))
+
 	conditions := map[string]interface{}{
 		"BomId": idNum,
+		"SoId":  soIdNum,
 	}
 	data, status, err := h.Service.GetComponents(conditions)
 	if err != nil {
