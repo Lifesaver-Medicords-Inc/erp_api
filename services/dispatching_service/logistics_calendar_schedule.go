@@ -23,7 +23,7 @@ func (s *LogisticsCalendarScheduleService) GetLogisticsSchedules(conditions map[
 	var schedules = &[]dispatching_models.LogisticsCalendarScheduleModel{}
 
 	if err := initializers.DB.Where(conditions).
-		Preload("Routes").Preload("Routes.Costs").
+		Preload("Routes").Preload("Routes.Costs").Preload("AssignedPeople").
 		Find(schedules).Error; err != nil {
 		fmt.Println("ERROR:", err)
 		return schedules, fiber.StatusInternalServerError, errors.New("failed getting logistics calendar schedules")
@@ -37,7 +37,7 @@ func (s *LogisticsCalendarScheduleService) GetLogisticsSchedule(conditions map[s
 	var schedule = &dispatching_models.LogisticsCalendarScheduleModel{}
 
 	if err := initializers.DB.Where(conditions).
-		Preload("Routes").Preload("Routes.Costs").
+		Preload("Routes").Preload("Routes.Costs").Preload("AssignedPeople").
 		First(schedule).Error; err != nil {
 		return schedule, fiber.StatusNotFound, errors.New("logistics calendar schedule not found")
 	}
@@ -61,6 +61,12 @@ func (s *LogisticsCalendarScheduleService) CreateLogisticsSchedule(tx *gorm.DB, 
 			return schedule, fiber.StatusInternalServerError, errors.New("duplicate record error")
 		}
 		return schedule, fiber.StatusInternalServerError, errors.New("failed creating logistics schedule")
+	}
+
+	// DbInsert cascades the People association, but driver_name (the older mirror
+	// several readers still use) has to be pointed at whoever holds the DRIVER role.
+	if err := SyncScheduleDriverName(tx, schedule.ID); err != nil {
+		return schedule, fiber.StatusInternalServerError, errors.New("failed syncing driver name")
 	}
 
 	atdata := dispatching_models.LogisticsCalendarScheduleModelAt{CalendarSchedulesBaseAt: dispatching_models.CalendarSchedulesBaseAt{
@@ -93,6 +99,12 @@ func (s *LogisticsCalendarScheduleService) UpdateLogisticsSchedule(tx *gorm.DB, 
 	}
 	if err := tx.Where("schedule_id = ?", schedule.ID).Delete(&dispatching_models.LogisticsRoute{}).Error; err != nil {
 		return schedule, fiber.StatusInternalServerError, errors.New("failed clearing old routes")
+	}
+
+	// The people on the trip are replaced the same way the routes are - the client
+	// sends the full intended set, not a diff. This also re-points driver_name.
+	if err := ReplaceSchedulePeople(tx, schedule.ID, schedule.AssignedPeople); err != nil {
+		return schedule, fiber.StatusInternalServerError, errors.New("failed saving schedule people")
 	}
 	if len(schedule.Routes) > 0 {
 		for i := range schedule.Routes {

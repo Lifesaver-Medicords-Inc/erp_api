@@ -560,6 +560,11 @@ func migrateLogisticsDispatching() {
 	migrateAndLog(&dispatching_models.EngineeringCalendarScheduleModel{}, &dispatching_models.EngineeringCalendarScheduleModelAt{})
 	migrateAndLog(&dispatching_models.LogisticsCalendarScheduleModel{}, &dispatching_models.LogisticsCalendarScheduleModelAt{})
 	migrateAndLog(&dispatching_models.LogisticsRoute{}, &dispatching_models.LogisticsRouteAt{})
+	// Dispatch people roster + their per-schedule assignments (§13.3 "select driver,
+	// helper, and vehicle first"). Additive - creates tbl_dispatching_people,
+	// its _at audit pair, and tbl_dispatching_schedule_people on first run.
+	migrateAndLog(&dispatching_models.DispatchPerson{}, &dispatching_models.DispatchPersonAt{})
+	migrateAndLog(&dispatching_models.SchedulePerson{})
 	// LogisticsRouteCost / tbl_dispatching_logistics_route_cost was removed on
 	// 2026-09-03 - route costs are now rows in tbl_dispatching_delivery_receipt_costs
 	// (migrated above) carrying a route_id, so there is one delivery-cost table

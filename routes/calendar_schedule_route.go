@@ -37,6 +37,19 @@ func CalendarScheduleRoutes(app *fiber.App) {
 	calendarCostTypeService := dispatching_services.NewCalendarCostTypeService()
 	costTypesHandler := dispatching_handlers.NewCalendarCostTypeHandler(calendarCostTypeService)
 
+	// Dispatch people (drivers / helpers) - §13.3's "select driver, helper, and vehicle
+	// first". Registered here alongside the other dispatching setup lists.
+	dispatchPersonService := dispatching_services.NewDispatchPersonService()
+	dispatchPersonHandler := dispatching_handlers.NewDispatchPersonHandler(dispatchPersonService)
+
+	people := api.Group("/dispatch-people")
+	people.Get("/", dispatchPersonHandler.GetDispatchPeopleHandler)
+	people.Get("/:id", dispatchPersonHandler.GetDispatchPersonHandler)
+	people.Post("/", dispatchPersonHandler.CreateDispatchPersonHandler)
+	people.Put("/:id", dispatchPersonHandler.UpdateDispatchPersonHandler)
+	// DELETE deactivates rather than removes - see the handler.
+	people.Delete("/:id", dispatchPersonHandler.DeactivateDispatchPersonHandler)
+
 	costTypes := api.Group("/calendar-cost-types")
 	costTypes.Get("/", costTypesHandler.GetCalendarCostTypesHandler)
 	costTypes.Get("/:id", costTypesHandler.GetCalendarCostTypeHandler)

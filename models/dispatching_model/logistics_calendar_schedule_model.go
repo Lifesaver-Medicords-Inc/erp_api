@@ -23,6 +23,16 @@ type LogisticsCalendarScheduleModel struct {
 	CalendarScheduleBase
 	LogisticsCalendarScheduleContent
 	Routes []LogisticsRoute `gorm:"foreignKey:ScheduleId;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"routes,omitempty"`
+
+	// The driver and helpers on this trip (§13.3). A row per person rather than fixed
+	// columns, so 1 driver + 1 helper and 1 driver + 2 helpers are the same shape.
+	// DriverName above is kept in step with whoever holds the DRIVER role - see
+	// SyncScheduleDriverName - because several older readers still use that column.
+	// NOT json:"people" - CalendarScheduleBase already embeds a People string under
+	// that key (the readable summary the calendar card and its search use). Two fields
+	// on one struct serialising to the same key is ambiguous at best and drops one of
+	// them at worst, so the assignment list gets its own key and its own name.
+	AssignedPeople []SchedulePerson `gorm:"foreignKey:ScheduleId;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"assigned_people,omitempty"`
 }
 
 func (LogisticsCalendarScheduleModel) TableName() string {
