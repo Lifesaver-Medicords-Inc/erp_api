@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/models"
@@ -159,6 +160,11 @@ type QuotationFieldChanges struct {
 	FinalRefNo           *FieldChange[any] `json:"final_ref_no,omitempty"`
 	IsFinalized          *FieldChange[any] `json:"is_finalized,omitempty"`
 	IsProject            *FieldChange[any] `json:"is_project,omitempty"`
+	// Was missing entirely, so REQUEST FOR ENGR. could never be changed on an
+	// existing project quote: the client's diff is unmarshalled into this struct, and
+	// a field with no home here is discarded before applyQuotationFieldChanges ever
+	// runs. The flag worked only on the INSERT that creates a quotation (§5.1, §6.3).
+	IsRequestedForEngr   *FieldChange[any] `json:"is_requested_for_engr,omitempty"`
 }
 
 func GetBpiSuppliers(conditions map[string]interface{}) (interface{}, int, error) {
@@ -597,6 +603,20 @@ func applyQuotationFieldChanges(tx *gorm.DB, id uint, fields QuotationFieldChang
 	}
 	if fields.IsProject != nil {
 		updates["is_project"] = fields.IsProject.NewValue
+	}
+	if fields.IsRequestedForEngr != nil {
+		requested := fields.IsRequestedForEngr.NewValue
+		updates["is_requested_for_engr"] = requested
+
+		// The client sends the flag only, never a timestamp - same as the insert path
+		// in quotation_service.go, which stamps it there for exactly this reason.
+		// Turning the request off clears the date so a later re-request gets a fresh
+		// one rather than reviving the original request's timestamp.
+		if b, ok := requested.(bool); ok && b {
+			updates["requested_for_engr_date"] = time.Now().Format("01/02/2006 3:04:05 PM")
+		} else {
+			updates["requested_for_engr_date"] = ""
+		}
 	}
 
 	if len(updates) == 0 {
