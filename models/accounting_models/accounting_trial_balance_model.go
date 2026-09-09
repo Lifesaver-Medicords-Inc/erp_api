@@ -28,4 +28,11 @@ type TrialBalanceRow struct {
 	// tbl_setup_chart_of_accounts.cash_flow_category, set via Chart of
 	// Accounts Setup. Only the Cash Flow Statement reads this today.
 	CashFlowCategory string `json:"cash_flow_category"`
+	// LiquidityClass: "" (unclassified) | "CURRENT" | "NON-CURRENT" | "CASH" -
+	// straight off tbl_setup_chart_of_accounts.liquidity_class, set via Chart
+	// of Accounts Setup. §12.10's liquidity ratios read this; carrying it here
+	// means they need no second query, exactly as CashFlowCategory does for the
+	// Cash Flow Statement. See the field's own comment on ChartOfAccountContent
+	// for why "" must never be treated as CURRENT.
+	LiquidityClass string `json:"liquidity_class"`
 }
