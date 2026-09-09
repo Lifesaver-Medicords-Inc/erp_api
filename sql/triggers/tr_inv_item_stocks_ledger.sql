@@ -8,29 +8,70 @@
 --
 -- source_type/source_id/remarks/unit_cost/supplier_id/supplier/purchase_date are all
 -- optional enrichment: the app sets them right before a write via
--- services.SetStockAuditContext(tx, ...), which calls sp_set_session_context. If a
+-- services.SetStockAuditContext(tx, ...), which writes one row to
+-- tbl_inv_stock_audit_context keyed by @@SPID (it used sp_set_session_context until
+-- 2026-09-08 - that is SQL Server 2016+, and production is 2012). If a
 -- write doesn't set that context, the ledger row is still created - just with those
 -- columns NULL - so the numeric trail is never lost, only the "why"/"at what cost".
 -- The cost columns are only ever set on writes that went through FIFO lot consumption
 -- (see ConsumeLotsFIFO/CreateStockLot in item_stock_services).
 --
--- CREATE OR ALTER so this is idempotent on every app startup (see
--- migrations.RunSQLMigrations), unlike the ALTER-only procs elsewhere in sql/procedures
--- which assume the object already exists on the target DB.
-CREATE OR ALTER TRIGGER [dbo].[tr_inv_item_stocks_ledger]
+-- Stub-then-ALTER so this is idempotent on every app startup (see
+-- migrations.RunSQLMigrations): the guard below creates a placeholder only when the
+-- trigger is absent, and the ALTER then installs the real body. CREATE OR ALTER would
+-- read better but does not exist before SQL Server 2016 SP1, and the target server is
+-- 2012 - it would be a syntax error there, not a fallback.
+IF NOT EXISTS (SELECT 1 FROM sys.triggers WHERE name = 'tr_inv_item_stocks_ledger' AND parent_id = OBJECT_ID('[dbo].[tbl_inv_item_stocks]'))
+BEGIN
+    EXEC('CREATE TRIGGER [dbo].[tr_inv_item_stocks_ledger] ON [dbo].[tbl_inv_item_stocks] AFTER INSERT AS SET NOCOUNT ON;')
+END
+GO
+ALTER TRIGGER [dbo].[tr_inv_item_stocks_ledger]
 ON [dbo].[tbl_inv_item_stocks]
 AFTER INSERT, UPDATE, DELETE
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @srcType NVARCHAR(100) = CAST(SESSION_CONTEXT(N'stock_source_type') AS NVARCHAR(100));
-    DECLARE @srcId NVARCHAR(50) = CAST(SESSION_CONTEXT(N'stock_source_id') AS NVARCHAR(50));
-    DECLARE @remarks NVARCHAR(500) = CAST(SESSION_CONTEXT(N'stock_remarks') AS NVARCHAR(500));
-    DECLARE @unitCost NVARCHAR(50) = CAST(SESSION_CONTEXT(N'stock_unit_cost') AS NVARCHAR(50));
-    DECLARE @supplierId NVARCHAR(50) = CAST(SESSION_CONTEXT(N'stock_supplier_id') AS NVARCHAR(50));
-    DECLARE @supplier NVARCHAR(200) = CAST(SESSION_CONTEXT(N'stock_supplier') AS NVARCHAR(200));
-    DECLARE @purchaseDate NVARCHAR(50) = CAST(SESSION_CONTEXT(N'stock_purchase_date') AS NVARCHAR(50));
+    -- Read from tbl_inv_stock_audit_context, not SESSION_CONTEXT.
+    --
+    -- SESSION_CONTEXT() and sp_set_session_context are SQL Server 2016 and later.
+    -- On the 2012 production server the DECLARE lines below called an
+    -- unrecognised function, so the batch failed to compile and every reference
+    -- cascaded into "Must declare the scalar variable @srcType" - the trigger
+    -- never installed, and RunSQLMigrations stopped there.
+    --
+    -- A database's compatibility level does NOT gate that syntax. On a 2016+
+    -- engine SESSION_CONTEXT runs fine at level 110, which is exactly why this
+    -- passed on the dev box and failed on the server.
+    --
+    -- CONTEXT_INFO() is the usual 2012 substitute but holds 128 bytes; these
+    -- values reach about a thousand characters. Hence a table, keyed by @@SPID:
+    -- the write and the trigger it fires are always the same session, so this
+    -- reads back exactly what services.SetStockAuditContext just wrote.
+    --
+    -- Still optional. No row means no context was set, every column below comes
+    -- back NULL, and the ledger row is written regardless - qty_before/qty_after/
+    -- qty_change/direction come from inserted/deleted, never from here.
+    DECLARE @srcType NVARCHAR(100);
+    DECLARE @srcId NVARCHAR(50);
+    DECLARE @remarks NVARCHAR(500);
+    DECLARE @unitCost NVARCHAR(50);
+    DECLARE @supplierId NVARCHAR(50);
+    DECLARE @supplier NVARCHAR(200);
+    DECLARE @purchaseDate NVARCHAR(50);
+
+    SELECT
+        @srcType      = NULLIF(source_type, ''),
+        @srcId        = NULLIF(source_id, ''),
+        @remarks      = NULLIF(remarks, ''),
+        @unitCost     = NULLIF(unit_cost, ''),
+        @supplierId   = NULLIF(supplier_id, ''),
+        @supplier     = NULLIF(supplier, ''),
+        @purchaseDate = NULLIF(purchase_date, '')
+    FROM dbo.tbl_inv_stock_audit_context
+    WHERE spid = @@SPID;
+
     DECLARE @now DATETIME2 = SYSDATETIME();
     DECLARE @dbUser SYSNAME = SUSER_SNAME();
 

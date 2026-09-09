@@ -62,12 +62,16 @@ func ReplaceSchedulePeople(tx *gorm.DB, scheduleID uint, people []dispatching_mo
 // source of truth; this is a mirror for the older readers.
 //
 // More than one DRIVER on a schedule is not expected; if it happens the first by id
-// wins, which is deterministic rather than arbitrary.
+// wins, which is deterministic rather than arbitrary. That ordering comes from First()
+// itself, which appends ORDER BY on the primary key - it must NOT also be asked for
+// explicitly. GORM appends rather than replaces, so `Order("id").First(...)` emits
+// `ORDER BY id, "tbl_dispatching_schedule_people"."id"`; MySQL and Postgres ignore the
+// repeat, but SQL Server rejects it outright ("a column has been specified more than
+// once in the order by list"), and this runs on every logistics schedule created.
 func SyncScheduleDriverName(tx *gorm.DB, scheduleID uint) error {
 	var driver dispatching_models.SchedulePerson
 
 	err := tx.Where("schedule_id = ? AND role = ?", scheduleID, RoleDriver).
-		Order("id").
 		First(&driver).Error
 
 	if err != nil {

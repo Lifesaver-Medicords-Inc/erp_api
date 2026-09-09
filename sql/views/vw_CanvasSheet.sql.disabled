@@ -1,0 +1,48 @@
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'vw_CanvasSheet' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[vw_CanvasSheet] AS SELECT 1 AS placeholder')
+END
+GO
+ALTER VIEW [dbo].[vw_CanvasSheet] AS
+SELECT id,
+    start_date,
+    validity AS TotalDays,
+    DATEADD(DAY, validity, start_date) AS ExpirationDate,
+    DATEDIFF(
+        DAY,
+        GETDATE(),
+        DATEADD(DAY, validity, start_date)
+    ) AS RemainingDays,
+    CASE
+        WHEN DATEDIFF(
+            DAY,
+            GETDATE(),
+            DATEADD(DAY, validity, start_date)
+        ) > 0 THEN 'Active'
+        ELSE 'Expired'
+    END AS Status
+FROM tbl_sales_canvas_sheet;
+-- ============================================================================
+-- DISABLED 2026-09-08 (renamed out of the *.sql glob RunSQLMigrations walks).
+--
+-- This view cannot compile against the current schema. It computes
+--     DATEADD(DAY, validity, start_date)
+-- but SalesCanvasSheet was redesigned into tbl_sales_canvas_sheet, which has no
+-- start_date at all and now stores validity as a string rather than a day count.
+-- The old table survives on long-running databases, which is the only reason
+-- this ever worked; on a database built from the models it failed outright and
+-- stopped RunSQLMigrations before the remaining views were created.
+--
+-- Disabled rather than deleted, and rather than rewritten: making it work needs
+-- a decision, not a guess. RemainingDays cannot be derived without knowing what
+-- replaced start_date.
+--
+-- Nothing currently reads it:
+--   * no Go or C# code references vw_CanvasSheet
+--   * its GET route is commented out (main.go, salesApi.Get("/salescanvas"))
+--   * models/sales_canvas_sheet_model.go still carries a "MUST DO AT SOON" note
+--
+-- The client IS coded for it though - ProjectService.Get expects a CanvasViewList
+-- with a RemainingDays field - so this is unfinished work, not dead work. To
+-- revive it: settle what start_date becomes, then rename this file back.
+-- ============================================================================

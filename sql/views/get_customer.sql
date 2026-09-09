@@ -1,3 +1,8 @@
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'get_customer' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[get_customer] AS SELECT 1 AS placeholder')
+END
+GO
 ALTER VIEW [dbo].[get_customer] AS
 SELECT *
 FROM (

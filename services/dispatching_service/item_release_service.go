@@ -157,6 +157,58 @@ func (s *ItemReleaseService) UpdateItemReleaseService(release *models.ItemReleas
 			return release, fiber.StatusInternalServerError, errors.New("failed saving item release details")
 		}
 
+		// Remove detail rows this release no longer carries.
+		//
+		// DbUpdateDetails only INSERTS (id 0) and UPDATES (id > 0) - it never deletes. So a
+		// row dropped from the document survived in the database forever: deleting a line
+		// from a saved Item Release did nothing, and switching the reference document left
+		// the previous order's lines behind. IREL#0001 is exactly that - 17 rows spanning
+		// two different sales orders (9 from SO 1, the rest from SO 6, which is the only one
+		// its header names), because it was built against one order and later repointed at
+		// another (user-reported 2026-09-05).
+		//
+		// The stock has to come back before the row goes. An orphaned row can still hold a
+		// bin allocation that deducted stock on release (rows 1 and 2 of IREL#0001 each
+		// hold one unit), and dropping the row without restoring it would leak that stock
+		// permanently, with nothing left pointing at it. RestoreItemReleaseLocations puts
+		// the quantity back and clears the location rows.
+		submitted := make(map[uint]bool, len(*release.ItemReleaseDetails))
+		for _, detail := range *release.ItemReleaseDetails {
+			if detail.ID != 0 {
+				submitted[detail.ID] = true
+			}
+		}
+
+		var storedDetails []models.ItemReleaseDetails
+		if err := tx.Where("item_release_id = ?", release.ID).Find(&storedDetails).Error; err != nil {
+			tx.Rollback()
+			return release, fiber.StatusInternalServerError, errors.New("failed reading existing item release details")
+		}
+
+		for i := range storedDetails {
+			stored := &storedDetails[i]
+			if submitted[stored.ID] {
+				continue
+			}
+
+			remarks := fmt.Sprintf("Item Release #%d (line removed)", release.DocNo)
+			if err := s.RestoreItemReleaseLocations(tx, stored.ID, remarks, at); err != nil {
+				tx.Rollback()
+				return release, fiber.StatusInternalServerError, err
+			}
+
+			if err := tx.Where("id = ?", stored.ID).Delete(&models.ItemReleaseDetails{}).Error; err != nil {
+				tx.Rollback()
+				return release, fiber.StatusInternalServerError, errors.New("failed removing item release detail")
+			}
+
+			// The SO line this row was serving no longer has this release against it.
+			if err := services.RecomputeSoItemStatus(tx, stored.SalesOrderDetailsID); err != nil {
+				tx.Rollback()
+				return release, fiber.StatusInternalServerError, errors.New("failed recomputing SO item status")
+			}
+		}
+
 		for i := range *release.ItemReleaseDetails {
 			detail := &(*release.ItemReleaseDetails)[i]
 

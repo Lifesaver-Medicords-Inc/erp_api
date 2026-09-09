@@ -1,3 +1,8 @@
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'vw_item_additional_specs' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[vw_item_additional_specs] AS SELECT 1 AS placeholder')
+END
+GO
 ALTER VIEW [dbo].[vw_item_additional_specs] AS
 SELECT a.*,
     b.name AS volume_unit_of_measure,

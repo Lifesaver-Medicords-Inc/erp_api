@@ -3,8 +3,10 @@ package dispatching_services
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
@@ -29,6 +31,203 @@ func getSalesOrderDocNo(tx *gorm.DB, salesOrderID uint) string {
 		return ""
 	}
 	return soView.DocumentNo
+}
+
+// The customer's name for a calendar title or a route's CLIENT/SUPPLIER.
+//
+// tbl_trans_sales_order carries a customer_name column, but it is a denormalized
+// copy that is not kept in step with the BPI record and is empty on every order
+// in production - which is how logistics schedules came to be titled "Delivery
+// to " with nothing after it (user-reported 2026-09-08). The Delivery Receipt
+// stores its own copy and that one IS populated, so it is preferred; BPI is the
+// authority behind both and settles it when neither copy has anything, resolving
+// customer_id -> bpi.name exactly as the schedule details screen does.
+func resolveCustomerName(tx *gorm.DB, stored string, customerID uint) string {
+	if name := strings.TrimSpace(stored); name != "" {
+		return name
+	}
+
+	if customerID != 0 {
+		var bpi models.Bpi
+		if err := tx.First(&bpi, customerID).Error; err == nil {
+			return strings.TrimSpace(bpi.Name)
+		}
+	}
+
+	return ""
+}
+
+// Dates in the calendar and delivery-receipt tables are free-text nvarchar, and
+// two writers store two different shapes: the calendar UI writes ISO
+// ("2026-09-04T00:00:00") while the Delivery Receipt copies its own
+// delivery_date straight through ("09/04/2026"). Grouping schedules by day
+// therefore has to compare the day itself and not the string - matching on the
+// raw text would miss every schedule written by the other writer and hand each
+// DR its own schedule again, which is the behaviour the grouping exists to stop.
+func parseScheduleDay(raw string) (time.Time, bool) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return time.Time{}, false
+	}
+
+	// "01/02/2006" is Go's reference layout for MM/dd/yyyy - what an en-PH client
+	// sends, that culture's short-date pattern being M/d/yyyy.
+	layouts := []string{
+		time.RFC3339,
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05",
+		"2006-01-02",
+		"01/02/2006 15:04:05",
+		"01/02/2006",
+		"1/2/2006",
+	}
+
+	for _, layout := range layouts {
+		if parsed, err := time.Parse(layout, raw); err == nil {
+			return time.Date(parsed.Year(), parsed.Month(), parsed.Day(), 0, 0, 0, 0, time.UTC), true
+		}
+	}
+
+	return time.Time{}, false
+}
+
+// §13.3 gives a logistics schedule 1..n routes, and the 2026-09-03 decision put
+// every DR's route "under that sales order's logistics schedule". The code did
+// not do that: it built a fresh schedule for each DR and attached the route to
+// the new one, so two DRs against one sales order became two one-route schedules
+// instead of one two-route schedule - and opening either calendar entry showed a
+// single route (user-reported 2026-09-08).
+//
+// The grouping key is sales order AND delivery day, per the user's decision:
+// two deliveries on one order on different days are separate trips and keep
+// separate schedules. Only the day is compared - see parseScheduleDay.
+//
+// delivery_receipt_id and delivery_receipt_doc_no are deliberately left unset
+// here (user decision, 2026-09-08). They are single-valued columns on a row that
+// now covers several receipts, so whatever they held would name one arbitrary DR
+// out of the set; each route carries its own delivery_receipt_doc instead.
+func (s *DeliveryReceiptService) findOrCreateLogisticsSchedule(
+	tx *gorm.DB,
+	salesOrderID uint,
+	deliveryDate string,
+	customerName string,
+	at models.At,
+) (*dispatching_models.LogisticsCalendarScheduleModel, error) {
+	title := fmt.Sprintf("Delivery to %s", customerName)
+
+	if wanted, ok := parseScheduleDay(deliveryDate); ok {
+		var existing []dispatching_models.LogisticsCalendarScheduleModel
+		if err := tx.Where("sales_order_id = ? AND department = ?", salesOrderID, "LOGISTICS").
+			Find(&existing).Error; err != nil {
+			return nil, err
+		}
+
+		// Sorted here rather than with Order("id") on the query. tx is the
+		// caller's transaction handle, and an ORDER BY chained onto it survives
+		// into the next statement built from the same handle - the very next one
+		// is CreateLogisticsSchedule's driver lookup, which adds its own
+		// ordering and then fails on "a column has been specified more than once
+		// in the order by list". Ordering the slice keeps the oldest schedule
+		// winning - which matters where rows already exist for the same order
+		// and day, exactly the split this repairs - without touching the shared
+		// statement.
+		sort.Slice(existing, func(a, b int) bool {
+			return existing[a].ID < existing[b].ID
+		})
+
+		for i := range existing {
+			day, ok := parseScheduleDay(existing[i].StartDate)
+			if !ok || !day.Equal(wanted) {
+				continue
+			}
+
+			// Correct a title left behind by the old per-DR naming
+			// ("Delivery Receipt #2"): the schedule now covers every receipt
+			// delivered to this customer on this day, so a single receipt
+			// number in the title names only one of them.
+			if existing[i].Title != title {
+				if err := tx.Model(&dispatching_models.LogisticsCalendarScheduleModel{}).
+					Where("id = ?", existing[i].ID).
+					Update("title", title).Error; err != nil {
+					return nil, err
+				}
+				existing[i].Title = title
+			}
+
+			return &existing[i], nil
+		}
+	}
+
+	schedule := dispatching_models.LogisticsCalendarScheduleModel{
+		CalendarScheduleBase: dispatching_models.CalendarScheduleBase{
+			Department: "LOGISTICS",
+			StartDate:  deliveryDate,
+			EndDate:    deliveryDate,
+			Title:      title,
+		},
+		LogisticsCalendarScheduleContent: dispatching_models.LogisticsCalendarScheduleContent{
+			SalesOrderId:    salesOrderID,
+			SalesOrderDocNo: getSalesOrderDocNo(tx, salesOrderID),
+		},
+	}
+
+	if _, _, err := s.LogisticsCalendarScheduleService.CreateLogisticsSchedule(tx, &schedule, at); err != nil {
+		return nil, err
+	}
+
+	return &schedule, nil
+}
+
+// Removes a logistics schedule that this service created and that now holds no
+// routes - the case being a delivery date change moving its last route to
+// another day, which would otherwise leave an empty card sitting on the old
+// date. Anything a dispatcher entered by hand (people, vehicle, notes,
+// description) means the schedule is theirs rather than ours, so it stays.
+//
+// Mirrors DeleteLogisticsSchedule's delete-plus-audit, inlined because that one
+// opens its own transaction and this runs inside the DR's.
+func deleteEmptyLogisticsSchedule(tx *gorm.DB, scheduleID uint, at models.At) error {
+	if scheduleID == 0 {
+		return nil
+	}
+
+	var routeCount int64
+	if err := tx.Model(&dispatching_models.LogisticsRoute{}).
+		Where("schedule_id = ?", scheduleID).
+		Count(&routeCount).Error; err != nil {
+		return err
+	}
+	if routeCount > 0 {
+		return nil
+	}
+
+	var schedule dispatching_models.LogisticsCalendarScheduleModel
+	if err := tx.First(&schedule, scheduleID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	if schedule.VehicleId != 0 ||
+		strings.TrimSpace(schedule.DriverName) != "" ||
+		strings.TrimSpace(schedule.People) != "" ||
+		strings.TrimSpace(schedule.Notes) != "" ||
+		strings.TrimSpace(schedule.Description) != "" {
+		return nil
+	}
+
+	if err := tx.Delete(&dispatching_models.LogisticsCalendarScheduleModel{}, scheduleID).Error; err != nil {
+		return err
+	}
+
+	audit := dispatching_models.LogisticsCalendarScheduleModelAt{
+		CalendarSchedulesBaseAt: dispatching_models.CalendarSchedulesBaseAt{
+			RefId: scheduleID,
+			At:    at,
+		},
+	}
+	return services.DbInsert(tx, &audit)
 }
 
 func NewDeliveryReceiptService(calendarScheduleService *CalendarScheduleService, logisticsCalendarScheduleService *LogisticsCalendarScheduleService) *DeliveryReceiptService {
@@ -174,7 +373,7 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *dispatching_
 			ReferenceDocId: &data.SalesOrderID,
 			CalendarScheduleContent: models.CalendarScheduleContent{
 				DepartmentType: "Logistics",
-				Title:          fmt.Sprintf("Delivery to %s", order.CustomerName),
+				Title:          fmt.Sprintf("Delivery to %s", resolveCustomerName(tx, data.CustomerName, data.CustomerID)),
 				StartDate:      data.DeliveryDate,
 				EndDate:        data.DeliveryDate,
 				Description:    "",
@@ -191,25 +390,13 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *dispatching_
 	}
 
 	// tbl_dispatching_logistics_calendar_schedule (department-specific, distinct
-	// from the generic tbl_calendar_schedule above) is unchanged - still one per
-	// DR, not deduped by sales order. Only the generic calendar entry above was
-	// asked to stop duplicating.
-	logisticsSchedule := dispatching_models.LogisticsCalendarScheduleModel{
-		CalendarScheduleBase: dispatching_models.CalendarScheduleBase{
-			Department: "LOGISTICS",
-			StartDate:  data.DeliveryDate,
-			EndDate:    data.DeliveryDate,
-			Title:      fmt.Sprintf("Delivery Receipt #%d", data.DocNo),
-		},
-		LogisticsCalendarScheduleContent: dispatching_models.LogisticsCalendarScheduleContent{
-			SalesOrderId:         data.SalesOrderID,
-			SalesOrderDocNo:      getSalesOrderDocNo(tx, data.SalesOrderID),
-			DeliveryReceiptId:    data.ID,
-			DeliveryReceiptDocNo: strconv.Itoa(data.DocNo),
-		},
-	}
-
-	if _, _, err := s.LogisticsCalendarScheduleService.CreateLogisticsSchedule(tx, &logisticsSchedule, at); err != nil {
+	// from the generic tbl_calendar_schedule above) now groups by sales order and
+	// delivery day rather than getting a fresh row per DR - several receipts
+	// delivered to one customer on one day share one schedule and appear on it as
+	// separate routes. See findOrCreateLogisticsSchedule.
+	logisticsSchedule, scheduleErr2 := s.findOrCreateLogisticsSchedule(
+		tx, data.SalesOrderID, data.DeliveryDate, resolveCustomerName(tx, data.CustomerName, data.CustomerID), at)
+	if scheduleErr2 != nil {
 		tx.Rollback()
 		return data, fiber.StatusInternalServerError, errors.New("failed creating logistics calendar schedule")
 	}
@@ -233,7 +420,7 @@ func (s *DeliveryReceiptService) CreateDeliveryReceiptService(data *dispatching_
 			ShipType:           shipType.ShipName,
 			ReferenceDoc:       getSalesOrderDocNo(tx, data.SalesOrderID),
 			DeliveryReceiptDoc: strconv.Itoa(data.DocNo),
-			ClientSupplier:     order.CustomerName,
+			ClientSupplier:     resolveCustomerName(tx, data.CustomerName, data.CustomerID),
 			Location:           order.ShipTo,
 			Receiver:           order.Receiver,
 			ContactNo:          order.ContactNo,
@@ -343,7 +530,7 @@ func (s *DeliveryReceiptService) UpdateDeliveryReceiptService(update *dispatchin
 		Updates(map[string]interface{}{
 			"start_date": update.DeliveryDate,
 			"end_date":   update.DeliveryDate,
-			"title":      fmt.Sprintf("Delivery to %s", receipt.CustomerName),
+			"title":      fmt.Sprintf("Delivery to %s", resolveCustomerName(tx, receipt.CustomerName, receipt.CustomerID)),
 		})
 	if genericResult.Error != nil {
 		tx.Rollback()
@@ -354,7 +541,7 @@ func (s *DeliveryReceiptService) UpdateDeliveryReceiptService(update *dispatchin
 			ReferenceDocId: &receipt.SalesOrderID,
 			CalendarScheduleContent: models.CalendarScheduleContent{
 				DepartmentType: "Logistics",
-				Title:          fmt.Sprintf("Delivery to %s", receipt.CustomerName),
+				Title:          fmt.Sprintf("Delivery to %s", resolveCustomerName(tx, receipt.CustomerName, receipt.CustomerID)),
 				StartDate:      update.DeliveryDate,
 				EndDate:        update.DeliveryDate,
 			},
@@ -365,39 +552,103 @@ func (s *DeliveryReceiptService) UpdateDeliveryReceiptService(update *dispatchin
 		}
 	}
 
-	// tbl_dispatching_logistics_calendar_schedule has a real delivery_receipt_id,
-	// so this match is reliable.
-	logisticsResult := tx.Model(&dispatching_models.LogisticsCalendarScheduleModel{}).
-		Where("delivery_receipt_id = ?", receipt.ID).
-		Updates(map[string]interface{}{
-			"start_date":         update.DeliveryDate,
-			"end_date":           update.DeliveryDate,
-			"title":              fmt.Sprintf("Delivery Receipt #%d", receipt.DocNo),
-			"sales_order_doc_no": getSalesOrderDocNo(tx, receipt.SalesOrderID),
-		})
-	if logisticsResult.Error != nil {
+	// The logistics schedule is no longer keyed to a single DR - delivery_receipt_id
+	// is deliberately left unset now that one schedule covers every receipt
+	// delivered to a customer on one day - so this can no longer find its schedule
+	// by that column. It resolves the schedule the DR belongs to *now*, from its
+	// sales order and its (possibly edited) delivery date, and moves this DR's
+	// route onto it.
+	//
+	// Re-parenting the route rather than editing the old schedule's dates matters:
+	// that schedule may carry other receipts' routes, and dragging its date along
+	// to follow this one receipt would move all of them.
+	targetSchedule, targetErr := s.findOrCreateLogisticsSchedule(
+		tx, receipt.SalesOrderID, update.DeliveryDate, resolveCustomerName(tx, receipt.CustomerName, receipt.CustomerID), at)
+	if targetErr != nil {
 		tx.Rollback()
 		return receipt, fiber.StatusInternalServerError, errors.New("failed syncing logistics calendar schedule")
 	}
-	if logisticsResult.RowsAffected == 0 {
-		logisticsSchedule := dispatching_models.LogisticsCalendarScheduleModel{
-			CalendarScheduleBase: dispatching_models.CalendarScheduleBase{
-				Department: "LOGISTICS",
-				StartDate:  update.DeliveryDate,
-				EndDate:    update.DeliveryDate,
-				Title:      fmt.Sprintf("Delivery Receipt #%d", receipt.DocNo),
-			},
-			LogisticsCalendarScheduleContent: dispatching_models.LogisticsCalendarScheduleContent{
-				SalesOrderId:         receipt.SalesOrderID,
-				SalesOrderDocNo:      getSalesOrderDocNo(tx, receipt.SalesOrderID),
-				DeliveryReceiptId:    receipt.ID,
-				DeliveryReceiptDocNo: strconv.Itoa(receipt.DocNo),
-			},
-		}
-		if _, _, err := s.LogisticsCalendarScheduleService.CreateLogisticsSchedule(tx, &logisticsSchedule, at); err != nil {
+
+	var orderSchedules []dispatching_models.LogisticsCalendarScheduleModel
+	if err := tx.Where("sales_order_id = ? AND department = ?", receipt.SalesOrderID, "LOGISTICS").
+		Find(&orderSchedules).Error; err != nil {
+		tx.Rollback()
+		return receipt, fiber.StatusInternalServerError, errors.New("failed loading logistics calendar schedules")
+	}
+
+	// The route is this DR's leg. delivery_receipt_doc is the link (routes carry
+	// no receipt id), scoped to the schedules of this sales order so a doc number
+	// reused under a different order cannot match.
+	//
+	// Two statements rather than one with a subquery: a subquery built from tx
+	// chains onto the same statement the outer query uses, and this handle has
+	// already been shown to carry clauses across executions (see the sort in
+	// findOrCreateLogisticsSchedule). Fetching the ids first keeps each statement
+	// to the plain Model/Where/execute shape used everywhere else here.
+	var scheduleIDs []uint
+	for _, sched := range orderSchedules {
+		scheduleIDs = append(scheduleIDs, sched.ID)
+	}
+
+	var route dispatching_models.LogisticsRoute
+	routeErr := gorm.ErrRecordNotFound
+	if len(scheduleIDs) > 0 {
+		routeErr = tx.Where(
+			"delivery_receipt_doc = ? AND schedule_id IN ?",
+			strconv.Itoa(receipt.DocNo),
+			scheduleIDs,
+		).First(&route).Error
+	}
+
+	switch {
+	case routeErr == nil:
+		previousScheduleID := route.ScheduleId
+		if err := tx.Model(&dispatching_models.LogisticsRoute{}).
+			Where("id = ?", route.ID).
+			Updates(map[string]interface{}{
+				"schedule_id":   targetSchedule.ID,
+				"reference_doc": getSalesOrderDocNo(tx, receipt.SalesOrderID),
+			}).Error; err != nil {
 			tx.Rollback()
-			return receipt, fiber.StatusInternalServerError, errors.New("failed creating logistics calendar schedule")
+			return receipt, fiber.StatusInternalServerError, errors.New("failed moving logistics route")
 		}
+
+		if previousScheduleID != targetSchedule.ID {
+			if err := deleteEmptyLogisticsSchedule(tx, previousScheduleID, at); err != nil {
+				tx.Rollback()
+				return receipt, fiber.StatusInternalServerError, errors.New("failed tidying empty logistics schedule")
+			}
+		}
+
+	case errors.Is(routeErr, gorm.ErrRecordNotFound):
+		// This DR predates the calendar-linking feature and never got a route.
+		// Give it one now rather than leaving a schedule with nothing on it.
+		var order models.Order
+		tx.First(&order, receipt.SalesOrderID)
+
+		var shipType models.ShipType
+		tx.First(&shipType, order.Ship_Type_ID)
+
+		newRoute := dispatching_models.LogisticsRoute{
+			LogisticsRouteContent: dispatching_models.LogisticsRouteContent{
+				ScheduleId:         targetSchedule.ID,
+				ShipType:           shipType.ShipName,
+				ReferenceDoc:       getSalesOrderDocNo(tx, receipt.SalesOrderID),
+				DeliveryReceiptDoc: strconv.Itoa(receipt.DocNo),
+				ClientSupplier:     resolveCustomerName(tx, receipt.CustomerName, receipt.CustomerID),
+				Location:           order.ShipTo,
+				Receiver:           order.Receiver,
+				ContactNo:          order.ContactNo,
+			},
+		}
+		if err := services.DbInsert(tx, &newRoute); err != nil {
+			tx.Rollback()
+			return receipt, fiber.StatusInternalServerError, errors.New("failed creating logistics route")
+		}
+
+	default:
+		tx.Rollback()
+		return receipt, fiber.StatusInternalServerError, errors.New("failed locating logistics route")
 	}
 
 	atdata := dispatching_models.DeliveryReceiptAt{

@@ -17,24 +17,24 @@ import (
 
 // // MigrateAll runs all database migrations - Use for deployment
 func MigrateAll() {
-	// migrateAdmin()
+	migrateAdmin()
 	migrateCompanySettings()
 	migrateInvoiceReceiptPaymentVoucherColumns()
-	// migrateSetup()
-	// migrateItemManagement()
-	// migrateBomBoq()
-	// migrateInventoryWarehouse()
-	// migrateEngineering()
+	migrateSetup()
+	migrateItemManagement()
+	migrateBomBoq()
+	migrateInventoryWarehouse()
+	migrateEngineering()
 	migrateAccessControl()
 	migrateSalesCrm()
 	migrateSalesProject()
-	// migratePurchasingVendor()
+	migratePurchasingVendor()
 	migrateBpi()
-	// migrateAccounting()
-	// migrateJobOrder()
+	migrateAccounting()
+	migrateJobOrder()
 	migrateLogisticsDispatching()
-	// migrateVehicleManagement()
-	// migrateInventoryTransaction()
+	migrateVehicleManagement()
+	migrateInventoryTransaction()
 }
 
 // // MigrateModel migrates specific models or categories by name
@@ -92,18 +92,18 @@ func MigrateModel(categories ...string) {
 func migrateAdmin() {
 	// fmt.Println("=== Migrating BPI Module ===")
 
-	// migrateAndLog(
-	// 	&models.User{}, &models.UserAt{},
-	// 	&models.PositionModel{}, &models.PositionAt{},
-	// 	&models.PositionAccessModel{}, &models.PositionAccessAt{},
-	// 	&models.UserPermissionModel{}, &models.UserPermissionAt{},
-	// 	&models.Social{}, &models.SocialAt{},
-	// 	&models.Entity{}, &models.EntityAt{},
-	// 	&models.Application{}, &models.ApplicationAt{},
-	// 	&models.CompanyModel{}, &models.CompanyAt{},
-	// 	&models.CompanyAddressModel{}, &models.CompanyAddressAt{},
-	// 	&models.CompanyContactModel{}, &models.CompanyContactAt{},
-	// )
+	migrateAndLog(
+		&models.User{}, &models.UserAt{},
+		&models.PositionModel{}, &models.PositionAt{},
+		&models.PositionAccessModel{}, &models.PositionAccessAt{},
+		&models.UserPermissionModel{}, &models.UserPermissionAt{},
+		&models.Social{}, &models.SocialAt{},
+		&models.Entity{}, &models.EntityAt{},
+		&models.Application{}, &models.ApplicationAt{},
+		&models.CompanyModel{}, &models.CompanyAt{},
+		&models.CompanyAddressModel{}, &models.CompanyAddressAt{},
+		&models.CompanyContactModel{}, &models.CompanyContactAt{},
+	)
 }
 
 // migrateAdmin() above is commented out wholesale (User/Position/PositionAccess/
@@ -169,23 +169,29 @@ func migrateAccessControl() {
 func migrateSetup() {
 	// fmt.Println("=== Migrating SETUP Module ===")
 
-	// migrateAndLog(
-	// 	&models.Class{}, &models.ClassAt{},
-	// 	&models.Name{}, &models.NameAt{},
-	// 	&models.Type{}, &models.TypeAt{},
-	// 	&models.Material{}, &models.MaterialAt{},
-	// 	&models.ValuationMethod{}, &models.ValuationMethodAt{},
-	// 	&models.TradeType{}, &models.TradeTypeAt{},
-	// 	&models.Brand{}, &models.BrandAt{},
-	// 	&models.UnitMeasurement{}, &models.UnitMeasurementAt{},
-	// 	&models.PaymentTerms{}, &models.PaymentTermsAt{},
-	// 	&models.Class{}, &models.ClassAt{},
-	// 	&models.Name{}, &models.NameAt{},
-	// 	&models.Type{}, &models.TypeAt{},
-	// 	&models.Material{}, &models.MaterialAt{},
-	// 	&models.ValuationMethod{}, &models.ValuationMethodAt{},
-	// 	&models.TradeType{}, &models.TradeTypeAt{},
-	// )
+	migrateAndLog(
+		&models.Class{}, &models.ClassAt{},
+		&models.Name{}, &models.NameAt{},
+		&models.Type{}, &models.TypeAt{},
+		&models.Material{}, &models.MaterialAt{},
+		&models.ValuationMethod{}, &models.ValuationMethodAt{},
+		&models.TradeType{}, &models.TradeTypeAt{},
+		&models.Brand{}, &models.BrandAt{},
+		&models.UnitMeasurement{}, &models.UnitMeasurementAt{},
+		&models.PaymentTerms{}, &models.PaymentTermsAt{},
+		// Registered 2026-09-08: both hold live setup data
+		// (tbl_setup_item_specs, tbl_setup_ship_type) but neither was listed here,
+		// so neither table was ever created on a database that had not been
+		// hand-patched.
+		&models.ItemSpecs{}, &models.ItemSpecsAt{},
+		&models.ShipType{}, &models.ShipTypeAt{},
+		&models.Class{}, &models.ClassAt{},
+		&models.Name{}, &models.NameAt{},
+		&models.Type{}, &models.TypeAt{},
+		&models.Material{}, &models.MaterialAt{},
+		&models.ValuationMethod{}, &models.ValuationMethodAt{},
+		&models.TradeType{}, &models.TradeTypeAt{},
+	)
 }
 
 // ============================================
@@ -194,17 +200,17 @@ func migrateSetup() {
 func migrateItemManagement() {
 	// fmt.Println("=== Migrating ITEM MANAGEMENT Module ===")
 
-	// migrateAndLog(
-	// 	&models.ItemSpecsTemplate{}, &models.ItemSpecsTemplateAt{},
-	// 	&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{},
-	// 	&models.AdditionalSpecsPumpType{}, &models.AdditionalSpecsPumpTypeAt{},
-	// 	&models.ItemImage{}, &models.ItemImageAt{},
-	// 	&models.ItemInventory{}, &models.ItemInventoryAt{},
-	// 	&models.Model{}, &models.ModelAt{},
-	// 	&models.PumpType{}, &models.PumpTypeAt{},
-	// 	&models.PumpCount{}, &models.PumpCountAt{},
-	// 	&models.ItemTradeType{}, &models.ItemTradeTypeAt{},
-	// )
+	migrateAndLog(
+		&models.ItemSpecsTemplate{}, &models.ItemSpecsTemplateAt{},
+		&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{},
+		&models.AdditionalSpecsPumpType{}, &models.AdditionalSpecsPumpTypeAt{},
+		&models.ItemImage{}, &models.ItemImageAt{},
+		&models.ItemInventory{}, &models.ItemInventoryAt{},
+		&models.Model{}, &models.ModelAt{},
+		&models.PumpType{}, &models.PumpTypeAt{},
+		&models.PumpCount{}, &models.PumpCountAt{},
+		&models.ItemTradeType{}, &models.ItemTradeTypeAt{},
+	)
 }
 
 // ============================================
@@ -212,14 +218,14 @@ func migrateItemManagement() {
 // ============================================
 func migrateBomBoq() {
 	// fmt.Println("=== Migrating BOM & BOQ Module ===")
-	// migrateAndLog(
-	// 	&models.SetupItemBom{}, &models.SetupItemBomAt{},
-	// 	&models.SetupItemBomDetails{}, &models.SetupItemBomDetailsAt{},
-	// 	&models.ItemBoq{}, &models.ItemBoqAt{},
-	// 	&models.ItemBoqDetails{}, &models.ItemBoqDetailsAt{},
-	// 	&models.BoqNotes{}, &models.BoqNotesAt{},
-	// 	&models.WiringUserInput{}, &models.WiringUserInputAt{},
-	// )
+	migrateAndLog(
+		&models.SetupItemBom{}, &models.SetupItemBomAt{},
+		&models.SetupItemBomDetails{}, &models.SetupItemBomDetailsAt{},
+		&models.ItemBoq{}, &models.ItemBoqAt{},
+		&models.ItemBoqDetails{}, &models.ItemBoqDetailsAt{},
+		&models.BoqNotes{}, &models.BoqNotesAt{},
+		&models.WiringUserInput{}, &models.WiringUserInputAt{},
+	)
 }
 
 // ============================================
@@ -227,18 +233,18 @@ func migrateBomBoq() {
 // ============================================
 func migrateInventoryWarehouse() {
 	// fmt.Println("=== Migrating INVENTORY & WAREHOUSE Module ===")
-	// migrateAndLog(
-	// 	&models.WarehouseUseType{}, &models.WarehouseUseTypeAt{},
-	// 	&models.WarehouseName{}, &models.WarehouseNameAt{},
-	// 	&models.WarehouseAddress{}, &models.WarehouseAddressAt{},
-	// 	&models.WarehouseArea{}, &models.WarehouseAreaAt{},
-	// )
-	// migrateAndLog(
-	// 	&models.InvTracker{}, &models.InvTrackerAt{},
-	// 	&models.InventoryStocks{}, &models.InventoryStocksAt{},
-	// 	&models.InventoryStocksHistory{}, &models.InventoryStocksHistoryAt{},
-	//	&inventory_models.ItemStocks{}, &inventory_models.ItemStocksAt{},
-	// )
+	migrateAndLog(
+		&models.WarehouseUseType{}, &models.WarehouseUseTypeAt{},
+		&models.WarehouseName{}, &models.WarehouseNameAt{},
+		&models.WarehouseAddress{}, &models.WarehouseAddressAt{},
+		&models.WarehouseArea{}, &models.WarehouseAreaAt{},
+	)
+	migrateAndLog(
+		&models.InvTracker{}, &models.InvTrackerAt{},
+		&models.InventoryStocks{}, &models.InventoryStocksAt{},
+		&models.InventoryStocksHistory{}, &models.InventoryStocksHistoryAt{},
+		&inventory_models.ItemStocks{}, &inventory_models.ItemStocksAt{},
+	)
 	// Scoped narrowly to just the new Remarks column on the audit table (added for the
 	// Inventory Item Stocks manual-adjustment feature) - not the broader commented-out
 	// block above, which covers several other legacy models this isn't touching.
@@ -250,6 +256,16 @@ func migrateInventoryWarehouse() {
 	// creates tr_inv_item_stocks_ledger, since the trigger inserts into this table.
 	migrateAndLog(
 		&inventory_models.StockTransaction{},
+	)
+	// StockAuditContext (tbl_inv_stock_audit_context) - carries the "why" of a
+	// stock write across to that same trigger, which reads it by @@SPID. Same
+	// ordering requirement: the trigger SELECTs from this table, so it has to
+	// exist before RunSQLMigrations() installs the trigger.
+	//
+	// Replaced SESSION_CONTEXT on 2026-09-08 - that is SQL Server 2016+ and the
+	// production server is 2012, where the trigger would not compile at all.
+	migrateAndLog(
+		&inventory_models.StockAuditContext{},
 	)
 	// StockLot / StockLotConsumption - FIFO purchase-cost tracking. Written directly by
 	// item_stock_services (CreateStockLot/ConsumeLotsFIFO/ReleaseLotsFIFO), not by a
@@ -264,15 +280,15 @@ func migrateInventoryWarehouse() {
 	migrateAndLog(
 		&inventory_models.StockReservation{},
 	)
-	// migrateAndLog(
-	//	&inventory_models.ReceivingReport{}, &inventory_models.ReceivingReportAt{},
-	//	&inventory_models.ReceivingReportDetails{}, &inventory_models.ReceivingReportDetailsAt{},
-	// )
-	// migrateAndLog(
-	// 	&models.ReceivingReport2{}, &models.ReceivingReportAt2{},
-	// 	&models.ReceivingReportDetails2{}, &models.ReceivingReportDetailsAt2{},
-	// 	&models.ReceivingHistory{}, &models.ReceivingHistoryAt{},
-	// )
+	migrateAndLog(
+		&inventory_models.ReceivingReport{}, &inventory_models.ReceivingReportAt{},
+		&inventory_models.ReceivingReportDetails{}, &inventory_models.ReceivingReportDetailsAt{},
+	)
+	migrateAndLog(
+		&models.ReceivingReport2{}, &models.ReceivingReportAt2{},
+		&models.ReceivingReportDetails2{}, &models.ReceivingReportDetailsAt2{},
+		&models.ReceivingHistory{}, &models.ReceivingHistoryAt{},
+	)
 }
 
 // ============================================
@@ -281,49 +297,49 @@ func migrateInventoryWarehouse() {
 
 func migrateInventoryTransaction() {
 	// fmt.Println("=== Migrating INVENTORY TRANSACTIONS Modules ===")
-	// migrateAndLog(
-	// 	&models.ItemRequest{}, &models.ItemRequestAt{},
-	// 	&models.ItemRequestDetails{}, &models.ItemRequestDetailsAt{},
-	// 	&models.ItemRequestLocation{}, &models.ItemRequestLocationAt{},
-	// 	&models.ItemRequestHistory{}, &models.ItemRequestHistoryAt{},
-	// )
 	migrateAndLog(
-	// &inventory_models.ItemRequest{}, &inventory_models.ItemRequestAt{},
-	// &inventory_models.ItemRequestDetails{}, &inventory_models.ItemRequestDetailsAt{},
-	// &inventory_models.ItemRequestLocations{}, &inventory_models.ItemRequestLocationsAt{},
+		&models.ItemRequest{}, &models.ItemRequestAt{},
+		&models.ItemRequestDetails{}, &models.ItemRequestDetailsAt{},
+		&models.ItemRequestLocation{}, &models.ItemRequestLocationAt{},
+		&models.ItemRequestHistory{}, &models.ItemRequestHistoryAt{},
+	)
+	migrateAndLog(
+		&inventory_models.ItemRequest{}, &inventory_models.ItemRequestAt{},
+		&inventory_models.ItemRequestDetails{}, &inventory_models.ItemRequestDetailsAt{},
+		&inventory_models.ItemRequestLocations{}, &inventory_models.ItemRequestLocationsAt{},
 	)
 
 	migrateAndLog(
-	// &inventory_models.PickActivity{}, &inventory_models.PickActivityAt{},
-	// &inventory_models.PickActivityDetails{}, &inventory_models.PickActivityDetailsAt{},
-	// &inventory_models.PickActivityLocations{}, &inventory_models.PickActivityLocationsAt{},
+		&inventory_models.PickActivity{}, &inventory_models.PickActivityAt{},
+		&inventory_models.PickActivityDetails{}, &inventory_models.PickActivityDetailsAt{},
+		&inventory_models.PickActivityLocations{}, &inventory_models.PickActivityLocationsAt{},
 	)
-	// migrateAndLog(
-	// 	&models.PickActivity{}, &models.PickActivityAt{},
-	// 	&models.PickActivityDetails{}, &models.PickActivityDetailsAt{},
-	// 	&models.PickActivityLocation{}, &models.PickActivityLocationAt{},
-	// 	&models.PickActivityHistory{}, &models.PickActivityHistoryAt{},
-	// )
+	migrateAndLog(
+		&models.PickActivity{}, &models.PickActivityAt{},
+		&models.PickActivityDetails{}, &models.PickActivityDetailsAt{},
+		&models.PickActivityLocation{}, &models.PickActivityLocationAt{},
+		&models.PickActivityHistory{}, &models.PickActivityHistoryAt{},
+	)
 
-	// migrateAndLog(
-	// 	&inventory_models.ReceivingReport{}, &inventory_models.ReceivingReportAt{},
-	// 	&inventory_models.ReceivingReportDetails{}, &inventory_models.ReceivingReportDetailsAt{},
-	// )
+	migrateAndLog(
+		&inventory_models.ReceivingReport{}, &inventory_models.ReceivingReportAt{},
+		&inventory_models.ReceivingReportDetails{}, &inventory_models.ReceivingReportDetailsAt{},
+	)
 }
 
 func migrateEngineering() {
-	// DB.AutoMigrate(
-	// 	&models.ItemRequest{}, &models.ItemRequestAt{},
-	// 	&models.ItemRequestDetails{}, &models.ItemRequestDetailsAt{},
-	// 	&models.ItemRequestLocation{}, &models.ItemRequestLocationAt{},
-	// 	&models.ItemRequestHistory{}, &models.ItemRequestHistoryAt{},
-	// )
-	// DB.AutoMigrate(
-	// 	&models.PickActivity{}, &models.PickActivityAt{},
-	// 	&models.PickActivityDetails{}, &models.PickActivityDetailsAt{},
-	// 	&models.PickActivityLocation{}, &models.PickActivityLocationAt{},
-	// 	&models.PickActivityHistory{}, &models.PickActivityHistoryAt{},
-	// )
+	DB.AutoMigrate(
+		&models.ItemRequest{}, &models.ItemRequestAt{},
+		&models.ItemRequestDetails{}, &models.ItemRequestDetailsAt{},
+		&models.ItemRequestLocation{}, &models.ItemRequestLocationAt{},
+		&models.ItemRequestHistory{}, &models.ItemRequestHistoryAt{},
+	)
+	DB.AutoMigrate(
+		&models.PickActivity{}, &models.PickActivityAt{},
+		&models.PickActivityDetails{}, &models.PickActivityDetailsAt{},
+		&models.PickActivityLocation{}, &models.PickActivityLocationAt{},
+		&models.PickActivityHistory{}, &models.PickActivityHistoryAt{},
+	)
 }
 
 // ============================================
@@ -331,16 +347,16 @@ func migrateEngineering() {
 // ============================================
 func migrateSalesCrm() {
 	// fmt.Println("=== Migrating SALES & CRM Module ===")
-	// migrateAndLog(
-	// 	&models.Order{}, &models.OrderAt{},
-	// 	&models.OrderDetails{}, &models.OrderDetailsAt{},
-	// 	&models.CRM{}, &models.CRMAt{},
-	// 	&models.Status{}, &models.StatusAt{},
-	// 	&models.Opportunity{}, &models.OpportunityAt{},
-	// 	&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{},
-	// 	&models.SalesQuotationSelectedImage{}, &models.SalesQuotationSelectedImageAt{},
-	// )
-	// migrateAndLog(&models.SalesCanvasSheet{})
+	migrateAndLog(
+		&models.Order{}, &models.OrderAt{},
+		&models.OrderDetails{}, &models.OrderDetailsAt{},
+		&models.CRM{}, &models.CRMAt{},
+		&models.Status{}, &models.StatusAt{},
+		&models.Opportunity{}, &models.OpportunityAt{},
+		&models.SalesQuotationQuick{}, &models.SalesQuotationQuickAt{},
+		&models.SalesQuotationSelectedImage{}, &models.SalesQuotationSelectedImageAt{},
+	)
+	migrateAndLog(&models.SalesCanvasSheet{})
 
 	// Only this pair is active for now - contact_1/contact_2 (SalesQuotationContent) were
 	// missing an explicit column tag, so applyQuotationFieldChanges' hand-built update map
@@ -426,13 +442,13 @@ func migrateSalesProject() {
 // ============================================
 func migratePurchasingVendor() {
 	// fmt.Println("=== Migrating PURCHASING & VENDOR Module ===")
-	// migrateAndLog(
-	// 	&models.PurchaseRequisition{}, &models.PurchaseRequisitionAt{},
-	// 	&models.PROrders{}, &models.PROrdersAt{},
-	// 	&models.PurchasingCanvassSheet{}, &models.PurchasingCanvassSheetAt{},
-	// 	&models.PurchaseOrder{}, &models.PurchaseOrderAt{},
-	// 	&models.PurchaseOrderDetails{}, &models.PurchaseOrderDetailsAt{},
-	// )
+	migrateAndLog(
+		&models.PurchaseRequisition{}, &models.PurchaseRequisitionAt{},
+		&models.PROrders{}, &models.PROrdersAt{},
+		&models.PurchasingCanvassSheet{}, &models.PurchasingCanvassSheetAt{},
+		&models.PurchaseOrder{}, &models.PurchaseOrderAt{},
+		&models.PurchaseOrderDetails{}, &models.PurchaseOrderDetailsAt{},
+	)
 }
 
 // ============================================
@@ -440,20 +456,20 @@ func migratePurchasingVendor() {
 // ============================================
 func migrateBpi() {
 	// fmt.Println("=== Migrating BPI Module ===")
-	// migrateAndLog(
-	// 	&models.Bpi{}, &models.BpiAt{},
-	// 	&models.BpiGeneral{}, &models.BpiGeneralAt{},
-	// 	&models.BpiContacts{}, &models.BpiContactsAt{},
-	// 	&models.BpiIndustries{}, &models.BpiIndustriesAt{},
-	// 	&models.Industries{}, &models.IndustriesAt{},
-	// 	&models.BpiBranchIndustries{}, &models.BpiBranchIndustriesAt{},
-	// 	&models.BpiEntity{}, &models.BpiEntityAt{},
-	// 	&models.BpiAddress{}, &models.BpiAddressAt{},
-	// 	&models.BpiItems{}, &models.BpiItemsAt{},
-	// 	&models.BpiFinance{}, &models.BpiFinanceAt{},
-	// 	&models.BpiAccreditation{}, &models.BpiAccreditationAt{},
-	// 	&models.BpiHistory{}, &models.BpiHistoryAt{},
-	// )
+	migrateAndLog(
+		&models.Bpi{}, &models.BpiAt{},
+		&models.BpiGeneral{}, &models.BpiGeneralAt{},
+		&models.BpiContacts{}, &models.BpiContactsAt{},
+		&models.BpiIndustries{}, &models.BpiIndustriesAt{},
+		&models.Industries{}, &models.IndustriesAt{},
+		&models.BpiBranchIndustries{}, &models.BpiBranchIndustriesAt{},
+		&models.BpiEntity{}, &models.BpiEntityAt{},
+		&models.BpiAddress{}, &models.BpiAddressAt{},
+		&models.BpiItems{}, &models.BpiItemsAt{},
+		&models.BpiFinance{}, &models.BpiFinanceAt{},
+		&models.BpiAccreditation{}, &models.BpiAccreditationAt{},
+		&models.BpiHistory{}, &models.BpiHistoryAt{},
+	)
 	// Only this pair is active for now - z_tbl_accounting_bpi_overpayment_at
 	// was missing AT_USER (and likely other At-embedded columns), causing
 	// "Invalid column name 'AT_USER'" on insert. The rest of the BPI module
@@ -499,39 +515,35 @@ func migrateAccounting() {
 	migrateAndLog(
 		&accounting_models.ChartOfAccounts{}, &accounting_models.ChartOfAccountsAt{},
 	)
-	// migrateAndLog(
-	// 	&accounting_models.ChartOfAccounts{}, &accounting_models.ChartOfAccountsAt{},
-	// 	&accounting_models.Tax{}, &accounting_models.TaxAt{},
-	// 	&accounting_models.TaxDetails{}, &accounting_models.TaxDetailsAt{},
-	// )
-	// migrateAndLog(
-	// 	&accounting_models.SalesInvoice{}, &accounting_models.SalesInvoiceAt{},
-	// 	&accounting_models.SalesInvoiceDetail{}, &accounting_models.SalesInvoiceDetailAt{},
-	// 	&accounting_models.SalesInvoice2{}, &accounting_models.SalesInvoice2At{},
-	// 	&accounting_models.SalesInvoiceDetails2{}, &accounting_models.SalesInvoiceDetails2At{},
-	// )
-	// migrateAndLog(
-	// 	&accounting_models.JournalEntry{}, &accounting_models.JournalEntryAt{},
-	// 	&accounting_models.JournalEntryDetails{}, &accounting_models.JournalEntryDetailsAt{},
-	// 	&accounting_models.JournalEntry2{}, &accounting_models.JournalEntry2At{},
-	// 	&accounting_models.JournalEntryDetails2{}, &accounting_models.JournalEntryDetails2At{},
-	// )
-	// migrateAndLog(
-	// 	&accounting_models.InvoiceReceipt{}, &accounting_models.InvoiceReceiptAt{},
-	// 	&accounting_models.InvoiceReceiptDetails{}, &accounting_models.InvoiceReceiptDetailsAt{},
-	// 	&accounting_models.BulkInvoiceReceipt{}, &accounting_models.BulkInvoiceReceiptAt{},
-	// 	&accounting_models.BulkInvoiceReceiptDetails{}, &accounting_models.BulkInvoiceReceiptDetailsAt{},
-	// )
-	// migrateAndLog(
-	// 	&accounting_models.ApVoucher{}, &accounting_models.ApVoucherAt{},
-	// 	&accounting_models.ApVoucherDetails{}, &accounting_models.ApVoucherDetailsAt{},
-	// 	&accounting_models.PaymentVoucher{}, &accounting_models.PaymentVoucherAt{},
-	// 	&accounting_models.PaymentVoucherDetails{}, &accounting_models.PaymentVoucherDetailsAt{},
-	// )
-	// migrateAndLog(
-	// 	&accounting_models.PaymentReceipt{}, &accounting_models.PaymentReceiptAt{},
-	// 	&accounting_models.PaymentReceiptDetails{}, &accounting_models.PaymentReceiptDetailsAt{},
-	// )
+	migrateAndLog(
+		&accounting_models.ChartOfAccounts{}, &accounting_models.ChartOfAccountsAt{},
+		&accounting_models.Tax{}, &accounting_models.TaxAt{},
+		&accounting_models.TaxDetails{}, &accounting_models.TaxDetailsAt{},
+	)
+	migrateAndLog(
+		&accounting_models.SalesInvoice{}, &accounting_models.SalesInvoiceAt{},
+		&accounting_models.SalesInvoiceDetails{}, &accounting_models.SalesInvoiceDetailsAt{},
+	)
+	migrateAndLog(
+		&accounting_models.JournalEntry{}, &accounting_models.JournalEntryAt{},
+		&accounting_models.JournalEntryDetails{}, &accounting_models.JournalEntryDetailsAt{},
+	)
+	migrateAndLog(
+		&accounting_models.InvoiceReceipt{}, &accounting_models.InvoiceReceiptAt{},
+		&accounting_models.InvoiceReceiptDetails{}, &accounting_models.InvoiceReceiptDetailsAt{},
+		&accounting_models.BulkInvoiceReceipt{}, &accounting_models.BulkInvoiceReceiptAt{},
+		&accounting_models.BulkInvoiceReceiptDetails{}, &accounting_models.BulkInvoiceReceiptDetailsAt{},
+	)
+	migrateAndLog(
+		&accounting_models.ApVoucher{}, &accounting_models.ApVoucherAt{},
+		&accounting_models.ApVoucherDetails{}, &accounting_models.ApVoucherDetailsAt{},
+		&accounting_models.PaymentVoucher{}, &accounting_models.PaymentVoucherAt{},
+		&accounting_models.PaymentVoucherDetails{}, &accounting_models.PaymentVoucherDetailsAt{},
+	)
+	migrateAndLog(
+		&accounting_models.PaymentReceipt{}, &accounting_models.PaymentReceiptAt{},
+		&accounting_models.PaymentReceiptDetails{}, &accounting_models.PaymentReceiptDetailsAt{},
+	)
 }
 
 // ============================================
@@ -555,6 +567,11 @@ func migrateLogisticsDispatching() {
 	migrateAndLog(&models.CalendarScheduleModel{}, &models.CalendarScheduleAt{})
 	migrateAndLog(&dispatching_models.DeliveryReceipt{}, &dispatching_models.DeliveryReceiptAt{})
 	migrateAndLog(&dispatching_models.DeliveryReceiptCosts{}, &dispatching_models.DeliveryReceiptCostsAt{})
+	// Registered 2026-09-08: the DR header and its costs were both here, the items
+	// were not - so tbl_dispatching_delivery_receipt_items was never created on any
+	// database the app had not been hand-patched. Same class of miss as
+	// ApVoucherDetails and tbl_fixed_asset before it.
+	migrateAndLog(&dispatching_models.DeliveryReceiptItems{}, &dispatching_models.DeliveryReceiptItemsAt{})
 	migrateAndLog(&dispatching_models.ReceiptFile{}, &dispatching_models.ReceiptFileAt{})
 	migrateAndLog(&dispatching_models.SalesCalendarScheduleModel{}, &dispatching_models.SalesCalendarScheduleModelAt{})
 	migrateAndLog(&dispatching_models.EngineeringCalendarScheduleModel{}, &dispatching_models.EngineeringCalendarScheduleModelAt{})
@@ -580,8 +597,8 @@ func migrateLogisticsDispatching() {
 // ============================================
 func migrateVehicleManagement() {
 	// fmt.Println("=== Migrating VEHICLE MANAGEMENT Module ===")
-	// migrateAndLog(&models.VehicleModel{}, &models.VehicleAt{})
-	// migrateAndLog(&models.VehicleFileModel{}, &models.VehicleFileAt{})
+	migrateAndLog(&models.VehicleModel{}, &models.VehicleAt{})
+	migrateAndLog(&models.VehicleFileModel{}, &models.VehicleFileAt{})
 }
 
 func migrateAndLog(models ...interface{}) {

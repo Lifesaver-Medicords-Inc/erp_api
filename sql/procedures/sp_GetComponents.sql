@@ -46,7 +46,12 @@
 -- @SoId is optional (defaults 0, matching @BomId's own style elsewhere in this
 -- file) so a caller that doesn't have it yet still gets a real, if slightly more
 -- conservative (no carve-out), stock figure rather than an error.
-CREATE OR ALTER PROCEDURE [dbo].[sp_GetComponents] @BomId int, @SoId int = 0 AS BEGIN
+IF NOT EXISTS (SELECT 1 FROM sys.procedures WHERE name = 'sp_GetComponents' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE PROCEDURE [dbo].[sp_GetComponents] AS SET NOCOUNT ON;')
+END
+GO
+ALTER PROCEDURE [dbo].[sp_GetComponents] @BomId int, @SoId int = 0 AS BEGIN
 SET NOCOUNT ON;
 BEGIN TRY
 

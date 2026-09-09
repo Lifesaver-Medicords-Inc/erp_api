@@ -1,3 +1,8 @@
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'GetProjectComponents' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[GetProjectComponents] AS SELECT 1 AS placeholder')
+END
+GO
 ALTER VIEW [dbo].[GetProjectComponents] AS
 SELECT tbl_trans_sales_quotation.id AS quotation_id,
     tbl_trans_sales_quotation.project_name,
@@ -12,11 +17,6 @@ SELECT tbl_trans_sales_quotation.id AS quotation_id,
     a.qty,
     a.based_id AS based_on_set_id,
     a.components,
-    a.node_id,
-    a.node_name,
-    a.node_order,
-    a.node_type,
-    a.parent_node_id,
     vw_items.item_name,
     c.long_description AS short_desc,
     c.size,

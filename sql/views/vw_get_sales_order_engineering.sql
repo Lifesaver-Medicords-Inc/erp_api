@@ -24,6 +24,11 @@
 -- duplicate every sales order belonging to them. The sales order records only the
 -- partner, not which branch, so there is nothing to disambiguate on - lowest id wins,
 -- which is the original record rather than a later branch.
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'vw_get_sales_order_engineering' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[vw_get_sales_order_engineering] AS SELECT 1 AS placeholder')
+END
+GO
 ALTER VIEW [dbo].[vw_get_sales_order_engineering] AS
 SELECT so.order_id AS id,
     bpg.branch_name AS customer,

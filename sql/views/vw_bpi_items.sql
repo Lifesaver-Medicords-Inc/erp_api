@@ -1,3 +1,8 @@
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'vw_bpi_items' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[vw_bpi_items] AS SELECT 1 AS placeholder')
+END
+GO
 ALTER VIEW [dbo].[vw_bpi_items] AS
 SELECT a.id AS bpi_item_id,
     a.based_id AS bpi_item_based_id,

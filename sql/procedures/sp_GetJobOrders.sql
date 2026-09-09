@@ -32,7 +32,12 @@
 -- for the full reasoning), including the same carve-out for this job's own SO's
 -- own approved reservation counting as covering the need rather than competing
 -- demand.
-CREATE OR ALTER PROCEDURE [dbo].[sp_GetJobOrders] @UserId INT AS BEGIN
+IF NOT EXISTS (SELECT 1 FROM sys.procedures WHERE name = 'sp_GetJobOrders' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE PROCEDURE [dbo].[sp_GetJobOrders] AS SET NOCOUNT ON;')
+END
+GO
+ALTER PROCEDURE [dbo].[sp_GetJobOrders] @UserId INT AS BEGIN
 SET NOCOUNT ON;
 BEGIN TRY
 SELECT ISNULL(jo.id, 0) AS id,

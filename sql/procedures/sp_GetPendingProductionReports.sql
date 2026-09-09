@@ -4,7 +4,12 @@
 -- COMPLETE that the Warehouse Manager has not yet acknowledged. INNER JOIN to
 -- tbl_trans_job_order (not LEFT, unlike sp_GetJobOrders) - a line with no job order
 -- at all can never be "complete and awaiting WH ack".
-CREATE OR ALTER PROCEDURE [dbo].[sp_GetPendingProductionReports] AS BEGIN
+IF NOT EXISTS (SELECT 1 FROM sys.procedures WHERE name = 'sp_GetPendingProductionReports' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE PROCEDURE [dbo].[sp_GetPendingProductionReports] AS SET NOCOUNT ON;')
+END
+GO
+ALTER PROCEDURE [dbo].[sp_GetPendingProductionReports] AS BEGIN
 SET NOCOUNT ON;
 BEGIN TRY
 SELECT jo.id AS id,

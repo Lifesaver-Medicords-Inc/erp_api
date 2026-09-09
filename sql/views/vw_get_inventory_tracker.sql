@@ -1,3 +1,8 @@
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'vw_get_inventory_tracker' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[vw_get_inventory_tracker] AS SELECT 1 AS placeholder')
+END
+GO
 ALTER VIEW [dbo].[vw_get_inventory_tracker] AS
 SELECT a1.receiving_report_details_id AS id,
     a1.receiving_report_id AS rr_id,

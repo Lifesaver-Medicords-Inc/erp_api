@@ -1,4 +1,9 @@
-ALTER procedure [dbo].[sp_SetOrderStatus] @OrderDetailId int,
+IF NOT EXISTS (SELECT 1 FROM sys.procedures WHERE name = 'sp_SetOrderStatus' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE PROCEDURE [dbo].[sp_SetOrderStatus] AS SET NOCOUNT ON;')
+END
+GO
+ALTER PROCEDURE [dbo].[sp_SetOrderStatus] @OrderDetailId int,
 @OrderType nvarchar(5) AS -- Update sales order details if OrderType is 'SO'
 IF @OrderType = 'SO' BEGIN
 UPDATE tbl_trans_sales_order_details

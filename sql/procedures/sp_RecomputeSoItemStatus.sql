@@ -16,7 +16,12 @@
 -- (SO_Item_Status_Module_Spec_2026-08-13.md §5 point 4) as the one place status gets
 -- written, so nothing can update stock/PO/production/pick/release/DR and forget to
 -- recompute it.
-CREATE OR ALTER PROCEDURE [dbo].[sp_RecomputeSoItemStatus]
+IF NOT EXISTS (SELECT 1 FROM sys.procedures WHERE name = 'sp_RecomputeSoItemStatus' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE PROCEDURE [dbo].[sp_RecomputeSoItemStatus] AS SET NOCOUNT ON;')
+END
+GO
+ALTER PROCEDURE [dbo].[sp_RecomputeSoItemStatus]
     @order_details_id BIGINT
 AS
 BEGIN

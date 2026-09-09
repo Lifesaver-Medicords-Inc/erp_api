@@ -1,3 +1,8 @@
+IF NOT EXISTS (SELECT 1 FROM sys.procedures WHERE name = 'sp_GetBpiList' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE PROCEDURE [dbo].[sp_GetBpiList] AS SET NOCOUNT ON;')
+END
+GO
 ALTER PROCEDURE [dbo].[sp_GetBpiList] AS BEGIN
 SELECT a.id AS id,
     a.sales_id,

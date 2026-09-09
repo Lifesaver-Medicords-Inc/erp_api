@@ -1,3 +1,8 @@
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'vw_get_sales_order_dr' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[vw_get_sales_order_dr] AS SELECT 1 AS placeholder')
+END
+GO
 ALTER VIEW [dbo].[vw_get_sales_order_dr] AS
 SELECT a.order_id,
     a.document_no,

@@ -1,3 +1,8 @@
+IF NOT EXISTS (SELECT 1 FROM sys.procedures WHERE name = 'sp_GetSIPaymentReceipt' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE PROCEDURE [dbo].[sp_GetSIPaymentReceipt] AS SET NOCOUNT ON;')
+END
+GO
 ALTER PROCEDURE [dbo].[sp_GetSIPaymentReceipt] @CustomerId INT AS BEGIN  
 SET NOCOUNT ON;  
 BEGIN TRY  

@@ -1,3 +1,8 @@
+IF NOT EXISTS (SELECT 1 FROM sys.procedures WHERE name = 'sp_GetItemLocation' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE PROCEDURE [dbo].[sp_GetItemLocation] AS SET NOCOUNT ON;')
+END
+GO
 ALTER PROCEDURE [dbo].[sp_GetItemLocation] @ItemId INT AS BEGIN
 SET NOCOUNT ON;
 BEGIN TRY

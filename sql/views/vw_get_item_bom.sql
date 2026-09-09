@@ -1,3 +1,8 @@
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'vw_get_item_bom' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[vw_get_item_bom] AS SELECT 1 AS placeholder')
+END
+GO
 ALTER VIEW [dbo].[vw_get_item_bom] AS
 SELECT TOP 2147483647 si.id AS item_id,
     itas.long_description AS short_desc,

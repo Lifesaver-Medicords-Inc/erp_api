@@ -53,7 +53,12 @@
 --
 -- Clamped at 0: only Item Release may drive stock negative, and only against a vehicle
 -- zone (§10.5, invariant 4). A negative here would be a display artefact, not a fact.
-CREATE OR ALTER VIEW [dbo].[vw_get_sales_order_details_engineering] AS
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'vw_get_sales_order_details_engineering' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[vw_get_sales_order_details_engineering] AS SELECT 1 AS placeholder')
+END
+GO
+ALTER VIEW [dbo].[vw_get_sales_order_details_engineering] AS
 SELECT sod.order_details_id AS id,
     sod.based_id AS so_id,
     sod.item_code AS item_code,

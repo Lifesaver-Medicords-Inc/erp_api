@@ -1,3 +1,8 @@
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'vw_get_purchasing_redbox_purchase_requisition_list' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[vw_get_purchasing_redbox_purchase_requisition_list] AS SELECT 1 AS placeholder')
+END
+GO
 ALTER VIEW [dbo].[vw_get_purchasing_redbox_purchase_requisition_list] AS
 SELECT a.pr_id AS id,
     a.doc_no AS doc_no,

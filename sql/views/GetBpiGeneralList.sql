@@ -1,3 +1,8 @@
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'GetBpiGeneralList' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[GetBpiGeneralList] AS SELECT 1 AS placeholder')
+END
+GO
 ALTER VIEW [dbo].[GetBpiGeneralList] AS
 SELECT a.id AS general_id,
     a.based_id AS general_based_id,

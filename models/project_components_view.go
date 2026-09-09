@@ -13,11 +13,16 @@ type ProjectComponent struct {
 	Qty                       uint    `json:"qty"`
 	BasedOnSetID              uint    `json:"based_on_set_id"`
 	Components                string  `json:"components"`
-	NodeID                    uint    `json:"node_id"`
-	NodeName                  string  `json:"node_name"`
-	NodeOrder                 uint    `json:"node_order"`
-	NodeType                  string  `json:"node_type"`
-	ParentNodeID              uint    `json:"parent_node_id"`
+	// NodeID / NodeName / NodeOrder / NodeType / ParentNodeID were removed
+	// 2026-09-08. The five node_* columns had already been deleted from
+	// SalesProjectItems, so a database built from the models has none of them -
+	// GetProjectComponents.sql was still selecting them and failed with "Invalid
+	// column name 'parent_node_id'" on any fresh database. They survived on the
+	// long-running database only because nothing ever dropped them there.
+	//
+	// Removed here too rather than left behind: this struct describes what the
+	// view returns, and fields the view no longer selects would deserialize as
+	// zero values forever.
 	ItemName                  string  `json:"item_name"`
 	ShortDesc                 string  `json:"short_desc"`
 	Size                      string  `json:"size"`

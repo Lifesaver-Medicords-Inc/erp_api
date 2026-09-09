@@ -1,3 +1,8 @@
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'vw_latest_sales_quotation' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[vw_latest_sales_quotation] AS SELECT 1 AS placeholder')
+END
+GO
 ALTER VIEW [dbo].[vw_latest_sales_quotation] AS WITH LatestQuotes AS (
     SELECT *,
         ROW_NUMBER() OVER (

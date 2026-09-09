@@ -1,3 +1,8 @@
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'GetWiringNotes' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[GetWiringNotes] AS SELECT 1 AS placeholder')
+END
+GO
 ALTER VIEW [dbo].[GetWiringNotes] AS
 SELECT a.id as wiring_id,
     a.based_id,

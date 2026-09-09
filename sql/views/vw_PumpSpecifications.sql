@@ -1,3 +1,8 @@
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'vw_PumpSpecifications' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[vw_PumpSpecifications] AS SELECT 1 AS placeholder')
+END
+GO
 ALTER VIEW [dbo].[vw_PumpSpecifications] AS
 -- FLA and VOLTAGE are saved straight to tbl_setup_item_specs.fla_1/volt_1 (see
 -- item_specs_service.go's CreateItemSpec/UpdateItemSpec) - never as title/value rows,

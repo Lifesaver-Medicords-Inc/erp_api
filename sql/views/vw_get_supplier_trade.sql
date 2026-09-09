@@ -18,6 +18,11 @@
 -- Also adds tax_code (a plain string on tbl_bpi_finance, not a lookup id) so
 -- Invoice Receipt can look it up against Tax Setup and default cmb_tax_code the
 -- same way payment_term defaults txt_payment_term.
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'vw_get_supplier_trade' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[vw_get_supplier_trade] AS SELECT 1 AS placeholder')
+END
+GO
 ALTER VIEW [dbo].[vw_get_supplier_trade] AS
 SELECT a.id AS supplier_id,
     a.branch_name AS supplier,

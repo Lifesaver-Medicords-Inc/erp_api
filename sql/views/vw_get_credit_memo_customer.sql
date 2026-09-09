@@ -19,11 +19,18 @@
 -- a.id is also what vw_get_supplier_trade already exposes as supplier_id, which
 -- is why supplier Credit Memos were never affected - this view brings the
 -- customer side onto that same convention.
--- CREATE OR ALTER (not plain CREATE): RunSQLMigrations re-runs every file in
+-- Stub-then-ALTER, not plain CREATE: RunSQLMigrations re-runs every file in
 -- sql/views on every API start and log.Fatal's on any error, so a plain CREATE
--- would take the whole API down on the second boot. Not ALTER either - that
--- fails the first time, on a database where this view doesn't exist yet.
-CREATE OR ALTER VIEW [dbo].[vw_get_credit_memo_customer] AS
+-- would take the whole API down on the second boot. Not a bare ALTER either - that
+-- fails the first time, on a database where this view doesn't exist yet. CREATE OR
+-- ALTER would say this in one line but is SQL Server 2016 SP1 and later; the target
+-- server is 2012, where it is a syntax error.
+IF NOT EXISTS (SELECT 1 FROM sys.views WHERE name = 'vw_get_credit_memo_customer' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    EXEC('CREATE VIEW [dbo].[vw_get_credit_memo_customer] AS SELECT 1 AS placeholder')
+END
+GO
+ALTER VIEW [dbo].[vw_get_credit_memo_customer] AS
 SELECT a.id AS partner_id,
     a.based_id AS parent_bpi_id,
     a.branch_name AS customer,
