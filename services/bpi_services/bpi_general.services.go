@@ -70,14 +70,24 @@ func UpdateBpiGeneral(tx *gorm.DB, child *models.BpiGeneralSchema, at models.At,
 	child.CustomerCode = oldGeneral.CustomerCode
 	child.SupplierCode = oldGeneral.SupplierCode
 
-	if err := services.DbUpdate(tx, &child.BpiGeneral, conditions); err != nil {
+	// An edit never changes who owns the branch (spec 4.1.10, 14.168): ownership
+	// moves only through an explicit reassignment. The client sends the EDITOR's
+	// name in sales_id, and every history row - the ones below, and the contact /
+	// address / item / finance rows UpdateBpi writes after this returns - records
+	// it as edit_by. So child.SalesId stays the editor, and only the row actually
+	// saved carries the stored owner. Done here rather than in the client so it
+	// holds for every client build, including ones already installed.
+	saved := child.BpiGeneral
+	saved.SalesId = oldGeneral.SalesId
+
+	if err := services.DbUpdate(tx, &saved, conditions); err != nil {
 		return errors.New("failed to update bpi general")
 	}
 
 	generalat := models.BpiGeneralAt{
 		RefId:                     child.ID,
 		BranchName:                child.BranchName,
-		SalesId:                   child.SalesId,
+		SalesId:                   saved.SalesId,
 		IsMain:                    child.IsMain,
 		BpiGeneralEmbeddedContent: child.BpiGeneralEmbeddedContent,
 		At:                        at,

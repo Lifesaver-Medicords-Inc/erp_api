@@ -4,3 +4,4 @@ tmp/main.exe
 tmp/main.exe~
 .env
 tmp_migratetest.exe
+smpc-api.exe

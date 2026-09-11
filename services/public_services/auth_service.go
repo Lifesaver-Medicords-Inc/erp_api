@@ -29,7 +29,26 @@ func CreateAccount(c *fiber.Ctx, tx *gorm.DB) (models.User, int, error) {
 		return user, fiber.StatusInternalServerError, errors.New("failed creating user")
 	}
 
-	employeeId := utils.GenerateEmployeeId(body.Department, user.Position.Name, user.ID)
+	// Read the position's NAME from the database rather than off user.Position.
+	// That association is never loaded here - the user was built from the
+	// request body and inserted, and GORM does not populate a relation it was
+	// not asked to preload - so user.Position.Name was always "", which is why
+	// every existing account reads "Admin--2" / "Warehouse--3" with an empty
+	// middle segment. Since the employee id doubles as the account's initial
+	// password just below, that defect also made every initial credential
+	// malformed and predictable.
+	var positionName string
+	if user.PositionId != 0 {
+		var positions []models.PositionModel
+		// Limit(1).Find, not First: a user whose position was deleted is a
+		// recoverable case (the id simply omits the segment), not an error
+		// worth logging red on every account creation.
+		if err := tx.Where("id = ?", user.PositionId).Limit(1).Find(&positions).Error; err == nil && len(positions) > 0 {
+			positionName = positions[0].Name
+		}
+	}
+
+	employeeId := utils.GenerateEmployeeId(body.Department, positionName, user.ID)
 	user.EmployeeId = employeeId
 
 	password, err := utils.GenerateUserPassword(employeeId)

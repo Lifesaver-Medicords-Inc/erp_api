@@ -58,6 +58,14 @@ func init() {
 	// one placeholder Project Quotation template - see seed_defaults.go.
 	initializers.SeedCalendarCostTypes()
 	initializers.SeedDefaultProjectQuotationTemplate()
+	// Bootstrap grant for the Admin position, and ONLY when it has no grants at
+	// all. Nothing else creates tbl_position_access rows - the setup-data
+	// migration does not carry that table - so without this every fresh
+	// database comes up with every user locked out of every screen, and it
+	// cannot be fixed through the UI (granting access needs the Access Control
+	// screen, which needs access). Must follow SeedAccessModules: it grants
+	// what is in the catalog. See seed_admin_position_access.go.
+	initializers.SeedAdminPositionAccess()
 	initializers.InitRedis()
 	initializers.InitWm()
 	initializers.InitWm2()

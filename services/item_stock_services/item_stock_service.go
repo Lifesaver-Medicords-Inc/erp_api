@@ -492,6 +492,19 @@ func (s *ItemStockService) AdjustItemStock(body *inventory_models.ItemStockAdjus
 		return nil, fiber.StatusInternalServerError, errors.New("failed creating item stock audit record")
 	}
 
+	// §7.1: this correction changes SUM(stock_qty) for the item, which is the
+	// base test deciding IN STOCK vs CANVASS on every SO line selling it.
+	// Without this, writing stock down for breakage leaves those lines still
+	// claiming IN STOCK, and a recount that finds units leaves them stuck on
+	// CANVASS. Every other stock movement recomputes because it has a document
+	// to resolve from; §10.6 has none, so it resolves by item instead.
+	//
+	// Inside the transaction on purpose - the adjustment and the statuses it
+	// invalidates commit together or not at all.
+	if err := services.RecomputeSoItemStatusForItem(tx, existing.ItemId); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed recomputing sales order item status")
+	}
+
 	if err := tx.Commit().Error; err != nil {
 		return nil, fiber.StatusInternalServerError, errors.New("failed committing transaction")
 	}

@@ -99,6 +99,56 @@ func RecomputeSoItemStatusForPurchaseOrderDetails(tx *gorm.DB, purchaseOrderDeta
 	return RecomputeSoItemStatusForCsv(tx, orderDetailIds)
 }
 
+// RecomputeSoItemStatusForItem recomputes every open SO line that sells a
+// given item. Used by the one stock movement that has no document behind it:
+// §10.6's manual stock adjustment.
+//
+// Every other caller in this file resolves BACKWARDS from a document to the SO
+// lines it touched. A manual adjustment has no document to resolve from - it is
+// a warehouse correction typed straight onto a bin - so the only link back to
+// the affected orders is the item itself.
+//
+// Why it is needed: sp_RecomputeSoItemStatus's base test is
+// "SUM(stock_qty) for this item + this SO's own reservations >= required qty",
+// which decides IN STOCK vs CANVASS (§7.1). A manual correction changes that
+// sum, so without this an SO line keeps saying IN STOCK after the stock backing
+// it was written down for breakage - or keeps saying CANVASS after a recount
+// found the units. The procedure's own header describes triggers that would
+// have caught this; they were never written, and every other path calls in
+// from Go instead.
+//
+// Deliberately NOT called from TransferStock. A bin-to-bin move leaves the
+// item's total untouched, and the procedure sums across every bin with no
+// location or is_active filter, so a transfer cannot change the answer.
+//
+// Only lines on orders that are not CLOSED are fetched. RecomputeSoItemStatus
+// skips closed orders anyway (§5.25 - a repair may cite a closed SO and must
+// not rewrite its frozen labels), so this is purely to avoid loading rows that
+// would be discarded one query later.
+func RecomputeSoItemStatusForItem(tx *gorm.DB, itemId uint) error {
+	if itemId == 0 {
+		return nil
+	}
+
+	var ids []uint
+	if err := tx.Raw(`
+		SELECT sod.order_details_id
+		FROM tbl_trans_sales_order_details sod
+		INNER JOIN tbl_trans_sales_order so ON so.order_id = sod.based_id
+		WHERE sod.item_id = ?
+		  AND ISNULL(so.status, '') <> 'CLOSED'
+	`, itemId).Scan(&ids).Error; err != nil {
+		return err
+	}
+
+	for _, id := range ids {
+		if err := RecomputeSoItemStatus(tx, id); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // RecomputeSoItemStatusForDeliveryReceiptDoc resolves a Logistics Route
 // leg's delivery_receipt_doc (a doc-number STRING, not a numeric FK - see
 // tbl_dispatching_logistics_route) back to the real Delivery Receipt and
