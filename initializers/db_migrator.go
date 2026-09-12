@@ -27,6 +27,7 @@ func MigrateAll() {
 	migrateEngineering()
 	migrateAccessControl()
 	migrateSalesCrm()
+	migrateSalesOrderCharges()
 	migrateSalesProject()
 	migratePurchasingVendor()
 	migrateBpi()
@@ -345,6 +346,12 @@ func migrateEngineering() {
 // ============================================
 // SALES & CRM
 // ============================================
+// The Sales Order cancellation charge record (spec 5.4, 8.15). New tables, no
+// existing data to disturb.
+func migrateSalesOrderCharges() {
+	migrateAndLog(&models.SalesOrderCharge{}, &models.SalesOrderChargeAt{})
+}
+
 func migrateSalesCrm() {
 	// fmt.Println("=== Migrating SALES & CRM Module ===")
 	migrateAndLog(

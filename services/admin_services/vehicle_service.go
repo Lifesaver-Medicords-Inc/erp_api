@@ -41,6 +41,14 @@ func (v *VehicleService) CreateVehicleService(vehicle *models.VehicleModel, at m
 		return vehicle, fiber.StatusInternalServerError, errors.New("failed creating vehicleat")
 	}
 
+	// 4.4.4: every vehicle also exists as an OUTBOUND zone in the warehouse it is
+	// homed to. Made here, inside the same transaction, so a vehicle can never
+	// exist without the zone that 10.5's negative stock has to land on.
+	if err := SyncVehicleZone(tx, vehicle, at); err != nil {
+		tx.Rollback()
+		return vehicle, fiber.StatusInternalServerError, err
+	}
+
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return vehicle, fiber.StatusInternalServerError, errors.New("failed to commit transaction")
@@ -99,6 +107,13 @@ func (v *VehicleService) UpdateVehicleService(vehicle *models.VehicleModel, cond
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		tx.Rollback()
 		return vehicle, fiber.StatusInternalServerError, errors.New("failed creating vehicleat")
+	}
+
+	// Keep the zone in step. A renamed or re-homed vehicle must move its existing
+	// zone, not leave the old one behind still holding stock.
+	if err := SyncVehicleZone(tx, vehicle, at); err != nil {
+		tx.Rollback()
+		return vehicle, fiber.StatusInternalServerError, err
 	}
 
 	if err := tx.Commit().Error; err != nil {

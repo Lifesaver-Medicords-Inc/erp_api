@@ -22,10 +22,43 @@ import (
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/middlewares"
 	"github.com/pierceperado/smpc/migrations"
+	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/routes"
 	"github.com/pierceperado/smpc/services"
+	adminservices "github.com/pierceperado/smpc/services/admin_services"
 	"github.com/pierceperado/smpc/services/item_stock_services"
 )
+
+// 4.4.4: every vehicle also exists as an OUTBOUND zone in the warehouse it is
+// homed to. Lives here rather than in initializers because services already
+// import initializers, so a seed helper in that package could not call back into
+// them without a cycle.
+//
+// Create-only and idempotent: a vehicle that already has a zone is skipped
+// entirely, so this is safe on every restart.
+func seedVehicleZones() {
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		log.Println("vehicle zones: could not start transaction:", tx.Error)
+		return
+	}
+
+	created, err := adminservices.BackfillVehicleZones(tx, models.At{AtUserId: "0"})
+	if err != nil {
+		tx.Rollback()
+		log.Println("vehicle zones: backfill failed:", err)
+		return
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		log.Println("vehicle zones: commit failed:", err)
+		return
+	}
+
+	if created > 0 {
+		log.Printf("vehicle zones: created %d missing OUTBOUND zone(s)", created)
+	}
+}
 
 func init() {
 	initializers.LoadEnv()
@@ -56,6 +89,12 @@ func init() {
 	// Delivery Cost's COST TYPE list (LABOR/VEHICLE/FUEL/TOLL GATE/INSURANCE/
 	// PENALTY/OTHERS) and, only on a genuinely fresh DB with zero templates,
 	// one placeholder Project Quotation template - see seed_defaults.go.
+	// 4.4.4: every vehicle exists as an OUTBOUND zone in its home warehouse.
+	// Vehicles created before that was wired up have no zone, and without one
+	// 10.5's negative-stock case has nowhere to land - so the missing zones are
+	// created here, once. Create-only: an existing zone is never rewritten (see
+	// BackfillVehicleZones).
+	seedVehicleZones()
 	initializers.SeedCalendarCostTypes()
 	initializers.SeedDefaultProjectQuotationTemplate()
 	// Bootstrap grant for the Admin position, and ONLY when it has no grants at

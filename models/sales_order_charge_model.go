@@ -35,12 +35,12 @@ type SalesOrderChargeContent struct {
 	// FeeBase is VAT-INCLUSIVE (8.15). Each fee therefore already contains VAT,
 	// and the Sales Invoice line MUST back the VAT out rather than adding it -
 	// adding VAT on top taxes the same amount twice.
-	UndeliveredNet   float64 `json:"undelivered_net"`
-	VatRatePercent   float64 `json:"vat_rate_percent"`
-	FeeBase          float64 `json:"fee_base"`
-	RestockingFee    float64 `json:"restocking_fee"`
-	CancellationFee  float64 `json:"cancellation_fee"`
-	TotalCharge      float64 `json:"total_charge"`
+	UndeliveredNet  float64 `json:"undelivered_net"`
+	VatRatePercent  float64 `json:"vat_rate_percent"`
+	FeeBase         float64 `json:"fee_base"`
+	RestockingFee   float64 `json:"restocking_fee"`
+	CancellationFee float64 `json:"cancellation_fee"`
+	TotalCharge     float64 `json:"total_charge"`
 
 	// FOR REVIEW -> APPROVED | REJECTED. Rejection returns the SO to OPEN with no
 	// charge record in force (5.4 step 5), so a rejected row is kept as history
