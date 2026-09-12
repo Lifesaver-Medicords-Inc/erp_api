@@ -522,6 +522,11 @@ func migrateAccounting() {
 	)
 	migrateAndLog(
 		&accounting_models.SalesInvoice{}, &accounting_models.SalesInvoiceAt{},
+		// Petty Cash Replenishment (spec 5.26).
+		&accounting_models.PettyCash{}, &accounting_models.PettyCashAt{},
+		&accounting_models.PettyCashDetails{}, &accounting_models.PettyCashDetailsAt{},
+		// The SO billing ledger (spec 12.4) behind the Billing list.
+		&accounting_models.SoBillingTransaction{}, &accounting_models.SoBillingTransactionAt{},
 		&accounting_models.SalesInvoiceDetails{}, &accounting_models.SalesInvoiceDetailsAt{},
 	)
 	migrateAndLog(

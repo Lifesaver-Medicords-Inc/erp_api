@@ -32,6 +32,9 @@ type SalesInvoiceContent struct {
 	AmountDue       float64 `json:"amount_due"`
 	AddVat          float64 `json:"add_vat"`
 	TotalAmountDue  float64 `json:"total_amount_due"`
+	// Typed by A/R, never computed from the payment term - no setup says how
+	// many days a term means (spec 12.3). Drives the A/R red box and Billing.
+	NextDue         string  `json:"next_due"`
 }
 
 type SalesInvoice struct {

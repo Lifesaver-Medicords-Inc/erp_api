@@ -4,20 +4,24 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/handlers/accounting_report_handlers"
 	"github.com/pierceperado/smpc/handlers/ap_voucher_handlers"
+	"github.com/pierceperado/smpc/handlers/billing_handlers"
 	"github.com/pierceperado/smpc/handlers/bulk_invoice_receipt_handlers"
 	"github.com/pierceperado/smpc/handlers/invoice_receipt_handlers"
 	"github.com/pierceperado/smpc/handlers/journal_entry_handlers"
 	"github.com/pierceperado/smpc/handlers/payment_receipt_handlers"
 	"github.com/pierceperado/smpc/handlers/payment_voucher_handlers"
+	"github.com/pierceperado/smpc/handlers/petty_cash_handlers"
 	"github.com/pierceperado/smpc/handlers/sales_invoice_handlers"
 	"github.com/pierceperado/smpc/handlers/setup_handlers"
 	"github.com/pierceperado/smpc/services/accounting_report_services"
 	"github.com/pierceperado/smpc/services/ap_voucher_services"
+	"github.com/pierceperado/smpc/services/billing_services"
 	"github.com/pierceperado/smpc/services/bulk_invoice_receipt_services"
 	"github.com/pierceperado/smpc/services/invoice_receipt_services"
 	"github.com/pierceperado/smpc/services/journal_entry_services"
 	"github.com/pierceperado/smpc/services/payment_receipt_services"
 	"github.com/pierceperado/smpc/services/payment_voucher_services"
+	"github.com/pierceperado/smpc/services/petty_cash_services"
 	"github.com/pierceperado/smpc/services/sales_invoice_services"
 	"github.com/pierceperado/smpc/services/setup_services"
 )
@@ -38,6 +42,35 @@ func AccountingRoutes(router fiber.Router) {
 	setupAssetCategoryRoutes(accountingApi)
 	setupFixedAssetRoutes(accountingApi)
 	setupAccountingReportRoutes(accountingApi)
+	setupBillingRoutes(accountingApi)
+	setupPettyCashRoutes(accountingApi)
+}
+
+// Petty Cash Replenishment (spec 5.26). No journal entry is posted - 12.7.4
+// leaves two mapping defects for management, and 12.8 blocks a posting whose
+// logical account is unmapped.
+func setupPettyCashRoutes(api fiber.Router) {
+	handler := petty_cash_handlers.NewPettyCashHandler(petty_cash_services.NewPettyCashService())
+	api.Get("/petty_cash", handler.GetAll)
+	api.Get("/petty_cash/next_cycle", handler.NextCycle)
+	api.Get("/petty_cash/:id", handler.Get)
+	api.Post("/petty_cash", handler.Save)
+	api.Put("/petty_cash", handler.Save)
+	api.Post("/petty_cash/approve", handler.Approve)
+	api.Delete("/petty_cash/:id", handler.Delete)
+}
+
+// A/R Record of Transactions (spec 12.3), the Billing list (12.5) and the SO
+// billing ledger (12.4).
+func setupBillingRoutes(api fiber.Router) {
+	handler := billing_handlers.NewBillingHandler(billing_services.NewBillingService())
+	api.Get("/ar_records", handler.GetARRecords)
+	api.Put("/ar_records/next_due", handler.SetNextDue)
+	api.Get("/billing", handler.GetBilling)
+	api.Get("/billing/transactions", handler.GetTransactions)
+	api.Post("/billing/transactions", handler.CreateTransaction)
+	api.Put("/billing/transactions", handler.UpdateTransaction)
+	api.Delete("/billing/transactions/:id", handler.DeleteTransaction)
 }
 
 // setupAssetCategoryRoutes / setupFixedAssetRoutes - the PP&E register's
