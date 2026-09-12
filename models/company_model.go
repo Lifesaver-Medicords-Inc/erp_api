@@ -40,6 +40,20 @@ type CompanyContent struct {
 	ExclusionsQuotationTerms string  `json:"exclusions_quotation_terms"`
 	TermAndConditions        string  `json:"term_and_conditions"`
 	VatRatePercent           float64 `json:"vat_rate_percent"`
+
+	// Spec 4.5.6: the restocking and cancellation fee percentages are live
+	// defaults, not just contract wording. They autofill the Sales Order's charges
+	// modal (5.4) and the Sales Return's credit computation (12.6.2), and are
+	// overridable at the point of charge - a rate negotiated with a client needs
+	// somewhere to live, and a locked field would force the charge outside the
+	// system entirely.
+	//
+	// Whole-number percentages, same convention as VatRatePercent above: 10 means
+	// 10%, and callers divide by 100. Zero is a real value and means "no fee" -
+	// 8.15 says a 0 fee produces no invoice line, so nothing may substitute a
+	// default for an explicit 0.
+	RestockingFeePercent   float64 `json:"restocking_fee_percent"`
+	CancellationFeePercent float64 `json:"cancellation_fee_percent"`
 }
 
 type CompanyModel struct {
@@ -89,6 +103,20 @@ type CompanyCacheModel struct {
 	ExclusionsQuotationTerms string  `json:"exclusions_quotation_terms"`
 	TermAndConditions        string  `json:"term_and_conditions"`
 	VatRatePercent           float64 `json:"vat_rate_percent"`
+
+	// Spec 4.5.6: the restocking and cancellation fee percentages are live
+	// defaults, not just contract wording. They autofill the Sales Order's charges
+	// modal (5.4) and the Sales Return's credit computation (12.6.2), and are
+	// overridable at the point of charge - a rate negotiated with a client needs
+	// somewhere to live, and a locked field would force the charge outside the
+	// system entirely.
+	//
+	// Whole-number percentages, same convention as VatRatePercent above: 10 means
+	// 10%, and callers divide by 100. Zero is a real value and means "no fee" -
+	// 8.15 says a 0 fee produces no invoice line, so nothing may substitute a
+	// default for an explicit 0.
+	RestockingFeePercent   float64 `json:"restocking_fee_percent"`
+	CancellationFeePercent float64 `json:"cancellation_fee_percent"`
 }
 
 func (CompanyCacheModel) TableName() string {
