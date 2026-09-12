@@ -312,6 +312,36 @@ func (h *CalendarScheduleHandler) DeleteLogisticsScheduleHandler(c *fiber.Ctx) e
 	return h.deleteSchedule(c, "LOGISTICS")
 }
 
+// scheduleCreator returns the AT_USER_ID of the first audit row written for a
+// schedule - the user who created it. The schedule row itself does not record
+// its creator. "" when no creator is on record (rows written before the login
+// token carried the real user id hold "0"); such schedules are not blocked.
+func scheduleCreator(department string, id uint) string {
+	var table string
+	switch department {
+	case "SALES":
+		table = dispatching_models.SalesCalendarScheduleModelAt{}.TableName()
+	case "ENGINEERING":
+		table = dispatching_models.EngineeringCalendarScheduleModelAt{}.TableName()
+	case "LOGISTICS":
+		table = dispatching_models.LogisticsCalendarScheduleModelAt{}.TableName()
+	default:
+		return ""
+	}
+
+	var rows []struct {
+		AtUserId string `gorm:"column:AT_USER_ID"`
+	}
+	if err := initializers.DB.Table(table).Select("AT_USER_ID").
+		Where("ref_id = ?", id).Order("id").Limit(1).Scan(&rows).Error; err != nil || len(rows) == 0 {
+		return ""
+	}
+	if rows[0].AtUserId == "0" {
+		return ""
+	}
+	return rows[0].AtUserId
+}
+
 // ✅ DELETE /calendar-schedules/:id
 func (h *CalendarScheduleHandler) deleteSchedule(c *fiber.Ctx, department string) error {
 	idNum, err := parseIDParam(c, "id")
@@ -321,6 +351,12 @@ func (h *CalendarScheduleHandler) deleteSchedule(c *fiber.Ctx, department string
 
 	at := getAtFromLocals(c)
 	conditions := map[string]interface{}{"id": idNum}
+
+	// Spec 14.49: an invitee may not delete a schedule someone else created -
+	// only its creator may.
+	if creator := scheduleCreator(department, uint(idNum)); creator != "" && creator != at.AtUserId {
+		return utils.RespondError(c, fiber.StatusForbidden, "Only the person who created this schedule can delete it.")
+	}
 
 	// only validates and calls the correct service
 	switch department {
