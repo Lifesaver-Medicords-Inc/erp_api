@@ -343,6 +343,20 @@ func (s *ItemReleaseService) ApplyItemReleaseLocations(tx *gorm.DB, release *mod
 		}
 		loc.ItemReleaseDetailsID = detail.ID
 
+		// A vehicle that has never held this item has no stock row to deduct from. The
+		// picker sends the vehicle's zone instead, and the row is made here at zero (10.5).
+		if loc.BinId == 0 && loc.WarehouseAreaId != 0 {
+			row, err := s.stockService.EnsureVehicleZoneStockRow(tx, detail.ItemID, loc.WarehouseAreaId, detail.ReleasedUomID,
+				&inventory_models.ItemStocksAt{SourceType: "item_release", Remarks: remarks}, at)
+			if err != nil {
+				return fmt.Errorf("item %s: %w", detail.ItemCode, err)
+			}
+			loc.BinId = row.ID
+		}
+		if loc.BinId == 0 {
+			return fmt.Errorf("item %s: a bin allocation names no location - re-pick locations", detail.ItemCode)
+		}
+
 		if err := services.DbInsert(tx, loc); err != nil {
 			return fmt.Errorf("failed creating item release location for detail %d: %w", detail.ID, err)
 		}
@@ -369,7 +383,8 @@ func (s *ItemReleaseService) ApplyItemReleaseLocations(tx *gorm.DB, release *mod
 			Remarks:    remarks,
 		}
 
-		if _, err := s.stockService.DeductStockWithTx(tx, stockBody, stockAtBody, at); err != nil {
+		// Item Release is the one document allowed below zero, and only on a vehicle zone.
+		if _, err := s.stockService.DeductStockForItemReleaseWithTx(tx, stockBody, stockAtBody, at); err != nil {
 			return fmt.Errorf("item %s: %w", detail.ItemCode, err)
 		}
 	}

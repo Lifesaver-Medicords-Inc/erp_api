@@ -101,6 +101,11 @@ type ItemReleaseLocationsContent struct {
 type ItemReleaseLocations struct {
 	ID uint `gorm:"primaryKey" json:"id"`
 	ItemReleaseLocationsContent
+
+	// A vehicle zone with no stock row for this item yet arrives as BinId 0 plus this id;
+	// ApplyItemReleaseLocations creates the stock row and fills BinId before saving (§10.5).
+	// Request-only - never stored.
+	WarehouseAreaId uint `gorm:"-" json:"warehouse_area_id,omitempty"`
 }
 
 func (ItemReleaseLocations) TableName() string {

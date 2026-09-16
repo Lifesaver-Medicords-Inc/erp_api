@@ -115,6 +115,7 @@ func (s *ItemStockService) UpsertStockWithTx(tx *gorm.DB, body *inventory_models
 
 	if err == nil {
 		// Row exists — accumulate incoming qty into existing stock
+		before := *existing.StockQty
 		*existing.StockQty += *body.StockQty
 		s.SetActiveStatus(&existing)
 
@@ -125,6 +126,15 @@ func (s *ItemStockService) UpsertStockWithTx(tx *gorm.DB, body *inventory_models
 		if lot != nil {
 			if err := s.CreateStockLot(tx, existing.ItemId, existing.WarehouseId, existing.BinLocation, *body.StockQty, lot); err != nil {
 				return nil, fmt.Errorf("failed creating stock lot: %w", err)
+			}
+
+			// A vehicle below zero (10.5) already handed over part of what this receipt
+			// brings in. Draw those units out of the new lot and book them to the releases
+			// that took them, so the lot keeps only what is really back on hand.
+			if owed := qtyOwedBack(before, *body.StockQty); owed > 0 {
+				if err := s.settleVehicleShortfall(tx, &existing, owed); err != nil {
+					return nil, fmt.Errorf("failed settling the vehicle's negative stock: %w", err)
+				}
 			}
 		}
 
@@ -229,7 +239,19 @@ func (s *ItemStockService) insertItemStockNoOutput(tx *gorm.DB, body *inventory_
 }
 
 // DeductStockWithTx is the shared core upsert logic that runs inside an existing transaction.
+// It never takes a bin below zero - DeductStockForItemReleaseWithTx is the one exception.
 func (s *ItemStockService) DeductStockWithTx(tx *gorm.DB, body *inventory_models.ItemStocks, atBody *inventory_models.ItemStocksAt, at models.At) (*inventory_models.ItemStocks, error) {
+	return s.deductStock(tx, body, atBody, at, false)
+}
+
+// DeductStockForItemReleaseWithTx is DeductStockWithTx for Item Release, the only document
+// allowed to take stock below zero, and then only on a vehicle zone (10.5). Any other bin
+// still refuses a deduction larger than what it holds.
+func (s *ItemStockService) DeductStockForItemReleaseWithTx(tx *gorm.DB, body *inventory_models.ItemStocks, atBody *inventory_models.ItemStocksAt, at models.At) (*inventory_models.ItemStocks, error) {
+	return s.deductStock(tx, body, atBody, at, true)
+}
+
+func (s *ItemStockService) deductStock(tx *gorm.DB, body *inventory_models.ItemStocks, atBody *inventory_models.ItemStocksAt, at models.At, allowVehicleNegative bool) (*inventory_models.ItemStocks, error) {
 
 	var existing inventory_models.ItemStocks
 
@@ -248,12 +270,22 @@ func (s *ItemStockService) DeductStockWithTx(tx *gorm.DB, body *inventory_models
 		return nil, errors.New("invalid stock quantity")
 	}
 
-	//Check for insufficient stock
-	if *existing.StockQty < *body.StockQty {
-		return nil, fmt.Errorf(
-			"insufficient stock: requested %d but only %d available in bin %s",
-			*body.StockQty, *existing.StockQty, existing.BinLocation,
-		)
+	before := *existing.StockQty
+
+	//Check for insufficient stock - lifted only for Item Release on a vehicle zone
+	if before < *body.StockQty {
+		isVehicle := false
+		if allowVehicleNegative {
+			if isVehicle, err = s.isVehicleBin(tx, existing.WarehouseId, existing.BinLocation); err != nil {
+				return nil, err
+			}
+		}
+		if !mayGoBelowZero(allowVehicleNegative, isVehicle) {
+			return nil, fmt.Errorf(
+				"insufficient stock: requested %d but only %d available in bin %s",
+				*body.StockQty, before, existing.BinLocation,
+			)
+		}
 	}
 
 	//Deduct stock
@@ -268,6 +300,17 @@ func (s *ItemStockService) DeductStockWithTx(tx *gorm.DB, body *inventory_models
 	cost, err := s.ConsumeLotsFIFO(tx, existing.ItemId, existing.WarehouseId, existing.BinLocation, *body.StockQty, atBody.SourceType, atBody.SourceId)
 	if err != nil {
 		return nil, fmt.Errorf("failed consuming stock lots: %w", err)
+	}
+
+	// Units taken below zero on a vehicle have no lot to draw from until the Receiving
+	// Report arrives (UpsertStockWithTx settles them then), so the ledger prices them at
+	// the item's last known cost instead of at nothing.
+	if short := qtyBelowZero(before, *body.StockQty); short > 0 {
+		lastCost, err := s.lastLotUnitCost(tx, existing.ItemId)
+		if err != nil {
+			return nil, fmt.Errorf("failed reading the item's last cost: %w", err)
+		}
+		cost = costWithShortfall(cost, *body.StockQty, short, lastCost)
 	}
 
 	if err := services.SetStockAuditContext(tx, atBody.SourceType, atBody.SourceId, atBody.Remarks, cost); err != nil {

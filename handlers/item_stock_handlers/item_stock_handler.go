@@ -1,7 +1,6 @@
 package item_stock_handlers
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -185,25 +184,84 @@ func (h *ItemStockHandler) GetPendingReservations(c *fiber.Ctx) error {
 // actingUserId pulls the numeric user id off the same "at" audit context every other
 // write endpoint already relies on (see utils/at_util.go) - there's no separate
 // authentication/session concept in this API beyond that, so it's what identifies who's
-// clicking Approve/Reject for the position-access check in the service layer.
+// deciding, for the position-access and quote-ownership checks in the service layer.
 func actingUserId(c *fiber.Ctx) uint {
-	// TEMP DEBUG - remove once RESERVATION_APPROVAL 403s are confirmed fixed.
-	atRaw := c.Locals("at")
-	at, ok := atRaw.(models.At)
+	at, ok := c.Locals("at").(models.At)
 	if !ok {
-		fmt.Printf("[RESV-DEBUG] c.Locals(\"at\") missing or wrong type - RequireAuth did not run on this request. raw=%#v\n", atRaw)
 		return 0
 	}
-	fmt.Printf("[RESV-DEBUG] c.Locals(\"at\") = %#v\n", at)
 
 	id, err := strconv.Atoi(at.AtUserId)
 	if err != nil || id < 0 {
-		fmt.Printf("[RESV-DEBUG] AtUserId %q did not parse to a valid uint: %v\n", at.AtUserId, err)
 		return 0
 	}
 
-	fmt.Printf("[RESV-DEBUG] actingUserId resolved to %d\n", id)
 	return uint(id)
+}
+
+// reservationIdParam reads the :id a reservation action is addressed to.
+func reservationIdParam(c *fiber.Ctx) (uint, bool) {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil || id <= 0 {
+		return 0, false
+	}
+	return uint(id), true
+}
+
+// GetReservationQueue backs the Reservations submodule: every reservation, at-limit
+// questions first (10.4.2, 10.4.5). ?at_limit=1 returns only those, for the sales red box.
+func (h *ItemStockHandler) GetReservationQueue(c *fiber.Ctx) error {
+	atLimitOnly := c.Query("at_limit") == "1" || strings.EqualFold(c.Query("at_limit"), "true")
+
+	data, status, err := h.Service.GetReservationQueue(atLimitOnly)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
+
+// KeepReservationOnHold answers an at-limit reservation with "keep on hold": a fresh window
+// from today, the quote's VALID UNTIL moving with it (10.4.5). The Warehouse Manager or the
+// sales executive who owns the quote may answer.
+func (h *ItemStockHandler) KeepReservationOnHold(c *fiber.Ctx) error {
+	return h.answerReservationLimit(c, true)
+}
+
+// LetReservationGo answers an at-limit reservation with "let go": it is removed and its
+// units return to stock (10.4.5). Same people as KeepReservationOnHold.
+func (h *ItemStockHandler) LetReservationGo(c *fiber.Ctx) error {
+	return h.answerReservationLimit(c, false)
+}
+
+func (h *ItemStockHandler) answerReservationLimit(c *fiber.Ctx, keep bool) error {
+	reservationId, ok := reservationIdParam(c)
+	if !ok {
+		return utils.RespondError(c, fiber.StatusBadRequest, "a valid reservation id is required")
+	}
+
+	status, err := h.Service.AnswerReservationLimit(reservationId, actingUserId(c), keep)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, nil)
+}
+
+// RemoveReservation is the Reservations submodule's ✕ (10.4.2): the row is deleted, used when
+// sales advises the quote is off. Warehouse Manager (RESERVATION_APPROVAL) only.
+func (h *ItemStockHandler) RemoveReservation(c *fiber.Ctx) error {
+	reservationId, ok := reservationIdParam(c)
+	if !ok {
+		return utils.RespondError(c, fiber.StatusBadRequest, "a valid reservation id is required")
+	}
+
+	status, err := h.Service.RemoveReservation(reservationId, actingUserId(c))
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, nil)
 }
 
 // ApproveReservation signs off on a pending reservation. Only a user whose Position has

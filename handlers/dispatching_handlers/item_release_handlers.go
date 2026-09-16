@@ -161,3 +161,19 @@ func (h *ItemReleaseHandler) GetItemStockAndLocationsHandler(c *fiber.Ctx) error
 
 	return utils.RespondSuccess(c, data)
 }
+
+// GetPickLocationsHandler serves Item Release's Actual Pick Qty modal: stocked bins plus
+// every vehicle zone (see ItemReleaseService.GetPickLocations).
+func (h *ItemReleaseHandler) GetPickLocationsHandler(c *fiber.Ctx) error {
+	itemIdNum, err := strconv.ParseUint(c.Params("itemId"), 10, 64)
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid Item ID")
+	}
+
+	data, code, err := h.Service.GetPickLocations(uint(itemIdNum))
+	if err != nil {
+		return utils.RespondError(c, code, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data)
+}
