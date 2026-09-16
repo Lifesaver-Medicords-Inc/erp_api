@@ -23,6 +23,64 @@ func GetItems(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
+// GetItemsPaged serves Item Entry: 20 items with their children, rather than the whole
+// catalogue. ?after= / ?before= / ?at= are ids, not page numbers - see setup_services.
+func GetItemsPaged(c *fiber.Ctx) error {
+	after, _ := strconv.Atoi(c.Query("after", "0"))
+	before, _ := strconv.Atoi(c.Query("before", "0"))
+	at, _ := strconv.Atoi(c.Query("at", "0"))
+
+	data, pagination, status, err := setup_services.GetItemsPaged(after, before, at)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data, pagination)
+}
+
+// GetItemsSearch serves Item Entry's Search modal - matching items only, no children,
+// 20 to a page. ?page= is 1-based; the response's pagination carries page/total_pages.
+func GetItemsSearch(c *fiber.Ctx) error {
+	search := c.Query("search")
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+
+	data, pagination, status, err := setup_services.GetItemsSearch(search, page)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data, pagination)
+}
+
+// GetItemPickerNames serves the Sales quotation's ITEM picker - one row per item name,
+// 20 to a page. ?search= and ?page= (1-based).
+func GetItemPickerNames(c *fiber.Ctx) error {
+	search := c.Query("search")
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+
+	data, pagination, status, err := setup_services.GetItemPickerNames(search, page)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data, pagination)
+}
+
+// GetItemPickerModels serves the quotation's MODEL picker - every model sharing the given
+// item's item name. ?item_id= is required; ?search= and ?page= are optional.
+func GetItemPickerModels(c *fiber.Ctx) error {
+	itemID, _ := strconv.Atoi(c.Query("item_id", "0"))
+	search := c.Query("search")
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+
+	data, pagination, status, err := setup_services.GetItemPickerModels(itemID, search, page)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data, pagination)
+}
+
 func GetItem(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)

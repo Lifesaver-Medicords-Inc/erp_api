@@ -108,6 +108,40 @@ func DbSearch(model interface{}, conditions map[string]interface{}, term string,
 	return hasNext, pageSize, nil
 }
 
+// DbSearchPage is DbSearch's offset-paged sibling, for a search list with numbered pages and
+// Previous/Next buttons rather than scroll-to-load. A page number and a "of 12 pages" need a
+// total, and the cursor form never counts one - it only ever answers "is there more". Page is
+// 1-based and orderBy defaults to "id ASC" (SQL Server requires an ORDER BY to offset at all).
+//
+// Uncached, like GetItemsPaged: the key would vary by term AND page, and nothing invalidates
+// that. A COUNT plus a 20-row window over an indexed table is cheap enough not to need it.
+func DbSearchPage(model interface{}, conditions map[string]interface{}, term string, columns []string, numericColumns []string, page int, pageSize int, orderBy string) (total int64, err error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 20
+	}
+	if orderBy == "" {
+		orderBy = "id ASC"
+	}
+
+	if err = buildSearchQuery(conditions, term, columns, numericColumns).
+		Model(model).Count(&total).Error; err != nil {
+		return 0, err
+	}
+
+	if err = buildSearchQuery(conditions, term, columns, numericColumns).
+		Order(orderBy).
+		Offset((page - 1) * pageSize).
+		Limit(pageSize).
+		Find(model).Error; err != nil {
+		return 0, err
+	}
+
+	return total, nil
+}
+
 // buildSearchQuery constructs the base *gorm.DB query with conditions and search term,
 // shared between the count and paginated fetch to avoid duplication.
 func buildSearchQuery(conditions map[string]interface{}, term string, columns []string, numericColumns []string) *gorm.DB {
@@ -388,6 +422,17 @@ func DbGetNoCache(model interface{}, conditions map[string]interface{}) error {
 	return nil
 }
 
+// DbGetWithPreloadsNoCache is DbGetWithPreloads without the Redis layer, for reads whose
+// conditions differ on every call - one keyset page's 20 ids, say (GetItemsPaged). Caching
+// those would mint a key per page while InvalidateItemCaches only clears the ":all" keys, so
+// every page but the first would keep serving pre-save rows for an hour. fetchRelDB is
+// package-private, which is why this wrapper exists rather than the caller reaching for it.
+func DbGetWithPreloadsNoCache(model interface{}, conditions map[string]interface{}, preloads ...string) error {
+	fmt.Println("Direct DB Fetch with preloads, conditions:", conditions)
+
+	return fetchRelDB(model, conditions, preloads)
+}
+
 func GetKey(model interface{}, conditions map[string]interface{}) string {
 	modelType := reflect.TypeOf(model)
 
@@ -413,7 +458,8 @@ func GetKey(model interface{}, conditions map[string]interface{}) string {
 		conditionsStr = "all"
 	}
 
-	return fmt.Sprintf("model:%s:conditions:%s", modelName, conditionsStr)
+	// Scoped to this instance's database - see cacheNamespace.
+	return cacheNamespace() + fmt.Sprintf("model:%s:conditions:%s", modelName, conditionsStr)
 }
 func DbGetWithPreloads(model interface{}, conditions map[string]interface{}, preloads ...string) error {
 	fmt.Println("CONDITION GET SERVICES", conditions)
@@ -466,14 +512,46 @@ func fetchDB(model interface{}, conditions map[string]interface{}) error {
 
 	return nil
 }
-func fetchRelDB(model interface{}, conditions map[string]interface{}, preloads []string) error {
-	query := initializers.DB
+// A preload fetches a relation with one "WHERE <foreign key> IN (...)" query holding a parameter
+// for every parent row, and SQL Server refuses a request with more than 2,100 parameters. So a
+// list is loaded preloadBatchSize parents at a time, each batch with its own preload queries.
+//
+// Found 2026-09-15, when 2,440 Calpeda pumps were given specs: the item list preloads
+// ItemSpecsTemplate onto every item specs row, that query failed with "The server supports a
+// maximum of 2100 parameters", and Item Entry came up empty - GetItems returns nothing when any
+// one of its queries fails. Positions, item releases, delivery receipts and project content go
+// through here too and would have hit the same wall as they grew.
+const preloadBatchSize = 500
 
-	for _, p := range preloads {
-		query = query.Preload(p)
+func fetchRelDB(model interface{}, conditions map[string]interface{}, preloads []string) error {
+	newQuery := func() *gorm.DB {
+		query := initializers.DB
+		for _, p := range preloads {
+			query = query.Preload(p)
+		}
+		return query.Where(conditions)
 	}
 
-	return query.Where(conditions).Find(model).Error
+	// A single record has a single parent id - nothing to batch.
+	target := reflect.ValueOf(model)
+	if target.Kind() != reflect.Ptr || target.Elem().Kind() != reflect.Slice {
+		return newQuery().Find(model).Error
+	}
+
+	list := target.Elem()
+	list.Set(reflect.MakeSlice(list.Type(), 0, 0))
+	batch := reflect.New(list.Type())
+
+	err := newQuery().FindInBatches(batch.Interface(), preloadBatchSize, func(tx *gorm.DB, _ int) error {
+		list.Set(reflect.AppendSlice(list, batch.Elem()))
+		return nil
+	}).Error
+
+	// FindInBatches pages by primary key; a model without one is loaded in a single query as before.
+	if errors.Is(err, gorm.ErrPrimaryKeyRequired) {
+		return newQuery().Find(model).Error
+	}
+	return err
 }
 
 func cacheData(ctx context.Context, cacheKey string, model interface{}) error {
@@ -631,9 +709,12 @@ func InvalidateCache(key string) error {
 	return nil
 }
 
+// InvalidateCacheByPattern deletes this instance's cached keys matching pattern, given
+// without the namespace ("model:*", "model:SalesReturn*"). It never reaches another
+// database's keys on the shared Redis - see cacheNamespace.
 func InvalidateCacheByPattern(pattern string) error {
 	ctx := context.Background()
-	iter := initializers.RC.Scan(ctx, 0, pattern, 0).Iterator()
+	iter := initializers.RC.Scan(ctx, 0, scopedPattern(pattern), 0).Iterator()
 
 	for iter.Next(ctx) {
 		if err := initializers.RC.Del(ctx, iter.Val()).Err(); err != nil {
