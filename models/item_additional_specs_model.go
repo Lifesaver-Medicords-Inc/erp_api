@@ -1,5 +1,7 @@
 package models
 
+import "encoding/json"
+
 type AdditionalSpecsContent struct {
 	BasedId                  uint    `json:"based_id"`
 	MaterialId               uint    `json:"material_id"`
@@ -32,6 +34,29 @@ func (AdditionalSpecs) TableName() string {
 type AdditionalSpecsSchema struct {
 	AdditionalSpecs
 	PumpTypeCompatabilityId []uint `json:"pump_type_compatibility_id"`
+
+	// Whether the request carried pump_count_compatibility_id / pump_type_compatibility_id at
+	// all - set by UnmarshalJSON, never serialized. An update writes those two only when they
+	// were sent: a missing key and a real "none" both decode to zero, and apps built before
+	// the key spelling was fixed send neither.
+	PumpCountSent bool `json:"-"`
+	PumpTypesSent bool `json:"-"`
+}
+
+// UnmarshalJSON decodes as usual, then records which of the two pump keys were present.
+func (s *AdditionalSpecsSchema) UnmarshalJSON(data []byte) error {
+	type schema AdditionalSpecsSchema // a defined type has none of these methods, so no recursion
+	if err := json.Unmarshal(data, (*schema)(s)); err != nil {
+		return err
+	}
+
+	var keys map[string]json.RawMessage
+	if err := json.Unmarshal(data, &keys); err != nil {
+		return err
+	}
+	_, s.PumpCountSent = keys["pump_count_compatibility_id"]
+	_, s.PumpTypesSent = keys["pump_type_compatibility_id"]
+	return nil
 }
 
 type AdditionalSpecsAt struct {

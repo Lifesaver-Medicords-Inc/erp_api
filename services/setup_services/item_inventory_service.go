@@ -31,7 +31,14 @@ func UpdateItemInventory(tx *gorm.DB, basedId uint, itemInventory models.ItemInv
 		return CreateItemInventory(tx, basedId, itemInventory, at)
 	}
 
-	if err := services.DbUpdate(tx, &itemInventory, conditions); err != nil {
+	// Every inventory field the Item Entry form sends, blanks and zeros included (see
+	// services.DbUpdateFields). A minimum lowered to 0 used to keep its old value, and REQ QTY
+	// reads the minimum (spec 8.12). IsSpecialItem is left out: the form sends it as
+	// special_item, not is_special_item, so it always arrives empty and would be cleared.
+	if err := services.DbUpdateFields(tx, &itemInventory, conditions,
+		"WarehouseId", "DefaultZone", "StorageType", "DefaultBinLocation",
+		"ValuationMethodId", "MinimunInventory", "MaximunInventory",
+	); err != nil {
 		return errors.New("failed updating item inventory")
 	}
 

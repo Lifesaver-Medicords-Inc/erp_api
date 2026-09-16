@@ -66,12 +66,30 @@ func UpdateAdditionalSpec(tx *gorm.DB, basedId uint, additionalspec models.Addit
 	additionalspec.ID = existing.ID
 	additionalspec.BasedId = existing.BasedId
 
-	if err := services.DbUpdate(tx, &additionalspec.AdditionalSpecs, map[string]interface{}{"id": existing.ID}); err != nil {
+	// Every additional-specs field the Item Entry form sends, blanks and zeros included (see
+	// services.DbUpdateFields).
+	fields := []string{"MaterialId", "SuctionPressure", "DriverType", "MotorEnclosure", "MotorManufacturer",
+		"ServiceFactor", "LiquidType", "ConnectionType", "Size", "Volume", "VolumeUnitOfMeasureId",
+		"Weight", "WeightUnitOfMeasureId", "Calibration", "LongDescription"}
+
+	// Pump count and pump types are written only when the request actually carried them.
+	// Item Entry used to send both under a misspelled key (…_compatability_id), so this model
+	// never received them: pump count never saved, and the pump types were replaced with an
+	// empty list - wiped - on every item update (user-reported 2026-09-14). The corrected app
+	// sends the right keys; an app not yet reinstalled still sends the old ones, and for it
+	// both are now left exactly as they are instead of being cleared.
+	if additionalspec.PumpCountSent {
+		fields = append(fields, "PumpCountCompatabilityId")
+	}
+
+	if err := services.DbUpdateFields(tx, &additionalspec.AdditionalSpecs, map[string]interface{}{"id": existing.ID}, fields...); err != nil {
 		return errors.New("failed updating additional specs")
 	}
 
-	if err := UpdateAdditionalSpecsPumpType(tx, existing.ID, additionalspec.PumpTypeCompatabilityId, at); err != nil {
-		return err
+	if additionalspec.PumpTypesSent {
+		if err := UpdateAdditionalSpecsPumpType(tx, existing.ID, additionalspec.PumpTypeCompatabilityId, at); err != nil {
+			return err
+		}
 	}
 
 	if err := services.DbInsert(tx, &models.AdditionalSpecsAt{

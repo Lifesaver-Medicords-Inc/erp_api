@@ -85,8 +85,14 @@ func UpdateItemSpec(tx *gorm.DB, basedId uint, itemSpecs models.ItemSpecs, at mo
 	existing.Fla_2 = itemSpecs.Fla_2
 	existing.Volt_1 = itemSpecs.Volt_1
 	existing.Volt_2 = itemSpecs.Volt_2
+	// The impeller is on the same form and was never copied across, so changing it on an
+	// existing item did not save.
+	existing.ImpellerId = itemSpecs.ImpellerId
 
-	if err := services.DbUpdate(tx, &existing, map[string]interface{}{"id": existing.ID}); err != nil {
+	// Blanks and zeros included - see services.DbUpdateFields.
+	if err := services.DbUpdateFields(tx, &existing, map[string]interface{}{"id": existing.ID},
+		"Template", "ManufacturerOrigin", "Fla_1", "Fla_2", "Volt_1", "Volt_2", "ImpellerId",
+	); err != nil {
 		return errors.New("failed updating itemspecs")
 	}
 
