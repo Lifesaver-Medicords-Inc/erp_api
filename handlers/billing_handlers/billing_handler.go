@@ -36,6 +36,18 @@ func (h *BillingHandler) GetARRecords(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, rows)
 }
 
+// The A/P Record of Transactions (3.2's A/P module list), the mirror of
+// GetARRecords above. Read-only: INVOICE DUE is typed on the Invoice Receipt and
+// carried forward from there (5.14), so unlike A/R's NEXT DUE there is nothing to
+// set from this screen.
+func (h *BillingHandler) GetAPRecords(c *fiber.Ctx) error {
+	rows, status, err := h.Service.GetAPRecords()
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, rows)
+}
+
 type nextDueBody struct {
 	SalesInvoiceId uint   `json:"sales_invoice_id"`
 	NextDue        string `json:"next_due"`

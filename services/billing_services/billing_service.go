@@ -81,6 +81,94 @@ ORDER BY si.doc_no DESC`
 	return rows, fiber.StatusOK, nil
 }
 
+// GetAPRecords is the A/P Record of Transactions (3.2's A/P module list), the
+// mirror of GetARRecords above.
+//
+// Trade and non-trade receipts are unioned because A/P owns both doors into the
+// payable - the trade Invoice Receipt (5.14) and the Bulk Invoice Receipt for
+// non-trade and foreign orders (5.15) - and a supplier's outstanding balance is
+// meaningless if it only counts one of them.
+//
+// BALANCE mirrors ComputeReceiptOpenAmount: net amount less what AP Vouchers have
+// applied and less what Debit Memos have taken off. It is computed here and never
+// stored (12.9).
+//
+// The AP Voucher deliberately does not appear as a settlement of its own - it
+// authorises a disbursement and posts nothing (invariant 23), so what reduces a
+// payable here is the amount an APV APPLIED, which is what the PV then settles.
+func (s *BillingService) GetAPRecords() ([]accounting_models.APRecordRow, int, error) {
+	rows := []accounting_models.APRecordRow{}
+
+	q := `
+SELECT ir.id AS invoice_receipt_id,
+       '' AS tag,
+       ISNULL(ir.supplier, '') AS supplier,
+       ISNULL(ir.supplier_code, '') AS supplier_code,
+       'IR#' + RIGHT('0000' + CAST(ISNULL(ir.doc_no, 0) AS NVARCHAR(20)), 4) AS invoice_receipt_no,
+       'INVOICE RECEIPT' AS receipt_type,
+       ISNULL(ir.doc_date, '') AS doc_date,
+       ISNULL(ir.reference_po, '') AS reference_po,
+       ISNULL(ir.payment_term, '') AS payment_term,
+       ISNULL(ir.net_amount, 0) AS net_amount,
+       ISNULL(a.applied, 0) + ISNULL(m.applied, 0) AS applied,
+       ISNULL(ir.net_amount, 0) - ISNULL(a.applied, 0) - ISNULL(m.applied, 0) AS balance,
+       ISNULL(ir.invoice_due, '') AS invoice_due
+FROM tbl_accounting_invoice_receipt ir
+LEFT JOIN (
+    SELECT d.invoice_receipt_id, SUM(ISNULL(d.amount_applied, 0)) AS applied
+    FROM tbl_accounting_ap_voucher_details d
+    WHERE d.receipt_type = 'INVOICE RECEIPT'
+    GROUP BY d.invoice_receipt_id
+) a ON a.invoice_receipt_id = ir.id
+LEFT JOIN (
+    SELECT d.target_doc_id, SUM(ISNULL(d.amount_applied, 0)) AS applied
+    FROM tbl_trans_debit_memo_details d
+    WHERE d.target_doc_type = 'Invoice Receipt'
+    GROUP BY d.target_doc_id
+) m ON m.target_doc_id = ir.id
+
+UNION ALL
+
+SELECT b.id AS invoice_receipt_id,
+       '' AS tag,
+       ISNULL(b.supplier, '') AS supplier,
+       ISNULL(b.supplier_code, '') AS supplier_code,
+       'IR#' + RIGHT('0000' + CAST(ISNULL(b.doc_no, 0) AS NVARCHAR(20)), 4) AS invoice_receipt_no,
+       'BULK INVOICE RECEIPT' AS receipt_type,
+       ISNULL(b.doc_date, '') AS doc_date,
+       ISNULL(b.reference_doc, '') AS reference_po,
+       ISNULL(b.payment_term, '') AS payment_term,
+       ISNULL(b.net_amount, 0) AS net_amount,
+       ISNULL(a.applied, 0) + ISNULL(m.applied, 0) AS applied,
+       ISNULL(b.net_amount, 0) - ISNULL(a.applied, 0) - ISNULL(m.applied, 0) AS balance,
+       ISNULL(b.invoice_due, '') AS invoice_due
+FROM tbl_accounting_bulk_invoice_receipt b
+LEFT JOIN (
+    SELECT d.invoice_receipt_id, SUM(ISNULL(d.amount_applied, 0)) AS applied
+    FROM tbl_accounting_ap_voucher_details d
+    WHERE d.receipt_type = 'BULK INVOICE RECEIPT'
+    GROUP BY d.invoice_receipt_id
+) a ON a.invoice_receipt_id = b.id
+LEFT JOIN (
+    SELECT d.target_doc_id, SUM(ISNULL(d.amount_applied, 0)) AS applied
+    FROM tbl_trans_debit_memo_details d
+    WHERE d.target_doc_type = 'Bulk Invoice Receipt'
+    GROUP BY d.target_doc_id
+) m ON m.target_doc_id = b.id
+
+ORDER BY doc_date DESC, invoice_receipt_no DESC`
+
+	if err := initializers.DB.Raw(q).Scan(&rows).Error; err != nil {
+		return rows, fiber.StatusInternalServerError, errors.New("failed reading the A/P record of transactions")
+	}
+
+	for i := range rows {
+		rows[i].Tag = tag(rows[i].Balance)
+	}
+
+	return rows, fiber.StatusOK, nil
+}
+
 // SetNextDue stores the date A/R typed against an invoice. Blank clears it, so
 // the column is written with UpdateColumns rather than a struct update, which
 // would skip an empty value.

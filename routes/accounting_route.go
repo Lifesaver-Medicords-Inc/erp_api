@@ -66,6 +66,7 @@ func setupBillingRoutes(api fiber.Router) {
 	handler := billing_handlers.NewBillingHandler(billing_services.NewBillingService())
 	api.Get("/ar_records", handler.GetARRecords)
 	api.Put("/ar_records/next_due", handler.SetNextDue)
+	api.Get("/ap_records", handler.GetAPRecords)
 	api.Get("/billing", handler.GetBilling)
 	api.Get("/billing/transactions", handler.GetTransactions)
 	api.Post("/billing/transactions", handler.CreateTransaction)
