@@ -2,6 +2,7 @@ package bpi_handlers
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/pierceperado/smpc/initializers"
@@ -46,6 +47,20 @@ func GetBpiItemList(c *fiber.Ctx) error {
 	}
 
 	return utils.RespondSuccess(c, data)
+}
+
+// GetBpiItemListPaged serves BPI's Add Item picker - 20 rows a page, searched server-side.
+// ?search= and ?page= (1-based); the response's pagination carries page/total_pages.
+func GetBpiItemListPaged(c *fiber.Ctx) error {
+	search := c.Query("search")
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+
+	data, pagination, status, err := bpi_services.GetBpiItemListPaged(search, page)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, data, pagination)
 }
 
 func CreateBpi(c *fiber.Ctx) error {

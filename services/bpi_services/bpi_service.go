@@ -132,6 +132,53 @@ func GetBpiItemList(conditions map[string]interface{}) (interface{}, int, error)
 	return response, 0, nil
 }
 
+// bpiItemPageSize matches the other pickers (Item Entry, the quotation's item and model
+// lists) so every picker in the system pages the same way.
+const bpiItemPageSize = 20
+
+// GetBpiItemListPaged backs BPI's Add Item picker: the same vw_bpi_item_list rows as
+// GetBpiItemList, but 20 at a time with a page count, searched on the server.
+//
+// It returns the WHOLE row rather than a trimmed one because the modal's "Add Selected
+// Items" reads item_price, short_desc, status_tangible and status_trade off every ticked
+// row - a narrower projection would reintroduce the KeyNotFoundException this view was
+// widened to fix.
+//
+// The search columns are the six the client used to filter on locally, so searching finds
+// the same things it did when the whole list was downloaded.
+func GetBpiItemListPaged(search string, page int) ([]models.BpiItemList, utils.PaginationMeta, int, error) {
+	var rows []models.BpiItemList
+
+	if page < 1 {
+		page = 1
+	}
+
+	searchColumns := []string{
+		"item_code",
+		"general_name",
+		"item_model_name",
+		"item_brand_name",
+		"item_type",
+		"long_description",
+	}
+
+	total, err := services.DbSearchPage(&rows, nil, search, searchColumns, nil, page, bpiItemPageSize, "id ASC")
+	if err != nil {
+		return rows, utils.PaginationMeta{}, fiber.StatusInternalServerError, errors.New("failed getting bpi item list")
+	}
+
+	totalPages := int((total + int64(bpiItemPageSize) - 1) / int64(bpiItemPageSize))
+
+	return rows, utils.PaginationMeta{
+		HasNext:    page < totalPages,
+		HasPrev:    page > 1,
+		PageSize:   bpiItemPageSize,
+		Page:       page,
+		TotalPages: totalPages,
+		Total:      total,
+	}, 0, nil
+}
+
 func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 	var body Body
 	var count int64
@@ -408,7 +455,6 @@ func UpdateBpi(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bo
 
 	// Update Bpi Accreditations — Fixed: corrected argument order
 	for _, v := range body.Accreditations {
-		fmt.Println("Body Accreditations", v)
 		if err := UpdateBpiAccreditation(tx, v, body.General.SalesId, at, body.ID); err != nil {
 			return body, fiber.StatusInternalServerError, err
 		}
