@@ -89,12 +89,6 @@ func init() {
 	// Delivery Cost's COST TYPE list (LABOR/VEHICLE/FUEL/TOLL GATE/INSURANCE/
 	// PENALTY/OTHERS) and, only on a genuinely fresh DB with zero templates,
 	// one placeholder Project Quotation template - see seed_defaults.go.
-	// 4.4.4: every vehicle exists as an OUTBOUND zone in its home warehouse.
-	// Vehicles created before that was wired up have no zone, and without one
-	// 10.5's negative-stock case has nowhere to land - so the missing zones are
-	// created here, once. Create-only: an existing zone is never rewritten (see
-	// BackfillVehicleZones).
-	seedVehicleZones()
 	initializers.SeedCalendarCostTypes()
 	initializers.SeedDefaultProjectQuotationTemplate()
 	// Bootstrap grant for the Admin position, and ONLY when it has no grants at
@@ -106,6 +100,18 @@ func init() {
 	// what is in the catalog. See seed_admin_position_access.go.
 	initializers.SeedAdminPositionAccess()
 	initializers.InitRedis()
+	// 4.4.4: every vehicle exists as an OUTBOUND zone in its home warehouse.
+	// Vehicles created before that was wired up have no zone, and without one
+	// 10.5's negative-stock case has nowhere to land - so the missing zones are
+	// created here, once. Create-only: an existing zone is never rewritten (see
+	// BackfillVehicleZones).
+	//
+	// MUST stay after InitRedis. The zone is written through services.DbInsert,
+	// which invalidates the Redis cache on every insert; run before Redis is
+	// connected, initializers.RC is nil and the API panics during startup - but
+	// only when some vehicle still lacks a zone, so it can pass on one database
+	// and take the API down on the next.
+	seedVehicleZones()
 	initializers.InitWm()
 	initializers.InitWm2()
 	initializers.InitProjectWM()
@@ -116,41 +122,48 @@ func init() {
 	startStockReservationSweep()
 }
 
-// startStockReservationSweep periodically deletes expired rows from
-// tbl_inv_stock_reservations (see ExpireStockReservations) so a quotation's soft hold
-// on stock doesn't outlive its own ValidUntil. There's no existing job scheduler in
-// this app, so this is a plain goroutine + ticker - deliberately placed here rather
-// than in the initializers package, since item_stock_services already imports
-// initializers and putting it there would create an import cycle.
+// startStockReservationSweep flags reservations that have reached their quotation's VALID
+// UNTIL (see FlagReservationsAtLimit). It releases and extends nothing - spec 10.4.5 and
+// 14.23 - it only puts the keep-or-let-go question to the Warehouse Manager and the owning
+// sales executive. Runs once at startup, then hourly. There's no existing job scheduler in
+// this app, so this is a plain goroutine + ticker - deliberately placed here rather than in
+// the initializers package, since item_stock_services already imports initializers and
+// putting it there would create an import cycle.
 func startStockReservationSweep() {
 	stockService := item_stock_services.NewItemStockService()
 
+	sweep := func() {
+		tx := initializers.DB.Begin()
+		if tx.Error != nil {
+			fmt.Println("stock reservation sweep: failed starting transaction:", tx.Error)
+			return
+		}
+
+		count, err := stockService.FlagReservationsAtLimit(tx)
+		if err != nil {
+			fmt.Println("stock reservation sweep: failed:", err)
+			tx.Rollback()
+			return
+		}
+
+		if err := tx.Commit().Error; err != nil {
+			fmt.Println("stock reservation sweep: failed committing:", err)
+			return
+		}
+
+		if count > 0 {
+			fmt.Println("stock reservation sweep:", count, "reservation(s) reached their limit and await an answer")
+		}
+	}
+
 	go func() {
+		sweep()
+
 		ticker := time.NewTicker(1 * time.Hour)
 		defer ticker.Stop()
 
 		for range ticker.C {
-			tx := initializers.DB.Begin()
-			if tx.Error != nil {
-				fmt.Println("stock reservation sweep: failed starting transaction:", tx.Error)
-				continue
-			}
-
-			count, err := stockService.ExpireStockReservations(tx)
-			if err != nil {
-				fmt.Println("stock reservation sweep: failed:", err)
-				tx.Rollback()
-				continue
-			}
-
-			if err := tx.Commit().Error; err != nil {
-				fmt.Println("stock reservation sweep: failed committing:", err)
-				continue
-			}
-
-			if count > 0 {
-				fmt.Println("stock reservation sweep: released", count, "expired reservation(s)")
-			}
+			sweep()
 		}
 	}()
 }
@@ -180,29 +193,51 @@ func SetupApp() *fiber.App {
 	})
 
 	// Rate Limiter
+	//
+	// Deliberately still off as a global limiter. Everything through the Cloudflare
+	// tunnel arrives from cloudflared on this machine, so a per-address limit would be
+	// one shared allowance for every user of every app, and pages such as Item Entry
+	// legitimately fire a dozen requests at once. Login has its own limits instead -
+	// see middlewares/login_limiter.go.
 	// app.Use(limiter.New(limiter.Config{
 	// 	Max:        20,
 	// 	Expiration: 1 * time.Second,
 	// }))
 
+	// Uploaded files were readable by anyone who could reach the API, with no login,
+	// through both /files and /api/vfile. FILES_REQUIRE_AUTH=true puts both behind
+	// RequireAuth. It is a switch rather than always on because the installed desktop
+	// apps fetched files without sending their token until the 2026-09-14 changes:
+	// turn it on for an instance only once every PC using that instance runs builds
+	// that include them, or item images, quotation print images and job order reports
+	// stop loading there.
+	filesRequireAuth := os.Getenv("FILES_REQUIRE_AUTH") == "true"
+	if filesRequireAuth {
+		app.Use("/files", middlewares.RequireAuth)
+	}
 	app.Static("/files", "./files")
 
-	// App Logger
+	// App Logger - ${client_ip} rather than ${ip}, which logged all tunnel traffic as
+	// this machine's own loopback address (middlewares.ClientIP).
 	app.Use(logger.New(logger.Config{
-		Format: "[${ip}]:${port} ${status} - ${method} ${path}\n",
+		CustomTags: map[string]logger.LogFunc{
+			"client_ip": func(output logger.Buffer, c *fiber.Ctx, _ *logger.Data, _ string) (int, error) {
+				return output.WriteString(middlewares.ClientIP(c))
+			},
+		},
+		Format: "[${client_ip}]:${port} ${status} - ${method} ${path}\n",
 	}))
 
 	// Api Endpoints
 	api := app.Group("/api")
 	{
 		// Public Endpoints
-		api.Post("/register", public_handlers.CreateAccount)
-		api.Post("/login", public_handlers.LoginAccount)
+		api.Post("/login", middlewares.LoginAttemptsPerClient, middlewares.LoginAttemptsPerAccount, public_handlers.LoginAccount)
 		api.Post("/logout", public_handlers.LogoutAccount)
 		api.Get("/hello", public_handlers.CheckHealth)
-		api.Post("/upload", public_handlers.ImageUpload)
-		api.Post("/dfile", public_handlers.DeleteFile)
-		api.Get("/vfile/:filename", public_handlers.ViewFile)
+		if !filesRequireAuth {
+			api.Get("/vfile/:filename", public_handlers.ViewFile)
+		}
 
 		// Protected Endpoints
 		//
@@ -218,6 +253,23 @@ func SetupApp() *fiber.App {
 		// were silently recording blank/zero for everyone on these routes.
 		api.Use(middlewares.RequireAuth)
 		{
+			// Account, upload and file deletion - moved here from the public list above.
+			//
+			// /register took position_id straight from the request body and
+			// returned the new employee id, which is also the account's initial
+			// password, so anyone who could reach the API - the Cloudflare tunnel
+			// included - could create an account in any position and log straight
+			// in. /dfile deleted whatever path the body named, with no login at
+			// all. /upload wrote up to 50 MB per request into the files folder for
+			// anyone. None of them is called by any client before it has logged in.
+			// Creating an account also needs the Users screen's grant, as POST /api/users does.
+			api.Post("/register", middlewares.RequireAccessCode(middlewares.ManageUsersAccessCode), public_handlers.CreateAccount)
+			api.Post("/dfile", public_handlers.DeleteFile)
+			api.Post("/upload", public_handlers.ImageUpload)
+			if filesRequireAuth {
+				api.Get("/vfile/:filename", public_handlers.ViewFile)
+			}
+
 			// Sample Endpoints
 
 			sampleApi := api.Group("/sample")
@@ -319,6 +371,14 @@ func SetupApp() *fiber.App {
 
 					// Item Endpoints
 					itemApi.Get("", setup_handlers.GetItems)
+					// Both MUST stay above "/:id": Fiber matches in registration order, and
+					// below it "paged" and "search" would be read as item ids.
+					itemApi.Get("/paged", setup_handlers.GetItemsPaged)
+					itemApi.Get("/search", setup_handlers.GetItemsSearch)
+					// Sales quotation pickers. Not "/name" - that is already the item-name
+					// setup list - and above "/:id" for the same reason as the two above.
+					itemApi.Get("/picker", setup_handlers.GetItemPickerNames)
+					itemApi.Get("/picker/models", setup_handlers.GetItemPickerModels)
 					itemApi.Get("/:id", setup_handlers.GetItem)
 					itemApi.Post("", setup_handlers.CreateItem)
 					itemApi.Put("", setup_handlers.UpdateItem)
@@ -625,6 +685,9 @@ func SetupApp() *fiber.App {
 
 			api.Get("/bpi/entity", bpi_handlers.GetBpiEntityRecords)
 			api.Get("/bpi/list", bpi_handlers.GetBpiItemList)
+			// Three segments, so "/bpi/:id" below cannot match it - but kept here beside
+			// its unpaged sibling so the ordering stays obvious.
+			api.Get("/bpi/list/paged", bpi_handlers.GetBpiItemListPaged)
 			api.Post("/bpi", bpi_handlers.CreateBpi)
 			api.Post("/bpi/createbpi", bpi_handlers.CreateBpiParentFromBranch)
 			api.Put("/bpi", bpi_handlers.UpdateBpi)
