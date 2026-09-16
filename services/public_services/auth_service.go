@@ -95,11 +95,14 @@ func LoginAccount(c *fiber.Ctx) (models.User, int, error) {
 		Preload("Position.Access").
 		Where(conditions).
 		First(&user).Error; err != nil {
-		return user, fiber.StatusUnauthorized, errors.New("Invalid user employee id")
+		// Compared anyway, against a throwaway hash, so an unknown id costs the same
+		// bcrypt work as a wrong password - see invalidLoginMessage.
+		_ = utils.CompareUserPassword(dummyPasswordHash, body.Password)
+		return user, fiber.StatusUnauthorized, errors.New(invalidLoginMessage)
 	}
 
 	if err := utils.CompareUserPassword(user.Password, body.Password); err != nil {
-		return user, fiber.StatusUnauthorized, errors.New("Invalid user password")
+		return user, fiber.StatusUnauthorized, errors.New(invalidLoginMessage)
 	}
 
 	body.AtUserId = strconv.Itoa(int(user.ID))

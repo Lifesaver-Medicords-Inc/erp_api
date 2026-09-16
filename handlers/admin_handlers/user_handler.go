@@ -199,3 +199,32 @@ func (u *UserHandler) DeleteUserHandler(c *fiber.Ctx) error {
 
 	return utils.RespondSuccess(c, data)
 }
+
+// ChangePasswordHandler sets a user's password from the Admin app's User Details. It is the
+// only route that sets a password once an account exists (UpdateUserService ignores one),
+// and user_route.go gates it on ADMIN USERS.
+func (u *UserHandler) ChangePasswordHandler(c *fiber.Ctx) error {
+	idNum, err := strconv.Atoi(c.Params("id"))
+	if err != nil || idNum <= 0 {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid ID parameter")
+	}
+
+	var body struct {
+		Password string `json:"password"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	status, err := u.UserService.ChangePasswordService(uint(idNum), body.Password, at)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	return utils.RespondSuccess(c, "password changed")
+}

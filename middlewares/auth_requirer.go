@@ -1,8 +1,6 @@
 package middlewares
 
 import (
-	"fmt"
-	"os"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -12,12 +10,13 @@ import (
 	"github.com/pierceperado/smpc/utils"
 )
 
+// RequireAuth used to print the token, its claims and the user on every request. That
+// put a live, reusable session token on the console for every call any app made -
+// anyone who could see the window, or a copy of its output, could act as that user
+// until the token expired. The prints are gone; the checks are unchanged apart from
+// where the token may come from (tokenFromRequest) and the logout check.
 func RequireAuth(c *fiber.Ctx) error {
-	tokenString := c.Query("Authorization")
-	if tokenString == "" {
-		tokenString = c.Get("Authorization") // check the cookie if the header is empty
-	}
-	fmt.Println("tokenString", tokenString)
+	tokenString := tokenFromRequest(c)
 	if tokenString == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"success": false,
@@ -25,15 +24,7 @@ func RequireAuth(c *fiber.Ctx) error {
 		})
 	}
 
-	secretKey := os.Getenv("SECRET_KEY")
-
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if method, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method %v", method)
-		}
-		return []byte(secretKey), nil
-	})
-
+	token, err := parseToken(tokenString)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"success": false,
@@ -50,7 +41,14 @@ func RequireAuth(c *fiber.Ctx) error {
 				})
 			}
 		}
-		fmt.Println("claims>>>>>", claims)
+
+		// Logged out before it expired (RevokeToken).
+		if isTokenRevoked(tokenString) {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"success": false,
+				"message": "Revoked authentication token",
+			})
+		}
 
 		userID, ok := claims["sub"].(float64)
 		if !ok {
@@ -68,7 +66,6 @@ func RequireAuth(c *fiber.Ctx) error {
 		}
 
 		var userObj models.User
-		fmt.Println("USEROBJ", userID)
 		if count := initializers.DB.First(&userObj, "id = ?", userID).RowsAffected; count == 0 {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"success": false,
@@ -91,9 +88,6 @@ func RequireAuth(c *fiber.Ctx) error {
 				"message": "Invalid at data",
 			})
 		}
-
-		fmt.Println("USER AT 1", userObj)
-		fmt.Println("USER AT 2", atObj)
 
 		c.Locals("user", userObj)
 		c.Locals("at", atObj)
