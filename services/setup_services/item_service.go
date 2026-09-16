@@ -474,6 +474,11 @@ func CreateItem(c *fiber.Ctx, tx *gorm.DB) (SaveBody, int, error) {
 	// as generateCustomerCode/generateSupplierCode (bpi_entity_service.go) -
 	// fixed the same way: the server generates the real code from the highest
 	// number ever issued, ignoring whatever the client guessed and sent.
+	// Spec 4.2.2, before anything is written: a duplicate Calpeda model is rejected outright.
+	if err := checkCalpedaModelUnique(tx, savebody.ItemBrandId, savebody.ItemModel, 0); err != nil {
+		return savebody, fiber.StatusBadRequest, err
+	}
+
 	generatedCode, err := generateItemCode(tx)
 	if err != nil {
 		return savebody, fiber.StatusInternalServerError, err
@@ -551,6 +556,11 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 		}
 	}
 
+	// Spec 4.2.2, excluding this item's own row for the same reason as the code guard above.
+	if err := checkCalpedaModelUnique(tx, body.ItemBrandId, body.ItemModel, body.ID); err != nil {
+		return body, fiber.StatusBadRequest, err
+	}
+
 	// Every field the Item Entry header edits, blanks and zeros included (see
 	// services.DbUpdateFields). DbUpdate skipped zero values, so clearing a field, setting the
 	// price to 0 or a dropdown back to none left the old value in place (user-reported
@@ -607,6 +617,52 @@ func UpdateItem(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (S
 
 	InvalidateItemCaches()
 	return body, 0, nil
+}
+
+// checkCalpedaModelUnique enforces spec 4.2.2: Calpeda model names MUST be globally unique,
+// regardless of differing specs, and a duplicate MUST be rejected with a message saying so.
+// Other brands may repeat a model provided the specs differ, so this applies to Calpeda alone.
+//
+// Nothing enforced this on either side before: the client's CheckIfCalpeda only guarded the
+// catalogue year, and neither CreateItem nor UpdateItem looked at item_model at all - they
+// checked item_code only. The 2026-09-15 Calpeda load put 3,683 Calpeda items in, so a
+// duplicate model is easy to create by hand and nothing would have stopped it.
+//
+// Matched on brand code CLP, not on the name: code is the unique column on tbl_setup_item_brand,
+// so a renamed or re-cased "Calpeda" cannot slip past it.
+//
+// excludeID is the row being updated (0 when creating), so re-saving an item without changing
+// its model does not reject against itself - the same shape as the item_code guard.
+func checkCalpedaModelUnique(tx *gorm.DB, brandID uint, model string, excludeID uint) error {
+	model = strings.TrimSpace(model)
+	if brandID == 0 || model == "" {
+		return nil
+	}
+
+	var isCalpeda int64
+	if err := tx.Model(&models.Brand{}).
+		Where("id = ? AND code = ?", brandID, "CLP").
+		Count(&isCalpeda).Error; err != nil {
+		return errors.New("failed checking the item brand")
+	}
+	if isCalpeda == 0 {
+		return nil
+	}
+
+	query := tx.Model(&models.Item{}).Where("item_model = ? AND item_brand_id = ?", model, brandID)
+	if excludeID != 0 {
+		query = query.Where("id <> ?", excludeID)
+	}
+
+	var existing int64
+	if err := query.Count(&existing).Error; err != nil {
+		return errors.New("failed checking for an existing Calpeda model")
+	}
+	if existing > 0 {
+		return fmt.Errorf("a Calpeda item with model %s already exists - Calpeda model names must be unique", model)
+	}
+
+	return nil
 }
 
 // Trello #091: same fix as generateCustomerCode/generateSupplierCode
