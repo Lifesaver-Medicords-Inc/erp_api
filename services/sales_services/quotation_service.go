@@ -665,8 +665,33 @@ func CancelQuotationForEngr(tx *gorm.DB, quotationId uint, at models.At) (*model
 
 // for finalizing the quotation
 func UpdateQuotationQuick(tx *gorm.DB, Quotation models.SalesQuotation, at models.At, conditions map[string]interface{}) error {
+	// VALID UNTIL and the quote's reservations move together (10.4.5). A reservation window
+	// can restart on the server - a quantity change, or keeping a reservation on hold at its
+	// limit - while this form still holds the VALID UNTIL it loaded, and it sends the whole
+	// header back. So an incoming VALID UNTIL counts as an edit only when DATE or VALIDITY
+	// (DAYS), the two it is computed from on screen (5.1), changed with it; otherwise the
+	// stored value stands.
+	var stored models.SalesQuotation
+	if Quotation.ID != 0 {
+		if err := tx.Select("id", "date", "validity_days", "valid_until").Where("id = ?", Quotation.ID).Limit(1).Find(&stored).Error; err != nil {
+			return errors.New("failed reading quotation")
+		}
+	}
+	validityEdited := stored.ID == 0 ||
+		!sameQuoteMoment(stored.Date, Quotation.Date) ||
+		strings.TrimSpace(stored.ValidityDays) != strings.TrimSpace(Quotation.ValidityDays)
+	if !validityEdited && stored.ValidUntil != "" {
+		Quotation.ValidUntil = stored.ValidUntil
+	}
+
 	if err := services.DbUpdate(tx, &Quotation, conditions); err != nil {
 		return errors.New("failed updating quotation")
+	}
+
+	if validityEdited {
+		if err := moveQuoteReservationLimits(tx, Quotation.ID, Quotation.ValidUntil); err != nil {
+			return errors.New("failed moving the quote's reservation limits")
+		}
 	}
 
 	quotationat := models.SalesQuotationAt{

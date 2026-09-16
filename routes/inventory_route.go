@@ -27,8 +27,12 @@ func setupItemStockRoutes(api fiber.Router) {
 	api.Post("/item_stocks/reservations", handler.CreateStockReservation)
 	api.Delete("/item_stocks/reservations", handler.ReleaseStockReservation)
 	api.Get("/item_stocks/reservations/pending", handler.GetPendingReservations)
+	api.Get("/item_stocks/reservations/queue", handler.GetReservationQueue)
 	api.Post("/item_stocks/reservations/:id/approve", handler.ApproveReservation)
 	api.Post("/item_stocks/reservations/:id/reject", handler.RejectReservation)
+	api.Post("/item_stocks/reservations/:id/keep", handler.KeepReservationOnHold)
+	api.Post("/item_stocks/reservations/:id/let-go", handler.LetReservationGo)
+	api.Delete("/item_stocks/reservations/:id", handler.RemoveReservation)
 }
 
 func setupReceivingReportRoutes(api fiber.Router) {
