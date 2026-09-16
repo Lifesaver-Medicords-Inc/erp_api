@@ -202,6 +202,11 @@ func migrateItemManagement() {
 	// fmt.Println("=== Migrating ITEM MANAGEMENT Module ===")
 
 	migrateAndLog(
+		// Registered 2026-09-14: bb73bf2 (2026-03-28) dropped this pair when
+		// DB.AutoMigrate became migrateAndLog, so no database built since got
+		// z_tbl_setup_item_at and every item save failed with "failed inserting
+		// itemat". Both existing databases already match the model column for column.
+		&models.Item{}, &models.ItemAt{},
 		&models.ItemSpecsTemplate{}, &models.ItemSpecsTemplateAt{},
 		&models.AdditionalSpecs{}, &models.AdditionalSpecsAt{},
 		&models.AdditionalSpecsPumpType{}, &models.AdditionalSpecsPumpTypeAt{},

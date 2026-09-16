@@ -124,7 +124,8 @@ FROM dbo.tbl_trans_sales_order AS so
                 OUTER APPLY (
                     SELECT SUM(qty) AS reserved
                     FROM dbo.tbl_inv_stock_reservations
-                    WHERE item_id = bod.item_id AND status <> 'Rejected'
+                    -- Only an approved reservation holds stock (spec 10.4.3, 14.22).
+                    WHERE item_id = bod.item_id AND status = 'Approved'
                         AND NOT (quotation_id = so.quotation_id AND status = 'Approved')
                 ) other_resv
             WHERE bod.item_bom_id = resolved.bom_id

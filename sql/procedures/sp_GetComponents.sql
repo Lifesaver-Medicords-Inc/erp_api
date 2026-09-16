@@ -28,10 +28,12 @@
 --     available = SUM(tbl_inv_item_stocks.stock_qty)      -- physical on hand,
 --                                                             already reflects
 --                                                             every RR receipt
---               - SUM(tbl_inv_stock_reservations.qty)      -- every OTHER active
---                 WHERE status <> 'Rejected'                  reservation (Pending
---                                                             or Approved both
---                                                             hold stock back)
+--               - SUM(tbl_inv_stock_reservations.qty)      -- every OTHER approved
+--                 WHERE status = 'Approved'                   reservation - only an
+--                                                             approved one holds
+--                                                             stock (spec 10.4.3,
+--                                                             14.22; was <> 'Rejected'
+--                                                             until 2026-09-15)
 --
 -- With one addition that generic formula doesn't have: this job's OWN sales
 -- order's own APPROVED reservation for the component counts as covering the
@@ -75,13 +77,13 @@ FROM dbo.tbl_setup_item_bom_details AS bod
         FROM dbo.tbl_inv_stock_reservations
         WHERE item_id = bod.item_id AND quotation_id = @QuotationId AND status = 'Approved'
     ) this_job
-    -- Every OTHER active reservation - held back from what this job can draw on.
+    -- Every OTHER approved reservation - held back from what this job can draw on.
     -- Excludes the exact rows this_job already counted, so nothing is both added
     -- and subtracted.
     OUTER APPLY (
         SELECT SUM(qty) AS reserved
         FROM dbo.tbl_inv_stock_reservations
-        WHERE item_id = bod.item_id AND status <> 'Rejected'
+        WHERE item_id = bod.item_id AND status = 'Approved'
             AND NOT (quotation_id = @QuotationId AND status = 'Approved')
     ) other_resv
 WHERE bod.item_bom_id = @BomId;

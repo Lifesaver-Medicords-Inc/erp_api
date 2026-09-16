@@ -629,6 +629,13 @@ func applyQuotationFieldChanges(tx *gorm.DB, id uint, fields QuotationFieldChang
 		return err
 	}
 
+	// The quote's reservations follow its VALID UNTIL (10.4.5).
+	if fields.ValidUntil != nil {
+		if err := moveQuoteReservationLimits(tx, id, fmt.Sprint(fields.ValidUntil.NewValue)); err != nil {
+			return err
+		}
+	}
+
 	// Unlike every other apply*Diff function in this file, this one updates via a raw
 	// GORM call (Updates takes a partial map, not a full model struct, so it can't go
 	// through services.DbUpdate as-is) - which means it never invalidated the
@@ -1057,12 +1064,23 @@ func applyItemsDiff(tx *gorm.DB, basedId uint, diff CollectionDiff[models.SalesP
 		}); err != nil {
 			return fmt.Errorf("item remove: %w", err)
 		}
+		// A removed item's reservation goes with it; anything it held returns (10.4.3).
+		if err := releaseProjectItemReservation(tx, item.ItemsID, at.AtUser); err != nil {
+			return fmt.Errorf("item reservation release: %w", err)
+		}
 	}
 	for _, entry := range diff.Updated {
 		if err := services.DbUpdate(tx, &entry.Item, map[string]interface{}{
 			"items_id": entry.Item.ItemsID,
 		}); err != nil {
 			return fmt.Errorf("item update: %w", err)
+		}
+		// An edited QTY is a new reservation request with a fresh window (10.4.5). Skipped at
+		// zero: DbUpdate ignores zero values too, so a zero here means QTY was not sent.
+		if entry.Item.Qty > 0 {
+			if err := syncProjectItemReservation(tx, entry.Item.ItemsID, entry.Item.Qty); err != nil {
+				return fmt.Errorf("item reservation sync: %w", err)
+			}
 		}
 	}
 	return nil

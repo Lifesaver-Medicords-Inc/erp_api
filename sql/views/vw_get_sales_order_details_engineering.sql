@@ -89,7 +89,8 @@ FROM dbo.tbl_trans_sales_order_details AS sod
         SELECT SUM(r.qty) AS reserved
         FROM dbo.tbl_inv_stock_reservations AS r
         WHERE r.item_id = sod.item_id
-            AND r.status <> 'Rejected'
+            -- Only an approved reservation holds stock (spec 10.4.3, 14.22).
+            AND r.status = 'Approved'
             AND NOT (r.quotation_id = so.quotation_id AND r.status = 'Approved')
     ) other_resv
 WHERE EXISTS (
