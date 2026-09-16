@@ -61,6 +61,11 @@ func CreateEntity(c *fiber.Ctx, tx *gorm.DB) (models.Entity, int, error) {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating entity at")
 	}
 
+	// Entity names show on every BPI branch - see InvalidateBpiSetupViews.
+	if err := InvalidateBpiSetupViews(); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
 	return body, 0, nil
 }
 
@@ -85,6 +90,10 @@ func UpdateEntity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) 
 		return body, fiber.StatusInternalServerError, errors.New("failed creating entity at")
 	}
 
+	if err := InvalidateBpiSetupViews(); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
 	return body, 0, nil
 }
 
@@ -106,6 +115,10 @@ func DeleteEntity(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) 
 	atdata := models.EntityAt{RefId: body.ID, Code: body.Code, EntityContent: models.EntityContent{Name: body.Name}, At: at}
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating social media at")
+	}
+
+	if err := InvalidateBpiSetupViews(); err != nil {
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	return body, 0, nil

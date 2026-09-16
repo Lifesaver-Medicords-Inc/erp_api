@@ -47,7 +47,7 @@ func CreateBpiAccreditation(tx *gorm.DB, parentId uint, general_id uint, child m
 		path, err := saveBase64Image(child.FilePath)
 
 		if err != nil {
-			return errors.New("failed to to convert file to base64")
+			return errors.New("failed to convert file to base64")
 		}
 		child.FilePath = path
 		if err := services.DbInsert(tx, &child); err != nil {
@@ -93,11 +93,24 @@ func UpdateBpiAccreditation(tx *gorm.DB, child models.BpiAccreditation, salesId 
 		"based_id": parentId,
 	}
 
-	path, err := saveBase64Image(child.FilePath)
-	if err != nil {
-		return errors.New("failed to convert file to base64")
+	// The client re-sends every existing accreditation row verbatim on a BPI save,
+	// so FilePath arrives as the path already stored ("./files/1757...docx"), not as
+	// base64. Decoding that fails - "." is not in the base64 alphabet - and because
+	// bpi_service.go returns on the first error, the WHOLE BPI update aborted:
+	// General, Contacts, Address, Finance and Items included. Any partner with an
+	// accreditation file on record was unsaveable, permanently, on every retry.
+	//
+	// Guarded the same way CreateBpiAccreditation already guards it, so a genuinely
+	// new upload still converts and an existing path is left alone. DbUpdate uses
+	// UpdateColumns, which skips zero values, so the untouched path is written back
+	// unchanged either way.
+	if !strings.HasPrefix(child.FilePath, "./") {
+		path, err := saveBase64Image(child.FilePath)
+		if err != nil {
+			return errors.New("failed to convert file to base64")
+		}
+		child.FilePath = path
 	}
-	child.FilePath = path
 
 	if err := services.DbUpdate(tx, &child, conditions); err != nil {
 		return errors.New("failed updating bpi accreditations")

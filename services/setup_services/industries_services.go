@@ -61,6 +61,10 @@ func CreateIndustry(c *fiber.Ctx, tx *gorm.DB) (models.Industries, int, error) {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating industries at")
 	}
 
+	if err := InvalidateBpiSetupViews(); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
 	return body, 0, nil
 }
 
@@ -83,6 +87,10 @@ func UpdateIndustry(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 
 	if err := services.DbInsert(tx, &atdata); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed creating industries at")
+	}
+
+	if err := InvalidateBpiSetupViews(); err != nil {
+		return body, fiber.StatusInternalServerError, err
 	}
 
 	return body, 0, nil
@@ -109,5 +117,23 @@ func DeleteIndustry(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}
 		return body, fiber.StatusInternalServerError, errors.New("failed creating industries at")
 	}
 
+	if err := InvalidateBpiSetupViews(); err != nil {
+		return body, fiber.StatusInternalServerError, err
+	}
+
 	return body, 0, nil
+}
+
+// InvalidateBpiSetupViews clears the cached Business Partner Info views that join setup
+// names in: industry names on the partner list (vw_get_bpi_list) and entity and industry
+// names on each branch (GetBpiGeneralList). A setup record's own save only clears keys
+// named after its own model ("model:Industries*", "model:Entity*"), which never match those
+// views, so adding, renaming or removing an industry or an entity type kept showing the old
+// names on BPI until the one-hour cache ran out (user-reported 2026-09-15). Every condition
+// variant is cleared, not just the unfiltered list.
+func InvalidateBpiSetupViews() error {
+	if err := services.InvalidateCacheByModel(models.BpiView{}); err != nil {
+		return err
+	}
+	return services.InvalidateCacheByModel(models.BpiGeneralView{})
 }

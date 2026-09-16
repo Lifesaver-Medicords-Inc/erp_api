@@ -11,6 +11,8 @@ type BpiItemsViewContent struct {
 	Notes           string  `json:"notes"`
 	ItemId          uint    `json:"item_id"`
 	ItemCode        string  `json:"item_code"`
+	ItemType        string  `json:"item_type"`
+	LongDescription string  `json:"long_description"`
 	ShortDesc       string  `json:"short_desc"`
 	StatusTangible  string  `json:"status_tangible"`
 	StatusTrade     string  `json:"status_trade"`
