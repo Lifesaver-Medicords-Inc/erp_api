@@ -103,6 +103,37 @@ func UpdateBpiEntity(tx *gorm.DB, parentId uint, entityId uint, salesId string, 
 
 // ─── Number Generators ────────────────────────────────────────────────────────
 
+// lockCodeIssuing makes BPI saves that can issue a C# or S# take turns. The next code is
+// MAX(existing) + 1, so two partners saved at the same moment - by two users, or the same
+// user in two windows - would both read the same MAX and store the same code, and no unique
+// index on either column would stop it.
+//
+// It must be the save's first statement, and it is held until COMMIT or ROLLBACK. A row lock
+// on the MAX read (the WITH (UPDLOCK, HOLDLOCK) that quotation numbers use) would not do here:
+// a partner's own row is inserted before its code is issued, and with READ_COMMITTED_SNAPSHOT
+// off each of two saves would then wait on the other's new row - a deadlock. Taken first, the
+// second save waits before it has written anything.
+func lockCodeIssuing(tx *gorm.DB) error {
+	var result int
+	if err := tx.Raw(`
+		DECLARE @result int;
+		EXEC @result = sp_getapplock
+			@Resource = 'bpi_code_issuing',
+			@LockMode = 'Exclusive',
+			@LockOwner = 'Transaction',
+			@LockTimeout = 30000;
+		SELECT @result;
+	`).Scan(&result).Error; err != nil {
+		return errors.New("failed waiting for another partner save to finish")
+	}
+
+	// 0 = granted at once, 1 = granted after waiting; negative = timed out, cancelled or deadlocked.
+	if result < 0 {
+		return errors.New("another partner is being saved right now - please save again")
+	}
+	return nil
+}
+
 // Bug #292 (Trello): codes weren't incrementing - COUNT(*) of existing
 // non-blank codes stands in for "the next number" here, but a delete or an
 // entity type toggled off-then-back-on drops the count below the highest

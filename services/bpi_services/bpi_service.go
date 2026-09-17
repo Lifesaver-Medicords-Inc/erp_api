@@ -187,6 +187,11 @@ func CreateBpi(c *fiber.Ctx, tx *gorm.DB) (Body, int, error) {
 		return body, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
+	// Before anything is written - see lockCodeIssuing.
+	if err := lockCodeIssuing(tx); err != nil {
+		return body, fiber.StatusServiceUnavailable, err
+	}
+
 	if err := tx.Model(&body.Bpi).Where("id =?", body.ID).Count(&count).Error; err != nil {
 		return body, fiber.StatusBadRequest, errors.New("failed to find data in Bpi Table")
 	}
@@ -375,6 +380,12 @@ func UpdateBpi(c *fiber.Ctx, tx *gorm.DB, conditions map[string]interface{}) (Bo
 	fmt.Println("BODY Address   REQUEST", body.Address)
 	fmt.Println("BODY Items     REQUEST", body.Items)
 	fmt.Println("BODY Finance   REQUEST", body.Finance)
+
+	// An update can add a branch or the Customer / Supplier type, and so issue a code.
+	// Before anything is written - see lockCodeIssuing.
+	if err := lockCodeIssuing(tx); err != nil {
+		return body, fiber.StatusServiceUnavailable, err
+	}
 
 	if err := services.DbUpdate(tx, &body.Bpi, conditions); err != nil {
 		return body, fiber.StatusInternalServerError, errors.New("failed updating parent")
