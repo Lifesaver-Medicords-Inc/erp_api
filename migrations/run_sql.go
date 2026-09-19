@@ -107,6 +107,8 @@ func runSQLFolder(path string) {
 }
 
 func RunSQLMigrations() {
+	// Indexes on tables GORM has already created; each script checks before creating.
+	runSQLFolder("sql/indexes")
 	runSQLFolder("sql/views")
 	runSQLFolder("sql/procedures")
 	// Triggers last: tr_inv_item_stocks_ledger depends on tbl_inv_stock_transactions,
