@@ -297,7 +297,11 @@ func GetItemsSearch(search string, page int) ([]models.ItemView, utils.Paginatio
 
 	searchColumns := []string{"item_code", "item_name", "item_model", "item_brand"}
 
-	total, err := services.DbSearchPage(&items, nil, search, searchColumns, nil, page, itemPageSize, "id ASC")
+	// Results read down by name then model, for the same reason the pickers do (see
+	// runItemPickerQuery): in id order the variants of one model scatter over several pages.
+	// Item Entry's own navigation is unaffected - PREV/NEXT still walk the catalogue by id.
+	total, err := services.DbSearchPage(&items, nil, search, searchColumns, nil, page, itemPageSize,
+		"item_name ASC, item_model ASC, id ASC")
 	if err != nil {
 		return items, utils.PaginationMeta{}, fiber.StatusInternalServerError, errors.New("failed searching items")
 	}
@@ -339,6 +343,13 @@ type ItemPickerRow struct {
 const itemPickerColumns = `v.id, v.item_code, v.item_name, v.item_model, v.item_name_id, v.unit_of_measure,
 	ISNULL((SELECT TOP 1 b.id FROM tbl_setup_item_bom b WHERE b.item_id = v.id), 0) AS bom_id`
 
+// Each picker is ordered by the column the user reads down: the ITEM picker shows item names,
+// the MODEL picker shows models. id breaks ties so paging stays stable.
+const (
+	itemPickerNameOrder  = "v.item_name ASC, v.id ASC"
+	itemPickerModelOrder = "v.item_model ASC, v.id ASC"
+)
+
 func itemPickerSearch(search string, args *[]interface{}) string {
 	search = strings.TrimSpace(search)
 	if search == "" {
@@ -350,7 +361,8 @@ func itemPickerSearch(search string, args *[]interface{}) string {
 	return " AND (v.item_code LIKE ? OR v.item_name LIKE ? OR v.item_model LIKE ?)"
 }
 
-func runItemPickerQuery(where string, args []interface{}, page int) ([]ItemPickerRow, utils.PaginationMeta, error) {
+// orderBy is always one of this file's own constants, never anything a caller typed.
+func runItemPickerQuery(where string, args []interface{}, page int, orderBy string) ([]ItemPickerRow, utils.PaginationMeta, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -361,13 +373,17 @@ func runItemPickerQuery(where string, args []interface{}, page int) ([]ItemPicke
 		return nil, utils.PaginationMeta{}, err
 	}
 
-	// ORDER BY id, matching the order these pickers showed while they were fed the whole
-	// catalogue in id order - a picker that suddenly re-sorts itself is a behaviour change.
+	// Ordered by what the modal displays, not by id. While these lists were fed the whole
+	// catalogue at once the user scrolled one long grid and id order was merely odd; paged 20
+	// at a time it hid models. "PUMP" holds 2,457 items, so the list is 123 pages, and id
+	// order is load order - the 15 variants of NM 40/12 landed on pages 42, 43, 44, 45, 46
+	// and 47 (user-reported 2026-09-21: "sometimes the pump model can't be seen"). By model
+	// they sit together on one page, and paging forward walks the models in order.
 	paged := append(append([]interface{}{}, args...), (page-1)*itemPageSize, itemPageSize)
 	rows := []ItemPickerRow{}
 	if err := initializers.DB.Raw(
 		"SELECT "+itemPickerColumns+" FROM vw_items v WHERE "+where+
-			" ORDER BY v.id ASC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY", paged...).
+			" ORDER BY "+orderBy+" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY", paged...).
 		Scan(&rows).Error; err != nil {
 		return nil, utils.PaginationMeta{}, err
 	}
@@ -395,7 +411,7 @@ func GetItemPickerNames(search string, page int) ([]ItemPickerRow, utils.Paginat
 	args := []interface{}{}
 	where := "v.id IN (SELECT MIN(id) FROM vw_items GROUP BY item_name_id)" + itemPickerSearch(search, &args)
 
-	rows, pagination, err := runItemPickerQuery(where, args, page)
+	rows, pagination, err := runItemPickerQuery(where, args, page, itemPickerNameOrder)
 	if err != nil {
 		return nil, utils.PaginationMeta{}, fiber.StatusInternalServerError, errors.New("failed getting the item picker list")
 	}
@@ -427,7 +443,7 @@ func GetItemPickerModels(itemID int, search string, page int) ([]ItemPickerRow, 
 	}
 	where += itemPickerSearch(search, &args)
 
-	rows, pagination, err := runItemPickerQuery(where, args, page)
+	rows, pagination, err := runItemPickerQuery(where, args, page, itemPickerModelOrder)
 	if err != nil {
 		return nil, utils.PaginationMeta{}, fiber.StatusInternalServerError, errors.New("failed getting the model list")
 	}

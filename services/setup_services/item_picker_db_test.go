@@ -178,6 +178,115 @@ func TestItemPickerModelsShareOneItemName(t *testing.T) {
 	t.Logf("%s: item %d (%s) has %d models", os.Getenv("DB_NAME"), subject.ID, subject.ItemName, collected)
 }
 
+// The pickers page 20 at a time, so the order decides what a user can actually find. In id
+// order the 15 variants of pump model NM 40/12 were spread over pages 42-47 of 123; by model
+// they sit together. This walks every page of the biggest model list and checks the order
+// holds across page boundaries - and that paging loses or repeats nothing, which is what a
+// wrong ORDER BY with OFFSET/FETCH does. Read-only.
+func TestItemPickerModelsAreOrderedByModel(t *testing.T) {
+	connectForTest(t)
+
+	// The longest model list is where order matters and where a paging fault shows up.
+	var subjectID int64
+	if err := initializers.DB.Raw(
+		`SELECT TOP 1 MIN(id) FROM vw_items WHERE item_name_id <> 0
+		 GROUP BY item_name_id ORDER BY COUNT(*) DESC`).Scan(&subjectID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if subjectID == 0 {
+		t.Skip("no items in this database")
+	}
+
+	// The expected order comes from SQL Server rather than a Go string compare: sorting is the
+	// database's collation, which weighs punctuation differently from Go's byte-wise <, so
+	// "BNM 32/16B-60/A" and "BNM 32/16B60/A" legitimately order differently in the two.
+	var want []uint
+	if err := initializers.DB.Raw(
+		`SELECT id FROM vw_items WHERE item_name_id = (SELECT item_name_id FROM vw_items WHERE id = ?)
+		 ORDER BY item_model ASC, id ASC`, subjectID).Scan(&want).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	var got []uint
+	page := 1
+	var total int64
+
+	for {
+		rows, pagination, _, err := GetItemPickerModels(int(subjectID), "", page)
+		if err != nil {
+			t.Fatalf("models page %d: %v", page, err)
+		}
+		total = pagination.Total
+
+		for _, row := range rows {
+			got = append(got, row.ID)
+		}
+
+		if !pagination.HasNext {
+			break
+		}
+		page++
+	}
+
+	if int64(len(got)) != total || len(got) != len(want) {
+		t.Fatalf("walked %d models over %d pages, meta reports %d, the database holds %d",
+			len(got), page, total, len(want))
+	}
+
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("position %d (page %d) is item %d, model order puts item %d there",
+				i, i/itemPageSize+1, got[i], want[i])
+		}
+	}
+
+	t.Logf("%s: %d models over %d pages, in model order", os.Getenv("DB_NAME"), len(got), page)
+}
+
+func TestItemPickerNamesAreOrderedByName(t *testing.T) {
+	connectForTest(t)
+
+	// Compared against the database's own ordering, for the collation reason above.
+	var want []uint
+	if err := initializers.DB.Raw(
+		`SELECT id FROM vw_items WHERE id IN (SELECT MIN(id) FROM vw_items GROUP BY item_name_id)
+		 ORDER BY item_name ASC, id ASC`).Scan(&want).Error; err != nil {
+		t.Fatal(err)
+	}
+	if len(want) == 0 {
+		t.Skip("no items in this database")
+	}
+
+	var got []uint
+	page := 1
+
+	for {
+		rows, pagination, _, err := GetItemPickerNames("", page)
+		if err != nil {
+			t.Fatalf("names page %d: %v", page, err)
+		}
+
+		for _, row := range rows {
+			got = append(got, row.ID)
+		}
+
+		if !pagination.HasNext {
+			break
+		}
+		page++
+	}
+
+	if len(got) != len(want) {
+		t.Fatalf("walked %d names, the database holds %d", len(got), len(want))
+	}
+
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("position %d is item %d, name order puts item %d there", i, got[i], want[i])
+		}
+	}
+}
+
 func TestItemPickerSearchNarrows(t *testing.T) {
 	connectForTest(t)
 
