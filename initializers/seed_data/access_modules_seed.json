@@ -7450,5 +7450,23 @@
     "code": "RESERVATION_APPROVAL.Reject",
     "kind": "button",
     "is_sensitive": true
+  },
+  {
+    "app_name": "Inventory App",
+    "module": "Purchasing",
+    "submodule": "Purchase Return",
+    "button": "",
+    "code": "Purchasing.Purchase Return",
+    "kind": "page",
+    "is_sensitive": false
+  },
+  {
+    "app_name": "Inventory App",
+    "module": "Inventory",
+    "submodule": "Production Report",
+    "button": "",
+    "code": "Inventory.Production Report",
+    "kind": "page",
+    "is_sensitive": false
   }
 ]
