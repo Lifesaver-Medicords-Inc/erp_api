@@ -175,6 +175,18 @@ func TestItemPickerModelsShareOneItemName(t *testing.T) {
 		t.Errorf("item_id 0 returned status %d, err %v - want a 400", status, err)
 	}
 
+	// An id that is simply not in the catalogue is the project-template case: the template
+	// keeps the item id it was built from, and a rebuilt database renumbers the items. It
+	// has to be reported, because an empty list reads as "this component has no models".
+	var missing int64
+	if err := initializers.DB.Raw("SELECT MAX(id) + 1000 FROM vw_items").Scan(&missing).Error; err != nil {
+		t.Fatal(err)
+	}
+	if _, _, status, err := GetItemPickerModels(int(missing), "", 1); err == nil || status != 404 {
+		t.Errorf("item %d is not in the catalogue but returned status %d, err %v - want a 404",
+			missing, status, err)
+	}
+
 	t.Logf("%s: item %d (%s) has %d models", os.Getenv("DB_NAME"), subject.ID, subject.ItemName, collected)
 }
 

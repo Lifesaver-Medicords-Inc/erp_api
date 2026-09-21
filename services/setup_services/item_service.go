@@ -427,17 +427,29 @@ func GetItemPickerModels(itemID int, search string, page int) ([]ItemPickerRow, 
 		return nil, utils.PaginationMeta{}, fiber.StatusBadRequest, errors.New("item_id is required")
 	}
 
-	var nameID uint
-	if err := initializers.DB.Raw("SELECT ISNULL(item_name_id, 0) FROM vw_items WHERE id = ?", itemID).
-		Scan(&nameID).Error; err != nil {
+	// An id that is not in the catalogue at all is reported, not answered with an empty
+	// list. A project template stores the item id of the row it was built from, and those
+	// ids do not survive a database rebuilt from scratch - every template's PUMP row still
+	// pointed at item 1 on a database whose items start at 1245, so the model picker came
+	// up empty and read as "this component has no models" (user-reported 2026-09-21).
+	var item struct {
+		ID         uint
+		ItemNameId uint
+	}
+	if err := initializers.DB.Raw("SELECT id, ISNULL(item_name_id, 0) AS item_name_id FROM vw_items WHERE id = ?", itemID).
+		Scan(&item).Error; err != nil {
 		return nil, utils.PaginationMeta{}, fiber.StatusInternalServerError, errors.New("failed getting the item")
+	}
+	if item.ID == 0 {
+		return nil, utils.PaginationMeta{}, fiber.StatusNotFound,
+			fmt.Errorf("this row points at item %d, which is not in the item catalogue - pick the component again", itemID)
 	}
 
 	args := []interface{}{}
 	where := "v.id = ?"
-	if nameID != 0 {
+	if item.ItemNameId != 0 {
 		where = "v.item_name_id = ?"
-		args = append(args, nameID)
+		args = append(args, item.ItemNameId)
 	} else {
 		args = append(args, itemID)
 	}
