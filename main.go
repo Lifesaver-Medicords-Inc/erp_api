@@ -99,6 +99,10 @@ func init() {
 	// screen, which needs access). Must follow SeedAccessModules: it grants
 	// what is in the catalog. See seed_admin_position_access.go.
 	initializers.SeedAdminPositionAccess()
+	// Every other position's starting access, from the same access-level workbook the
+	// catalog came from. Only fills a position that has none at all, so it never undoes a
+	// grant removed through Admin's Access Control screen. See seed_position_access.go.
+	initializers.SeedPositionAccess()
 	initializers.InitRedis()
 	// 4.4.4: every vehicle exists as an OUTBOUND zone in its home warehouse.
 	// Vehicles created before that was wired up have no zone, and without one
