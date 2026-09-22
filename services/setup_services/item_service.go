@@ -463,6 +463,66 @@ func GetItemPickerModels(itemID int, search string, page int) ([]ItemPickerRow, 
 	return rows, pagination, 0, nil
 }
 
+// ItemDetailResponse is one catalogue row with only its own descriptions and
+// images - for lazy per-item loads in the Sales quotation (descriptions,
+// image picker, BOM component resolution). The module used to download all
+// 3,707 items with all specs and images to look at one.
+type ItemDetailResponse struct {
+	Item   models.ItemView              `json:"item"`
+	Specs  []models.AdditionalSpecsView `json:"specs"`
+	Images []models.ItemImage           `json:"images"`
+}
+
+// GetItemDetail serves one item by its vw_items id. 404 when unknown.
+// Uncached: three indexed seeks (id, then two based_id), like the item page
+// children.
+func GetItemDetail(id int) (ItemDetailResponse, int, error) {
+	var response ItemDetailResponse
+
+	if id <= 0 {
+		return response, fiber.StatusBadRequest, errors.New("missing or invalid item id")
+	}
+
+	if err := services.DbGetNoCache(&response.Item, map[string]interface{}{"id": id}); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting item")
+	}
+	if response.Item.ID == 0 {
+		return response, fiber.StatusNotFound, errors.New("item not found")
+	}
+
+	byItem := map[string]interface{}{"based_id": response.Item.ID}
+	if err := services.DbGetNoCache(&response.Specs, byItem); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting item specs")
+	}
+	if err := services.DbGetNoCache(&response.Images, byItem); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting item images")
+	}
+
+	return response, 0, nil
+}
+
+// GetPumpPickerRows serves the Sales Size Up / Final pump pickers: light
+// picker rows (same shape as the item/model pickers) for item_name = 'PUMP'
+// (spec §17.2, code PMP), ordered by model so variants sit together. Unpaged
+// by design - these modals multi-select across the whole set with rows
+// pre-checked, which paging would break - but light columns only, fetched on
+// modal open instead of holding the catalogue for the filter. An optional
+// search narrows by code/name/model.
+func GetPumpPickerRows(search string) ([]ItemPickerRow, int, error) {
+	args := []interface{}{}
+	where := "v.item_name = 'PUMP'" + itemPickerSearch(search, &args)
+
+	rows := []ItemPickerRow{}
+	if err := initializers.DB.Raw(
+		"SELECT "+itemPickerColumns+" FROM vw_items v WHERE "+where+
+			" ORDER BY "+itemPickerModelOrder, args...).
+		Scan(&rows).Error; err != nil {
+		return rows, fiber.StatusInternalServerError, errors.New("failed getting the pump list")
+	}
+
+	return rows, 0, nil
+}
+
 func GetItem(id int) (Body, int, error) {
 	conditions := map[string]interface{}{
 		"id": id,

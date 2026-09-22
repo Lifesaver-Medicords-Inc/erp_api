@@ -391,6 +391,8 @@ func SetupApp() *fiber.App {
 					// setup list - and above "/:id" for the same reason as the two above.
 					itemApi.Get("/picker", setup_handlers.GetItemPickerNames)
 					itemApi.Get("/picker/models", setup_handlers.GetItemPickerModels)
+					itemApi.Get("/picker/pumps", setup_handlers.GetPumpPickerRows)
+					itemApi.Get("/detail/:id", setup_handlers.GetItemDetail)
 					itemApi.Get("/:id", setup_handlers.GetItem)
 					itemApi.Post("", setup_handlers.CreateItem)
 					itemApi.Put("", setup_handlers.UpdateItem)

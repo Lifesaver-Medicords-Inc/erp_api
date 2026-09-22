@@ -81,6 +81,32 @@ func GetItemPickerModels(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data, pagination)
 }
 
+// GetItemDetail serves one catalogue row with only its own specs and images,
+// for lazy per-item loads in the Sales quotation.
+func GetItemDetail(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "invalid item id")
+	}
+
+	data, status, svcErr := setup_services.GetItemDetail(id)
+	if svcErr != nil {
+		return utils.RespondError(c, status, svcErr.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
+
+// GetPumpPickerRows serves the Sales Size Up / Final pump pickers: light
+// picker rows for item_name = 'PUMP', fetched on modal open. ?search= is
+// optional (code/name/model).
+func GetPumpPickerRows(c *fiber.Ctx) error {
+	data, status, err := setup_services.GetPumpPickerRows(c.Query("search"))
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
+
 func GetItem(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	idNum, err := strconv.Atoi(idParam)
