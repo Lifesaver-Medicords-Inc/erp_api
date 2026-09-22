@@ -25,6 +25,17 @@ func GetLatestQuotations(c *fiber.Ctx) error {
 	}
 	return utils.RespondSuccess(c, data)
 }
+// GetQuotationVersions serves one document's full version history
+// (all version_no/sub_version_no rows + only that document's lines/images)
+// for the WinForms version-history viewer and open-by-document flows, which
+// previously downloaded the entire quotation list for a single document.
+func GetQuotationVersions(c *fiber.Ctx) error {
+	data, status, err := sales_services.GetQuotationVersions(c.Query("document_no"))
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
 func GetBpiCustomers(c *fiber.Ctx) error {
 	data, status, err := sales_services.GetBpiCustomers(nil)
 	if err != nil {

@@ -350,6 +350,12 @@ func CreateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, erro
 		return body, fiber.StatusInternalServerError, errors.New("failed creating projects")
 	}
 
+	// Project quotes share the header table behind vw_latest_sales_quotation,
+	// so a new project also changes the latest-versions list.
+	if err := invalidateLatestQuotationCache(); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed invalidating latest quotation cache")
+	}
+
 	at, ok := c.Locals("at").(models.At)
 	if !ok {
 		at = models.At{}
@@ -645,6 +651,11 @@ func applyQuotationFieldChanges(tx *gorm.DB, id uint, fields QuotationFieldChang
 	// Application field showing the database's new value in a SQL client but not in
 	// the app's own view even after refreshing.
 	if err := services.InvalidateCache(services.GetKey(&models.SalesQuotation{}, nil)); err != nil {
+		return err
+	}
+	// Same header table feeds vw_latest_sales_quotation - see
+	// invalidateLatestQuotationCache in quotation_service.go.
+	if err := invalidateLatestQuotationCache(); err != nil {
 		return err
 	}
 	return services.InvalidateCacheByModel(&models.SalesQuotation{})

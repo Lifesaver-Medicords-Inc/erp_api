@@ -8,6 +8,7 @@ import (
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/pierceperado/smpc/handlers/bpi_handlers"
 	"github.com/pierceperado/smpc/handlers/engineering_handlers"
@@ -231,6 +232,13 @@ func SetupApp() *fiber.App {
 		},
 		Format: "[${client_ip}]:${port} ${status} - ${method} ${path}\n",
 	}))
+
+	// Gzip JSON responses for clients that ask (Accept-Encoding). The desktop
+	// apps opt in via AutomaticDecompression; older builds without it get
+	// plain responses exactly as before, since compress only acts when the
+	// request advertises support. This is what makes the multi-MB list
+	// payloads (item catalogue, quotations) cheap across the VPN.
+	app.Use(compress.New())
 
 	// Api Endpoints
 	api := app.Group("/api")
@@ -567,6 +575,7 @@ func SetupApp() *fiber.App {
 			{
 				salesApi.Get("/quotation", sales_handlers.GetSalesQuotations)
 				salesApi.Get("/quotation/latest", sales_handlers.GetLatestQuotations)
+				salesApi.Get("/quotation/versions", sales_handlers.GetQuotationVersions)
 				salesApi.Get("/quotation/customers", sales_handlers.GetBpiCustomers)
 				//salesApi.Get("/quotation/:id", sales_handlers.GetSalesQuotation)
 				//salesApi.Get("/quotation/:id", sales_handlers.GetBpi)

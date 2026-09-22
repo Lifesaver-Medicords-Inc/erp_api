@@ -115,30 +115,149 @@ func isFirstVersion(versionNo, subVersionNo string) bool {
 	return (v == "" || v == "1") && (sv == "" || sv == "0")
 }
 
-func GetLatestQuotations(conditions map[string]interface{}) (interface{}, int, error) {
-	type Response struct {
-		LatestQuote         []models.LatestQuotationView
-		SalesQuotationQuick []models.SalesQuotationQuick
+// quotationListShape is the wire shape GET /sales/quotation has always
+// returned: headers + quick lines + selected images. GET
+// /sales/quotation/latest and GET /sales/quotation/versions return the same
+// shape (narrowed to latest versions / one document) so the WinForms client
+// binds any of them with its existing SalesQuotationList model.
+type quotationListShape struct {
+	SalesQuotation               []models.SalesQuotation
+	SalesQuotationQuick          []models.SalesQuotationQuick
+	SalesQuotationSelectedImages []models.SalesQuotationSelectedImage
+}
+
+func newQuotationListShape() quotationListShape {
+	return quotationListShape{
+		SalesQuotation:               []models.SalesQuotation{},
+		SalesQuotationQuick:          []models.SalesQuotationQuick{},
+		SalesQuotationSelectedImages: []models.SalesQuotationSelectedImage{},
 	}
-	var response Response
-	if err := services.DbGet(&response.LatestQuote, conditions); err != nil {
-		return nil, fiber.StatusInternalServerError, errors.New("failed getting latest quotations")
+}
+
+// scopeQuotationChildren fills quick lines + selected images for exactly the
+// given header ids. The full tables are read through the same cached DbGet
+// keys the all-versions endpoint uses (so no new cache-invalidation surface),
+// and the narrowing happens in API memory - the VPN transfer to the client is
+// what shrinks, which is the actual bottleneck.
+func scopeQuotationChildren(shape *quotationListShape, headerIDs map[uint]bool) error {
+	var quicks []models.SalesQuotationQuick
+	if err := GetSalesQuotationQuicks(&quicks, nil); err != nil {
+		return err
 	}
 
-	var filteredQuotations []models.LatestQuotationView
-	for _, quotation := range response.LatestQuote {
-		if quotation.ProjectName == "" {
-			filteredQuotations = append(filteredQuotations, quotation)
+	var images []models.SalesQuotationSelectedImage
+	if err := GetQuotationQuickSelectedImages(&images, nil); err != nil {
+		return err
+	}
+
+	lineIDs := make(map[uint]bool, len(quicks))
+	for _, q := range quicks {
+		if headerIDs[q.BasedId] {
+			shape.SalesQuotationQuick = append(shape.SalesQuotationQuick, q)
+			lineIDs[q.ID] = true
+		}
+	}
+	for _, img := range images {
+		if lineIDs[img.QuotationQuickId] {
+			shape.SalesQuotationSelectedImages = append(shape.SalesQuotationSelectedImages, img)
 		}
 	}
 
-	response.LatestQuote = filteredQuotations
+	return nil
+}
 
-	if err := GetSalesQuotationQuicks(&response.SalesQuotationQuick, conditions); err != nil {
-		return response, fiber.StatusInternalServerError, err
+// invalidateLatestQuotationCache clears the vw_latest_sales_quotation read
+// cache. DbInsert/DbUpdate invalidate by written model only
+// (model:SalesQuotation*), so without this a save stays invisible on GET
+// /sales/quotation/latest until the hour cache expires - the same gap
+// RequestQuotationForEngr already closes for the engineering list view.
+func invalidateLatestQuotationCache() error {
+	return services.InvalidateCache(services.GetKey(models.LatestQuotationView{}, nil))
+}
+
+// stripQuotationPrefix mirrors the WinForms DocumentNo.Strip helper for
+// quotation prefixes: the client compares prefix-insensitively
+// (NormalizeDocumentNo), so "0005", "Q#0005" and "FQ#0005" must all resolve
+// to the same document.
+func stripQuotationPrefix(docNo string) string {
+	v := strings.TrimSpace(docNo)
+	for {
+		u := strings.ToUpper(v)
+		if strings.HasPrefix(u, "FQ#") {
+			v = strings.TrimSpace(v[3:])
+			continue
+		}
+		if strings.HasPrefix(u, "Q#") {
+			v = strings.TrimSpace(v[2:])
+			continue
+		}
+		return v
+	}
+}
+
+func GetLatestQuotations(conditions map[string]interface{}) (interface{}, int, error) {
+	shape := newQuotationListShape()
+
+	// One row per document out of SQL (ROW_NUMBER partition in the view),
+	// instead of every historical version - the client used to download all
+	// of them and dedupe in memory (Quotation.cs fetchQuotationDetails).
+	var latest []models.LatestQuotationView
+	if err := services.DbGet(&latest, conditions); err != nil {
+		return shape, fiber.StatusInternalServerError, errors.New("failed getting latest quotations")
 	}
 
-	return response, 0, nil
+	ids := make(map[uint]bool, len(latest))
+	for _, v := range latest {
+		if v.ProjectName == "" {
+			shape.SalesQuotation = append(shape.SalesQuotation, v.SalesQuotation)
+			ids[v.ID] = true
+		}
+	}
+
+	if err := scopeQuotationChildren(&shape, ids); err != nil {
+		return shape, fiber.StatusInternalServerError, err
+	}
+
+	return shape, 0, nil
+}
+
+// GetQuotationVersions returns every version of ONE quick quotation document
+// (all version_no/sub_version_no rows for the bare document number) with only
+// that document's lines and images. It backs the WinForms version-history
+// viewer (VersionModal) and the open-by-document flows, which previously
+// downloaded the full quotation list to look at a single document.
+func GetQuotationVersions(documentNo string) (interface{}, int, error) {
+	shape := newQuotationListShape()
+
+	bare := stripQuotationPrefix(documentNo)
+	if bare == "" {
+		return shape, fiber.StatusBadRequest, errors.New("missing document number")
+	}
+
+	// Same shared cache key as the all-versions endpoint - no new
+	// invalidation surface; the narrowing is in API memory only.
+	var all []models.SalesQuotation
+	if err := services.DbGet(&all, nil); err != nil {
+		return shape, fiber.StatusInternalServerError, errors.New("failed getting quotation versions")
+	}
+
+	ids := make(map[uint]bool)
+	for _, q := range all {
+		if q.ProjectName == "" && stripQuotationPrefix(q.DocumentNo) == bare {
+			shape.SalesQuotation = append(shape.SalesQuotation, q)
+			ids[q.ID] = true
+		}
+	}
+
+	if len(shape.SalesQuotation) == 0 {
+		return shape, fiber.StatusNotFound, errors.New("quotation not found")
+	}
+
+	if err := scopeQuotationChildren(&shape, ids); err != nil {
+		return shape, fiber.StatusInternalServerError, err
+	}
+
+	return shape, 0, nil
 }
 
 func GetSalesQuotations(conditions map[string]interface{}) (interface{}, int, error) {
@@ -361,6 +480,12 @@ func CreateSalesQuotation(c *fiber.Ctx, tx *gorm.DB) (CreateBody, int, error) {
 		fmt.Println(err)
 		fmt.Println("ERR", body)
 		return body, fiber.StatusInternalServerError, errors.New("failed creating sales quotation")
+	}
+
+	// The latest-versions list reads through LatestQuotationView, which
+	// DbInsert does not invalidate (it only clears model:SalesQuotation*).
+	if err := invalidateLatestQuotationCache(); err != nil {
+		return body, fiber.StatusInternalServerError, errors.New("failed invalidating latest quotation cache")
 	}
 
 	at, ok := c.Locals("at").(models.At)
@@ -604,6 +729,10 @@ func RequestQuotationForEngr(tx *gorm.DB, quotationId uint, at models.At) (*mode
 		return nil, fiber.StatusInternalServerError, errors.New("failed requesting quotation for engineering")
 	}
 
+	if err := invalidateLatestQuotationCache(); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed invalidating latest quotation cache")
+	}
+
 	// DbUpdate's own InvalidateCacheByModel only ever clears model:SalesQuotation*
 	// keys - the Engineering Sales Quotation List reads a completely different
 	// cached type (EngineeringRedboxQuotationListView, bound to
@@ -647,6 +776,10 @@ func CancelQuotationForEngr(tx *gorm.DB, quotationId uint, at models.At) (*model
 		return nil, fiber.StatusInternalServerError, errors.New("failed cancelling the engineering request")
 	}
 
+	if err := invalidateLatestQuotationCache(); err != nil {
+		return nil, fiber.StatusInternalServerError, errors.New("failed invalidating latest quotation cache")
+	}
+
 	if err := services.InvalidateCache(services.GetKey(models.EngineeringRedboxQuotationListView{}, nil)); err != nil {
 		return nil, fiber.StatusInternalServerError, errors.New("failed invalidating engineering quotation list cache")
 	}
@@ -686,6 +819,10 @@ func UpdateQuotationQuick(tx *gorm.DB, Quotation models.SalesQuotation, at model
 
 	if err := services.DbUpdate(tx, &Quotation, conditions); err != nil {
 		return errors.New("failed updating quotation")
+	}
+
+	if err := invalidateLatestQuotationCache(); err != nil {
+		return errors.New("failed invalidating latest quotation cache")
 	}
 
 	if validityEdited {
