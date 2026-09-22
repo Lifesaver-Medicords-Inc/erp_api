@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
+	"github.com/pierceperado/smpc/utils"
 	"gorm.io/gorm"
 )
 
@@ -179,6 +181,212 @@ func GetBpiSuppliers(conditions map[string]interface{}) (interface{}, int, error
 	}
 
 	return response, 0, nil
+}
+
+// Phase 2 - paged project headers + lazy project detail. Same split as the
+// quick side: the module list pages latest headers only, and opening a project
+// pulls its full tab/item/wiring tree on demand.
+const projectOnlyWhere = "(project_name IS NOT NULL AND project_name <> '')"
+
+const projectHeaderPageSize = 50
+
+// SalesProjectDetail is the GetSalesProjects wire shape, named so the
+// single-project detail endpoint can return it too.
+type SalesProjectDetail struct {
+	SalesQuotation                       []models.SalesQuotation                 `json:"SalesQuotation"`
+	SalesProjectMultiplier               []models.SalesProjectMultiplier         `json:"sales_project_multiplier"`
+	SalesProjectHistory                  []models.SalesProjectHistory            `json:"sales_project_history"`
+	SalesProjectItemSet                  []models.SalesProjectItemSet            `json:"sales_project_item_set"`
+	SalesProjectContent                  []models.SalesProjectContent            `json:"sales_project_content"`
+	SalesProjectContentAdvancedCondition []models.SalesProjectAdvancedConditions `json:"sales_project_content_advanced_condition"`
+	SalesProjectItems                    []models.SalesProjectItems              `json:"sales_project_items"`
+	SalesProjectWirings                  []models.SalesProjectWiring             `json:"sales_project_wiring"`
+	SalesProjectItemsSelectedImages      []models.SalesQuotationSelectedImage    `json:"sales_project_items_selected_images"`
+}
+
+func newSalesProjectDetail() SalesProjectDetail {
+	return SalesProjectDetail{
+		SalesQuotation:                       []models.SalesQuotation{},
+		SalesProjectMultiplier:               []models.SalesProjectMultiplier{},
+		SalesProjectHistory:                  []models.SalesProjectHistory{},
+		SalesProjectItemSet:                  []models.SalesProjectItemSet{},
+		SalesProjectContent:                  []models.SalesProjectContent{},
+		SalesProjectContentAdvancedCondition: []models.SalesProjectAdvancedConditions{},
+		SalesProjectItems:                    []models.SalesProjectItems{},
+		SalesProjectWirings:                  []models.SalesProjectWiring{},
+		SalesProjectItemsSelectedImages:      []models.SalesQuotationSelectedImage{},
+	}
+}
+
+// GetProjectHeadersPaged serves the project list: one page of latest project
+// headers, newest first, no children. Same keyset contract as
+// GetQuotationHeadersPaged (after/before/at, all unset = first page).
+// Deliberately uncached, like GetItemsPaged.
+func GetProjectHeadersPaged(after, before, at int) (quotationListShape, utils.PaginationMeta, int, error) {
+	shape := newQuotationListShape()
+	pagination := utils.PaginationMeta{PageSize: projectHeaderPageSize}
+
+	var latest []models.LatestQuotationView
+	query := initializers.DB.Model(&models.LatestQuotationView{}).Where(projectOnlyWhere)
+	reversed := false
+
+	switch {
+	case before > 0:
+		query = query.Where("id > ?", before).Order("id ASC")
+		reversed = true
+	case after > 0:
+		query = query.Where("id < ?", after).Order("id DESC")
+	case at > 0:
+		query = query.Where("id <= ?", at).Order("id DESC")
+	default:
+		query = query.Order("id DESC")
+	}
+
+	if err := query.Limit(projectHeaderPageSize).Find(&latest).Error; err != nil {
+		return shape, pagination, fiber.StatusInternalServerError, errors.New("failed getting project headers")
+	}
+
+	if reversed {
+		for i, j := 0, len(latest)-1; i < j; i, j = i+1, j-1 {
+			latest[i], latest[j] = latest[j], latest[i]
+		}
+	}
+
+	var total int64
+	if err := initializers.DB.Model(&models.LatestQuotationView{}).
+		Where(projectOnlyWhere).Count(&total).Error; err != nil {
+		return shape, pagination, fiber.StatusInternalServerError, errors.New("failed counting project headers")
+	}
+	pagination.Total = total
+	pagination.TotalPages = int((total + int64(projectHeaderPageSize) - 1) / int64(projectHeaderPageSize))
+
+	if len(latest) == 0 {
+		return shape, pagination, 0, nil
+	}
+
+	var newer, older int64
+	if err := initializers.DB.Model(&models.LatestQuotationView{}).
+		Where(projectOnlyWhere).Where("id > ?", latest[0].ID).Count(&newer).Error; err != nil {
+		return shape, pagination, fiber.StatusInternalServerError, errors.New("failed checking for a newer header page")
+	}
+	if err := initializers.DB.Model(&models.LatestQuotationView{}).
+		Where(projectOnlyWhere).Where("id < ?", latest[len(latest)-1].ID).Count(&older).Error; err != nil {
+		return shape, pagination, fiber.StatusInternalServerError, errors.New("failed checking for an older header page")
+	}
+	pagination.HasPrev = newer > 0
+	pagination.HasNext = older > 0
+	pagination.Page = int(newer)/projectHeaderPageSize + 1
+
+	for _, v := range latest {
+		shape.SalesQuotation = append(shape.SalesQuotation, v.SalesQuotation)
+	}
+
+	return shape, pagination, 0, nil
+}
+
+// GetProjectVersions returns every version of ONE project document with the
+// same scoping the quick versions endpoint uses, for the project
+// version-history navigation that used to need the whole project list.
+func GetProjectVersions(documentNo string) (quotationListShape, int, error) {
+	shape := newQuotationListShape()
+
+	bare := stripQuotationPrefix(documentNo)
+	if bare == "" {
+		return shape, fiber.StatusBadRequest, errors.New("missing document number")
+	}
+
+	var all []models.SalesQuotation
+	if err := services.DbGet(&all, nil); err != nil {
+		return shape, fiber.StatusInternalServerError, errors.New("failed getting project versions")
+	}
+
+	ids := make(map[uint]bool)
+	for _, q := range all {
+		if q.ProjectName != "" && stripQuotationPrefix(q.DocumentNo) == bare {
+			shape.SalesQuotation = append(shape.SalesQuotation, q)
+			ids[q.ID] = true
+		}
+	}
+
+	if len(shape.SalesQuotation) == 0 {
+		return shape, fiber.StatusNotFound, errors.New("project not found")
+	}
+
+	_ = ids
+	return shape, 0, nil
+}
+
+// GetProjectDetail returns ONE project's full tree (tabs, contents, items,
+// wiring, history, multipliers, images) scoped to that project id, for lazy
+// loading when a project is opened. 404 when the id is unknown or not a
+// project. Uncached: a handful of indexed seeks, like the item page children.
+func GetProjectDetail(id int) (SalesProjectDetail, int, error) {
+	detail := newSalesProjectDetail()
+
+	if id <= 0 {
+		return detail, fiber.StatusBadRequest, errors.New("missing or invalid project id")
+	}
+
+	var header models.SalesQuotation
+	if err := services.DbGetNoCache(&header, map[string]interface{}{"id": id}); err != nil {
+		return detail, fiber.StatusInternalServerError, errors.New("failed getting project")
+	}
+	if header.ID == 0 || header.ProjectName == "" {
+		return detail, fiber.StatusNotFound, errors.New("project not found")
+	}
+	detail.SalesQuotation = append(detail.SalesQuotation, header)
+
+	uid := uint(id)
+	byProject := map[string]interface{}{"based_id": uid}
+
+	if err := services.DbGetNoCache(&detail.SalesProjectMultiplier, byProject); err != nil {
+		return detail, fiber.StatusInternalServerError, errors.New("failed getting project multipliers")
+	}
+
+	if err := services.DbGetNoCache(&detail.SalesProjectItemSet, byProject); err != nil {
+		return detail, fiber.StatusInternalServerError, errors.New("failed getting project item sets")
+	}
+
+	itemSetIDs := make([]uint, 0, len(detail.SalesProjectItemSet))
+	for _, s := range detail.SalesProjectItemSet {
+		itemSetIDs = append(itemSetIDs, s.ItemSetID)
+	}
+
+	// History rows hang off the project AND its item sets (see
+	// GetFullProjectHistory on the client).
+	historyIDs := append([]uint{uid}, itemSetIDs...)
+	if err := services.DbGetNoCache(&detail.SalesProjectHistory, map[string]interface{}{"based_id": historyIDs}); err != nil {
+		return detail, fiber.StatusInternalServerError, errors.New("failed getting project history")
+	}
+
+	if len(itemSetIDs) > 0 {
+		byItemSet := map[string]interface{}{"based_id": itemSetIDs}
+		if err := services.DbGetNoCache(&detail.SalesProjectContent, byItemSet); err != nil {
+			return detail, fiber.StatusInternalServerError, errors.New("failed getting project content")
+		}
+		if err := services.DbGetNoCache(&detail.SalesProjectContentAdvancedCondition, byItemSet); err != nil {
+			return detail, fiber.StatusInternalServerError, errors.New("failed getting project conditions")
+		}
+		if err := services.DbGetNoCache(&detail.SalesProjectItems, byItemSet); err != nil {
+			return detail, fiber.StatusInternalServerError, errors.New("failed getting project items")
+		}
+		if err := services.DbGetNoCache(&detail.SalesProjectWirings, byItemSet); err != nil {
+			return detail, fiber.StatusInternalServerError, errors.New("failed getting project wiring")
+		}
+
+		itemIDs := make([]uint, 0, len(detail.SalesProjectItems))
+		for _, it := range detail.SalesProjectItems {
+			itemIDs = append(itemIDs, it.ItemsID)
+		}
+		if len(itemIDs) > 0 {
+			if err := services.DbGetNoCache(&detail.SalesProjectItemsSelectedImages,
+				map[string]interface{}{"quotation_quick_id": itemIDs}); err != nil {
+				return detail, fiber.StatusInternalServerError, errors.New("failed getting project images")
+			}
+		}
+	}
+
+	return detail, 0, nil
 }
 
 func GetSalesProjectsWS(conditions map[string]interface{}, multiplierConditions map[string]interface{}) (interface{}, int, error) {

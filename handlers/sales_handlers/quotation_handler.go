@@ -10,7 +10,6 @@ import (
 	"github.com/pierceperado/smpc/services/sales_services"
 	"github.com/pierceperado/smpc/utils"
 )
-
 func GetSalesQuotations(c *fiber.Ctx) error {
 	data, status, err := sales_services.GetSalesQuotations(nil)
 	if err != nil {
@@ -35,6 +34,44 @@ func GetQuotationVersions(c *fiber.Ctx) error {
 		return utils.RespondError(c, status, err.Error())
 	}
 	return utils.RespondSuccess(c, data)
+}
+// GetQuotationHeadersPaged serves the module list: one page of latest
+// headers, newest first, no children. ?after= / ?before= / ?at= are ids.
+func GetQuotationHeadersPaged(c *fiber.Ctx) error {
+	after, _ := strconv.Atoi(c.Query("after", "0"))
+	before, _ := strconv.Atoi(c.Query("before", "0"))
+	at, _ := strconv.Atoi(c.Query("at", "0"))
+
+	data, pagination, status, err := sales_services.GetQuotationHeadersPaged(after, before, at)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data, pagination)
+}
+// GetQuotationDetail serves one header with only its own lines and images,
+// for lazy loading on row selection.
+func GetQuotationDetail(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "invalid quotation id")
+	}
+
+	data, status, svcErr := sales_services.GetQuotationDetail(id)
+	if svcErr != nil {
+		return utils.RespondError(c, status, svcErr.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
+// SearchQuotations backs the module Search: flat matching headers, 20 to a
+// page, no children.
+func SearchQuotations(c *fiber.Ctx) error {
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+
+	data, pagination, status, err := sales_services.SearchQuotations(c.Query("term"), page)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data, pagination)
 }
 func GetBpiCustomers(c *fiber.Ctx) error {
 	data, status, err := sales_services.GetBpiCustomers(nil)

@@ -3,6 +3,7 @@ package sales_handlers
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
@@ -16,6 +17,43 @@ import (
 
 func GetSalesProject(c *fiber.Ctx) error {
 	data, status, err := sales_services.GetSalesProjects(nil)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
+
+// GetProjectHeadersPaged serves the project list: one page of latest project
+// headers, newest first, no children. ?after= / ?before= / ?at= are ids.
+func GetProjectHeadersPaged(c *fiber.Ctx) error {
+	after, _ := strconv.Atoi(c.Query("after", "0"))
+	before, _ := strconv.Atoi(c.Query("before", "0"))
+	at, _ := strconv.Atoi(c.Query("at", "0"))
+
+	data, pagination, status, err := sales_services.GetProjectHeadersPaged(after, before, at)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data, pagination)
+}
+
+// GetProjectDetail serves one project's full tree for lazy loading on open.
+func GetProjectDetail(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, "invalid project id")
+	}
+
+	data, status, svcErr := sales_services.GetProjectDetail(id)
+	if svcErr != nil {
+		return utils.RespondError(c, status, svcErr.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
+
+// GetProjectVersions serves one project document's full version history.
+func GetProjectVersions(c *fiber.Ctx) error {
+	data, status, err := sales_services.GetProjectVersions(c.Query("document_no"))
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

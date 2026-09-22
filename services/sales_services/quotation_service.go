@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
+	"github.com/pierceperado/smpc/utils"
 	"gorm.io/gorm"
 )
 
@@ -193,6 +195,198 @@ func stripQuotationPrefix(docNo string) string {
 		}
 		return v
 	}
+}
+
+// Phase 2 - paged headers + lazy detail. The module list used to download
+// every header with every line and image (then every version of them); now it
+// pages headers only and pulls one record's children on selection.
+//
+// quickOnlyWhere keeps the quick/project split server-side. It mirrors the old
+// Go filter (ProjectName == "") exactly, NULL included - a plain
+// `project_name = ''` would silently drop NULL rows the client used to see.
+const quickOnlyWhere = "(project_name IS NULL OR project_name = '')"
+
+const quotationHeaderPageSize = 50
+
+// GetQuotationHeadersPaged serves the module list: one page of latest quick
+// headers, newest first, no children. Keyset on id (never OFFSET - ids are
+// indexed and stable under inserts), mirroring GetItemsPaged:
+//
+//	after  - the last id of the page just shown (NEXT >>, older)
+//	before - the first id of it (<< PREV, newer)
+//	at     - open the page starting at this id (a search hit, one just saved)
+//
+// All three unset means the first page. Deliberately uncached, like
+// GetItemsPaged: an indexed keyset window plus counts is cheap, and page keys
+// would need invalidating on every save.
+func GetQuotationHeadersPaged(after, before, at int) (quotationListShape, utils.PaginationMeta, int, error) {
+	shape := newQuotationListShape()
+	pagination := utils.PaginationMeta{PageSize: quotationHeaderPageSize}
+
+	var latest []models.LatestQuotationView
+	query := initializers.DB.Model(&models.LatestQuotationView{}).Where(quickOnlyWhere)
+	reversed := false
+
+	switch {
+	case before > 0:
+		query = query.Where("id > ?", before).Order("id ASC")
+		reversed = true
+	case after > 0:
+		query = query.Where("id < ?", after).Order("id DESC")
+	case at > 0:
+		query = query.Where("id <= ?", at).Order("id DESC")
+	default:
+		query = query.Order("id DESC")
+	}
+
+	if err := query.Limit(quotationHeaderPageSize).Find(&latest).Error; err != nil {
+		return shape, pagination, fiber.StatusInternalServerError, errors.New("failed getting quotation headers")
+	}
+
+	// A PREV page is read back to front; put it the right way round before
+	// anything else sees it.
+	if reversed {
+		for i, j := 0, len(latest)-1; i < j; i, j = i+1, j-1 {
+			latest[i], latest[j] = latest[j], latest[i]
+		}
+	}
+
+	var total int64
+	if err := initializers.DB.Model(&models.LatestQuotationView{}).
+		Where(quickOnlyWhere).Count(&total).Error; err != nil {
+		return shape, pagination, fiber.StatusInternalServerError, errors.New("failed counting quotation headers")
+	}
+	pagination.Total = total
+	pagination.TotalPages = int((total + int64(quotationHeaderPageSize) - 1) / int64(quotationHeaderPageSize))
+
+	if len(latest) == 0 {
+		return shape, pagination, 0, nil
+	}
+
+	// Indexed counts over the view's ids - cheap, and exact in both directions.
+	var newer, older int64
+	if err := initializers.DB.Model(&models.LatestQuotationView{}).
+		Where(quickOnlyWhere).Where("id > ?", latest[0].ID).Count(&newer).Error; err != nil {
+		return shape, pagination, fiber.StatusInternalServerError, errors.New("failed checking for a newer header page")
+	}
+	if err := initializers.DB.Model(&models.LatestQuotationView{}).
+		Where(quickOnlyWhere).Where("id < ?", latest[len(latest)-1].ID).Count(&older).Error; err != nil {
+		return shape, pagination, fiber.StatusInternalServerError, errors.New("failed checking for an older header page")
+	}
+	pagination.HasPrev = newer > 0
+	pagination.HasNext = older > 0
+	pagination.Page = int(newer)/quotationHeaderPageSize + 1
+
+	for _, v := range latest {
+		shape.SalesQuotation = append(shape.SalesQuotation, v.SalesQuotation)
+	}
+
+	return shape, pagination, 0, nil
+}
+
+// GetQuotationDetail returns ONE header with only its own lines and images,
+// for lazy loading on row selection. 404 when the id is unknown.
+func GetQuotationDetail(id int) (quotationListShape, int, error) {
+	shape := newQuotationListShape()
+
+	if id <= 0 {
+		return shape, fiber.StatusBadRequest, errors.New("missing or invalid quotation id")
+	}
+
+	var header models.SalesQuotation
+	if err := services.DbGetNoCache(&header, map[string]interface{}{"id": id}); err != nil {
+		return shape, fiber.StatusInternalServerError, errors.New("failed getting quotation")
+	}
+	if header.ID == 0 {
+		return shape, fiber.StatusNotFound, errors.New("quotation not found")
+	}
+	shape.SalesQuotation = append(shape.SalesQuotation, header)
+
+	ids := map[uint]bool{header.ID: true}
+	if err := scopeQuotationChildrenNoCache(&shape, ids); err != nil {
+		return shape, fiber.StatusInternalServerError, err
+	}
+
+	return shape, 0, nil
+}
+
+// scopeQuotationChildrenNoCache is scopeQuotationChildren without the shared
+// full-table cache keys: a single record's children are two indexed seeks
+// (based_id, then quotation_quick_id IN), cheap enough to read straight from
+// the database every time, and per-id cache keys would churn on each save.
+func scopeQuotationChildrenNoCache(shape *quotationListShape, headerIDs map[uint]bool) error {
+	headerList := make([]uint, 0, len(headerIDs))
+	for id := range headerIDs {
+		headerList = append(headerList, id)
+	}
+
+	var quicks []models.SalesQuotationQuick
+	if err := services.DbGetNoCache(&quicks, map[string]interface{}{"based_id": headerList}); err != nil {
+		return err
+	}
+
+	lineIDs := make([]uint, 0, len(quicks))
+	seen := make(map[uint]bool, len(quicks))
+	for _, q := range quicks {
+		shape.SalesQuotationQuick = append(shape.SalesQuotationQuick, q)
+		if !seen[q.ID] {
+			seen[q.ID] = true
+			lineIDs = append(lineIDs, q.ID)
+		}
+	}
+
+	if len(lineIDs) == 0 {
+		return nil
+	}
+
+	var images []models.SalesQuotationSelectedImage
+	if err := services.DbGetNoCache(&images, map[string]interface{}{"quotation_quick_id": lineIDs}); err != nil {
+		return err
+	}
+	shape.SalesQuotationSelectedImages = append(shape.SalesQuotationSelectedImages, images...)
+
+	return nil
+}
+
+// SearchQuotations backs the module Search: flat matching quick headers, 20
+// to a page, no children - the picked record reopens through the headers'
+// `at`. A blank term matches nothing (never the whole table).
+func SearchQuotations(term string, page int) (quotationListShape, utils.PaginationMeta, int, error) {
+	const searchPageSize = 20
+
+	shape := newQuotationListShape()
+	pagination := utils.PaginationMeta{PageSize: searchPageSize, Page: page}
+
+	term = strings.TrimSpace(term)
+	if term == "" {
+		return shape, pagination, 0, nil
+	}
+	if page < 1 {
+		page = 1
+		pagination.Page = 1
+	}
+
+	base := initializers.DB.Model(&models.SalesQuotation{}).
+		Where(quickOnlyWhere).
+		Where("document_no LIKE ?", "%"+term+"%")
+
+	var total int64
+	if err := base.Count(&total).Error; err != nil {
+		return shape, pagination, fiber.StatusInternalServerError, errors.New("failed searching quotations")
+	}
+	pagination.Total = total
+	pagination.TotalPages = int((total + int64(searchPageSize) - 1) / int64(searchPageSize))
+	pagination.HasPrev = page > 1
+	pagination.HasNext = page < pagination.TotalPages
+
+	if err := base.Order("id DESC").
+		Offset((page - 1) * searchPageSize).
+		Limit(searchPageSize).
+		Find(&shape.SalesQuotation).Error; err != nil {
+		return shape, pagination, fiber.StatusInternalServerError, errors.New("failed searching quotations")
+	}
+
+	return shape, pagination, 0, nil
 }
 
 func GetLatestQuotations(conditions map[string]interface{}) (interface{}, int, error) {
