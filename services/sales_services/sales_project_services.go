@@ -284,6 +284,47 @@ func GetProjectHeadersPaged(after, before, at int) (quotationListShape, utils.Pa
 	return shape, pagination, 0, nil
 }
 
+// SearchProjects backs the project Search: flat matching project headers,
+// 20 to a page, no children - the picked record reopens through the headers'
+// `at`. A blank term matches nothing (never the whole table).
+func SearchProjects(term string, page int) (quotationListShape, utils.PaginationMeta, int, error) {
+	const searchPageSize = 20
+
+	shape := newQuotationListShape()
+	pagination := utils.PaginationMeta{PageSize: searchPageSize, Page: page}
+
+	term = strings.TrimSpace(term)
+	if term == "" {
+		return shape, pagination, 0, nil
+	}
+	if page < 1 {
+		page = 1
+		pagination.Page = 1
+	}
+
+	base := initializers.DB.Model(&models.SalesQuotation{}).
+		Where(projectOnlyWhere).
+		Where("document_no LIKE ?", "%"+term+"%")
+
+	var total int64
+	if err := base.Count(&total).Error; err != nil {
+		return shape, pagination, fiber.StatusInternalServerError, errors.New("failed searching projects")
+	}
+	pagination.Total = total
+	pagination.TotalPages = int((total + int64(searchPageSize) - 1) / int64(searchPageSize))
+	pagination.HasPrev = page > 1
+	pagination.HasNext = page < pagination.TotalPages
+
+	if err := base.Order("id DESC").
+		Offset((page - 1) * searchPageSize).
+		Limit(searchPageSize).
+		Find(&shape.SalesQuotation).Error; err != nil {
+		return shape, pagination, fiber.StatusInternalServerError, errors.New("failed searching projects")
+	}
+
+	return shape, pagination, 0, nil
+}
+
 // GetProjectVersions returns every version of ONE project document with the
 // same scoping the quick versions endpoint uses, for the project
 // version-history navigation that used to need the whole project list.

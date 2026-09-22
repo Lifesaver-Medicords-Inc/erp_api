@@ -618,6 +618,7 @@ func SetupApp() *fiber.App {
 				salesApi.Get("/projects", sales_handlers.GetSalesProject)
 				salesApi.Get("/projects/headers", sales_handlers.GetProjectHeadersPaged)
 				salesApi.Get("/projects/versions", sales_handlers.GetProjectVersions)
+				salesApi.Get("/projects/search", sales_handlers.SearchProjects)
 				salesApi.Get("/projects/detail/:id", sales_handlers.GetProjectDetail)
 
 				salesApi.Post("/projects", sales_handlers.CreateSalesProject)

@@ -59,6 +59,17 @@ func GetProjectVersions(c *fiber.Ctx) error {
 	}
 	return utils.RespondSuccess(c, data)
 }
+// SearchProjects backs the project Search: flat matching headers, 20 to a
+// page, no children.
+func SearchProjects(c *fiber.Ctx) error {
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+
+	data, pagination, status, err := sales_services.SearchProjects(c.Query("term"), page)
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data, pagination)
+}
 
 func GetSalesCanvasView(c *fiber.Ctx) error {
 	data, status, err := sales_services.GetSalesCanvasView(nil)
