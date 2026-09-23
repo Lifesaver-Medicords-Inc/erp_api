@@ -13,8 +13,23 @@
 -- tbl_bpi_contacts.position points at that same table for a contact's role. The sheet's
 -- entries (Owner, Contractor, Project Manager, ...) are contact roles, so they will also
 -- show up in Admin's Access Control as positions that can be granted access. They are
--- inserted because that is how the two screens already share the table; the script lists
--- them at the end so it stays a visible decision rather than a side effect.
+-- inserted because that is how the two screens already share the table.
+--
+-- The new positions are inserted with NO access rows at all - the script writes nothing to
+-- tbl_position_access, and the API's position-access seeder only fills positions it can
+-- match by name in seed_data/position_access_seed.json, which none of these match. Access
+-- is assigned by hand in Admin > Access Control. The script lists each new position with
+-- its grant count at the end so the ones still waiting on that are visible.
+--
+-- CAUTION, and it is why that list is printed: the apps treat a position with zero grants
+-- as "not set up yet" and show the WHOLE menu (NavigationAccess.HasAccess / Apply return
+-- early on an empty grant set, by design - see the comments there). So until Admin grants
+-- these positions their pages, a user assigned to one sees everything. Granting even one
+-- code switches that position to deny-by-default.
+--
+-- One code correction is applied: the Municipal industry row is moved from MUN to MUNI to
+-- match the file. That is the only row this script updates - everything else is
+-- insert-only, and an existing row keeps the code and name it has.
 --
 -- Set @commit = 1 to write. With @commit = 0 it reports and rolls back.
 
@@ -550,8 +565,35 @@ WHERE i.table_name = N'tbl_setup_valuation_method'
   AND LTRIM(RTRIM(LOWER(t.code))) <> LTRIM(RTRIM(LOWER(i.code)))
 ORDER BY table_name, name;
 
-SELECT 'also appears in Access Control as a position' AS note, code, name
-FROM #added WHERE table_name = N'tbl_position' ORDER BY name;
+-- The one code correction ------------------------------------------------------
+-- Municipal was entered as MUN and the file calls it MUNI. Agreed with the user on
+-- 2026-09-23, so the existing row is renamed rather than left disagreeing. Guarded three
+-- ways: the name must match, the code must still be the old one, and no other row may
+-- already hold the new code. Re-running this changes nothing.
+DECLARE @code_fix TABLE (table_name sysname, name nvarchar(400),
+                         old_code nvarchar(200), new_code nvarchar(200));
+
+UPDATE t
+   SET t.code = N'MUNI'
+OUTPUT N'tbl_setup_bpi_industries', inserted.name, deleted.code, inserted.code
+  INTO @code_fix
+  FROM tbl_setup_bpi_industries t
+ WHERE LTRIM(RTRIM(LOWER(t.name))) = N'municipal'
+   AND LTRIM(RTRIM(LOWER(t.code))) = N'mun'
+   AND NOT EXISTS (SELECT 1 FROM tbl_setup_bpi_industries x
+                    WHERE LTRIM(RTRIM(LOWER(x.code))) = N'muni');
+
+SELECT 'code corrected' AS state, table_name, name, old_code, new_code FROM @code_fix;
+
+-- Positions and what they can currently open. A new position has none - Admin assigns it.
+SELECT CASE WHEN a.code IS NULL THEN 'existing' ELSE 'added by this script' END AS state,
+       p.code,
+       p.name,
+       (SELECT COUNT(*) FROM tbl_position_access pa WHERE pa.position_id = p.id) AS access_codes
+FROM tbl_position p
+LEFT JOIN #added a
+       ON a.table_name = N'tbl_position' AND a.code = p.code AND a.name = p.name
+ORDER BY state DESC, p.name;
 
 IF @commit = 1
 BEGIN
