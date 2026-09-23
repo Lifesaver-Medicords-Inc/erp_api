@@ -48,6 +48,7 @@ IF OBJECT_ID('tempdb..#comp')   IS NOT NULL DROP TABLE #comp;
 IF OBJECT_ID('tempdb..#remark') IS NOT NULL DROP TABLE #remark;
 IF OBJECT_ID('tempdb..#line')   IS NOT NULL DROP TABLE #line;
 IF OBJECT_ID('tempdb..#bommap') IS NOT NULL DROP TABLE #bommap;
+IF OBJECT_ID('tempdb..#bomall') IS NOT NULL DROP TABLE #bomall;
 
 CREATE TABLE #parent (
     bom_no     int NOT NULL PRIMARY KEY,
@@ -69,7 +70,8 @@ CREATE TABLE #line (
     qty       decimal(18,4) NOT NULL,
     remark_no int NOT NULL
 );
-CREATE TABLE #bommap (bom_no int PRIMARY KEY, bom_id bigint NOT NULL);
+CREATE TABLE #bommap (bom_no int PRIMARY KEY, bom_id bigint NOT NULL);  -- added by this run
+CREATE TABLE #bomall (bom_no int PRIMARY KEY, bom_id bigint NOT NULL);  -- every BOM, new or not
 
 -- The controllers ---------------------------------------------------------------
 
@@ -6514,6 +6516,14 @@ WHEN NOT MATCHED THEN
     VALUES (x.item_id, 1, N'PRODUCTION', 0, 0, 0)
 OUTPUT inserted.id, x.bom_no INTO #bommap (bom_id, bom_no);
 
+-- Every controller's BOM, whether this run created it or an earlier one did. The remarks
+-- step below works off this, so running the script again after adding the remarks column
+-- fills in the BOMs that are already loaded instead of skipping them.
+INSERT INTO #bomall (bom_no, bom_id)
+SELECT p.bom_no, b.id
+  FROM #parent p
+  JOIN tbl_setup_item_bom b ON b.item_id = p.item_id;
+
 -- 2. The component lines ----------------------------------------------------------
 -- unit_price and net_price are left at 0: the workbook carries no prices, and the BOM
 -- screen fills them from the item when it is priced.
@@ -6534,7 +6544,7 @@ BEGIN
         UPDATE d
            SET d.remarks = r.text
           FROM tbl_setup_item_bom_details d
-          JOIN #bommap m ON m.bom_id = d.item_bom_id
+          JOIN #bomall m ON m.bom_id = d.item_bom_id
           JOIN #comp   c ON c.item_id = d.item_id
           JOIN #line   l ON l.bom_no = m.bom_no AND l.comp_no = c.comp_no
           JOIN #remark r ON r.remark_no = l.remark_no;
@@ -6585,3 +6595,4 @@ IF OBJECT_ID('tempdb..#comp')   IS NOT NULL DROP TABLE #comp;
 IF OBJECT_ID('tempdb..#remark') IS NOT NULL DROP TABLE #remark;
 IF OBJECT_ID('tempdb..#line')   IS NOT NULL DROP TABLE #line;
 IF OBJECT_ID('tempdb..#bommap') IS NOT NULL DROP TABLE #bommap;
+IF OBJECT_ID('tempdb..#bomall') IS NOT NULL DROP TABLE #bomall;

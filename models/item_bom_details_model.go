@@ -7,6 +7,10 @@ type SetupItemBomDetailsContent struct {
 	BomQty    uint    `json:"bom_qty"`
 	UnitPrice uint    `json:"unit_price"` // should be float32
 	NetPrice  float32 `json:"net_price"`
+	// What this component is for on this BOM - 'Power', 'Control', 'Wye', 'Main, Delta',
+	// 'alternative models'. The controller BOMs carry one on 39,180 of their lines and
+	// until now there was nowhere to keep it.
+	Remarks string `gorm:"size:400" json:"remarks"`
 }
 
 type SetupItemBomDetails struct {

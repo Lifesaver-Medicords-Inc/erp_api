@@ -12,6 +12,7 @@ type BomViewItemList struct {
 	UomName   string  `json:"uom_name"`
 	UnitPrice uint    `json:"unit_price"`
 	NetPrice  float32 `json:"net_price"`
+	Remarks   string  `json:"remarks"`
 }
 
 func (BomViewItemList) TableName() string {
