@@ -2,12 +2,29 @@ package models
 
 type SalesProjectContentContent struct {
 	// SHOULD BE THE TAB # / SET #
-	BasedId              uint   `json:"based_id"`
-	ItemDesignation      string `json:"item_designation"`
-	Application          string `json:"application"`
-	Additional           string `json:"additional"`
-	Flow                 string `json:"flow"`
-	Head                 string `json:"head"`
+	BasedId         uint   `json:"based_id"`
+	ItemDesignation string `json:"item_designation"`
+	Application     string `json:"application"`
+	Additional      string `json:"additional"`
+	Flow            string `json:"flow"`
+	Head            string `json:"head"`
+
+	// The unit each of those two figures is quoted in, held as an ID rather than as its
+	// text. The lists are hard-coded in the client for now - FLOW 1=gpm lpm, 2=m^2/hr,
+	// 3=lps; HEAD 1=psi, 2=ft, 3=m (user decision 2026-09-23) - and the whole point of
+	// storing the id is that turning either into a Setup list later is then a change to
+	// the list, not a migration of every project quotation ever saved. The ids are fixed:
+	// append, never renumber.
+	//
+	// Named after the controls that carry them, cmb_flow and cmb_head, because that is
+	// what decides the key: Helpers.GetControlsValues maps a combo tagged DYNAMIC to
+	// <its name without cmb_>_id. 0 means nothing was chosen and the client shows the
+	// first entry.
+	//
+	// Before this the two combos were unnamed, unread and unsaved - whatever the user
+	// picked was discarded.
+	FlowId               uint   `json:"flow_id"`
+	HeadId               uint   `json:"head_id"`
 	Voltage              string `json:"voltage"`
 	RPM                  string `json:"rpm"`
 	HP                   string `json:"hp"`
