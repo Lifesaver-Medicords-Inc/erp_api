@@ -62,12 +62,20 @@ func (s *SalesReturnService) CreateSalesReturn(body *models.SalesReturnBody, at 
 	// every line. The model's own comment defers this check to the service
 	// layer (GORM has no cross-column CHECK constraint worth relying on
 	// across DB engines) - this is that check.
+	// Also §5.13: QtyReceived MUST NOT exceed QtyReturned (the quantity
+	// originally shipped/sold per the reference document).
 	for i, d := range body.SalesReturnDetails {
 		sum := d.QtyForReplacement + d.QtyToStock + d.QtyForPurchaseReturn
 		if sum != d.QtyReceived {
 			return body, fiber.StatusBadRequest, fmt.Errorf(
 				"line %d: qty_for_replacement + qty_to_stock + qty_for_purchase_return (%d) must equal qty_received (%d)",
 				i+1, sum, d.QtyReceived,
+			)
+		}
+		if d.QtyReceived > d.QtyReturned {
+			return body, fiber.StatusBadRequest, fmt.Errorf(
+				"line %d: qty_received (%d) cannot exceed qty_returned (%d) from the reference document",
+				i+1, d.QtyReceived, d.QtyReturned,
 			)
 		}
 	}
