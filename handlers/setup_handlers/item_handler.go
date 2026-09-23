@@ -98,9 +98,10 @@ func GetItemDetail(c *fiber.Ctx) error {
 
 // GetPumpPickerRows serves the Sales Size Up / Final pump pickers: light
 // picker rows for item_name = 'PUMP', fetched on modal open. ?search= is
-// optional (code/name/model).
+// optional (code/name/model), and so is ?ids=41,58,77 - FINAL sends the ids on its
+// SIZE UP grid rather than pulling every pump and filtering them on the client.
 func GetPumpPickerRows(c *fiber.Ctx) error {
-	data, status, err := setup_services.GetPumpPickerRows(c.Query("search"))
+	data, status, err := setup_services.GetPumpPickerRows(c.Query("search"), utils.QueryIDs(c, "ids"))
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

@@ -59,6 +59,7 @@ func GetProjectVersions(c *fiber.Ctx) error {
 	}
 	return utils.RespondSuccess(c, data)
 }
+
 // SearchProjects backs the project Search: flat matching headers, 20 to a
 // page, no children.
 func SearchProjects(c *fiber.Ctx) error {
@@ -79,8 +80,20 @@ func GetSalesCanvasView(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
+// GetItemPumps serves the pump electrical specs (FLA, VOLTAGE, ...) behind a project
+// quotation's FINAL selection. ?ids=58,77 narrows it to those items: FINAL needs the
+// specs of the pumps just picked, not of every pump in the catalogue, and it asks after
+// the pick rather than before - the whole view is 4,884 rows on the rehearsal database
+// and it used to be fetched before the picker could even open.
+//
+// No ids means the whole view, exactly as before.
 func GetItemPumps(c *fiber.Ctx) error {
-	data, status, err := sales_services.GetItemPumps(nil)
+	var conditions map[string]interface{}
+	if ids := utils.QueryIDs(c, "ids"); len(ids) > 0 {
+		conditions = map[string]interface{}{"item_id": ids}
+	}
+
+	data, status, err := sales_services.GetItemPumps(conditions)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}

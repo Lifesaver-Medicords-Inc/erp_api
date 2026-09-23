@@ -350,6 +350,26 @@ const (
 	itemPickerModelOrder = "v.item_model ASC, v.id ASC"
 )
 
+// itemPickerIDs narrows a picker to exactly the ids the caller names. The ids are
+// already integers - utils.QueryIDs parsed them - and each one still goes in as its own
+// parameter, so the SQL is the same shape whatever arrives.
+//
+// An empty list means no filter, which is what every caller that does not pass ?ids=
+// gets.
+func itemPickerIDs(ids []int, args *[]interface{}) string {
+	if len(ids) == 0 {
+		return ""
+	}
+
+	placeholders := make([]string, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		*args = append(*args, id)
+	}
+
+	return " AND v.id IN (" + strings.Join(placeholders, ",") + ")"
+}
+
 func itemPickerSearch(search string, args *[]interface{}) string {
 	search = strings.TrimSpace(search)
 	if search == "" {
@@ -508,9 +528,14 @@ func GetItemDetail(id int) (ItemDetailResponse, int, error) {
 // pre-checked, which paging would break - but light columns only, fetched on
 // modal open instead of holding the catalogue for the filter. An optional
 // search narrows by code/name/model.
-func GetPumpPickerRows(search string) ([]ItemPickerRow, int, error) {
+//
+// ids narrows it to exactly those items. SIZE UP passes none - it offers every pump.
+// FINAL passes the ids already on its SIZE UP grid, because spec 5.1.4 limits it to
+// what SIZE UP lists: it used to download all of them and filter client-side, which on
+// the rehearsal database meant 3,684 rows and half a second of SQL to show three.
+func GetPumpPickerRows(search string, ids []int) ([]ItemPickerRow, int, error) {
 	args := []interface{}{}
-	where := "v.item_name = 'PUMP'" + itemPickerSearch(search, &args)
+	where := "v.item_name = 'PUMP'" + itemPickerIDs(ids, &args) + itemPickerSearch(search, &args)
 
 	rows := []ItemPickerRow{}
 	if err := initializers.DB.Raw(
