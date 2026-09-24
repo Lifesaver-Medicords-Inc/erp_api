@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
 	"gorm.io/gorm"
@@ -27,7 +28,16 @@ func GetSalesProjectTemplates(conditions map[string]interface{}) (interface{}, i
 		return response, fiber.StatusInternalServerError, errors.New("failed getting sales project template")
 	}
 
-	if err := services.DbGet(&response.SalesProjectTemplateChild, conditions); err != nil {
+	// The children come with the item's CURRENT name joined on, rather than only the
+	// components text that was typed when the row was made - see the model's note on
+	// ItemName. Raw rather than DbGet because that reads the table alone; this list is a
+	// few dozen rows per template, so it is not worth a view.
+	if err := initializers.DB.Raw(`
+		SELECT c.*, ISNULL(i.item_name, '') AS item_name
+		  FROM tbl_trans_sales_project_template_child c
+		  LEFT JOIN vw_items i ON i.id = c.item_id
+		 ORDER BY c.id`).
+		Scan(&response.SalesProjectTemplateChild).Error; err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting sales project template child")
 	}
 

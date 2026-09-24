@@ -30,6 +30,16 @@ type SalesProjectTemplateChildContent struct {
 	Components string `json:"components"`
 	Level      uint   `json:"level"`
 
+	// The item's name as Item Entry holds it TODAY, read on the way out and never
+	// stored - gorm:"->" keeps it off every insert and update.
+	//
+	// components is a typed string, so renaming an item in Item Entry left every
+	// template still showing the old name, and a template edited by someone who did not
+	// know how the tree is built could drift from the item it points at. The row keeps
+	// item_id; the name is looked up. A row with no item (a heading somebody typed) has
+	// no name to look up and keeps its components text.
+	ItemName string `gorm:"->" json:"item_name"`
+
 	// Qty - the quantity of this component the template proposes, carried
 	// into a project quotation's own qty column when the template is applied.
 	//
