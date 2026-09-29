@@ -8,6 +8,7 @@ import (
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
+	"gorm.io/gorm"
 )
 
 type SalesOrderService struct{}
@@ -23,6 +24,9 @@ func (s *SalesOrderService) GetSalesOrdersService(conditions map[string]interfac
 	if tx.Error != nil {
 		return orders, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
+	// Read-only, and it was never committed or rolled back: every call left its
+	// transaction - and the pooled connection under it - open.
+	defer tx.Rollback()
 
 	query := tx.Preload("Items").Omit("Order").
 		Preload("Items.Item").
@@ -44,7 +48,39 @@ func (s *SalesOrderService) GetSalesOrdersService(conditions map[string]interfac
 	// 		}
 	// 	}
 	// }
+	fillCustomerNames(tx, orders)
 	return orders, fiber.StatusOK, nil
+}
+
+// The dispatching Sales Order screen showed CUSTOMER blank on every order (user-reported
+// 2026-09-29): it reads customer_name, a denormalised copy the sales order form never
+// fills in. BPI is the authority, resolved customer_id -> bpi.name as the logistics
+// screens and resolveCustomerName already do; a stored name, when there is one, is kept.
+// One query for the whole list rather than one per order.
+func fillCustomerNames(tx *gorm.DB, orders []models.Order) {
+	ids := []uint{}
+	for _, o := range orders {
+		if strings.TrimSpace(o.CustomerName) == "" && o.Customer_ID != 0 {
+			ids = append(ids, o.Customer_ID)
+		}
+	}
+	if len(ids) == 0 {
+		return
+	}
+
+	var partners []models.Bpi
+	if err := tx.Where("id IN ?", ids).Find(&partners).Error; err != nil {
+		return // best effort: the list still loads, as it did before
+	}
+	names := map[uint]string{}
+	for _, b := range partners {
+		names[b.ID] = strings.TrimSpace(b.Name)
+	}
+	for i := range orders {
+		if strings.TrimSpace(orders[i].CustomerName) == "" {
+			orders[i].CustomerName = names[orders[i].Customer_ID]
+		}
+	}
 }
 
 func (s *SalesOrderService) GetSalesOrderService(conditions map[string]interface{}) (*models.Order, int, error) {
@@ -54,6 +90,7 @@ func (s *SalesOrderService) GetSalesOrderService(conditions map[string]interface
 	if tx.Error != nil {
 		return order, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
+	defer tx.Rollback()
 
 	query := tx.Preload("Items").Omit("Order").
 		Preload("Items.Item").
@@ -75,6 +112,7 @@ func (s *SalesOrderService) GetSalesOrderService(conditions map[string]interface
 	// 	}
 	// }
 
+	order.CustomerName = resolveCustomerName(tx, order.CustomerName, order.Customer_ID)
 	return order, fiber.StatusOK, nil
 }
 
