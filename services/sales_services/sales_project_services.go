@@ -576,6 +576,12 @@ func CreateSalesProject(c *fiber.Ctx, tx *gorm.DB) (CreateProjectBody, int, erro
 	// quick-quote create path - both draw from the one shared tbl_trans_sales_quotation
 	// sequence. For a brand-new project quote this replaces the client's guess (which could
 	// collide with a quick quote it never loaded); a New Version keeps its number.
+	// An Edit session's copy is not built from a posted screen: StartProjectSubVersion copies
+	// the stored project, every column of every row (see project_sub_version.go).
+	if strings.EqualFold(strings.TrimSpace(body.VersionAction), "new_sub_version") {
+		return body, fiber.StatusBadRequest, errors.New("a new sub-version of a project is started with POST /sales/projects/:id/sub-version")
+	}
+
 	if err := assignNewQuotationDocNo(tx, &body.SalesQuotation); err != nil {
 		return body, fiber.StatusInternalServerError, err
 	}
@@ -673,6 +679,14 @@ func UpdateSalesProject(c *fiber.Ctx, tx *gorm.DB) (UpdateProjectBody, int, erro
 		return body, fiber.StatusBadRequest, errors.New("invalid sales project id")
 	}
 
+	// Only the newest copy of a version can change. An Edit session makes a new sub-version,
+	// and the one it came from becomes history: a late save from someone still looking at
+	// the old copy (Engineering, before it has followed; a second window) must not land
+	// there, where nobody would ever see it again. And an FQ never changes at all (§5.2).
+	if status, err := guardProjectCopyIsCurrent(tx, body.ID); err != nil {
+		return body, status, err
+	}
+
 	at, _ := c.Locals("at").(models.At)
 
 	// ---- UPDATE SALES QUOTATION FIELDS ----
@@ -758,6 +772,35 @@ func UpdateSalesProject(c *fiber.Ctx, tx *gorm.DB) (UpdateProjectBody, int, erro
 	// broadcast happens in the handler, after tx.Commit() succeeds.
 
 	return body, fiber.StatusOK, nil
+}
+
+// guardProjectCopyIsCurrent refuses a write to a finalized quote, or to a sub-version that a
+// newer sub-version of the same version has replaced. The error names the current copy, so
+// whoever gets it knows where the work now lives.
+func guardProjectCopyIsCurrent(tx *gorm.DB, id uint) (int, error) {
+	var current models.SalesQuotation
+	if err := tx.First(&current, id).Error; err != nil {
+		return fiber.StatusNotFound, errors.New("quotation not found")
+	}
+	code := models.FormatQuoteCode(current.DocumentNo, current.VersionNo, current.SubVersionNo)
+
+	if current.IsFinalized {
+		return fiber.StatusForbidden, fmt.Errorf("%s is finalized and cannot be changed", code)
+	}
+
+	var newer models.SalesQuotation
+	err := tx.Where("document_no = ? AND version_no = ? AND TRY_CONVERT(int, sub_version_no) > TRY_CONVERT(int, ?)",
+		current.DocumentNo, current.VersionNo, current.SubVersionNo).
+		Order("TRY_CONVERT(int, sub_version_no) DESC").
+		Limit(1).Find(&newer).Error
+	if err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed checking for a newer copy of this quotation")
+	}
+	if newer.ID != 0 {
+		return fiber.StatusConflict, fmt.Errorf("%s has been replaced by %s (id %d) - reopen the quotation to continue",
+			code, models.FormatQuoteCode(newer.DocumentNo, newer.VersionNo, newer.SubVersionNo), newer.ID)
+	}
+	return 0, nil
 }
 
 func applyQuotationFieldChanges(tx *gorm.DB, id uint, fields QuotationFieldChanges) error {

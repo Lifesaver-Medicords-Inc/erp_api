@@ -221,6 +221,11 @@ func CreateOrder(c *fiber.Ctx, tx *gorm.DB) (BodyOrderDetails, int, error) {
 		return bodyorder, fiber.StatusBadRequest, errors.New("cannot bind request")
 	}
 
+	// FQ# -> SO#. Settled here, not trusted from the client (user-reported 2026-09-25).
+	if status, err := prepareOrderFromFinalizedQuote(tx, &bodyorder.Order); err != nil {
+		return bodyorder, status, err
+	}
+
 	if err := services.DbInsert(tx, &bodyorder.Order); err != nil {
 		return bodyorder, fiber.StatusInternalServerError, errors.New("failed creating order")
 	}
@@ -245,6 +250,55 @@ func CreateOrder(c *fiber.Ctx, tx *gorm.DB) (BodyOrderDetails, int, error) {
 	// 	return body, fiber.StatusInternalServerError, err
 	// }
 	return bodyorder, 0, nil
+}
+
+// prepareOrderFromFinalizedQuote makes the three things about a new SO that the client used to
+// decide for itself - and got wrong - correct before it is written:
+//
+//   - Only a finalized quotation may become a sales order (CLAUDE.md invariant 2, §5.2). SO#0002
+//     on the rehearsal database was made from Q#0007, a draft, because nothing here checked.
+//   - One live SO per FQ. A cancelled SO does not count, so a cancelled order can be raised again.
+//   - WHICH FQ. document_no used to hold the quote's bare number ("0004"), which once versions
+//     exist names several FQs at once (FQ#2026-0001.1.1 and FQ#2026-0001.2.3). It now holds the
+//     FQ's full code; quotation_id remains the actual link.
+//   - The SO's own number. The client took "rows in my list + 1", which repeats a number
+//     whenever the list is filtered or a row is removed. Now the next number in the table,
+//     taken under a range lock so two orders saved at once cannot share one.
+func prepareOrderFromFinalizedQuote(tx *gorm.DB, order *models.Order) (int, error) {
+	if order.Quotation_ID == 0 {
+		return fiber.StatusBadRequest, errors.New("a sales order must come from a finalized quotation (FQ#)")
+	}
+
+	var fq models.SalesQuotation
+	if err := tx.First(&fq, order.Quotation_ID).Error; err != nil {
+		return fiber.StatusBadRequest, errors.New("the quotation for this sales order was not found")
+	}
+	code := models.FormatQuoteCode(fq.DocumentNo, fq.VersionNo, fq.SubVersionNo)
+	if !fq.IsFinalized {
+		return fiber.StatusBadRequest, fmt.Errorf("only a finalized quotation (FQ#) can become a sales order - %s is a draft; finalize it first", code)
+	}
+
+	var existing int64
+	if err := tx.Model(&models.Order{}).
+		Where("quotation_id = ? AND UPPER(ISNULL(status, '')) NOT IN ('CANCELLED', 'CANCELED')", fq.ID).
+		Count(&existing).Error; err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed checking for an existing sales order")
+	}
+	if existing > 0 {
+		return fiber.StatusBadRequest, fmt.Errorf("%s already has a sales order", code)
+	}
+
+	var maxDoc int
+	if err := tx.Raw(`
+		SELECT ISNULL(MAX(TRY_CONVERT(int,
+			CASE WHEN CHARINDEX('#', doc) > 0 THEN SUBSTRING(doc, CHARINDEX('#', doc) + 1, 20) ELSE doc END)), 0)
+		  FROM tbl_trans_sales_order WITH (UPDLOCK, HOLDLOCK)`).Scan(&maxDoc).Error; err != nil {
+		return fiber.StatusInternalServerError, errors.New("failed computing the next sales order number")
+	}
+
+	order.Doc = fmt.Sprintf("%04d", maxDoc+1) // stored as digits like every existing row; shown as SO#0008
+	order.Document_No = code
+	return 0, nil
 }
 
 // UpdateOrder function or similar code

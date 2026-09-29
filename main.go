@@ -624,6 +624,8 @@ func SetupApp() *fiber.App {
 				salesApi.Get("/projects/detail/:id", sales_handlers.GetProjectDetail)
 
 				salesApi.Post("/projects", sales_handlers.CreateSalesProject)
+				// EDIT on a project quotation: copy it onto the next sub-version.
+				salesApi.Post("/projects/:id/sub-version", sales_handlers.StartProjectSubVersion)
 				salesApi.Post("/projects_tab", sales_handlers.CreateItemSetTab)
 				//salesApi.Post("/project_item", sales_handlers.CreateNewProjectItem)
 

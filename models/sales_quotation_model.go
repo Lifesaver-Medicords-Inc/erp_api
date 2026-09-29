@@ -62,6 +62,21 @@ type SalesQuotationContent struct {
 type SalesQuotation struct {
 	ID uint `gorm:"primarykey" json:"id"`
 	SalesQuotationContent
+
+	// Q#2026-0001.2.1 - filled on read by AfterFind (quote_code.go), never stored.
+	QuoteCode string `json:"quote_code" gorm:"-"`
+
+	// What a create is FOR, when it is not a brand-new quote. The server works out the
+	// version and sub-version itself from what already exists - the client's own guess
+	// compared "0001" against "Q#0001", never matched, and left every quotation at 1.0.
+	//   "new_version"      same number, next version, sub-version 0
+	//   "new_sub_version"  same number and version, next sub-version (an Edit session)
+	// Kept off SalesQuotationContent so the audit table does not grow these columns.
+	VersionAction string `json:"version_action,omitempty" gorm:"-"`
+
+	// For "new_sub_version" on a project quote: the copy it was made from. Its reserved
+	// stock moves to the new copy, and anyone watching it is told to follow.
+	SourceQuotationID uint `json:"source_quotation_id,omitempty" gorm:"-"`
 }
 
 func (SalesQuotation) TableName() string {

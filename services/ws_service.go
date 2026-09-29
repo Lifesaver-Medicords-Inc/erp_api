@@ -213,6 +213,10 @@ func BroadcastToProject(branch string, projectid string, data interface{}) error
 	initializers.WM3.RLock()
 	defer initializers.WM3.RUnlock()
 
+	// Every viewer is tried. This used to return at the first connection that failed to take
+	// the message - a window closed without saying goodbye - so everyone listed after it
+	// silently missed the save (or, now, the news that their copy was replaced).
+	var firstErr error
 	for _, info := range initializers.WM3.ProjectInfo {
 		if info.Conn == nil {
 			fmt.Println("WARNING: Conn is nil for department", info.Branch)
@@ -221,11 +225,13 @@ func BroadcastToProject(branch string, projectid string, data interface{}) error
 
 		if info.Branch == branch && info.ProjectId == projectid {
 			if err := info.Conn.WriteJSON(data); err != nil {
-				fmt.Println("HELLOWORLD:", err)
-				return err
+				fmt.Println("project broadcast: a viewer could not be reached:", err)
+				if firstErr == nil {
+					firstErr = err
+				}
 			}
 		}
 	}
 
-	return nil
+	return firstErr
 }

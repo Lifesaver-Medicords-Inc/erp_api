@@ -6,7 +6,9 @@ GO
 ALTER VIEW [dbo].[vw_get_engineering_redbox_quotation_list] AS
 SELECT sq.id AS id,
     bpi.name AS client_name,
-    sq.document_no AS sales_quotation,
+    -- The full code - Q#2026-0001.2.1 - not the bare number, which since versioning names
+    -- several copies at once (2026-09-25).
+    sq.document_no + '.' + ISNULL(NULLIF(sq.version_no, ''), '1') + '.' + ISNULL(NULLIF(sq.sub_version_no, ''), '0') AS sales_quotation,
     so.status AS status,
     sq.project_name AS project_name,
     sq.created_by AS sales_executive,
@@ -57,3 +59,15 @@ FROM tbl_trans_sales_quotation sq
 -- the actual enforcement, not just relying on the client control being hidden.
 WHERE sq.is_requested_for_engr = 1
     AND ISNULL(sq.project_name, '') <> ''
+    -- Only the copy engineers work on (versioning, 2026-09-25). Every Edit session in Sales
+    -- makes a new sub-version and the one before becomes history, so without this the list
+    -- grew a row per edit. The newest sub-version of each version is the live one; an FQ is
+    -- frozen (§5.2) and never edited, so it is not on this list either.
+    AND ISNULL(sq.is_finalized, 0) = 0
+    AND NOT EXISTS (
+        SELECT 1
+          FROM tbl_trans_sales_quotation nx
+         WHERE nx.document_no = sq.document_no
+           AND nx.version_no = sq.version_no
+           AND TRY_CONVERT(int, nx.sub_version_no) > TRY_CONVERT(int, sq.sub_version_no)
+    )

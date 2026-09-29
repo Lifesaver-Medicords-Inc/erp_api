@@ -137,6 +137,64 @@ func CreateSalesProject(c *fiber.Ctx) error {
 	return utils.RespondSuccess(c, data)
 }
 
+// StartProjectSubVersion: EDIT on a project quotation. Copies the stored project onto its
+// version's next sub-version and returns the copy, which is what the Edit session then saves
+// to (user decision 2026-09-25).
+//
+// POST /sales/projects/:id/sub-version   body (optional): {"fork_note": {user, date, time}}
+func StartProjectSubVersion(c *fiber.Ctx) error {
+	sourceID, err := c.ParamsInt("id")
+	if err != nil || sourceID <= 0 {
+		return utils.RespondError(c, fiber.StatusBadRequest, "missing or invalid project id")
+	}
+
+	var body struct {
+		ForkNote *models.SalesProjectHistoryContent `json:"fork_note"`
+	}
+	if len(c.Body()) > 0 {
+		if err := c.BodyParser(&body); err != nil {
+			return utils.RespondError(c, fiber.StatusBadRequest, "cannot bind request")
+		}
+	}
+
+	at, ok := c.Locals("at").(models.At)
+	if !ok {
+		at = models.At{}
+	}
+
+	tx := initializers.DB.Begin()
+	if tx.Error != nil {
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to start transaction")
+	}
+
+	created, status, err := sales_services.StartProjectSubVersion(tx, uint(sourceID), body.ForkNote, at)
+	if err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, status, err.Error())
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
+	}
+
+	sales_services.InvalidateProjectCopyCaches()
+	refreshEngineeringQuotationList()
+
+	// Everyone watching the old copy - Engineering above all - is told where the work now
+	// lives, so they follow it instead of editing a copy that has just become history.
+	if err := services.BroadcastToProject("Sales", fmt.Sprint(sourceID), map[string]interface{}{
+		"event":  "quotation_superseded",
+		"id":     sourceID,
+		"new_id": created.ID,
+		"code":   created.QuoteCode,
+	}); err != nil {
+		fmt.Println("Error broadcasting superseded copy:", err)
+	}
+
+	return utils.RespondSuccess(c, created)
+}
+
 func UpdateSalesProject(c *fiber.Ctx) error {
 	tx := initializers.DB.Begin()
 	if tx.Error != nil {

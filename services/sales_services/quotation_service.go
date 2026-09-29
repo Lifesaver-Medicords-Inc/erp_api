@@ -3,6 +3,7 @@
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -78,33 +79,116 @@ type ItemBody struct {
 // UQ_sales_quotation_doc_version unique index would then reject on the loser). document_no
 // is stored with its "Q#"/"FQ#" prefix, so the numeric part is taken from after the '#'.
 func assignNewQuotationDocNo(tx *gorm.DB, sq *models.SalesQuotation) error {
-	// Finalization is NOT a fresh number. It keeps its source quote's number and only
-	// swaps the prefix (Q#0005 -> FQ#0005), which the client already baked into DocumentNo.
-	// A finalize also arrives as version 1 (so isFirstVersion below can't tell it apart from
-	// a brand-new draft), which is exactly how this used to clobber FQ#0005 into a fresh
-	// Q#000n. Detect it by is_finalized or the FQ# prefix and leave the number untouched.
+	// Finalization is NOT a fresh number, version or sub-version. An FQ is the sub-version
+	// it was finalized from under an immutable identity (FQ#2026-0001.2.1 from Q#2026-0001.2.1),
+	// which the client already carries across. Detect it by is_finalized or the FQ# prefix and
+	// leave all three parts alone.
 	if sq.IsFinalized || strings.HasPrefix(strings.ToUpper(strings.TrimSpace(sq.DocumentNo)), "FQ#") {
 		return nil
 	}
 
-	if !isFirstVersion(sq.VersionNo, sq.SubVersionNo) {
-		return nil // a new version keeps the document_no the client sent
+	switch strings.ToLower(strings.TrimSpace(sq.VersionAction)) {
+	case "new_version":
+		return assignNextVersion(tx, sq)
+	case "new_sub_version":
+		return assignNextSubVersion(tx, sq)
 	}
+
+	if !isFirstVersion(sq.VersionNo, sq.SubVersionNo) {
+		return nil // an older client sending its own version: keep what it sent
+	}
+
+	// A new quote (or a Duplicate): the next number in the year the quote was raised.
+	// Numbering restarts every January (spec §2) - "Q#2026-0147" is followed in the new year
+	// by "Q#2027-0001" - so the year is part of the number and the count is per year.
+	//
+	// Numbers from before the year was added ("Q#0026", no dash) are counted too when they
+	// were raised in the same year, so a database not yet renamed by the migration script
+	// carries on from its highest number instead of starting 2026 again at 0001.
+	year := models.QuoteYear(sq.Date)
 
 	var maxNum int
 	err := tx.Raw(`
-		SELECT ISNULL(MAX(TRY_CONVERT(int,
-			CASE WHEN CHARINDEX('#', document_no) > 0
-			     THEN SUBSTRING(document_no, CHARINDEX('#', document_no) + 1, 50)
-			     ELSE document_no END)), 0)
-		FROM tbl_trans_sales_quotation WITH (UPDLOCK, HOLDLOCK)
-	`).Scan(&maxNum).Error
+		SELECT ISNULL(MAX(n), 0) FROM (
+			SELECT TRY_CONVERT(int, SUBSTRING(document_no, CHARINDEX('-', document_no) + 1, 20)) AS n
+			  FROM tbl_trans_sales_quotation WITH (UPDLOCK, HOLDLOCK)
+			 WHERE document_no LIKE ? OR document_no LIKE ?
+			UNION ALL
+			SELECT TRY_CONVERT(int, SUBSTRING(document_no, CHARINDEX('#', document_no) + 1, 20))
+			  FROM tbl_trans_sales_quotation WITH (UPDLOCK, HOLDLOCK)
+			 WHERE CHARINDEX('-', document_no) = 0
+			   AND YEAR(TRY_CONVERT(datetime, [date])) = ?
+		) x`,
+		fmt.Sprintf("Q#%d-%%", year), fmt.Sprintf("FQ#%d-%%", year), year).Scan(&maxNum).Error
 	if err != nil {
 		return fmt.Errorf("failed computing next quotation document number: %w", err)
 	}
 
-	// A brand-new quote is always a draft "Q#"; only finalization (elsewhere) mints "FQ#".
-	sq.DocumentNo = fmt.Sprintf("Q#%04d", maxNum+1)
+	// A brand-new quote is always a draft "Q#"; only finalization mints "FQ#".
+	sq.DocumentNo = fmt.Sprintf("Q#%d-%04d", year, maxNum+1)
+	sq.VersionNo = "1"
+	sq.SubVersionNo = "0"
+	return nil
+}
+
+// quoteDraftNumber is a document number as its draft: "FQ#2026-0001" and "Q#2026-0001" both
+// give "Q#2026-0001". A new version or sub-version is always a draft, whichever copy - the
+// quote or its FQ - it was started from.
+func quoteDraftNumber(documentNo string) (draft, finalized string) {
+	bare := stripQuotationPrefix(documentNo)
+	return "Q#" + bare, "FQ#" + bare
+}
+
+// assignNextVersion: New Version. Same number, the next version, sub-version 0 -
+// Q#2026-0001.1.3 -> Q#2026-0001.2.0. Worked out here, from what is stored, rather than
+// trusted from the client: the client's own lookup never matched and every quote stayed 1.0.
+func assignNextVersion(tx *gorm.DB, sq *models.SalesQuotation) error {
+	draft, final := quoteDraftNumber(sq.DocumentNo)
+	if strings.TrimSpace(stripQuotationPrefix(sq.DocumentNo)) == "" {
+		return errors.New("a new version needs the document number of the quote it continues")
+	}
+
+	var maxVersion int
+	if err := tx.Raw(`
+		SELECT ISNULL(MAX(TRY_CONVERT(int, version_no)), 0)
+		  FROM tbl_trans_sales_quotation WITH (UPDLOCK, HOLDLOCK)
+		 WHERE document_no IN (?, ?)`, draft, final).Scan(&maxVersion).Error; err != nil {
+		return fmt.Errorf("failed computing next version: %w", err)
+	}
+
+	sq.DocumentNo = draft
+	sq.VersionNo = strconv.Itoa(maxVersion + 1)
+	sq.SubVersionNo = "0"
+	sq.IsFinalized = false
+	return nil
+}
+
+// assignNextSubVersion: an Edit session. Same number and version, the next sub-version -
+// Q#2026-0001.2.0 -> Q#2026-0001.2.1 -> Q#2026-0001.2.2. Counted over the FQs of that version
+// as well, so a sub-version number is never reused even where only its FQ remains.
+func assignNextSubVersion(tx *gorm.DB, sq *models.SalesQuotation) error {
+	draft, final := quoteDraftNumber(sq.DocumentNo)
+	if strings.TrimSpace(stripQuotationPrefix(sq.DocumentNo)) == "" {
+		return errors.New("a new sub-version needs the document number of the quote it continues")
+	}
+
+	version := strings.TrimSpace(sq.VersionNo)
+	if version == "" {
+		version = "1"
+	}
+
+	var maxSub int
+	if err := tx.Raw(`
+		SELECT ISNULL(MAX(TRY_CONVERT(int, sub_version_no)), 0)
+		  FROM tbl_trans_sales_quotation WITH (UPDLOCK, HOLDLOCK)
+		 WHERE document_no IN (?, ?) AND version_no = ?`, draft, final, version).Scan(&maxSub).Error; err != nil {
+		return fmt.Errorf("failed computing next sub-version: %w", err)
+	}
+
+	sq.DocumentNo = draft
+	sq.VersionNo = version
+	sq.SubVersionNo = strconv.Itoa(maxSub + 1)
+	sq.IsFinalized = false
 	return nil
 }
 
