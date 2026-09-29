@@ -373,7 +373,12 @@ func SearchProjects(term string, page int) (quotationListShape, utils.Pagination
 		pagination.Page = 1
 	}
 
-	base := initializers.DB.Model(&models.SalesQuotation{}).
+	// The latest copy of each document only - the same rows << PREV / NEXT >> walk. Searching
+	// the table itself listed every copy, so each EDIT (a new sub-version since 2026-09-25)
+	// showed up as another project in the list (user-reported 2026-09-26: "it not suppose to
+	// create a new project if edit -> save happen"). Older copies are reached through the
+	// version table (double-click the version number).
+	base := initializers.DB.Model(&models.LatestQuotationView{}).
 		Where(projectOnlyWhere).
 		Where("document_no LIKE ?", "%"+term+"%")
 
@@ -386,11 +391,15 @@ func SearchProjects(term string, page int) (quotationListShape, utils.Pagination
 	pagination.HasPrev = page > 1
 	pagination.HasNext = page < pagination.TotalPages
 
+	var latest []models.LatestQuotationView
 	if err := base.Order("id DESC").
 		Offset((page - 1) * searchPageSize).
 		Limit(searchPageSize).
-		Find(&shape.SalesQuotation).Error; err != nil {
+		Find(&latest).Error; err != nil {
 		return shape, pagination, fiber.StatusInternalServerError, errors.New("failed searching projects")
+	}
+	for _, v := range latest {
+		shape.SalesQuotation = append(shape.SalesQuotation, v.SalesQuotation)
 	}
 
 	return shape, pagination, 0, nil

@@ -24,6 +24,15 @@ func GetLatestQuotations(c *fiber.Ctx) error {
 	}
 	return utils.RespondSuccess(c, data)
 }
+// GetSalesRedBoxQuotations serves the Sales red box's quote cards: one row per open quote,
+// Quick and Project alike, without lines or images.
+func GetSalesRedBoxQuotations(c *fiber.Ctx) error {
+	data, status, err := sales_services.GetSalesRedBoxQuotations()
+	if err != nil {
+		return utils.RespondError(c, status, err.Error())
+	}
+	return utils.RespondSuccess(c, data)
+}
 // GetQuotationVersions serves one document's full version history
 // (all version_no/sub_version_no rows + only that document's lines/images)
 // for the WinForms version-history viewer and open-by-document flows, which

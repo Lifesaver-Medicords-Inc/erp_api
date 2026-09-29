@@ -582,6 +582,7 @@ func SetupApp() *fiber.App {
 				salesApi.Get("/quotation", sales_handlers.GetSalesQuotations)
 				salesApi.Get("/quotation/latest", sales_handlers.GetLatestQuotations)
 				salesApi.Get("/quotation/versions", sales_handlers.GetQuotationVersions)
+				salesApi.Get("/quotation/redbox", sales_handlers.GetSalesRedBoxQuotations)
 				salesApi.Get("/quotation/headers", sales_handlers.GetQuotationHeadersPaged)
 				salesApi.Get("/quotation/search", sales_handlers.SearchQuotations)
 				salesApi.Get("/quotation/detail/:id", sales_handlers.GetQuotationDetail)
