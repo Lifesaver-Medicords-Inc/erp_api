@@ -28,12 +28,17 @@ func GetSalesProjectTemplates(conditions map[string]interface{}) (interface{}, i
 		return response, fiber.StatusInternalServerError, errors.New("failed getting sales project template")
 	}
 
-	// The children come with the item's CURRENT name joined on, rather than only the
-	// components text that was typed when the row was made - see the model's note on
-	// ItemName. Raw rather than DbGet because that reads the table alone; this list is a
-	// few dozen rows per template, so it is not worth a view.
+	// The children come with the item's CURRENT name joined on - the name of its
+	// item_name_id, which is what a template component is (Template Setup shows it, plus any
+	// note in brackets). Raw rather than DbGet because that reads the table alone; this list
+	// is a few dozen rows per template, so it is not worth a view.
+	//
+	// Columns named, not c.*: the table has an item_name column of its own (NULL on every
+	// row, made by an old AutoMigrate from the read-only field), and c.* put it in the result
+	// beside the joined one - two columns called item_name, and the empty one could win.
 	if err := initializers.DB.Raw(`
-		SELECT c.*, ISNULL(i.item_name, '') AS item_name
+		SELECT c.id, c.parent_id, c.item_id, c.components, c.level, c.qty,
+		       ISNULL(i.item_name, '') AS item_name
 		  FROM tbl_trans_sales_project_template_child c
 		  LEFT JOIN vw_items i ON i.id = c.item_id
 		 ORDER BY c.id`).
