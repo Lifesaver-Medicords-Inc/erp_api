@@ -4,7 +4,12 @@ BEGIN
 END
 GO
 ALTER VIEW [dbo].[vw_get_purchasing_redbox_purchase_list] AS
-SELECT *
+-- purchaser holds the assigned purchaser's EMPLOYEE ID - the card compares it with the signed-in
+-- user's to know whose the order is. purchaser_name is who that is, first and last name, for the
+-- card to show (user 2026-09-29: "assigned purchaser suppose to be name, not employee id").
+-- An id no user has, and "~" (nobody), show as stored.
+SELECT a.*,
+    ISNULL(NULLIF(LTRIM(RTRIM(ISNULL(u.first_name, '') + ' ' + ISNULL(u.last_name, ''))), ''), a.purchaser) AS purchaser_name
 FROM (
         SELECT a.order_id AS id,
             a.doc AS doc_no,
@@ -144,3 +149,9 @@ FROM (
             a.purchaser,
             a.request_by
     ) a
+    OUTER APPLY (
+        SELECT TOP 1 su.first_name, su.last_name
+          FROM tbl_setup_users su
+         WHERE su.employee_id = a.purchaser
+         ORDER BY su.id
+    ) u
