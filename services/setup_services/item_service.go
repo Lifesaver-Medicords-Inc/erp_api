@@ -336,12 +336,17 @@ type ItemPickerRow struct {
 	ItemNameId    uint   `json:"item_name_id"`
 	UnitOfMeasure string `json:"unit_of_measure"`
 	BomId         uint   `json:"bom_id"`
+	// The Size Up / Final pump picker shows a BRAND column. These rows replaced the whole
+	// catalogue those modals used to be handed, which carried item_brand; the light row
+	// did not, so the column came up empty for every pump (user-reported 2026-09-28).
+	ItemBrand string `json:"item_brand"`
 }
 
 // TOP 1, not a join: an item with two BOM heads would otherwise duplicate its own row in the
 // picker. The client's old bomHead.Where(...).FirstOrDefault() had the same effect.
 const itemPickerColumns = `v.id, v.item_code, v.item_name, v.item_model, v.item_name_id, v.unit_of_measure,
-	ISNULL((SELECT TOP 1 b.id FROM tbl_setup_item_bom b WHERE b.item_id = v.id), 0) AS bom_id`
+	ISNULL((SELECT TOP 1 b.id FROM tbl_setup_item_bom b WHERE b.item_id = v.id), 0) AS bom_id,
+	ISNULL(v.item_brand, '') AS item_brand`
 
 // Each picker is ordered by the column the user reads down: the ITEM picker shows item names,
 // the MODEL picker shows models. id breaks ties so paging stays stable.
