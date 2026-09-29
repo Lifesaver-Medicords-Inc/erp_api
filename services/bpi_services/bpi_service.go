@@ -55,8 +55,10 @@ func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
 		Items          []models.BpiItemsView          `json:"items"`
 		Finance        []models.BpiFinance            `json:"finance"`
 		FinancePending []models.BpiFinancePendingView `json:"finance_pending"`
-		Accreditations []models.BpiAccreditationView  `json:"accreditations"`
-		History        []models.BpiHistoryView        `json:"history"`
+		// Spec 4.1.7 TRANSACTIONS: finished SOs with their POs, SI and PAYR.
+		FinanceTransactions []models.BpiFinanceTransactionView `json:"finance_transactions"`
+		Accreditations      []models.BpiAccreditationView      `json:"accreditations"`
+		History             []models.BpiHistoryView            `json:"history"`
 	}
 
 	var response Response
@@ -86,8 +88,14 @@ func GetBpis(conditions map[string]interface{}) (interface{}, int, error) {
 	if err := services.DbGet(&response.Finance, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting finance ")
 	}
-	if err := services.DbGet(&response.FinancePending, conditions); err != nil {
+	// Read fresh, not from the cache: both views follow quotations, sales orders, invoices and
+	// payment receipts, and saving any of those clears nothing here - a cached copy kept an
+	// invoiced SO under PENDING, counted in ACCOUNT BALANCE, for up to an hour.
+	if err := services.DbGetNoCache(&response.FinancePending, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting finance pending quotation")
+	}
+	if err := services.DbGetNoCache(&response.FinanceTransactions, conditions); err != nil {
+		return response, fiber.StatusInternalServerError, errors.New("failed getting finance transactions")
 	}
 	if err := services.DbGet(&response.Accreditations, conditions); err != nil {
 		return response, fiber.StatusInternalServerError, errors.New("failed getting accreditations  ")

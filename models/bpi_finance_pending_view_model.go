@@ -5,6 +5,7 @@ type BpiFinancePendingView struct {
 	FinancePendingBranchId uint    `json:"finance_pending_branch_id"`
 	Date                   string  `json:"date"`
 	QouteRef               string  `json:"qoute_ref"`
+	SoRef                  string  `json:"so_ref"`
 	TotalPrice             float64 `json:"total_price"`
 	Stage                  string  `json:"stage"`
 	Status                 string  `json:"status"`
