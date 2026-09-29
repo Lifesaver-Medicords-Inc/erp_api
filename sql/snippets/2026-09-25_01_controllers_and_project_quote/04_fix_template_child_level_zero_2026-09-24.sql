@@ -1,3 +1,9 @@
+-- STEP 04 of 07 - project template rows saved with level 0
+-- Run the numbered scripts in this folder in order, each on its own: 01, 02 ... 07.
+-- Run after:  03_add_advanced_conditions_dropdown_ids_2026-09-24.sql
+-- Run before: 05_load_controllers_items_2026-09-23.sql
+-- Every step is a TRIAL RUN until you set @commit = 1; it must end by printing "committed".
+
 -- Project template rows saved with level 0
 -- ========================================
 -- There is no level 0 in a project template: level 1 is the top, which is what every row

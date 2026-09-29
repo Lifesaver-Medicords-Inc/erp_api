@@ -1,4 +1,10 @@
-﻿-- Controllers and their components, from 'Controllers_Data_Entry_(9_22_26).xlsx'
+﻿-- STEP 05 of 07 - controller items - 07 matches every BOM line against these
+-- Run the numbered scripts in this folder in order, each on its own: 01, 02 ... 07.
+-- Run after:  04_fix_template_child_level_zero_2026-09-24.sql
+-- Run before: 06_fix_qerp_items_for_controllers_2026-09-23.sql
+-- Every step is a TRIAL RUN until you set @commit = 1; it must end by printing "committed".
+
+-- Controllers and their components, from 'Controllers_Data_Entry_(9_22_26).xlsx'
 -- =============================================================================
 -- 5,975 catalogue items: 5,840 CONTROLLER models and the 135 components the controller
 -- BOMs are built from. Written to be run on any Lightspeed database - every setup row is
@@ -30,7 +36,7 @@
 -- Run again safely: an item whose BRAND + ITEM MODEL is already there is skipped and
 -- reported, and nothing existing is updated or deleted.
 --
--- The BOMs are a separate script (load_controllers_bom_*.sql) and need this one first.
+-- The BOMs are a separate script (07_load_controllers_bom_*.sql) and need this one first.
 --
 -- HOW TO RUN: sqlcmd -S <server> -d <database> -b -i <this file>  (or open it in SSMS).
 -- With @commit = 0 everything is done and counted, then rolled back. Set @commit = 1 to

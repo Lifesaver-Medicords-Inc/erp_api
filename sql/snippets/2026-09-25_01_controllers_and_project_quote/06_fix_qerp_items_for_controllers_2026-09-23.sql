@@ -1,4 +1,10 @@
-﻿-- QERP catalogue corrections the controller BOMs depend on
+﻿-- STEP 06 of 07 - corrects the existing QERP component items 07 depends on
+-- Run the numbered scripts in this folder in order, each on its own: 01, 02 ... 07.
+-- Run after:  05_load_controllers_items_2026-09-23.sql
+-- Run before: 07_load_controllers_bom_2026-09-23.sql
+-- Every step is a TRIAL RUN until you set @commit = 1; it must end by printing "committed".
+
+-- QERP catalogue corrections the controller BOMs depend on
 -- ========================================================
 -- From the 'QERP Actions' sheet of 'Controllers_Data_Entry_(9_22_26).xlsx'. It lists the
 -- items already in the catalogue that the controller BOMs point at under a different brand
@@ -9,7 +15,7 @@
 --   @apply_edits (default 1)
 --       15 field corrections. Five of them the BOM load NEEDS: the BOM names
 --       ANLY/OMR/WIX/MAC/CHS where QERP has the same item under 'No Brand', so without
---       them those components resolve to nothing and load_controllers_bom_*.sql refuses to
+--       them those components resolve to nothing and 07_load_controllers_bom_*.sql refuses to
 --       run. The rest move the nine CONTROL BOX items from item name CTRL to ME (metal
 --       enclosure), which is what they are - CTRL is now the controllers themselves.
 --

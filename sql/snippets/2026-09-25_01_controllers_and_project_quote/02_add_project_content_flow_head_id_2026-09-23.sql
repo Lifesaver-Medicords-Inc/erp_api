@@ -1,3 +1,9 @@
+-- STEP 02 of 07 - FLOW / HEAD unit ids on a project quotation
+-- Run the numbered scripts in this folder in order, each on its own: 01, 02 ... 07.
+-- Run after:  01_add_bom_details_remarks_2026-09-23.sql
+-- Run before: 03_add_advanced_conditions_dropdown_ids_2026-09-24.sql
+-- Every step is a TRIAL RUN until you set @commit = 1; it must end by printing "committed".
+
 -- FLOW and HEAD unit columns on a project quotation's item set
 -- ============================================================
 -- The two little dropdowns beside FLOW and HEAD on a project quotation (ItemSetUC) had

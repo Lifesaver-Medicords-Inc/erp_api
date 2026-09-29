@@ -1,11 +1,16 @@
-﻿-- Controller BOMs, from 'Controllers_Data_Entry_(9_22_26).xlsx'
+﻿-- STEP 07 of 07 - controller BOMs - needs 05 and 06 COMMITTED first, and a choice on fractional wire quantities (see THE QUANTITY COLUMN)
+-- Run the numbered scripts in this folder in order, each on its own: 01, 02 ... 07.
+-- Run after:  06_fix_qerp_items_for_controllers_2026-09-23.sql
+-- Every step is a TRIAL RUN until you set @commit = 1; it must end by printing "committed".
+
+-- Controller BOMs, from 'Controllers_Data_Entry_(9_22_26).xlsx'
 -- ============================================================
 -- 5840 production BOMs - one per controller - and their 130,372 component lines.
 --
--- RUN load_controllers_items_*.sql FIRST. Every parent and every component is matched by
+-- RUN 05_load_controllers_items_*.sql FIRST. Every parent and every component is matched by
 -- ITEM NAME + BRAND + ITEM MODEL against the catalogue, and the script refuses to write
 -- anything if even one of them is missing, listing what it could not find. Five components
--- also need fix_qerp_items_for_controllers_*.sql, which moves the QERP rows for
+-- also need 06_fix_qerp_items_for_controllers_*.sql, which moves the QERP rows for
 -- ANLY / OMR / WIX / MAC / CHS off 'No Brand'.
 --
 -- THE QUANTITY COLUMN. 4,096 of the 130,372 lines are wire and cable measured in metres -
@@ -6475,7 +6480,7 @@ BEGIN
       FROM #parent WHERE item_id IS NULL ORDER BY item_model;
     SELECT 'component not in the catalogue' AS problem, name_code, brand_code, item_model
       FROM #comp WHERE item_id IS NULL ORDER BY name_code, brand_code, item_model;
-    RAISERROR('Items are missing (listed above). Run load_controllers_items_*.sql, and fix_qerp_items_for_controllers_*.sql for the components, then run this again.', 16, 1);
+    RAISERROR('Items are missing (listed above). Run 05_load_controllers_items_*.sql, and 06_fix_qerp_items_for_controllers_*.sql for the components, then run this again.', 16, 1);
     RETURN;
 END
 

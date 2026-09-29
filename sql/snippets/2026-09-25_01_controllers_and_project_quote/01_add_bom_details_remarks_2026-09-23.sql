@@ -1,8 +1,13 @@
+-- STEP 01 of 07 - adds the remarks column 07 writes into - run before 07 or the remarks are only counted
+-- Run the numbered scripts in this folder in order, each on its own: 01, 02 ... 07.
+-- Run before: 02_add_project_content_flow_head_id_2026-09-23.sql
+-- Every step is a TRIAL RUN until you set @commit = 1; it must end by printing "committed".
+
 -- A remarks column on the BOM component line
 -- ==========================================
 -- tbl_setup_item_bom_details had nowhere to record what a component is FOR on its BOM -
 -- 'Power', 'Control', 'Wye', 'Main, Delta', 'alternative models'. The controller workbook
--- carries one on 39,180 of its 130,372 lines, and load_controllers_bom_*.sql writes them
+-- carries one on 39,180 of its 130,372 lines, and 07_load_controllers_bom_*.sql writes them
 -- only if this column exists (it checks with COL_LENGTH and reports them instead when it
 -- does not). So run this BEFORE that script, or run that script again afterwards - it fills
 -- the remarks on BOMs it has already loaded.
