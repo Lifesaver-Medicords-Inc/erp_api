@@ -39,6 +39,13 @@ type SalesProjectAdvancedConditionsContent struct {
 	MotorManufacturerId      uint `json:"motor_manufacturer_id"`
 	LiquidTypeId             uint `json:"liquid_type_id"`
 	ControllerManufacturerId uint `json:"controller_manufacturer_id"`
+
+	// The unit beside PRESSURE (user, 2026-09-28): 1 bar, 2 psi, 3 ft, 4 m - fixed ids,
+	// append only, like the lists above. Unlike them it has no "-- Select --": it is a
+	// unit beside a figure (like head_id), so the screen starts on bar. 0 is only what a
+	// row saved before this column existed holds, and the screen shows it as bar.
+	// Starting the API adds the column (migrateSalesProject) - no script.
+	PressureUnitId uint `json:"pressure_unit_id"`
 }
 
 type SalesProjectAdvancedConditions struct {
