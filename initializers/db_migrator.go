@@ -429,10 +429,14 @@ func migrateSalesProject() {
 	// Was fully commented out, so the live DB never picked up schema changes made to
 	// these models over time (e.g. SalesProjectContent.IsWiring, added to the struct but
 	// never applied to the actual table - "Invalid column name 'is_wiring'"). AutoMigrate
-	// is additive-only (creates missing tables/columns/indexes, never drops or alters
-	// existing data), and migrateAndLog logs+continues per model instead of aborting on
-	// a single failure, so re-enabling this is safe to run on every startup - it'll pick
-	// up is_wiring here and self-heals the same way for any other drift in this module.
+	// creates missing tables/columns/indexes and never drops anything - but it DOES alter
+	// a column whose type differs from the model's: SalesProjectWiring's qty/total_qty
+	// went from bigint to decimal(18,4) this way on 2026-09-28 (tested, rolled back:
+	// services/sales_services/wiring_automigrate_db_test.go). So a model's type change
+	// reaches the database on the next start, with no script. migrateAndLog logs and
+	// continues per model instead of aborting on a single failure - check the start-up
+	// log for "Failed" after a type change. It'll pick up is_wiring here and self-heals
+	// the same way for any other drift in this module.
 	migrateAndLog(
 		&models.SalesProjectTemplate{}, &models.SalesProjectTemplateAt{},
 		&models.SalesProjectTemplateChild{}, &models.SalesProjectTemplateChildAt{},
