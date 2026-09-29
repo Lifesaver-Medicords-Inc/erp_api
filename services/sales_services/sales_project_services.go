@@ -1218,7 +1218,24 @@ func applyItemSetDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.Sa
 // ItemID note), the grid ended up holding each pump twice, and this function wrote
 // both copies. The client-side hole is fixed too, but this is the backstop - a
 // duplicate can no longer reach the table even if some other caller sends one.
-func syncContentChildren(tx *gorm.DB, contentID uint, finals []models.SalesProjectContentFinal, sizeUps []models.SalesProjectSizeUp, at models.At) error {
+// syncFinals / syncSizeUps: which of the two lists to make match what was sent. A list not
+// synced is left exactly as stored.
+//
+// knownFinalIDs / knownSizeUpIDs: the row ids the saving screen had read. A stored row that
+// was not sent is deleted only when it is named there - the screen saw it and took it off.
+// One it never saw was added by the other app after the screen last read the list, and
+// deleting it is how one app's pick wiped the other's. nil (a client that does not send
+// them) keeps the old rule: the stored list becomes exactly what was sent.
+//
+// Fixed 2026-09-28 (user-reported: "size up and finals don't have websocket when
+// updating ... final it no data sometimes"): the stored rows were read for the prune pass
+// AFTER the new rows had been created, and a created row's id was never marked kept - so
+// every pump picked on a saved quote was inserted and deleted again in the same save. The
+// save reported success, the screen that picked it still showed it, the other app was told
+// and found nothing new, and a reload showed nothing. The prune now runs over the rows as
+// they were before this save, and a created row counts as kept.
+func syncContentChildren(tx *gorm.DB, contentID uint, finals []models.SalesProjectContentFinal, sizeUps []models.SalesProjectSizeUp,
+	syncFinals, syncSizeUps bool, knownFinalIDs, knownSizeUpIDs []uint, at models.At) error {
 	// Resolve item ids BEFORE deduping, so the dedupe below can key on the pump
 	// itself rather than falling back to comparing model text - two rows naming the
 	// same pump are then caught even if one of them arrived without an id.
@@ -1227,61 +1244,121 @@ func syncContentChildren(tx *gorm.DB, contentID uint, finals []models.SalesProje
 	finals = dedupeFinals(finals)
 	sizeUps = dedupeSizeUps(sizeUps)
 
-	keptFinals := map[uint]bool{}
-	for _, v := range finals {
-		if v.ID > 0 {
-			keptFinals[v.ID] = true
-			if err := UpdateProjectContentFinal(tx, v, at, map[string]interface{}{"id": v.ID}); err != nil {
-				return fmt.Errorf("content final update: %w", err)
+	if syncFinals {
+		var existingFinals []models.SalesProjectContentFinal
+		if err := tx.Where("sales_project_content_id = ?", contentID).Find(&existingFinals).Error; err != nil {
+			return fmt.Errorf("content final read: %w", err)
+		}
+
+		keptFinals := map[uint]bool{}
+		for _, v := range finals {
+			// Sent without an id but naming a pump already on this list: that row, not a
+			// second copy of it. A screen that has not yet been told the id its own pick was
+			// given sends it like this.
+			if v.ID == 0 {
+				v.ID = matchStoredPump(len(existingFinals), func(i int) (uint, uint, string) {
+					return existingFinals[i].ID, existingFinals[i].ItemID, existingFinals[i].Final
+				}, v.ItemID, v.Final, keptFinals)
 			}
-			continue
-		}
-		if err := CreateProjectContentFinal(tx, contentID, v, at); err != nil {
-			return fmt.Errorf("content final add: %w", err)
-		}
-	}
-
-	var existingFinals []models.SalesProjectContentFinal
-	if err := tx.Where("sales_project_content_id = ?", contentID).Find(&existingFinals).Error; err != nil {
-		return fmt.Errorf("content final read: %w", err)
-	}
-	for _, row := range existingFinals {
-		if keptFinals[row.ID] {
-			continue
-		}
-		if err := DeleteProjectContentFinal(tx, row, at); err != nil {
-			return fmt.Errorf("content final delete: %w", err)
-		}
-	}
-
-	kept := map[uint]bool{}
-	for _, v := range sizeUps {
-		if v.ID > 0 {
-			kept[v.ID] = true
-			if err := UpdateProjectSizeUp(tx, v, at, map[string]interface{}{"id": v.ID}); err != nil {
-				return fmt.Errorf("size up update: %w", err)
+			if v.ID > 0 {
+				keptFinals[v.ID] = true
+				if err := UpdateProjectContentFinal(tx, v, at, map[string]interface{}{"id": v.ID}); err != nil {
+					return fmt.Errorf("content final update: %w", err)
+				}
+				continue
 			}
-			continue
+			id, err := createProjectContentFinal(tx, contentID, v, at)
+			if err != nil {
+				return fmt.Errorf("content final add: %w", err)
+			}
+			keptFinals[id] = true
 		}
-		if err := CreateProjectSizeUp(tx, contentID, v, at); err != nil {
-			return fmt.Errorf("size up add: %w", err)
+
+		known := idSet(knownFinalIDs)
+		for _, row := range existingFinals {
+			if keptFinals[row.ID] || (known != nil && !known[row.ID]) {
+				continue
+			}
+			if err := DeleteProjectContentFinal(tx, row, at); err != nil {
+				return fmt.Errorf("content final delete: %w", err)
+			}
 		}
 	}
 
-	var existing []models.SalesProjectSizeUp
-	if err := tx.Where("sales_project_content_id = ?", contentID).Find(&existing).Error; err != nil {
-		return fmt.Errorf("size up read: %w", err)
-	}
-	for _, row := range existing {
-		if kept[row.ID] {
-			continue
+	if syncSizeUps {
+		var existing []models.SalesProjectSizeUp
+		if err := tx.Where("sales_project_content_id = ?", contentID).Find(&existing).Error; err != nil {
+			return fmt.Errorf("size up read: %w", err)
 		}
-		if err := DeleteProjectSizeUp(tx, row, at); err != nil {
-			return fmt.Errorf("size up delete: %w", err)
+
+		kept := map[uint]bool{}
+		for _, v := range sizeUps {
+			if v.ID == 0 {
+				v.ID = matchStoredPump(len(existing), func(i int) (uint, uint, string) {
+					return existing[i].ID, existing[i].ItemID, existing[i].Model
+				}, v.ItemID, v.Model, kept)
+			}
+			if v.ID > 0 {
+				kept[v.ID] = true
+				if err := UpdateProjectSizeUp(tx, v, at, map[string]interface{}{"id": v.ID}); err != nil {
+					return fmt.Errorf("size up update: %w", err)
+				}
+				continue
+			}
+			id, err := createProjectSizeUp(tx, contentID, v, at)
+			if err != nil {
+				return fmt.Errorf("size up add: %w", err)
+			}
+			kept[id] = true
+		}
+
+		known := idSet(knownSizeUpIDs)
+		for _, row := range existing {
+			if kept[row.ID] || (known != nil && !known[row.ID]) {
+				continue
+			}
+			if err := DeleteProjectSizeUp(tx, row, at); err != nil {
+				return fmt.Errorf("size up delete: %w", err)
+			}
 		}
 	}
 
 	return nil
+}
+
+// matchStoredPump finds the stored row a row sent without an id stands for: the same pump by
+// item id when both have one, otherwise the same model name. Rows already claimed by this
+// save are skipped. 0 when there is none.
+func matchStoredPump(n int, stored func(i int) (id uint, itemID uint, model string), itemID uint, model string, claimed map[uint]bool) uint {
+	model = strings.TrimSpace(model)
+	for i := 0; i < n; i++ {
+		id, storedItem, storedModel := stored(i)
+		if claimed[id] {
+			continue
+		}
+		if itemID > 0 && storedItem > 0 {
+			if itemID == storedItem {
+				return id
+			}
+			continue
+		}
+		if model != "" && strings.EqualFold(strings.TrimSpace(storedModel), model) {
+			return id
+		}
+	}
+	return 0
+}
+
+// idSet is nil for a nil list - "not sent" - and an empty set for an empty one.
+func idSet(ids []uint) map[uint]bool {
+	if ids == nil {
+		return nil
+	}
+	set := make(map[uint]bool, len(ids))
+	for _, id := range ids {
+		set[id] = true
+	}
+	return set
 }
 
 // resolveChildItemIds fills in a missing item id on a Size Up / Final row by looking
@@ -1425,7 +1502,7 @@ func applyContentDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.Sale
 			return fmt.Errorf("content add: %w", err)
 		}
 
-		if err := syncContentChildren(tx, item.ContentID, addFinals, addSizeUps, at); err != nil {
+		if err := syncContentChildren(tx, item.ContentID, addFinals, addSizeUps, true, true, nil, nil, at); err != nil {
 			return err
 		}
 
@@ -1485,7 +1562,12 @@ func applyContentDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.Sale
 
 		// DbUpdate does not touch associations, so without this the finals and size-ups
 		// on an edited tab were discarded on every save.
-		if err := syncContentChildren(tx, entry.Item.ContentID, entry.Item.SalesProjectContentFinal, entry.Item.SalesProjectSizeUp, at); err != nil {
+		// Only the list this save changed. Syncing both replaced the other one with whatever
+		// this client last read - a Sales edit of FLOW wiped the Size Up an engineer had just
+		// picked.
+		if err := syncContentChildren(tx, entry.Item.ContentID, entry.Item.SalesProjectContentFinal, entry.Item.SalesProjectSizeUp,
+			changed(entry.Changes, "final_selection"), changed(entry.Changes, "size_up"),
+			entry.Item.FinalKnownIDs, entry.Item.SizeUpKnownIDs, at); err != nil {
 			return err
 		}
 

@@ -57,6 +57,13 @@ type SalesProjectContent struct {
 	SalesProjectContentContent
 	SalesProjectContentFinal []SalesProjectContentFinal `json:"sales_project_content_final" gorm:"foreignKey:SalesProjectContentID;references:ContentID"`
 	SalesProjectSizeUp       []SalesProjectSizeUp       `json:"sales_project_size_up" gorm:"foreignKey:SalesProjectContentID;references:ContentID"`
+
+	// The Size Up / FINAL row ids the saving screen had read - not columns, only sent on a
+	// save. A stored row missing from the lists above is deleted only if it is named here:
+	// one the screen never saw was added by the other app since, and is kept. nil (an older
+	// client) keeps the old rule - make the stored list exactly what was sent.
+	SizeUpKnownIDs []uint `json:"size_up_known_ids,omitempty" gorm:"-"`
+	FinalKnownIDs  []uint `json:"final_known_ids,omitempty" gorm:"-"`
 }
 
 func (SalesProjectContent) TableName() string {

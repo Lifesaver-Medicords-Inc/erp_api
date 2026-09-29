@@ -10,7 +10,15 @@ import (
 	"gorm.io/gorm"
 )
 
-func  CreateProjectContentFinal(tx *gorm.DB, parentId uint, ProjectContentFinal models.SalesProjectContentFinal, at models.At) error {
+func CreateProjectContentFinal(tx *gorm.DB, parentId uint, ProjectContentFinal models.SalesProjectContentFinal, at models.At) error {
+	_, err := createProjectContentFinal(tx, parentId, ProjectContentFinal, at)
+	return err
+}
+
+// createProjectContentFinal is CreateProjectContentFinal returning the id the row was given.
+// syncContentChildren needs it: a row it has just created must count as kept, or its own
+// prune pass deletes it again in the same save.
+func createProjectContentFinal(tx *gorm.DB, parentId uint, ProjectContentFinal models.SalesProjectContentFinal, at models.At) (uint, error) {
 	// parentId is the owning content row's ContentID. This used to assign it to
 	// ProjectContentFinal.ID - the child's OWN primary key - which both forced an
 	// IDENTITY_INSERT of an id that may already exist and left the real foreign key
@@ -25,7 +33,7 @@ func  CreateProjectContentFinal(tx *gorm.DB, parentId uint, ProjectContentFinal 
 	if err := services.DbInsert(tx, &ProjectContentFinal); err != nil {
 		fmt.Println(err)
 		fmt.Println("ERR", &ProjectContentFinal)
-		return errors.New("failed creating project content final")
+		return 0, errors.New("failed creating project content final")
 	}
 
 	projectcontentat := models.SalesProjectContentFinalAt{
@@ -35,9 +43,9 @@ func  CreateProjectContentFinal(tx *gorm.DB, parentId uint, ProjectContentFinal 
 	}
 
 	if err := services.DbInsert(tx, &projectcontentat); err != nil {
-		return errors.New("failed creating project content")
+		return 0, errors.New("failed creating project content")
 	}
-	return nil
+	return ProjectContentFinal.ID, nil
 }
 
 func GetSalesProjectContentFinal(ProjectContentFinal *[]models.SalesProjectContentFinal, conditions map[string]interface{}) error {

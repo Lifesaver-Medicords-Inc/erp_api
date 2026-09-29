@@ -14,24 +14,31 @@ import (
 // Final Selection save (parent id written to the child's primary key, leaving the FK at
 // zero so the preload never matched), so this mirrors the corrected shape.
 func CreateProjectSizeUp(tx *gorm.DB, parentId uint, SizeUp models.SalesProjectSizeUp, at models.At) error {
+	_, err := createProjectSizeUp(tx, parentId, SizeUp, at)
+	return err
+}
+
+// createProjectSizeUp is CreateProjectSizeUp returning the id the row was given - see
+// createProjectContentFinal for why syncContentChildren needs it.
+func createProjectSizeUp(tx *gorm.DB, parentId uint, SizeUp models.SalesProjectSizeUp, at models.At) (uint, error) {
 	SizeUp.ID = 0
 	SizeUp.SalesProjectContentID = parentId
 
 	if err := services.DbInsert(tx, &SizeUp); err != nil {
 		fmt.Println(err)
-		return errors.New("failed creating project size up")
+		return 0, errors.New("failed creating project size up")
 	}
 
 	sizeupat := models.SalesProjectSizeUpAt{
-		RefID:                    SizeUp.ID,
+		RefID:                     SizeUp.ID,
 		SalesProjectSizeUpContent: SizeUp.SalesProjectSizeUpContent,
-		At:                       at,
+		At:                        at,
 	}
 
 	if err := services.DbInsert(tx, &sizeupat); err != nil {
-		return errors.New("failed creating project size up audit row")
+		return 0, errors.New("failed creating project size up audit row")
 	}
-	return nil
+	return SizeUp.ID, nil
 }
 
 func GetSalesProjectSizeUp(SizeUp *[]models.SalesProjectSizeUp, conditions map[string]interface{}) error {
