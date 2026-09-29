@@ -67,3 +67,34 @@ func TestProjectDetailCarriesContentChildren(t *testing.T) {
 		t.Errorf("Final rows: database has %d, GetProjectDetail returned %d", wantFinals, gotFinals)
 	}
 }
+
+// The header's lookup names ride along with the project detail, for the Engineering app's
+// read-only header. Read-only. Run by hand:
+//
+//	go test -tags dbtest -run TestProjectDetailHeaderNames -v ./services/sales_services/
+func TestProjectDetailHeaderNames(t *testing.T) {
+	if _, err := os.Stat(".env"); err != nil {
+		if err := os.Chdir("../.."); err != nil {
+			t.Fatal(err)
+		}
+	}
+	initializers.LoadEnv()
+	initializers.ConnectDb()
+
+	var projectID int
+	initializers.DB.Raw(`SELECT TOP 1 id FROM tbl_trans_sales_quotation WHERE project_name <> '' AND application_id > 0 AND payment_terms_id > 0 ORDER BY id DESC`).Scan(&projectID)
+	if projectID == 0 {
+		t.Skip("no project quotation with an application and payment terms")
+	}
+
+	detail, _, err := GetProjectDetail(projectID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	n := detail.HeaderNames
+	t.Logf("project %d: application=%q payment_terms=%q ship_type=%q ship_to=%q bill_to=%q",
+		projectID, n.Application, n.PaymentTerms, n.ShipType, n.ShipTo, n.BillTo)
+	if n.Application == "" || n.PaymentTerms == "" {
+		t.Fatalf("application and payment terms are set on project %d but came back without names", projectID)
+	}
+}

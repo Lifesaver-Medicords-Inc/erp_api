@@ -273,6 +273,19 @@ type SalesProjectDetail struct {
 	SalesProjectItems                    []models.SalesProjectItems              `json:"sales_project_items"`
 	SalesProjectWirings                  []models.SalesProjectWiring             `json:"sales_project_wiring"`
 	SalesProjectItemsSelectedImages      []models.SalesQuotationSelectedImage    `json:"sales_project_items_selected_images"`
+
+	// The names behind the header's lookup ids, for a screen that shows the header without
+	// the Setup lists Sales binds its dropdowns to - the Engineering app, which shows the
+	// whole header read-only (user decision 2026-09-28). Added alongside; nothing else reads it.
+	HeaderNames SalesProjectHeaderNames `json:"header_names"`
+}
+
+type SalesProjectHeaderNames struct {
+	Application  string `json:"application"`
+	PaymentTerms string `json:"payment_terms"`
+	ShipType     string `json:"ship_type"`
+	ShipTo       string `json:"ship_to"`
+	BillTo       string `json:"bill_to"`
 }
 
 func newSalesProjectDetail() SalesProjectDetail {
@@ -456,6 +469,19 @@ func GetProjectDetail(id int) (SalesProjectDetail, int, error) {
 		return detail, fiber.StatusNotFound, errors.New("project not found")
 	}
 	detail.SalesQuotation = append(detail.SalesQuotation, header)
+
+	// Best effort: a missing name shows blank, it does not fail the quotation.
+	initializers.DB.Raw(`
+		SELECT ISNULL(a.name, '') AS application, ISNULL(p.name, '') AS payment_terms,
+		       ISNULL(s.ship_name, '') AS ship_type, ISNULL(st.location, '') AS ship_to,
+		       ISNULL(bt.location, '') AS bill_to
+		  FROM tbl_trans_sales_quotation q
+		  LEFT JOIN tbl_setup_application a    ON a.id = q.application_id
+		  LEFT JOIN tbl_setup_payment_terms p  ON p.id = q.payment_terms_id
+		  LEFT JOIN tbl_setup_ship_type s      ON s.id = q.ship_type_id
+		  LEFT JOIN tbl_bpi_address st         ON st.id = q.ship_to_id
+		  LEFT JOIN tbl_bpi_address bt         ON bt.id = q.bill_to_id
+		 WHERE q.id = ?`, id).Scan(&detail.HeaderNames)
 
 	uid := uint(id)
 	byProject := map[string]interface{}{"based_id": uid}
