@@ -174,7 +174,52 @@ func scopeQuotationChildren(shape *quotationListShape, headerIDs map[uint]bool) 
 // /sales/quotation/latest until the hour cache expires - the same gap
 // RequestQuotationForEngr already closes for the engineering list view.
 func invalidateLatestQuotationCache() error {
+	InvalidateQuotationPipelineViews()
 	return services.InvalidateCache(services.GetKey(models.LatestQuotationView{}, nil))
+}
+
+// InvalidateQuotationPipelineViews clears the two other lists built on the quotation rows:
+// Opportunities (vw_get_sales_opportunities) and BPI Finance's PENDING table
+// (vw_get_bpi_finance_pending, which mirrors it - spec 4.7). Each is cached as its own type,
+// so the model:SalesQuotation* clear a quotation write does never reached them: a quote
+// saved, versioned or finalized left both showing the old list for up to the hour DbGet
+// caches for, and only an edit on the Opportunities screen itself refreshed it
+// (user-reported 2026-09-25: "the opportunities module is not reflecting").
+//
+// Called from invalidateLatestQuotationCache, which every quotation write already calls, and
+// again after commit from InvalidateEngineeringQuotationListCache - a read that lands between
+// the first clear and the commit would otherwise put the pre-commit list straight back.
+// Best-effort: the write has succeeded either way.
+func InvalidateQuotationPipelineViews() {
+	for _, view := range []interface{}{&models.OpportunityView{}, &models.BpiFinancePendingView{}} {
+		if err := services.InvalidateCacheByModel(view); err != nil {
+			fmt.Println("quotation list cache invalidation:", err)
+		}
+	}
+}
+
+// InvalidateEngineeringQuotationListCache clears the Engineering Sales Quotation
+// List's own cached read.
+//
+// That list is served by DbGet on EngineeringRedboxQuotationListView, bound to
+// vw_get_engineering_redbox_quotation_list - a DIFFERENT cached type from
+// SalesQuotation, sitting on the same tbl_trans_sales_quotation row. DbUpdate's
+// InvalidateCacheByModel only ever clears model:SalesQuotation* keys, so a write
+// that changes what the view returns leaves the engineer's list serving its cached
+// copy for the full hour DbGet caches for (db_service.go).
+//
+// Exported and called from the handlers rather than from the services below,
+// because it must run AFTER tx.Commit(). Clearing the key while the transaction is
+// still open lets a concurrent read repopulate it from pre-commit data, which puts
+// the stale list straight back - the same reasoning as the "quotation_saved"
+// broadcast, which is also deliberately post-commit.
+//
+// Best-effort at the call sites: the write itself has already succeeded and been
+// committed by then, so a Redis failure must not turn a saved quotation into a
+// failed response.
+func InvalidateEngineeringQuotationListCache() error {
+	InvalidateQuotationPipelineViews()
+	return services.InvalidateCache(services.GetKey(models.EngineeringRedboxQuotationListView{}, nil))
 }
 
 // stripQuotationPrefix mirrors the WinForms DocumentNo.Strip helper for
@@ -934,7 +979,7 @@ func RequestQuotationForEngr(tx *gorm.DB, quotationId uint, at models.At) (*mode
 	// Same gap already found and fixed for BPI Financing/CustomerView/
 	// SupplierTradeView - without this, a freshly requested quotation stays
 	// invisible in Engineering until the cache happens to expire on its own.
-	if err := services.InvalidateCache(services.GetKey(models.EngineeringRedboxQuotationListView{}, nil)); err != nil {
+	if err := InvalidateEngineeringQuotationListCache(); err != nil {
 		return nil, fiber.StatusInternalServerError, errors.New("failed invalidating engineering quotation list cache")
 	}
 
@@ -974,7 +1019,7 @@ func CancelQuotationForEngr(tx *gorm.DB, quotationId uint, at models.At) (*model
 		return nil, fiber.StatusInternalServerError, errors.New("failed invalidating latest quotation cache")
 	}
 
-	if err := services.InvalidateCache(services.GetKey(models.EngineeringRedboxQuotationListView{}, nil)); err != nil {
+	if err := InvalidateEngineeringQuotationListCache(); err != nil {
 		return nil, fiber.StatusInternalServerError, errors.New("failed invalidating engineering quotation list cache")
 	}
 

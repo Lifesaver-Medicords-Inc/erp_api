@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
+	"github.com/pierceperado/smpc/handlers/engineering_handlers"
 	"github.com/pierceperado/smpc/initializers"
 	"github.com/pierceperado/smpc/models"
 	"github.com/pierceperado/smpc/services"
@@ -127,6 +128,12 @@ func CreateSalesProject(c *fiber.Ctx) error {
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
 
+	// A project quote can be created with REQUEST FOR ENGR. already ticked - the flag
+	// rides along in this same insert (see CreateSalesQuotation's own note on
+	// is_requested_for_engr), so the engineer's list is out of date the moment this
+	// commits. Same reasoning as the update path below.
+	refreshEngineeringQuotationList()
+
 	return utils.RespondSuccess(c, data)
 }
 
@@ -146,6 +153,18 @@ func UpdateSalesProject(c *fiber.Ctx) error {
 		tx.Rollback()
 		return utils.RespondError(c, fiber.StatusInternalServerError, "Failed to commit transaction")
 	}
+
+	// REQUEST FOR ENGR. reaches the database through this save and nothing else: the
+	// checkbox's own handler in Quotation.cs is commented out, so the standalone
+	// RequestQuotationForEngr / CancelQuotationForEngr endpoints - which DO invalidate
+	// this cache - are never called. Without this, a quotation sent to engineering was
+	// written correctly but stayed invisible on the engineer's Sales Quotation List until
+	// the cached read expired an hour later or the API restarted (user-reported 2026-09-24,
+	// Q#0026). The same applies to anything else the view shows: project name, client,
+	// created_by, and whether the quote has wiring rows.
+	//
+	// Best-effort and post-commit, for the same two reasons as the broadcast below.
+	refreshEngineeringQuotationList()
 
 	// Let anyone else with this same project quotation open know a save just happened, so
 	// their client can refresh instead of waiting for its next 5-minute poll. Only fired once
@@ -465,4 +484,34 @@ func WsProjects(c *websocket.Conn, userid string, branch string, projectid strin
 			return
 		}
 	}
+}
+
+// refreshEngineeringQuotationList brings every engineer's Sales Quotation List up to date
+// after a project quotation is written. Two halves, and both are needed:
+//
+//   - the cache: the list is a cached read (EngineeringRedboxQuotationListView), so
+//     without the invalidation anyone who opens or reloads the list keeps getting the
+//     pre-save copy for up to an hour.
+//   - the push: an engineer who already HAS the list open never asks again - the page
+//     reads it once, on open. The engineering app keeps a socket on
+//     /ws/engineering/redboxlist/quotation for its red box, and the API only ever sent on
+//     it when a client connected. Sending the fresh list on it now is what makes a quote
+//     requested in Sales appear in Engineering without anyone restarting or reopening
+//     anything (user-reported 2026-09-24).
+//
+// Must run AFTER tx.Commit(): the push re-reads the list, and re-reading inside the
+// transaction would publish (and re-cache) the pre-commit state. The invalidation is
+// synchronous so the very next GET is fresh; the push runs in the background so a slow or
+// dead engineering socket can never hold up the save's own response. Best-effort
+// throughout - the save has already succeeded by the time either runs.
+func refreshEngineeringQuotationList() {
+	if err := sales_services.InvalidateEngineeringQuotationListCache(); err != nil {
+		fmt.Println("Error invalidating engineering quotation list cache:", err)
+	}
+
+	go func() {
+		if err := engineering_handlers.BroadcastRedboxQuotationList(); err != nil {
+			fmt.Println("Error broadcasting engineering quotation list:", err)
+		}
+	}()
 }
