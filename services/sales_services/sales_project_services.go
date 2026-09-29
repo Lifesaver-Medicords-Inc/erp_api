@@ -3,6 +3,7 @@
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -85,6 +86,13 @@ type UpdateProjectBody struct {
 	ID     uint       `json:"id"`
 	Header HeaderDiff `json:"Header"`
 	Tabs   []TabDiff  `json:"Tabs"`
+
+	// The item sets (tabs) the user removed on purpose - Remove Tabs in Sales. An item set is
+	// deleted ONLY if its id is here. The diff alone used to be enough, and the diff reports
+	// "removed" for any tab a payload merely fails to mention: one incomplete save deleted
+	// every tab on Q#0026 five times over. Engineering never sends this, and cannot remove a
+	// tab at all.
+	RemovedItemSetIds []uint `json:"removed_item_set_ids"`
 }
 
 type HeaderDiff struct {
@@ -127,6 +135,69 @@ type UpdatedItem[T any] struct {
 type FieldChange[T any] struct {
 	OldValue T `json:"OldValue"`
 	NewValue T `json:"NewValue"`
+}
+
+// writeChangedFields writes exactly the fields a save reports as changed - the keys of its
+// Changes - with each value taken, correctly typed, from the row the client sent. Nothing
+// else on the row is touched.
+//
+// Sales and Engineering edit the same project quotation at the same time (live sync,
+// 2026-09-24). Writing the WHOLE row the client sent, as this used to (DbUpdate), meant a save
+// carried the saver's copy of every field - including one the other app had changed a moment
+// before and this screen had not caught up with yet. Sales editing FLOW while Engineering
+// edited HEAD on the same content row: whichever saved second put the other's value back
+// (user-reported 2026-09-26: "when update the advance conditions and items using sales and
+// engineering it will not update"). Each client's change lists name every stored field of
+// its section, so nothing a save means to change is lost by writing only what it lists.
+//
+// A change whose NewValue is null was not sent by that client (Engineering omits what it may
+// not edit; nullable dropdown ids are only sent when set) and is left alone. A deliberate
+// zero, blank or false IS written: GORM's UpdateColumns(struct) skips zero values, so "-- No
+// Template --", a dropdown back to "-- Select --", an untick or a cleared field used to look
+// saved and come back unchanged (2026-09-24) - a column map writes them. Keys that are not
+// columns (size_up, final_selection - child lists) are skipped; the caller syncs those.
+func writeChangedFields(tx *gorm.DB, row interface{}, keyColumn string, keyValue interface{}, changes map[string]FieldChange[any]) error {
+	if len(changes) == 0 {
+		return nil
+	}
+
+	stmt := &gorm.Statement{DB: tx}
+	if err := stmt.Parse(row); err != nil {
+		return err
+	}
+
+	rv := reflect.ValueOf(row)
+	for rv.Kind() == reflect.Ptr {
+		rv = rv.Elem()
+	}
+
+	cols := map[string]interface{}{}
+	for key, change := range changes {
+		if change.NewValue == nil {
+			continue
+		}
+		field := stmt.Schema.LookUpField(key)
+		if field == nil || field.DBName == "" || field.PrimaryKey {
+			continue
+		}
+		value, _ := field.ValueOf(tx.Statement.Context, rv)
+		cols[field.DBName] = value
+	}
+
+	if len(cols) == 0 {
+		return nil
+	}
+
+	if err := tx.Model(row).Where(keyColumn+" = ?", keyValue).UpdateColumns(cols).Error; err != nil {
+		return err
+	}
+	return services.InvalidateCacheByModel(row)
+}
+
+// changed reports whether a save's Changes name this field.
+func changed(changes map[string]FieldChange[any], key string) bool {
+	_, ok := changes[key]
+	return ok
 }
 
 type QuotationFieldChanges struct {
@@ -402,7 +473,13 @@ func GetProjectDetail(id int) (SalesProjectDetail, int, error) {
 
 	if len(itemSetIDs) > 0 {
 		byItemSet := map[string]interface{}{"based_id": itemSetIDs}
-		if err := services.DbGetNoCache(&detail.SalesProjectContent, byItemSet); err != nil {
+		// WITH Size Up and Final Selection. A plain read left both off every content row,
+		// so every project the Sales app opened - and every live refresh - showed those two
+		// grids empty, and the next save of that tab's content sent the empty lists back,
+		// which syncContentChildren reads as "delete them all". The full /sales/projects list
+		// always preloaded them; this per-project read did not.
+		if err := services.DbGetWithPreloadsNoCache(&detail.SalesProjectContent, byItemSet,
+			"SalesProjectContentFinal", "SalesProjectSizeUp"); err != nil {
 			return detail, fiber.StatusInternalServerError, errors.New("failed getting project content")
 		}
 		if err := services.DbGetNoCache(&detail.SalesProjectContentAdvancedCondition, byItemSet); err != nil {
@@ -716,7 +793,26 @@ func UpdateSalesProject(c *fiber.Ctx, tx *gorm.DB) (UpdateProjectBody, int, erro
 	}
 
 	// ---- TABS ----
+	removalRequested := map[uint]bool{}
+	for _, id := range body.RemovedItemSetIds {
+		removalRequested[id] = true
+	}
+
 	for _, tab := range body.Tabs {
+		// A tab whose item set this save would delete without being asked to is skipped
+		// whole - not just the deletion. Its diff also lists every one of its items and
+		// wiring rows as removed, and applying those would empty the tab just the same.
+		unrequested := false
+		for _, removed := range tab.SalesProjectItemSet.Removed {
+			if !removalRequested[removed.ItemSetID] {
+				unrequested = true
+				break
+			}
+		}
+		if unrequested {
+			fmt.Printf("UpdateSalesProject %d: refused to delete item set %d - its removal was not requested\n", body.ID, tab.BasedId)
+			continue
+		}
 
 		// ---- ITEM SET ----
 		// Resolve this tab's real item_set_id before touching any of its children. For an
@@ -772,6 +868,76 @@ func UpdateSalesProject(c *fiber.Ctx, tx *gorm.DB) (UpdateProjectBody, int, erro
 	// broadcast happens in the handler, after tx.Commit() succeeds.
 
 	return body, fiber.StatusOK, nil
+}
+
+// deleteItemSetChildren removes every row that belongs to one item set, children before
+// parents (Size Up and Final Selection carry foreign keys to their content row). Items give
+// back any stock they had reserved (10.4.3). Change History is kept: it is the audit trail,
+// and the removal itself is logged as a PROJECT line by the client.
+//
+// Safe to run when the same save's diff also lists the tab's items and wiring as removed:
+// whichever runs second finds nothing left to delete.
+func deleteItemSetChildren(tx *gorm.DB, itemSetID uint, at models.At) error {
+	var contents []models.SalesProjectContent
+	if err := tx.Where("based_id = ?", itemSetID).Find(&contents).Error; err != nil {
+		return fmt.Errorf("item set remove (content read): %w", err)
+	}
+	for _, content := range contents {
+		var sizeUps []models.SalesProjectSizeUp
+		if err := tx.Where("sales_project_content_id = ?", content.ContentID).Find(&sizeUps).Error; err != nil {
+			return fmt.Errorf("item set remove (size up read): %w", err)
+		}
+		for _, row := range sizeUps {
+			if err := DeleteProjectSizeUp(tx, row, at); err != nil {
+				return fmt.Errorf("item set remove (size up): %w", err)
+			}
+		}
+
+		var finals []models.SalesProjectContentFinal
+		if err := tx.Where("sales_project_content_id = ?", content.ContentID).Find(&finals).Error; err != nil {
+			return fmt.Errorf("item set remove (final read): %w", err)
+		}
+		for _, row := range finals {
+			if err := DeleteProjectContentFinal(tx, row, at); err != nil {
+				return fmt.Errorf("item set remove (final): %w", err)
+			}
+		}
+
+		if err := services.DbDelete(tx, &models.SalesProjectContent{}, map[string]interface{}{
+			"content_id": content.ContentID,
+		}); err != nil {
+			return fmt.Errorf("item set remove (content): %w", err)
+		}
+	}
+
+	if err := services.DbDelete(tx, &models.SalesProjectAdvancedConditions{}, map[string]interface{}{
+		"based_id": itemSetID,
+	}); err != nil {
+		return fmt.Errorf("item set remove (advanced conditions): %w", err)
+	}
+
+	var items []models.SalesProjectItems
+	if err := tx.Where("based_id = ?", itemSetID).Find(&items).Error; err != nil {
+		return fmt.Errorf("item set remove (items read): %w", err)
+	}
+	for _, item := range items {
+		if err := releaseProjectItemReservation(tx, item.ItemsID, at.AtUser); err != nil {
+			return fmt.Errorf("item set remove (reservation release): %w", err)
+		}
+		if err := services.DbDelete(tx, &models.SalesProjectItems{}, map[string]interface{}{
+			"items_id": item.ItemsID,
+		}); err != nil {
+			return fmt.Errorf("item set remove (item): %w", err)
+		}
+	}
+
+	if err := services.DbDelete(tx, &models.SalesProjectWiring{}, map[string]interface{}{
+		"based_id": itemSetID,
+	}); err != nil {
+		return fmt.Errorf("item set remove (wiring): %w", err)
+	}
+
+	return nil
 }
 
 // guardProjectCopyIsCurrent refuses a write to a finalized quote, or to a sub-version that a
@@ -999,6 +1165,13 @@ func applyItemSetDiff(tx *gorm.DB, projectID uint, diff CollectionDiff[models.Sa
 		newItemSetId = item.ItemSetID
 	}
 	for _, item := range diff.Removed {
+		// Everything filed under the tab goes with it. Deleting only the item set row left its
+		// content, Size Up, Final Selection and Advanced Conditions behind as orphans (five of
+		// each on the rehearsal database) - invisible, but still counted by anything that
+		// reads those tables whole.
+		if err := deleteItemSetChildren(tx, item.ItemSetID, at); err != nil {
+			return 0, err
+		}
 		if err := services.DbDelete(tx, &models.SalesProjectItemSet{}, map[string]interface{}{
 			"item_set_id": item.ItemSetID,
 		}); err != nil {
@@ -1297,9 +1470,7 @@ func applyContentDiff(tx *gorm.DB, BasedId uint, diff CollectionDiff[models.Sale
 
 		println(entry.Item.ItemDesignation, " ID=", entry.Item.ContentID)
 
-		if err := services.DbUpdate(tx, &entry.Item, map[string]interface{}{
-			"content_id": entry.Item.ContentID,
-		}); err != nil {
+		if err := writeChangedFields(tx, &entry.Item, "content_id", entry.Item.ContentID, entry.Changes); err != nil {
 			return fmt.Errorf("content update: %w", err)
 		}
 
@@ -1342,9 +1513,7 @@ func applyAdvancedConditionDiff(tx *gorm.DB, basedId uint, diff CollectionDiff[m
 		}
 	}
 	for _, entry := range diff.Updated {
-		if err := services.DbUpdate(tx, &entry.Item, map[string]interface{}{
-			"conditions_id": entry.Item.ConditionsID,
-		}); err != nil {
+		if err := writeChangedFields(tx, &entry.Item, "conditions_id", entry.Item.ConditionsID, entry.Changes); err != nil {
 			return fmt.Errorf("advanced condition update: %w", err)
 		}
 	}
@@ -1373,14 +1542,14 @@ func applyItemsDiff(tx *gorm.DB, basedId uint, diff CollectionDiff[models.SalesP
 		}
 	}
 	for _, entry := range diff.Updated {
-		if err := services.DbUpdate(tx, &entry.Item, map[string]interface{}{
-			"items_id": entry.Item.ItemsID,
-		}); err != nil {
+		if err := writeChangedFields(tx, &entry.Item, "items_id", entry.Item.ItemsID, entry.Changes); err != nil {
 			return fmt.Errorf("item update: %w", err)
 		}
 		// An edited QTY is a new reservation request with a fresh window (10.4.5). Skipped at
 		// zero: DbUpdate ignores zero values too, so a zero here means QTY was not sent.
-		if entry.Item.Qty > 0 {
+		// Only when this save changed QTY - otherwise Qty is this client's copy, which may be
+		// older than the stored one.
+		if changed(entry.Changes, "qty") && entry.Item.Qty > 0 {
 			if err := syncProjectItemReservation(tx, entry.Item.ItemsID, entry.Item.Qty); err != nil {
 				return fmt.Errorf("item reservation sync: %w", err)
 			}
@@ -1415,9 +1584,7 @@ func applyWiringsDiff(tx *gorm.DB, basedId uint, diff CollectionDiff[models.Sale
 		}
 	}
 	for _, entry := range diff.Updated {
-		if err := services.DbUpdate(tx, &entry.Item, map[string]interface{}{
-			"id": entry.Item.ID,
-		}); err != nil {
+		if err := writeChangedFields(tx, &entry.Item, "id", entry.Item.ID, entry.Changes); err != nil {
 			return fmt.Errorf("wiring update: %w", err)
 		}
 	}
