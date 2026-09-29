@@ -55,6 +55,9 @@ func (c *CompanyService) GetCompanyService(conditions map[string]interface{}) (*
 	if tx.Error != nil {
 		return company, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
+	// A read: nothing to commit, but the transaction must still end. It was never closed,
+	// so every fetch held a pooled connection open until the garbage collector found it.
+	defer tx.Rollback()
 
 	if err := tx.Where(conditions).Preload("Address").Preload("Contacts").First(company).Error; err != nil {
 		return company, fiber.StatusNotFound, errors.New("failed getting company")
@@ -71,6 +74,7 @@ func (c *CompanyService) GetCompaniesService(conditions map[string]interface{}) 
 	if tx.Error != nil {
 		return companies, fiber.StatusInternalServerError, errors.New("failed to start DB transaction")
 	}
+	defer tx.Rollback() // a read - see GetCompanyService
 
 	if err := tx.Where(conditions).Preload("Address").Preload("Contacts").Find(companies).Error; err != nil {
 		fmt.Println("ERROR:", err)
@@ -248,4 +252,12 @@ func (c *CompanyService) UpdateCompanyContactService(contact *models.CompanyCont
 	}
 
 	return contact, fiber.StatusOK, nil
+}
+
+// CompanyHasAddress reports whether the company already has its address row. A company
+// carries at most one; an update writes to it when it exists and creates it when it does not.
+func (c *CompanyService) CompanyHasAddress(companyID uint) (bool, error) {
+	var count int64
+	err := initializers.DB.Model(&models.CompanyAddressModel{}).Where("company_id = ?", companyID).Count(&count).Error
+	return count > 0, err
 }

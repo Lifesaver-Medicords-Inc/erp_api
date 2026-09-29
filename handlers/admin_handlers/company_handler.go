@@ -32,29 +32,37 @@ func (co *CompanyHandler) CreateCompanyHandler(c *fiber.Ctx) error {
 		at = models.At{}
 	}
 
+	// Detached before the company row is inserted - see UpdateCompanyHandler. GORM inserted
+	// them with the company, then the code below inserted them again: every new company got
+	// its address and each contact twice.
+	address := body.Address
+	contacts := body.Contacts
+	body.Address = models.CompanyAddressModel{}
+	body.Contacts = nil
+
 	data, status, err := co.CompanyService.CreateCompanyService(&body, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
-	address := body.Address
-	contacts := body.Contacts
-
-	address.CompanyId = data.ID
-
-	a, _, err := co.CompanyService.CreateCompanyAddressService(&address, at)
-
-	if err != nil {
-		data.Address = *a
+	if address.CompanyAddressContent != (models.CompanyAddressContent{}) {
+		address.ID = 0
+		address.CompanyId = data.ID
+		if _, _, err := co.CompanyService.CreateCompanyAddressService(&address, at); err != nil {
+			return utils.RespondError(c, fiber.StatusInternalServerError, "Company created, but its address was not: "+err.Error())
+		}
 	}
 
 	for _, contact := range contacts {
+		contact.ID = 0
 		contact.CompanyId = data.ID
-		con, _, err := co.CompanyService.CreateCompanyContactService(&contact, at)
-
-		if err != nil {
-			contacts = append(contacts, *con)
+		if _, _, err := co.CompanyService.CreateCompanyContactService(&contact, at); err != nil {
+			return utils.RespondError(c, fiber.StatusInternalServerError, "Company created, but a contact was not: "+err.Error())
 		}
+	}
+
+	if saved, _, err := co.CompanyService.GetCompanyService(map[string]interface{}{"id": data.ID}); err == nil {
+		data = saved
 	}
 
 	return utils.RespondSuccess(c, data)
@@ -129,36 +137,62 @@ func (co *CompanyHandler) UpdateCompanyHandler(c *fiber.Ctx) error {
 	conditions := map[string]interface{}{
 		"id": idNum,
 	}
+	// The record is the one in the URL; the address and contacts below hang off this id.
+	body.ID = uint(idNum)
+
+	// Detached before the company row is written. GORM saves a model's associations along
+	// with it, so an address or contact without an id was INSERTED by the company update
+	// itself - a second address row on every save - and then written again below.
+	address := body.Address
+	contacts := body.Contacts
+	body.Address = models.CompanyAddressModel{}
+	body.Contacts = nil
 
 	data, status, err := co.CompanyService.UpdateCompanyService(&body, conditions, at)
 	if err != nil {
 		return utils.RespondError(c, status, err.Error())
 	}
 
-	address := body.Address
-	contacts := body.Contacts
-
-	updateAddressCondition := map[string]interface{}{
-		"company_id": data.ID,
-	}
-
-	a, _, err := co.CompanyService.UpdateCompanyAddressService(&address, updateAddressCondition, at)
-
+	// Address and contacts. An update used to write only to rows that already existed: the
+	// address by company_id, a contact by its id. A company saved without an address (company 1
+	// has none) could never be given one, and a contact added while editing (id 0) matched no
+	// row and was silently dropped. Now: the address is updated when it exists and created when
+	// it does not and something was entered; a contact with an id is updated within this
+	// company, one without is created. A caller that sends neither (Accounting's Company Setup)
+	// changes neither - an empty address is never created.
+	address.CompanyId = data.ID
+	hasAddress, err := co.CompanyService.CompanyHasAddress(data.ID)
 	if err != nil {
-		data.Address = *a
+		return utils.RespondError(c, fiber.StatusInternalServerError, "Company saved, but its address could not be checked: "+err.Error())
+	}
+	if hasAddress {
+		if _, _, err := co.CompanyService.UpdateCompanyAddressService(&address, map[string]interface{}{"company_id": data.ID}, at); err != nil {
+			return utils.RespondError(c, fiber.StatusInternalServerError, "Company saved, but its address was not: "+err.Error())
+		}
+	} else if address.CompanyAddressContent != (models.CompanyAddressContent{}) {
+		address.ID = 0
+		if _, _, err := co.CompanyService.CreateCompanyAddressService(&address, at); err != nil {
+			return utils.RespondError(c, fiber.StatusInternalServerError, "Company saved, but its address was not: "+err.Error())
+		}
 	}
 
 	for _, contact := range contacts {
-		condition := map[string]interface{}{
-			"id": contact.ID,
+		contact.CompanyId = data.ID
+		if contact.ID == 0 {
+			if _, _, err := co.CompanyService.CreateCompanyContactService(&contact, at); err != nil {
+				return utils.RespondError(c, fiber.StatusInternalServerError, "Company saved, but a new contact was not: "+err.Error())
+			}
+			continue
 		}
-		fmt.Println(contact)
-
-		con, _, err := co.CompanyService.UpdateCompanyContactService(&contact, condition, at)
-
-		if err != nil {
-			contacts = append(contacts, *con)
+		condition := map[string]interface{}{"id": contact.ID, "company_id": data.ID}
+		if _, _, err := co.CompanyService.UpdateCompanyContactService(&contact, condition, at); err != nil {
+			return utils.RespondError(c, fiber.StatusInternalServerError, "Company saved, but a contact was not: "+err.Error())
 		}
+	}
+
+	// The company as stored, address and contacts included, so the caller shows what was saved.
+	if saved, _, err := co.CompanyService.GetCompanyService(map[string]interface{}{"id": data.ID}); err == nil {
+		data = saved
 	}
 
 	return utils.RespondSuccess(c, data)
