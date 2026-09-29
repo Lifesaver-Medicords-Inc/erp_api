@@ -510,6 +510,10 @@ func SetupApp() *fiber.App {
 
 				//BOM Endpoints
 				setupApi.Get("/bom", setup_handlers.GetSetupItemBoms)
+				// The BOM screen, 20 at a time - registered before the id route below.
+				setupApi.Get("/bom/paged", setup_handlers.GetBomsPaged)
+				setupApi.Get("/bom/search", setup_handlers.GetBomsSearch)
+				setupApi.Get("/bom/tree", setup_handlers.GetBomTree)
 				//setupApi.Get("/bom", setup_handlers.GetSetupItemBomss)
 
 				setupApi.Get("/bom:/id", setup_handlers.GetSetupItemBom)
