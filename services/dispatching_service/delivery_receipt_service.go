@@ -22,15 +22,25 @@ type DeliveryReceiptService struct {
 	LogisticsCalendarScheduleService *LogisticsCalendarScheduleService
 }
 
-// Looks up the sales order's document number via the vw_get_sales_order_dr
-// join so it can be shown on the logistics schedule/route without requiring
-// the client to look it up separately. Best-effort: returns "" if not found.
+// The sales order's own number (doc, "0006" - shown as SO#0006), for the logistics
+// schedule and route a delivery receipt creates, so neither needs the client to look
+// it up. Best-effort: "" if the order is not found.
+//
+// It read vw_get_sales_order_dr.document_no, which is not the order's number: an
+// order's document_no holds the code of the quotation it was made from (FQ#2026-0020.1.0
+// today, "0020" before quotation versioning). So every DR-made schedule and route named
+// the quote as its SALES ORDER reference (2026-09-30), and the dispatching screens, which
+// match references on the order's digits, could pair a schedule with the wrong order.
+// The view is left as it is - accounting reads it too.
 func getSalesOrderDocNo(tx *gorm.DB, salesOrderID uint) string {
-	var soView models.SalesOrderDrView
-	if err := tx.Where("order_id = ?", salesOrderID).First(&soView).Error; err != nil {
+	if salesOrderID == 0 {
 		return ""
 	}
-	return soView.DocumentNo
+	var order models.Order
+	if err := tx.Select("order_id", "doc").Where("order_id = ?", salesOrderID).First(&order).Error; err != nil {
+		return ""
+	}
+	return order.Doc
 }
 
 // The customer's name for a calendar title or a route's CLIENT/SUPPLIER.
